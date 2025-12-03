@@ -41,7 +41,7 @@ Build and run the image:
 ```bash
 docker build -t it-aware-frontend:latest .
 docker stop it-aware-frontend && docker rm it-aware-frontend
-docker run -p 3007:3000 --network dev-net --env-file ./.env.local_docker --name it-aware-frontend it-aware-frontend:latest
+docker run -d -p 3007:3000 --network dev-net --env-file ./.env.local_docker --name it-aware-frontend it-aware-frontend:latest
 ```
 
 The app will be available at http://localhost:3000. The Docker build copies `.env.local_docker` to `.env.local` so the environment variables defined there are used during the build. You can also override any variable at runtime with `-e KEY=VALUE`.

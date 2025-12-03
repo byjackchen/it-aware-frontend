@@ -1,17 +1,21 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
 import { Globe } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function LanguageSwitcher() {
     const locale = useLocale();
     const router = useRouter();
-    const pathname = usePathname();
 
     const toggleLanguage = () => {
         const nextLocale = locale === 'en' ? 'zh' : 'en';
-        router.replace(pathname, { locale: nextLocale });
+
+        // Set cookie for locale preference
+        document.cookie = `IT_AWARE_LOCALE=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`;
+
+        // Refresh the page to apply new locale
+        router.refresh();
     };
 
     return (

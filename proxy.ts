@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu'
-import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 
 const intlMiddleware = createMiddleware(routing);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     // Skip if static files (handled by matcher, but good to be safe)
     if (request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.startsWith('/static') ||
@@ -15,7 +14,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
     }
 
-    // 1. Run i18n middleware first to handle routing/redirects
+    // 1. Run i18n middleware first to handle locale detection from cookies
     const response = intlMiddleware(request);
 
     // 2. Run Auth Logic
@@ -42,11 +41,11 @@ export async function middleware(request: NextRequest) {
     const accessToken = request.cookies.get('it_aware_access')
 
 
-
     return response;
 }
 
+export default proxy;
 export const config = {
-    // Match only internationalized pathnames
-    matcher: ['/', '/(zh|en)/:path*']
+    // Match all pathnames except for static assets, API routes, and files with extensions
+    matcher: ['/((?!api|_next|_vercel|.*\\\\..*).*)']
 };
