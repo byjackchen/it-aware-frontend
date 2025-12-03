@@ -1,0 +1,14 @@
+{
+    "TopBar": {
+        "title": "IT Aware"
+    },
+    "Sidebar": {
+        "security": "安全",
+        "persona": "用户画像"
+    },
+    "Chatbot": {
+        "title": "IT Aware 助手",
+        "placeholder": "今天我能为您做什么？",
+        "inputPlaceholder": "输入消息..."
+    }
+}

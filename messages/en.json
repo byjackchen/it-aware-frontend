@@ -1,0 +1,14 @@
+{
+    "TopBar": {
+        "title": "IT Aware"
+    },
+    "Sidebar": {
+        "security": "Security",
+        "persona": "Persona"
+    },
+    "Chatbot": {
+        "title": "IT Aware Assistant",
+        "placeholder": "How can I help you today?",
+        "inputPlaceholder": "Type a message..."
+    }
+}
