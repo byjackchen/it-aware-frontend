@@ -1,23 +1,41 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Bell, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslations } from 'next-intl';
-import { logout } from '@/app/actions/auth';
+import { logout, getCurrentUser } from '@/app/actions/auth';
 import { useRouter } from 'next/navigation';
 
 export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useRouter();
+  const [loginName, setLoginName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // TODO: Get user identity from React Context or server-passed props
-  // For now, using placeholder values
-  const loginName = 'byjackchen';
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const result = await getCurrentUser();
+        if (result.success && result.user) {
+          setLoginName(result.user.loginName);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchUser();
+  }, []);
+
   const initials = loginName
-    .split('.')
-    .map((part: string) => part.charAt(0).toUpperCase())
-    .join('') || 'U';
+    ? loginName
+        .split('.')
+        .map((part: string) => part.charAt(0).toUpperCase())
+        .join('')
+    : 'U';
 
   const handleLogout = async () => {
     await logout();

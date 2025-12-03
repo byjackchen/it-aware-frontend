@@ -1,84 +1,39 @@
 'use server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
-import { redirect } from 'next/navigation'
+import { getUserIdentity, TaihuHeaders } from '@/lib/auth/taihu'
+
+const AUTH_URL = RUNTIME_CONFIG.auth.serviceUrl
+
+async function parseCookies(response: Response, cookieStore: Awaited<ReturnType<typeof cookies>>) {
+    for (const cookieStr of response.headers.getSetCookie()) {
+        const [nameValue] = cookieStr.split(';')
+        const [name, value] = nameValue.split('=')
+        if (name && value) {
+            cookieStore.set(name.trim(), value.trim(), { path: '/', httpOnly: true, sameSite: 'lax' })
+        }
+    }
+}
 
 export async function login(formData: FormData) {
     const username = formData.get('username') as string
+    if (!username) return { error: 'Username is required' }
 
-    if (!username) {
-        return { error: 'Username is required' }
-    }
+    console.log(`[Auth] Calling backend auth service /auth/session/token for user: ${username}`)
 
     try {
-        const response = await fetch(`${RUNTIME_CONFIG.auth.serviceUrl}/auth/session/token`, {
+        const response = await fetch(`${AUTH_URL}/auth/session/token`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ username }),
         })
 
         if (!response.ok) {
-            const errorText = await response.text()
-            return { error: `Login failed: ${response.status} ${errorText}` }
+            return { error: `Login failed: ${response.status} ${await response.text()}` }
         }
 
-        // Forward cookies from backend to client
-        const setCookieHeader = response.headers.get('set-cookie')
-        if (setCookieHeader) {
-            // Parse and set cookies
-            // Note: This is a simplified handling. In a real app, you might want to parse multiple Set-Cookie headers more robustly.
-            // However, fetch API merges multiple Set-Cookie headers into one string with comma separation, which is tricky to parse.
-            // For now, we'll assume the backend sets cookies correctly and we might need a better way to forward them if they are complex.
-            // Actually, Server Actions running on Node.js might not easily forward all Set-Cookie headers automatically.
-            // We might need to manually parse them.
-
-            // Let's try to just return success and let the browser handle it if we were doing client-side fetch, 
-            // but this is a server action.
-
-            // A better approach for Server Actions acting as proxy:
-            const cookieStore = await cookies()
-
-            // We need to parse the Set-Cookie header string.
-            // Since 'set-cookie' can be an array in Node.js but fetch returns a combined string, it's messy.
-            // But Next.js 'cookies().set()' is what we need.
-
-            // If the backend sets cookies, we should probably read them.
-            // But wait, if the backend is on localhost:8007 and we are on localhost:3000, 
-            // the cookies set by 8007 won't be sent to 3000 unless we proxy or set them ourselves.
-
-            // The user requirement says "this frontend will be logged in via SSO... calling another standalone BFF service".
-            // And "prefer to use server actions for any api calls".
-
-            // If the backend returns "Login successful" and sets cookies, we need to capture those cookies.
-            // Since we can't easily parse the combined Set-Cookie string from standard fetch in all environments,
-            // we might assume the tokens are NOT returned in the body (based on user description).
-
-            // Let's try to parse the split cookies if possible, or just warn.
-            // For this task, I'll assume standard cookie forwarding.
-
-            // Actually, `response.headers.getSetCookie()` is available in newer Node.js / Next.js environments.
-            const setCookies = response.headers.getSetCookie()
-
-            for (const cookieStr of setCookies) {
-                // Simple parsing: name=value; Path=/; HttpOnly...
-                const [nameValue, ...options] = cookieStr.split(';')
-                const [name, value] = nameValue.split('=')
-
-                if (name && value) {
-                    cookieStore.set(name.trim(), value.trim(), {
-                        // We should parse options too, but for now defaults or simple forwarding:
-                        path: '/',
-                        httpOnly: true,
-                        // secure: true, // if https
-                        sameSite: 'lax',
-                    })
-                }
-            }
-        }
-
+        await parseCookies(response, await cookies())
         return { success: true }
     } catch (error) {
         console.error('Login error:', error)
@@ -89,20 +44,15 @@ export async function login(formData: FormData) {
 export async function logout() {
     try {
         const cookieStore = await cookies()
-        const allCookies = cookieStore.getAll()
-        const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+        const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
-        const response = await fetch(`${RUNTIME_CONFIG.auth.serviceUrl}/auth/session/logout`, {
+        await fetch(`${AUTH_URL}/auth/session/logout`, {
             method: 'POST',
-            headers: {
-                'Cookie': cookieHeader
-            }
+            headers: { 'Cookie': cookieHeader }
         })
 
-        // Clear cookies
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
-
         return { success: true }
     } catch (error) {
         console.error('Logout error:', error)
@@ -113,29 +63,40 @@ export async function logout() {
 export async function refresh() {
     try {
         const cookieStore = await cookies()
-        const allCookies = cookieStore.getAll()
-        const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+        const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
-        const response = await fetch(`${RUNTIME_CONFIG.auth.serviceUrl}/auth/session/refresh`, {
+        const response = await fetch(`${AUTH_URL}/auth/session/refresh`, {
             method: 'POST',
-            headers: {
-                'Cookie': cookieHeader
-            }
+            headers: { 'Cookie': cookieHeader }
         })
 
-        if (response.ok) {
-            const setCookies = response.headers.getSetCookie()
-            for (const cookieStr of setCookies) {
-                const [nameValue] = cookieStr.split(';')
-                const [name, value] = nameValue.split('=')
-                if (name && value) {
-                    cookieStore.set(name.trim(), value.trim(), { path: '/', httpOnly: true, sameSite: 'lax' })
-                }
-            }
-            return { success: true }
-        }
-        return { error: 'Refresh failed' }
+        if (!response.ok) return { error: 'Refresh failed' }
+        
+        await parseCookies(response, cookieStore)
+        return { success: true }
     } catch (error) {
         return { error: 'Refresh error' }
+    }
+}
+
+export async function getCurrentUser() {
+    try {
+        const headerStore = await headers()
+        
+        const taihuHeaders: TaihuHeaders = {
+            'x-tai-identity': headerStore.get('x-tai-identity') || undefined,
+            timestamp: headerStore.get('timestamp') || undefined,
+            signature: headerStore.get('signature') || undefined,
+            'x-rio-seq': headerStore.get('x-rio-seq') || undefined,
+        }
+
+        const identity = await getUserIdentity(taihuHeaders)
+        return { 
+            success: true, 
+            user: { loginName: identity.loginName, staffId: identity.staffId }
+        }
+    } catch (error) {
+        console.error('getCurrentUser error:', error)
+        return { error: error instanceof Error ? error.message : 'Failed to get user identity' }
     }
 }

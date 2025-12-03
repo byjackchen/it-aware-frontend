@@ -1,4 +1,5 @@
 import * as jose from 'jose'
+import crypto from 'crypto'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 
 export interface TaihuHeaders {
@@ -22,16 +23,12 @@ interface JWEPayload {
 /**
  * Decode and decrypt the x-tai-identity header using JWE
  */
-async function decodeAuthorizationHeader(
-    authorizationHeader: string,
-    keyBytes: Buffer
-): Promise<JWEPayload> {
-    const dec = await jose.compactDecrypt(authorizationHeader, keyBytes)
+async function decodeAuthorizationHeader(header: string, keyBytes: Buffer): Promise<JWEPayload> {
+    const dec = await jose.compactDecrypt(header, keyBytes)
     const payload = JSON.parse(new TextDecoder().decode(dec.plaintext)) as JWEPayload
 
     const exp = new Date(payload.Expiration)
-    // Check if token is expired, add 3 minute buffer to avoid server time differences
-    if (new Date().getTime() - 3 * 60 * 1000 > exp.getTime()) {
+    if (Date.now() - 3 * 60 * 1000 > exp.getTime()) {
         throw new Error('Token expired')
     }
     return payload
@@ -40,89 +37,44 @@ async function decodeAuthorizationHeader(
 /**
  * Check signature validity for Taihu gateway requests
  */
-function checkSignature(
-    key: string,
-    timestampSeconds: string,
-    signature: string,
-    extHeaders: string[]
-): boolean {
-    if (!timestampSeconds || isNaN(Number(timestampSeconds))) {
-        return false
-    }
+function checkSignature(key: string, timestamp: string, signature: string, extHeaders: string[]): boolean {
+    if (!timestamp || isNaN(Number(timestamp))) return false
 
-    // Check timestamp is within 3 minutes (180 seconds)
-    const timestampMs = parseInt(timestampSeconds, 10) * 1000
-    if (Math.abs(timestampMs - Date.now()) > 180000) {
-        return false
-    }
+    // Dev: 1 hour, Prod: 3 minutes
+    const maxTimeDiff = process.env.NODE_ENV === 'development' ? 3600000 : 180000
+    const timeDiff = Math.abs(parseInt(timestamp, 10) * 1000 - Date.now())
+    if (timeDiff > maxTimeDiff) return false
 
-    // Create hash for signature verification
-    const crypto = require('crypto')
-    const hash = crypto.createHash('sha256')
-    hash.update(timestampSeconds + key + extHeaders.join(',') + timestampSeconds)
-
-    return signature.toLowerCase() === hash.digest('hex').toLowerCase()
+    const dataToSign = timestamp + key + extHeaders.join(',') + timestamp
+    const expectedSignature = crypto.createHash('sha256').update(dataToSign).digest('hex').toLowerCase()
+    return signature.toLowerCase() === expectedSignature
 }
 
 /**
  * Extract and verify user identity from Taihu gateway headers
  */
-export async function getIdentityFromHeaders(
-    headers: TaihuHeaders
-): Promise<TaihuIdentity> {
-    const config = RUNTIME_CONFIG.taihu
-    const key = config.paasToken
-    const keyBytes = Buffer.from(key)
-    const identitySafeMode = config.isSingnatured
+export async function getIdentityFromHeaders(headers: TaihuHeaders): Promise<TaihuIdentity> {
+    const key = RUNTIME_CONFIG.taihu.paasToken
+    const extHeaders = [headers['x-rio-seq'] || '', '', '', '']
 
-    // Build extended headers for signature check
-    let extHeaders = [headers['x-rio-seq'] || '', '', '', '']
-    if (!identitySafeMode) {
-        extHeaders = [
-            headers['x-rio-seq'] || '',
-            '', // staffid - not available in safe mode
-            '', // staffname - not available in safe mode
-            '' // x-ext-data
-        ]
-    }
-
-    // Verify signature
-    if (!checkSignature(
-        key,
-        headers.timestamp || '',
-        headers.signature || '',
-        extHeaders
-    )) {
+    if (!checkSignature(key, headers.timestamp || '', headers.signature || '', extHeaders)) {
         throw new Error('Invalid signature - authentication failed')
     }
 
-    // Decrypt identity from x-tai-identity header
-    const taiIdentity = headers['x-tai-identity']
-    if (!taiIdentity) {
+    if (!headers['x-tai-identity']) {
         throw new Error('Missing x-tai-identity header')
     }
 
-    const payload = await decodeAuthorizationHeader(taiIdentity, keyBytes)
-    return {
-        staffId: payload.StaffId,
-        loginName: payload.LoginName
-    }
+    const payload = await decodeAuthorizationHeader(headers['x-tai-identity'], Buffer.from(key))
+    return { staffId: payload.StaffId, loginName: payload.LoginName }
 }
 
 /**
- * Get user identity - either from headers or mock data based on config
+ * Get user identity from Taihu headers
  */
-export async function getUserIdentity(headers?: TaihuHeaders): Promise<TaihuIdentity> {
-    const authConfig = RUNTIME_CONFIG.auth
-
-    // Extract from headers
+export async function getUserIdentity(headers: TaihuHeaders): Promise<TaihuIdentity> {
     if (!headers) {
-        console.error('[Taihu Auth] No headers provided', {
-            runtimeConfig: RUNTIME_CONFIG
-        })
         throw new Error('No headers provided for authentication')
     }
-
-    console.log('[Taihu Auth] Extracting from headers:', Object.keys(headers))
     return getIdentityFromHeaders(headers)
 }
