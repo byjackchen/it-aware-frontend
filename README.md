@@ -45,3 +45,10 @@ docker run -d -p 3007:3000 --network dev-net --env-file ./.env.local_docker --na
 ```
 
 The app will be available at http://localhost:3000. The Docker build copies `.env.local_docker` to `.env.local` so the environment variables defined there are used during the build. You can also override any variable at runtime with `-e KEY=VALUE`.
+
+# Repo Scripts
+
+## Generate headers
+```bash
+npx ts-node scripts/generate_headers.ts
+```
