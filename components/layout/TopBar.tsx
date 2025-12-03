@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Bell, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslations } from 'next-intl';
-import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { logout } from '@/app/actions/auth';
 import { useRouter } from 'next/navigation';
 
@@ -12,15 +11,13 @@ export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useRouter();
 
-  // Derive initials from the mock user login name (e.g. "mock.user" -> "MU")
-  const loginName = RUNTIME_CONFIG.auth?.mockUser?.loginName ?? '';
-  const initials = (() => {
-    if (!loginName) return 'U';
-    return loginName
-      .split('.')
-      .map((part: string) => part.charAt(0).toUpperCase())
-      .join('');
-  })();
+  // TODO: Get user identity from React Context or server-passed props
+  // For now, using placeholder values
+  const loginName = 'byjackchen';
+  const initials = loginName
+    .split('.')
+    .map((part: string) => part.charAt(0).toUpperCase())
+    .join('') || 'U';
 
   const handleLogout = async () => {
     await logout();

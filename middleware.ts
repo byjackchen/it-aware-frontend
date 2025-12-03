@@ -41,10 +41,7 @@ export async function middleware(request: NextRequest) {
     // Check for standard cookies if Taihu headers are missing
     const accessToken = request.cookies.get('it_aware_access')
 
-    // If mock auth is enabled
-    if (RUNTIME_CONFIG.auth.useMockData) {
-        // proceed
-    }
+
 
     return response;
 }

@@ -115,25 +115,9 @@ export async function getIdentityFromHeaders(
 export async function getUserIdentity(headers?: TaihuHeaders): Promise<TaihuIdentity> {
     const authConfig = RUNTIME_CONFIG.auth
 
-    console.log('[Taihu Auth] getUserIdentity called', {
-        useMockData: authConfig.useMockData,
-        hasHeaders: !!headers,
-        environment: RUNTIME_CONFIG.app.environment
-    })
-
-    // Use mock data if configured
-    if (authConfig.useMockData) {
-        console.log('[Taihu Auth] Using mock data:', authConfig.mockUser)
-        return {
-            staffId: authConfig.mockUser.staffId,
-            loginName: authConfig.mockUser.loginName
-        }
-    }
-
     // Extract from headers
     if (!headers) {
-        console.error('[Taihu Auth] No headers provided but useMockData is false', {
-            authConfig,
+        console.error('[Taihu Auth] No headers provided', {
             runtimeConfig: RUNTIME_CONFIG
         })
         throw new Error('No headers provided for authentication')

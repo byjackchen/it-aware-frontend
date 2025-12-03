@@ -3,11 +3,6 @@ export const RUNTIME_CONFIG = {
         environment: process.env.NODE_ENV || 'development',
     },
     auth: {
-        useMockData: process.env.USE_MOCK_AUTH === 'true',
-        mockUser: {
-            staffId: 12345,
-            loginName: 'mock.user',
-        },
         serviceUrl: process.env.AUTH_SERVICE_URL || 'http://localhost:8007',
     },
     taihu: {
