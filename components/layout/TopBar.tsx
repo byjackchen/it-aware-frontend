@@ -1,43 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Bell, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslations } from 'next-intl';
-import { logout, getCurrentUser } from '@/app/actions/auth';
+import { logout } from '@/app/actions/auth';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/lib/contexts/user-context';
 
 export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useRouter();
-  const [loginName, setLoginName] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, clearUser } = useUser();
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const result = await getCurrentUser();
-        if (result.success && result.user) {
-          setLoginName(result.user.loginName);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchUser();
-  }, []);
-
-  const initials = loginName
-    ? loginName
+  // Use consistent initial value to avoid hydration mismatch
+  const initials = !isLoading && user?.username
+    ? user.username
         .split('.')
         .map((part: string) => part.charAt(0).toUpperCase())
         .join('')
     : 'U';
 
   const handleLogout = async () => {
+    clearUser();
     await logout();
     router.push('/login');
   };
@@ -64,10 +48,16 @@ export function TopBar() {
           </button>
 
           {/* Dropdown Menu */}
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
+          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {loginName}
+                {user?.full_name || '\u00A0'}
+              </p>
+              <p className="text-sm text-gray-600 truncate">
+                {user?.username || '\u00A0'}
+              </p>
+              <p className="text-xs text-gray-500 truncate mt-1">
+                {user?.email || '\u00A0'}
               </p>
             </div>
             <button

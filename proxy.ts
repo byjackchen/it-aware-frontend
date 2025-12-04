@@ -72,7 +72,9 @@ export async function middleware(request: NextRequest) {
 
                     if (authResponse.ok) {
                         // Forward Set-Cookie headers from backend to client
-                        for (const cookieStr of authResponse.headers.getSetCookie()) {
+                        const setCookies = authResponse.headers.getSetCookie()
+                        console.log(`[Proxy] Backend Set-Cookie headers:`, setCookies)
+                        for (const cookieStr of setCookies) {
                             response.headers.append('Set-Cookie', cookieStr)
                         }
                         // Clear the logged_out cookie since user is re-authenticating
@@ -103,5 +105,5 @@ export async function middleware(request: NextRequest) {
 export default middleware
 
 export const config = {
-    matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
-}
+    // Exclude: /api/*, /_next/*, /_vercel/*, static files (.*\..*)
+    matcher: ['/((?!api/|_next/|_vercel/|.*\..*).*)']}
