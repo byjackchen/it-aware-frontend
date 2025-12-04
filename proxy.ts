@@ -136,7 +136,10 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
       console.error('[Middleware] Taihu auth failed:', error)
       if (!hasAccessToken) {
-        return NextResponse.redirect(new URL('/login', request.url))
+        const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('error', errorMessage)
+        return NextResponse.redirect(loginUrl)
       }
     }
   }
