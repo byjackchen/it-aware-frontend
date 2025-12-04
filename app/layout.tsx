@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { TopBar } from "@/components/layout/TopBar";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { ChatbotDrawer } from "@/components/layout/ChatbotDrawer";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 
@@ -39,12 +36,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
         <NextIntlClientProvider messages={messages}>
-          <TopBar />
-          <Sidebar />
-          <main className="pt-16 pl-64 min-h-screen">
-            {children}
-          </main>
-          <ChatbotDrawer />
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>

@@ -33,7 +33,13 @@ export async function login(formData: FormData) {
             return { error: `Login failed: ${response.status} ${await response.text()}` }
         }
 
-        await parseCookies(response, await cookies())
+        const cookieStore = await cookies()
+        await parseCookies(response, cookieStore)
+        
+        // Delete logged_out cookie to allow auto-login again
+        cookieStore.delete('it_aware_logged_out')
+        console.log('[Auth] User logged in, deleted it_aware_logged_out cookie')
+        
         return { success: true }
     } catch (error) {
         console.error('Login error:', error)
@@ -51,8 +57,20 @@ export async function logout() {
             headers: { 'Cookie': cookieHeader }
         })
 
+        // Delete JWT cookies
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
+        
+        // Set logged_out cookie to prevent auto-login from proxy.ts
+        // This cookie will be checked by proxy.ts to skip automatic Taihu SSO login
+        cookieStore.set('it_aware_logged_out', 'true', { 
+            path: '/', 
+            httpOnly: true, 
+            sameSite: 'lax',
+            maxAge: 60 * 60 // 1 hour expiry
+        })
+        
+        console.log('[Auth] User logged out, set it_aware_logged_out cookie')
         return { success: true }
     } catch (error) {
         console.error('Logout error:', error)

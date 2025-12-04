@@ -39,7 +39,7 @@ export function TopBar() {
 
   const handleLogout = async () => {
     await logout();
-    router.refresh();
+    router.push('/login');
   };
 
   return (

@@ -12,9 +12,16 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
     }
 
-    const response = NextResponse.next()
+    // Skip login page - no auth required
+    if (pathname === '/login') {
+        return NextResponse.next()
+    }
 
-    // Check for Taihu headers and verify identity
+    // Check if user is authenticated
+    const hasAccessToken = request.cookies.has('it_aware_access')
+    const hasLoggedOut = request.cookies.has('it_aware_logged_out')
+
+    // Check for Taihu headers
     const taihuHeaders: TaihuHeaders = {
         'x-tai-identity': request.headers.get('x-tai-identity') || undefined,
         timestamp: request.headers.get('timestamp') || undefined,
@@ -22,19 +29,38 @@ export async function middleware(request: NextRequest) {
         'x-rio-seq': request.headers.get('x-rio-seq') || undefined,
     }
 
-    if (taihuHeaders['x-tai-identity']) {
+    const hasTaihuHeaders = !!taihuHeaders['x-tai-identity']
+
+    // If user has logged out and no Taihu headers (not trying to re-login via SSO), redirect to login page
+    if (hasLoggedOut && !hasTaihuHeaders) {
+        console.log(`[Proxy] User logged out, redirecting to login page`)
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // If no JWT token and no Taihu headers, redirect to login page
+    if (!hasAccessToken && !hasTaihuHeaders) {
+        console.log(`[Proxy] No authentication found, redirecting to login page`)
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    const response = NextResponse.next()
+
+    // Process Taihu authentication if headers are present
+    if (hasTaihuHeaders) {
         try {
             const identity = await getIdentityFromHeaders(taihuHeaders)
             response.headers.set('x-user-staff-id', identity.staffId.toString())
             response.headers.set('x-user-login-name', identity.loginName)
 
-            // Check if JWT cookies already exist
-            const hasAccessToken = request.cookies.has('it_aware_access')
-            
-            if (hasAccessToken) {
+            // Skip auto-login only if user logged out AND already has a valid JWT token
+            // If user logged out but has no JWT token, they need to re-authenticate
+            if (hasLoggedOut && hasAccessToken) {
+                console.log(`[Proxy] Skipping auto-login - user has explicitly logged out`)
+            } else if (!hasLoggedOut && hasAccessToken) {
                 console.log(`[Proxy] Skipping /auth/session/token call - JWT cookies already exist for user: ${identity.loginName}`)
             } else {
                 // Call backend auth service to get JWT cookies
+                // This handles: 1) No JWT token, 2) User logged out and needs to re-login
                 console.log(`[Proxy] Calling backend auth service /auth/session/token for user: ${identity.loginName}`)
                 
                 try {
@@ -49,6 +75,10 @@ export async function middleware(request: NextRequest) {
                         for (const cookieStr of authResponse.headers.getSetCookie()) {
                             response.headers.append('Set-Cookie', cookieStr)
                         }
+                        // Clear the logged_out cookie since user is re-authenticating
+                        if (hasLoggedOut) {
+                            response.cookies.delete('it_aware_logged_out')
+                        }
                         console.log(`[Proxy] JWT cookies set for user: ${identity.loginName}`)
                     } else {
                         console.error(`[Proxy] Auth service failed: ${authResponse.status}`)
@@ -59,6 +89,11 @@ export async function middleware(request: NextRequest) {
             }
         } catch (error) {
             console.error('Taihu auth failed:', error)
+            // If Taihu auth fails and no JWT token, redirect to login
+            if (!hasAccessToken) {
+                console.log(`[Proxy] Taihu auth failed and no JWT token, redirecting to login page`)
+                return NextResponse.redirect(new URL('/login', request.url))
+            }
         }
     }
 
