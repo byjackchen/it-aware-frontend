@@ -3,16 +3,20 @@
 import Link from 'next/link';
 import { Bell, LogOut, Shield, UserCircle } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/lib/contexts/user-context';
+import { useTheme } from '@/lib/contexts/theme-context';
 
 export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
 
   // Use consistent initial value to avoid hydration mismatch
   const initials = !isLoading && user?.username
@@ -41,7 +45,7 @@ export function TopBar() {
           <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
             <span className="text-white font-bold text-lg">IT</span>
           </div>
-          <span className="text-xl font-semibold text-white">{t('title')}</span>
+          <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
         </div>
 
         {/* Main Navigation */}
@@ -55,8 +59,10 @@ export function TopBar() {
                 href={item.href}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   isActive
-                    ? 'nav-active text-blue-400'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    ? 'nav-active text-blue-500'
+                    : isLight 
+                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -68,27 +74,28 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeSwitcher />
         <LanguageSwitcher />
-        <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300">
+        <button className={`p-2 rounded-full transition-all duration-300 ${isLight ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-900/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
           <Bell className="w-5 h-5" />
         </button>
 
         {/* User Profile Dropdown */}
         <div className="relative group">
-          <button className="w-9 h-9 bg-gradient-to-br from-blue-500/30 to-purple-500/30 border border-white/20 rounded-full flex items-center justify-center text-white font-medium text-sm hover:from-blue-500/50 hover:to-purple-500/50 transition-all duration-300">
+          <button className={`w-9 h-9 bg-gradient-to-br from-blue-500/30 to-purple-500/30 border rounded-full flex items-center justify-center font-medium text-sm hover:from-blue-500/50 hover:to-purple-500/50 transition-all duration-300 ${isLight ? 'border-slate-300 text-slate-700' : 'border-white/20 text-white'}`}>
             {initials}
           </button>
 
           {/* Dropdown Menu */}
           <div className="absolute right-0 top-full mt-2 w-64 glass-dark rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right">
-            <div className="px-4 py-3 border-b border-white/10">
-              <p className="text-sm font-medium text-white truncate">
+            <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+              <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                 {user?.full_name || '\u00A0'}
               </p>
-              <p className="text-sm text-gray-400 truncate">
+              <p className={`text-sm truncate ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {user?.username || '\u00A0'}
               </p>
-              <p className="text-xs text-gray-500 truncate mt-1">
+              <p className={`text-xs truncate mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                 {user?.email || '\u00A0'}
               </p>
             </div>

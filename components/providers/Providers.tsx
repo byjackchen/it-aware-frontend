@@ -1,6 +1,7 @@
 'use client'
 
 import { UserProvider } from '@/lib/contexts/user-context'
+import { ThemeProvider } from '@/lib/contexts/theme-context'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -8,8 +9,10 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <UserProvider>
-      {children}
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        {children}
+      </UserProvider>
+    </ThemeProvider>
   )
 }

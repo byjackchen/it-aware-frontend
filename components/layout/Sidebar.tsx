@@ -11,6 +11,7 @@ import {
     Users,
     Settings
 } from 'lucide-react';
+import { useTheme } from '@/lib/contexts/theme-context';
 
 // Define sub-menu items for each main section
 const subMenuItems: Record<string, { href: string; labelKey: string; icon: React.ElementType }[]> = {
@@ -29,6 +30,8 @@ const subMenuItems: Record<string, { href: string; labelKey: string; icon: React
 export function Sidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
 
     // Determine which main section is active
     const activeSection = Object.keys(subMenuItems).find(section => 
@@ -55,11 +58,13 @@ export function Sidebar() {
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
                                 isActive
-                                    ? 'nav-active text-blue-400'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    ? 'nav-active text-blue-500'
+                                    : isLight
+                                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-gray-500'}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : isLight ? 'text-slate-500' : 'text-gray-500'}`} />
                             <span className="text-sm font-medium">{t(item.labelKey)}</span>
                         </Link>
                     );

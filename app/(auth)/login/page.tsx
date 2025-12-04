@@ -174,7 +174,7 @@ export default function LoginPage() {
               <span className="text-gray-400">Cross Platforms</span>
             </h1>
             <p className="text-gray-400 text-lg mt-6">
-              Unified visibility across your infrastructure
+              Persona, Journey, 
             </p>
           </div>
         </div>
