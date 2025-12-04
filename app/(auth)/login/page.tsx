@@ -68,7 +68,7 @@ export default function LoginPage() {
             <h1 className="text-4xl font-bold italic leading-tight mb-4">
               INTELLIGENT
               <br />
-              IT OPERATIONS
+              IT DATA AWARENESS
               <br />
               PLATFORM
             </h1>
