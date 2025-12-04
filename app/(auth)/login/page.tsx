@@ -156,9 +156,9 @@ export default function LoginPage() {
             <h1 className="text-5xl font-bold leading-tight mb-4">
               <span className="text-gradient">INTELLIGENT</span>
               <br />
-              <span className="text-white">AWARENESS</span>
+              <span className="text-white">IT AWARENESS</span>
               <br />
-              <span className="text-gray-400">Cross IT Platforms</span>
+              <span className="text-gray-400">Cross Platforms</span>
             </h1>
             <p className="text-gray-400 text-lg mt-6">
               Unified visibility across your infrastructure
