@@ -1,10 +1,16 @@
 {
     "TopBar": {
-        "title": "IT Aware"
-    },
-    "Sidebar": {
+        "title": "IT Aware",
         "security": "Security",
         "persona": "Persona"
+    },
+    "Sidebar": {
+        "overview": "Overview",
+        "threats": "Threats",
+        "access": "Access Control",
+        "profile": "Profile",
+        "team": "Team",
+        "settings": "Settings"
     },
     "Chatbot": {
         "title": "IT Aware Assistant",

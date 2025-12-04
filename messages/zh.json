@@ -1,10 +1,16 @@
 {
     "TopBar": {
-        "title": "IT Aware"
-    },
-    "Sidebar": {
+        "title": "IT Aware",
         "security": "安全",
         "persona": "用户画像"
+    },
+    "Sidebar": {
+        "overview": "概览",
+        "threats": "威胁",
+        "access": "访问控制",
+        "profile": "个人资料",
+        "team": "团队",
+        "settings": "设置"
     },
     "Chatbot": {
         "title": "IT Aware 助手",

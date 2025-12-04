@@ -1,15 +1,17 @@
 'use client';
 
-import { Bell, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { Bell, LogOut, Shield, UserCircle } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/lib/contexts/user-context';
 
 export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
 
   // Use consistent initial value to avoid hydration mismatch
@@ -26,13 +28,43 @@ export function TopBar() {
     router.push('/login');
   };
 
+  const navItems = [
+    { href: '/security', label: t('security'), icon: Shield },
+    { href: '/persona', label: t('persona'), icon: UserCircle },
+  ];
+
   return (
     <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">IT</span>
+      <div className="flex items-center gap-8">
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">IT</span>
+          </div>
+          <span className="text-xl font-semibold text-gray-900">{t('title')}</span>
         </div>
-        <span className="text-xl font-semibold text-gray-900">{t('title')}</span>
+
+        {/* Main Navigation */}
+        <nav className="flex items-center gap-1">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       <div className="flex items-center gap-4">
