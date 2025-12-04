@@ -71,6 +71,7 @@ function setUserDataCookie(response: NextResponse, userData: object): void {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
 
   if (shouldSkipMiddleware(pathname)) {
     return NextResponse.next()
@@ -79,10 +80,11 @@ export async function middleware(request: NextRequest) {
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
   const hasLoggedOut = request.cookies.has(COOKIES.LOGGED_OUT)
   const taihuHeaders = extractTaihuHeaders(request)
-  const hasTaihuHeaders = !!taihuHeaders['x-tai-identity']
+  // Skip Taihu headers check for public routes (like /login) to allow username/password auth
+  const hasTaihuHeaders = !isPublicRoute && !!taihuHeaders['x-tai-identity']
 
-  // Redirect to login if not authenticated
-  if (!hasAccessToken && !hasTaihuHeaders) {
+  // Redirect to login if not authenticated (skip for public routes)
+  if (!isPublicRoute && !hasAccessToken && !hasTaihuHeaders) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -92,6 +94,11 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next()
+
+  // Skip Taihu SSO authentication for public routes (allow username/password login)
+  if (isPublicRoute) {
+    return response
+  }
 
   // Process Taihu SSO authentication
   if (hasTaihuHeaders) {
@@ -135,12 +142,11 @@ export async function middleware(request: NextRequest) {
       }
     } catch (error) {
       console.error('[Middleware] Taihu auth failed:', error)
-      if (!hasAccessToken) {
-        const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
-        const loginUrl = new URL('/login', request.url)
-        loginUrl.searchParams.set('error', errorMessage)
-        return NextResponse.redirect(loginUrl)
-      }
+      // Always redirect to login when Taihu headers are present but invalid
+      const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('error', errorMessage)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
