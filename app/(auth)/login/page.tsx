@@ -35,28 +35,110 @@ export default function LoginPage() {
     <div className="min-h-screen flex gradient-bg-animated">
       {/* Left Side - Branding/Visual Area */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background Pattern */}
+        {/* Background Pattern - Network Graph */}
         <div className="absolute inset-0">
-          {/* Glowing orbs */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl" />
+          {/* Soft glowing background effects */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl" />
           
-          {/* Circular outlines */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 border border-white/10 rounded-full" />
-          <div className="absolute top-1/3 left-1/3 w-64 h-64 border border-white/5 rounded-full" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-cyan-400/20 rounded-full" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-full" />
-        </div>
-        
-        {/* Grid Lines */}
-        <div className="absolute inset-0 opacity-[0.03]">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className="absolute h-px w-full bg-white" style={{ top: `${i * 5}%` }} />
-          ))}
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className="absolute w-px h-full bg-white" style={{ left: `${i * 5}%` }} />
-          ))}
+          {/* Network Graph SVG - Subtle & Elegant */}
+          <svg className="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              {/* Subtle gradient for lines */}
+              <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(148, 163, 184, 0.3)" />
+                <stop offset="100%" stopColor="rgba(148, 163, 184, 0.1)" />
+              </linearGradient>
+              {/* Soft glow filter */}
+              <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Connection Lines - Thin and subtle */}
+            <g stroke="url(#lineGradient)" strokeWidth="0.5" fill="none">
+              {/* Main structure */}
+              <line x1="400" y1="380" x2="220" y2="220" />
+              <line x1="400" y1="380" x2="580" y2="220" />
+              <line x1="400" y1="380" x2="180" y2="420" />
+              <line x1="400" y1="380" x2="620" y2="480" />
+              <line x1="400" y1="380" x2="320" y2="580" />
+              <line x1="400" y1="380" x2="520" y2="620" />
+              
+              {/* Extended connections */}
+              <line x1="220" y1="220" x2="120" y2="160" />
+              <line x1="220" y1="220" x2="280" y2="140" />
+              <line x1="580" y1="220" x2="680" y2="160" />
+              <line x1="580" y1="220" x2="520" y2="120" />
+              <line x1="180" y1="420" x2="100" y2="360" />
+              <line x1="180" y1="420" x2="120" y2="520" />
+              <line x1="620" y1="480" x2="700" y2="420" />
+              <line x1="620" y1="480" x2="680" y2="580" />
+              <line x1="320" y1="580" x2="240" y2="660" />
+              <line x1="520" y1="620" x2="580" y2="720" />
+              
+              {/* Cross connections - very subtle */}
+              <line x1="220" y1="220" x2="580" y2="220" opacity="0.3" />
+              <line x1="220" y1="220" x2="180" y2="420" opacity="0.3" />
+              <line x1="580" y1="220" x2="620" y2="480" opacity="0.3" />
+              <line x1="320" y1="580" x2="520" y2="620" opacity="0.3" />
+            </g>
+            
+            {/* Primary Nodes - Central hub */}
+            <g filter="url(#softGlow)">
+              <circle cx="400" cy="380" r="6" fill="rgba(148, 163, 184, 0.4)" />
+              <circle cx="400" cy="380" r="3" fill="rgba(203, 213, 225, 0.6)" />
+            </g>
+            
+            {/* Secondary Nodes */}
+            <g opacity="0.5">
+              <circle cx="220" cy="220" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="220" cy="220" r="2" fill="rgba(203, 213, 225, 0.4)" />
+              
+              <circle cx="580" cy="220" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="580" cy="220" r="2" fill="rgba(203, 213, 225, 0.4)" />
+              
+              <circle cx="180" cy="420" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="180" cy="420" r="2" fill="rgba(203, 213, 225, 0.4)" />
+              
+              <circle cx="620" cy="480" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="620" cy="480" r="2" fill="rgba(203, 213, 225, 0.4)" />
+              
+              <circle cx="320" cy="580" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="320" cy="580" r="2" fill="rgba(203, 213, 225, 0.4)" />
+              
+              <circle cx="520" cy="620" r="4" fill="rgba(148, 163, 184, 0.5)" />
+              <circle cx="520" cy="620" r="2" fill="rgba(203, 213, 225, 0.4)" />
+            </g>
+            
+            {/* Tertiary Nodes - Small endpoints */}
+            <g opacity="0.35">
+              <circle cx="120" cy="160" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="280" cy="140" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="680" cy="160" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="520" cy="120" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="100" cy="360" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="120" cy="520" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="700" cy="420" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="680" cy="580" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="240" cy="660" r="2" fill="rgba(148, 163, 184, 0.6)" />
+              <circle cx="580" cy="720" r="2" fill="rgba(148, 163, 184, 0.6)" />
+            </g>
+            
+            {/* Subtle floating dots */}
+            <g opacity="0.15">
+              <circle cx="300" cy="300" r="1.5" fill="white" />
+              <circle cx="500" cy="350" r="1.5" fill="white" />
+              <circle cx="350" cy="480" r="1.5" fill="white" />
+              <circle cx="450" cy="520" r="1.5" fill="white" />
+              <circle cx="260" cy="400" r="1.5" fill="white" />
+              <circle cx="540" cy="400" r="1.5" fill="white" />
+            </g>
+          </svg>
         </div>
 
         {/* Content */}
@@ -74,9 +156,9 @@ export default function LoginPage() {
             <h1 className="text-5xl font-bold leading-tight mb-4">
               <span className="text-gradient">INTELLIGENT</span>
               <br />
-              <span className="text-white">IT DATA AWARENESS</span>
+              <span className="text-white">AWARENESS</span>
               <br />
-              <span className="text-gray-400">PLATFORM</span>
+              <span className="text-gray-400">Cross IT Platforms</span>
             </h1>
             <p className="text-gray-400 text-lg mt-6">
               Unified visibility across your infrastructure
