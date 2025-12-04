@@ -82,6 +82,31 @@ export async function middleware(request: NextRequest) {
                             response.cookies.delete('it_aware_logged_out')
                         }
                         console.log(`[Proxy] JWT cookies set for user: ${identity.loginName}`)
+                        
+                        // Fetch user data immediately and pass it to client via a non-HttpOnly cookie
+                        // This allows the client to hydrate user data without waiting for cookie propagation
+                        try {
+                            // Extract the access token from Set-Cookie headers
+                            const accessTokenCookie = setCookies.find(c => c.startsWith('it_aware_access='))
+                            if (accessTokenCookie) {
+                                const userResponse = await fetch(`${AUTH_URL}/auth/me`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Cookie': accessTokenCookie.split(';')[0], // Just the name=value part
+                                    },
+                                })
+                                if (userResponse.ok) {
+                                    const userData = await userResponse.json()
+                                    console.log(`[Proxy] Fetched user data for immediate hydration:`, userData.username)
+                                    // Set user data in a non-HttpOnly cookie that JS can read
+                                    // Use encodeURIComponent for JSON safety, set short expiry
+                                    const userDataStr = encodeURIComponent(JSON.stringify(userData))
+                                    response.headers.append('Set-Cookie', `it_aware_user_data=${userDataStr}; Path=/; Max-Age=30; SameSite=lax`)
+                                }
+                            }
+                        } catch (userDataError) {
+                            console.error('[Proxy] Failed to fetch user data for hydration:', userDataError)
+                        }
                     } else {
                         console.error(`[Proxy] Auth service failed: ${authResponse.status}`)
                     }

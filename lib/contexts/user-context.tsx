@@ -46,7 +46,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setIsMounted(true)
   }, [])
 
-  const fetchUser = useCallback(async (retryCount = 0): Promise<void> => {
+  // Helper to get and clear the initial user data cookie set by middleware
+  const getInitialUserData = useCallback((): User | null => {
+    if (typeof window === 'undefined') return null
+    
+    const cookies = document.cookie.split(';')
+    for (const cookie of cookies) {
+      const [name, ...valueParts] = cookie.trim().split('=')
+      if (name === 'it_aware_user_data') {
+        try {
+          const value = valueParts.join('=')
+          const userData = JSON.parse(decodeURIComponent(value)) as User
+          console.log('[UserContext] Found initial user data from middleware cookie')
+          // Clear the cookie after reading (it's only for initial hydration)
+          document.cookie = 'it_aware_user_data=; Path=/; Max-Age=0'
+          return userData
+        } catch (e) {
+          console.error('[UserContext] Failed to parse initial user data:', e)
+          // Clear invalid cookie
+          document.cookie = 'it_aware_user_data=; Path=/; Max-Age=0'
+        }
+      }
+    }
+    return null
+  }, [])
+
+  const fetchUser = useCallback(async (): Promise<void> => {
     // Only fetch on client side where cookies are available
     if (typeof window === 'undefined') {
       console.log('[UserContext] Skipping fetch on server side')
@@ -62,11 +87,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Check if access cookie is available in browser
-    // Note: HttpOnly cookies won't be visible here, but we try anyway
-    const hasCookie = document.cookie.includes('it_aware_access')
-    console.log(`[UserContext] Fetching user data... (attempt: ${retryCount + 1}, cookie visible: ${hasCookie})`)
-    
+    // First, check for initial user data cookie (set by middleware after login)
+    // This solves the timing issue where JWT HttpOnly cookies aren't available yet
+    const initialData = getInitialUserData()
+    if (initialData) {
+      console.log('[UserContext] Using initial user data from middleware:', initialData.username)
+      setUser(initialData)
+      setIsLoading(false)
+      return
+    }
+
+    console.log('[UserContext] Fetching user data from /api/auth/me...')
     setIsLoading(true)
     setError(null)
     
@@ -78,18 +109,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Cookies might not be available yet after login redirect
-          // This happens because Set-Cookie headers from the page response
-          // may not be processed by the browser yet
-          // Retry up to 3 times with increasing delay
-          if (retryCount < 3) {
-            const delay = (retryCount + 1) * 500 // 500ms, 1000ms, 1500ms
-            console.log(`[UserContext] Got 401, retrying in ${delay}ms...`)
-            await new Promise(resolve => setTimeout(resolve, delay))
-            return fetchUser(retryCount + 1)
-          }
-          // Not authenticated after all retries - clear user state
-          console.log('[UserContext] User not authenticated (401) after all retries')
+          // Not authenticated - clear user state
+          console.log('[UserContext] User not authenticated (401)')
           setUser(null)
           return
         }
@@ -106,7 +127,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [getInitialUserData])
 
   const clearUser = useCallback(() => {
     setUser(null)
@@ -133,16 +154,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [user])
 
   // Auto-fetch user only after component is mounted on client
-  // Add a delay to ensure browser has processed Set-Cookie headers from the page response
-  // This is needed because cookies set via Set-Cookie headers from the page request
-  // may not be immediately available for subsequent fetch calls
+  // The middleware now sets a readable cookie with user data, so no delay needed
   useEffect(() => {
     if (isMounted) {
-      // Delay to ensure cookies from the page response are stored in browser
-      const timer = setTimeout(() => {
-        fetchUser()
-      }, 200)
-      return () => clearTimeout(timer)
+      fetchUser()
     }
   }, [isMounted, fetchUser])
 
