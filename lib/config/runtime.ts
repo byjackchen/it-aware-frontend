@@ -7,6 +7,5 @@ export const RUNTIME_CONFIG = {
     },
     taihu: {
         paasToken: process.env.TAIHU_PAAS_TOKEN || 'mock-token',
-        isSingnatured: process.env.TAIHU_CHECK_SIGNATURE === 'true',
     },
 };
