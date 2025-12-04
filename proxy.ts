@@ -5,130 +5,147 @@ import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 
 const AUTH_URL = RUNTIME_CONFIG.auth.serviceUrl
 
+// Cookie names
+const COOKIES = {
+  ACCESS: 'it_aware_access',
+  REFRESH: 'it_aware_refresh',
+  LOGGED_OUT: 'it_aware_logged_out',
+  USER_DATA: 'it_aware_user_data',
+} as const
+
+// Routes that don't require authentication
+const PUBLIC_ROUTES = ['/login']
+
+// --- Helper Functions ---
+
+function extractTaihuHeaders(request: NextRequest): TaihuHeaders {
+  return {
+    'x-tai-identity': request.headers.get('x-tai-identity') || undefined,
+    timestamp: request.headers.get('timestamp') || undefined,
+    signature: request.headers.get('signature') || undefined,
+    'x-rio-seq': request.headers.get('x-rio-seq') || undefined,
+  }
+}
+
+function shouldSkipMiddleware(pathname: string): boolean {
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname === '/favicon.ico' ||
+    PUBLIC_ROUTES.includes(pathname)
+  )
+}
+
+async function fetchJwtTokens(username: string): Promise<Response> {
+  return fetch(`${AUTH_URL}/auth/session/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ username }),
+  })
+}
+
+async function fetchUserData(accessTokenCookie: string): Promise<object | null> {
+  try {
+    const response = await fetch(`${AUTH_URL}/auth/me`, {
+      method: 'GET',
+      headers: { 'Cookie': accessTokenCookie.split(';')[0] },
+    })
+    return response.ok ? await response.json() : null
+  } catch {
+    return null
+  }
+}
+
+function forwardAuthCookies(response: NextResponse, setCookies: string[]): void {
+  for (const cookieStr of setCookies) {
+    response.headers.append('Set-Cookie', cookieStr)
+  }
+}
+
+function setUserDataCookie(response: NextResponse, userData: object): void {
+  const encoded = encodeURIComponent(JSON.stringify(userData))
+  response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
+}
+
+// --- Main Middleware ---
+
 export async function middleware(request: NextRequest) {
-    // Skip static files
-    const { pathname } = request.nextUrl
-    if (pathname.startsWith('/_next') || pathname.startsWith('/static') || pathname === '/favicon.ico') {
-        return NextResponse.next()
-    }
+  const { pathname } = request.nextUrl
 
-    // Skip login page - no auth required
-    if (pathname === '/login') {
-        return NextResponse.next()
-    }
+  if (shouldSkipMiddleware(pathname)) {
+    return NextResponse.next()
+  }
 
-    // Check if user is authenticated
-    const hasAccessToken = request.cookies.has('it_aware_access')
-    const hasLoggedOut = request.cookies.has('it_aware_logged_out')
+  const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
+  const hasLoggedOut = request.cookies.has(COOKIES.LOGGED_OUT)
+  const taihuHeaders = extractTaihuHeaders(request)
+  const hasTaihuHeaders = !!taihuHeaders['x-tai-identity']
 
-    // Check for Taihu headers
-    const taihuHeaders: TaihuHeaders = {
-        'x-tai-identity': request.headers.get('x-tai-identity') || undefined,
-        timestamp: request.headers.get('timestamp') || undefined,
-        signature: request.headers.get('signature') || undefined,
-        'x-rio-seq': request.headers.get('x-rio-seq') || undefined,
-    }
+  // Redirect to login if not authenticated
+  if (!hasAccessToken && !hasTaihuHeaders) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
-    const hasTaihuHeaders = !!taihuHeaders['x-tai-identity']
+  // Redirect logged-out users without SSO headers to login
+  if (hasLoggedOut && !hasTaihuHeaders) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
-    // If user has logged out and no Taihu headers (not trying to re-login via SSO), redirect to login page
-    if (hasLoggedOut && !hasTaihuHeaders) {
-        console.log(`[Proxy] User logged out, redirecting to login page`)
-        return NextResponse.redirect(new URL('/login', request.url))
-    }
+  const response = NextResponse.next()
 
-    // If no JWT token and no Taihu headers, redirect to login page
-    if (!hasAccessToken && !hasTaihuHeaders) {
-        console.log(`[Proxy] No authentication found, redirecting to login page`)
-        return NextResponse.redirect(new URL('/login', request.url))
-    }
+  // Process Taihu SSO authentication
+  if (hasTaihuHeaders) {
+    try {
+      const identity = await getIdentityFromHeaders(taihuHeaders)
+      
+      // Set user info headers
+      response.headers.set('x-user-staff-id', identity.staffId.toString())
+      response.headers.set('x-user-login-name', identity.loginName)
 
-    const response = NextResponse.next()
+      // Determine if we need to fetch new JWT tokens
+      const needsNewTokens = !hasAccessToken || (hasLoggedOut && !hasAccessToken)
+      const skipTokenFetch = hasLoggedOut && hasAccessToken
 
-    // Process Taihu authentication if headers are present
-    if (hasTaihuHeaders) {
-        try {
-            const identity = await getIdentityFromHeaders(taihuHeaders)
-            response.headers.set('x-user-staff-id', identity.staffId.toString())
-            response.headers.set('x-user-login-name', identity.loginName)
+      if (skipTokenFetch) {
+        // User logged out but still has valid token - respect logout
+        return response
+      }
 
-            // Skip auto-login only if user logged out AND already has a valid JWT token
-            // If user logged out but has no JWT token, they need to re-authenticate
-            if (hasLoggedOut && hasAccessToken) {
-                console.log(`[Proxy] Skipping auto-login - user has explicitly logged out`)
-            } else if (!hasLoggedOut && hasAccessToken) {
-                console.log(`[Proxy] Skipping /auth/session/token call - JWT cookies already exist for user: ${identity.loginName}`)
-            } else {
-                // Call backend auth service to get JWT cookies
-                // This handles: 1) No JWT token, 2) User logged out and needs to re-login
-                console.log(`[Proxy] Calling backend auth service /auth/session/token for user: ${identity.loginName}`)
-                
-                try {
-                    const authResponse = await fetch(`${AUTH_URL}/auth/session/token`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ username: identity.loginName }),
-                    })
+      if (needsNewTokens) {
+        const authResponse = await fetchJwtTokens(identity.loginName)
 
-                    if (authResponse.ok) {
-                        // Forward Set-Cookie headers from backend to client
-                        const setCookies = authResponse.headers.getSetCookie()
-                        console.log(`[Proxy] Backend Set-Cookie headers:`, setCookies)
-                        for (const cookieStr of setCookies) {
-                            response.headers.append('Set-Cookie', cookieStr)
-                        }
-                        // Clear the logged_out cookie since user is re-authenticating
-                        if (hasLoggedOut) {
-                            response.cookies.delete('it_aware_logged_out')
-                        }
-                        console.log(`[Proxy] JWT cookies set for user: ${identity.loginName}`)
-                        
-                        // Fetch user data immediately and pass it to client via a non-HttpOnly cookie
-                        // This allows the client to hydrate user data without waiting for cookie propagation
-                        try {
-                            // Extract the access token from Set-Cookie headers
-                            const accessTokenCookie = setCookies.find(c => c.startsWith('it_aware_access='))
-                            if (accessTokenCookie) {
-                                const userResponse = await fetch(`${AUTH_URL}/auth/me`, {
-                                    method: 'GET',
-                                    headers: {
-                                        'Cookie': accessTokenCookie.split(';')[0], // Just the name=value part
-                                    },
-                                })
-                                if (userResponse.ok) {
-                                    const userData = await userResponse.json()
-                                    console.log(`[Proxy] Fetched user data for immediate hydration:`, userData.username)
-                                    // Set user data in a non-HttpOnly cookie that JS can read
-                                    // Use encodeURIComponent for JSON safety, set short expiry
-                                    const userDataStr = encodeURIComponent(JSON.stringify(userData))
-                                    response.headers.append('Set-Cookie', `it_aware_user_data=${userDataStr}; Path=/; Max-Age=30; SameSite=lax`)
-                                }
-                            }
-                        } catch (userDataError) {
-                            console.error('[Proxy] Failed to fetch user data for hydration:', userDataError)
-                        }
-                    } else {
-                        console.error(`[Proxy] Auth service failed: ${authResponse.status}`)
-                    }
-                } catch (authError) {
-                    console.error('[Proxy] Failed to call auth service:', authError)
-                }
+        if (authResponse.ok) {
+          const setCookies = authResponse.headers.getSetCookie()
+          forwardAuthCookies(response, setCookies)
+
+          // Clear logged_out cookie on re-authentication
+          if (hasLoggedOut) {
+            response.cookies.delete(COOKIES.LOGGED_OUT)
+          }
+
+          // Fetch and set user data for immediate client hydration
+          const accessTokenCookie = setCookies.find(c => c.startsWith(`${COOKIES.ACCESS}=`))
+          if (accessTokenCookie) {
+            const userData = await fetchUserData(accessTokenCookie)
+            if (userData) {
+              setUserDataCookie(response, userData)
             }
-        } catch (error) {
-            console.error('Taihu auth failed:', error)
-            // If Taihu auth fails and no JWT token, redirect to login
-            if (!hasAccessToken) {
-                console.log(`[Proxy] Taihu auth failed and no JWT token, redirecting to login page`)
-                return NextResponse.redirect(new URL('/login', request.url))
-            }
+          }
         }
+      }
+    } catch (error) {
+      console.error('[Middleware] Taihu auth failed:', error)
+      if (!hasAccessToken) {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
     }
+  }
 
-    return response
+  return response
 }
 
 export default middleware
 
 export const config = {
-    // Exclude: /api/*, /_next/*, /_vercel/*, static files (.*\..*)
-    matcher: ['/((?!api/|_next/|_vercel/|.*\..*).*)']}
+  matcher: ['/((?!api/|_next/|_vercel/|.*\\..*).*)'],
+}

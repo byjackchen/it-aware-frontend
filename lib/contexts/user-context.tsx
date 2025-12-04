@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 
-// Types based on the API response
+// --- Types ---
+
 export interface UserRole {
   role_code: string
   name: string
@@ -23,15 +24,38 @@ interface UserContextType {
   user: User | null
   isLoading: boolean
   error: string | null
-  // Actions
   fetchUser: () => Promise<void>
   clearUser: () => void
-  // Permission helpers
   hasPermission: (permission: string) => boolean
   hasAnyPermission: (permissions: string[]) => boolean
   hasAllPermissions: (permissions: string[]) => boolean
   hasRole: (roleCode: string) => boolean
 }
+
+// --- Constants ---
+
+const COOKIES = {
+  USER_DATA: 'it_aware_user_data',
+  LOGGED_OUT: 'it_aware_logged_out',
+} as const
+
+// --- Cookie Helpers ---
+
+function getCookie(name: string): string | null {
+  if (typeof window === 'undefined') return null
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`))
+  return match ? match[2] : null
+}
+
+function deleteCookie(name: string): void {
+  document.cookie = `${name}=; Path=/; Max-Age=0`
+}
+
+function hasCookie(name: string): boolean {
+  return document.cookie.includes(`${name}=`)
+}
+
+// --- Context ---
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
@@ -41,87 +65,63 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Track when component is mounted on client
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  // Helper to get and clear the initial user data cookie set by middleware
+  // Try to get user data from middleware cookie (set during login redirect)
   const getInitialUserData = useCallback((): User | null => {
-    if (typeof window === 'undefined') return null
-    
-    const cookies = document.cookie.split(';')
-    for (const cookie of cookies) {
-      const [name, ...valueParts] = cookie.trim().split('=')
-      if (name === 'it_aware_user_data') {
-        try {
-          const value = valueParts.join('=')
-          const userData = JSON.parse(decodeURIComponent(value)) as User
-          console.log('[UserContext] Found initial user data from middleware cookie')
-          // Clear the cookie after reading (it's only for initial hydration)
-          document.cookie = 'it_aware_user_data=; Path=/; Max-Age=0'
-          return userData
-        } catch (e) {
-          console.error('[UserContext] Failed to parse initial user data:', e)
-          // Clear invalid cookie
-          document.cookie = 'it_aware_user_data=; Path=/; Max-Age=0'
-        }
-      }
+    const cookieValue = getCookie(COOKIES.USER_DATA)
+    if (!cookieValue) return null
+
+    try {
+      const userData = JSON.parse(decodeURIComponent(cookieValue)) as User
+      deleteCookie(COOKIES.USER_DATA) // One-time use
+      return userData
+    } catch {
+      deleteCookie(COOKIES.USER_DATA)
+      return null
     }
-    return null
   }, [])
 
   const fetchUser = useCallback(async (): Promise<void> => {
-    // Only fetch on client side where cookies are available
-    if (typeof window === 'undefined') {
-      console.log('[UserContext] Skipping fetch on server side')
-      return
-    }
+    if (typeof window === 'undefined') return
 
-    // Check if user explicitly logged out (cookie set by logout action)
-    const isLoggedOut = document.cookie.includes('it_aware_logged_out=true')
-    if (isLoggedOut) {
-      console.log('[UserContext] User is logged out, skipping fetch')
+    // Respect explicit logout
+    if (hasCookie(COOKIES.LOGGED_OUT)) {
       setIsLoading(false)
       setUser(null)
       return
     }
 
-    // First, check for initial user data cookie (set by middleware after login)
-    // This solves the timing issue where JWT HttpOnly cookies aren't available yet
+    // Check for pre-fetched user data from middleware
     const initialData = getInitialUserData()
     if (initialData) {
-      console.log('[UserContext] Using initial user data from middleware:', initialData.username)
       setUser(initialData)
       setIsLoading(false)
       return
     }
 
-    console.log('[UserContext] Fetching user data from /api/auth/me...')
+    // Fetch from API
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/auth/me', {
         method: 'GET',
-        credentials: 'include', // Include cookies for JWT authentication
+        credentials: 'include',
       })
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Not authenticated - clear user state
-          console.log('[UserContext] User not authenticated (401)')
           setUser(null)
           return
         }
         throw new Error(`Failed to fetch user: ${response.status}`)
       }
 
-      const userData: User = await response.json()
-      console.log('[UserContext] User data fetched successfully:', userData.username)
-      setUser(userData)
+      setUser(await response.json())
     } catch (err) {
-      console.error('[UserContext] Error fetching user:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch user')
       setUser(null)
     } finally {
@@ -134,62 +134,61 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setError(null)
   }, [])
 
-  // Permission helper functions
-  const hasPermission = useCallback((permission: string): boolean => {
-    return user?.permissions?.includes(permission) ?? false
-  }, [user])
+  // --- Permission Helpers ---
 
-  const hasAnyPermission = useCallback((permissions: string[]): boolean => {
-    if (!user?.permissions) return false
-    return permissions.some(p => user.permissions.includes(p))
-  }, [user])
+  const hasPermission = useCallback(
+    (permission: string) => user?.permissions?.includes(permission) ?? false,
+    [user]
+  )
 
-  const hasAllPermissions = useCallback((permissions: string[]): boolean => {
-    if (!user?.permissions) return false
-    return permissions.every(p => user.permissions.includes(p))
-  }, [user])
+  const hasAnyPermission = useCallback(
+    (permissions: string[]) => permissions.some(p => user?.permissions?.includes(p)),
+    [user]
+  )
 
-  const hasRole = useCallback((roleCode: string): boolean => {
-    return user?.roles?.some(role => role.role_code === roleCode) ?? false
-  }, [user])
+  const hasAllPermissions = useCallback(
+    (permissions: string[]) => permissions.every(p => user?.permissions?.includes(p)),
+    [user]
+  )
 
-  // Auto-fetch user only after component is mounted on client
-  // The middleware now sets a readable cookie with user data, so no delay needed
+  const hasRole = useCallback(
+    (roleCode: string) => user?.roles?.some(r => r.role_code === roleCode) ?? false,
+    [user]
+  )
+
+  // Fetch user on mount
   useEffect(() => {
-    if (isMounted) {
-      fetchUser()
-    }
+    if (isMounted) fetchUser()
   }, [isMounted, fetchUser])
 
-  const value = useMemo<UserContextType>(() => ({
-    user,
-    isLoading,
-    error,
-    fetchUser,
-    clearUser,
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-    hasRole,
-  }), [user, isLoading, error, fetchUser, clearUser, hasPermission, hasAnyPermission, hasAllPermissions, hasRole])
-
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
+  const value = useMemo<UserContextType>(
+    () => ({
+      user,
+      isLoading,
+      error,
+      fetchUser,
+      clearUser,
+      hasPermission,
+      hasAnyPermission,
+      hasAllPermissions,
+      hasRole,
+    }),
+    [user, isLoading, error, fetchUser, clearUser, hasPermission, hasAnyPermission, hasAllPermissions, hasRole]
   )
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }
 
-// Hook to use the user context
+// --- Hooks ---
+
 export function useUser() {
   const context = useContext(UserContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useUser must be used within a UserProvider')
   }
   return context
 }
 
-// Convenience hook for just permissions
 export function usePermissions() {
   const { hasPermission, hasAnyPermission, hasAllPermissions, hasRole, user } = useUser()
   return {
