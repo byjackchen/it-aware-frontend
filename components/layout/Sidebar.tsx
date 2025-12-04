@@ -44,7 +44,7 @@ export function Sidebar() {
     }
 
     return (
-        <aside className="w-56 border-r border-gray-200 bg-gray-50 fixed top-16 bottom-0 left-0 overflow-y-auto z-40">
+        <aside className="w-56 glass-dark border-r-0 fixed top-16 bottom-0 left-0 overflow-y-auto z-40">
             <nav className="p-3 space-y-1">
                 {currentSubMenu.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -53,13 +53,13 @@ export function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
                                 isActive
-                                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200'
-                                    : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                                    ? 'nav-active text-blue-400'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-gray-500'}`} />
                             <span className="text-sm font-medium">{t(item.labelKey)}</span>
                         </Link>
                     );

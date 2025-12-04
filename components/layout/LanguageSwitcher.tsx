@@ -21,7 +21,7 @@ export function LanguageSwitcher() {
     return (
         <button
             onClick={toggleLanguage}
-            className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-1"
+            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 flex items-center gap-1"
             title={locale === 'en' ? 'Switch to Chinese' : 'Switch to English'}
         >
             <Globe className="w-5 h-5" />

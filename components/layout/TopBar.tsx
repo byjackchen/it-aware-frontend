@@ -34,14 +34,14 @@ export function TopBar() {
   ];
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+    <header className="h-16 glass-dark px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
       <div className="flex items-center gap-8">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
             <span className="text-white font-bold text-lg">IT</span>
           </div>
-          <span className="text-xl font-semibold text-gray-900">{t('title')}</span>
+          <span className="text-xl font-semibold text-white">{t('title')}</span>
         </div>
 
         {/* Main Navigation */}
@@ -53,10 +53,10 @@ export function TopBar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'nav-active text-blue-400'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -69,23 +69,23 @@ export function TopBar() {
 
       <div className="flex items-center gap-4">
         <LanguageSwitcher />
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+        <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300">
           <Bell className="w-5 h-5" />
         </button>
 
         {/* User Profile Dropdown */}
         <div className="relative group">
-          <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-800 font-medium text-sm hover:bg-gray-300 transition-colors">
+          <button className="w-9 h-9 bg-gradient-to-br from-blue-500/30 to-purple-500/30 border border-white/20 rounded-full flex items-center justify-center text-white font-medium text-sm hover:from-blue-500/50 hover:to-purple-500/50 transition-all duration-300">
             {initials}
           </button>
 
           {/* Dropdown Menu */}
-          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right z-50">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900 truncate">
+          <div className="absolute right-0 top-full mt-2 w-64 glass-dark rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right">
+            <div className="px-4 py-3 border-b border-white/10">
+              <p className="text-sm font-medium text-white truncate">
                 {user?.full_name || '\u00A0'}
               </p>
-              <p className="text-sm text-gray-600 truncate">
+              <p className="text-sm text-gray-400 truncate">
                 {user?.username || '\u00A0'}
               </p>
               <p className="text-xs text-gray-500 truncate mt-1">
@@ -94,7 +94,7 @@ export function TopBar() {
             </div>
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+              className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
