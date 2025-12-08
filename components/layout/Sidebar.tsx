@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { 
-    ShieldCheck, 
-    ShieldAlert, 
-    KeyRound,
+    Shield,
+    Lock,
     User,
     Users,
     Settings,
@@ -25,25 +24,25 @@ import { type MenuItem, type SubMenuConfig, requireAnyPermission } from '@/lib/t
 const subMenuItems: SubMenuConfig = {
     '/security': [
         { 
-            href: '/security/overview', 
-            labelKey: 'overview', 
-            icon: ShieldCheck,
+            href: '/security/users', 
+            labelKey: 'users', 
+            icon: Users,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
             ]),
         },
         { 
-            href: '/security/threats', 
-            labelKey: 'threats', 
-            icon: ShieldAlert,
+            href: '/security/roles', 
+            labelKey: 'roles', 
+            icon: Shield,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
             ]),
         },
         { 
-            href: '/security/access', 
-            labelKey: 'access', 
-            icon: KeyRound,
+            href: '/security/permissions', 
+            labelKey: 'permissions', 
+            icon: Lock,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
             ]),
