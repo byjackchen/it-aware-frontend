@@ -2,7 +2,8 @@
     "TopBar": {
         "title": "IT Aware",
         "security": "Security",
-        "persona": "Persona"
+        "persona": "Persona",
+        "knowledge": "Knowledge"
     },
     "Sidebar": {
         "overview": "Overview",
@@ -10,7 +11,9 @@
         "access": "Access Control",
         "profile": "Profile",
         "team": "Team",
-        "settings": "Settings"
+        "settings": "Settings",
+        "articles": "Articles",
+        "faqs": "FAQs"
     },
     "Chatbot": {
         "title": "IT Aware Assistant",

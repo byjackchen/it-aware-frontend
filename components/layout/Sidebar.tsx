@@ -9,21 +9,89 @@ import {
     KeyRound,
     User,
     Users,
-    Settings
+    Settings,
+    FileText,
+    HelpCircle
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useMenuAuthorization } from './AuthorizedMenuItem';
+import { PERMISSIONS } from '@/lib/config/permissions';
+import { type MenuItem, type SubMenuConfig, requireAnyPermission } from '@/lib/types/menu';
 
-// Define sub-menu items for each main section
-const subMenuItems: Record<string, { href: string; labelKey: string; icon: React.ElementType }[]> = {
+/**
+ * Sub-menu items configuration for each main section.
+ * Each item includes permission requirements for authorization.
+ */
+const subMenuItems: SubMenuConfig = {
     '/security': [
-        { href: '/security/overview', labelKey: 'overview', icon: ShieldCheck },
-        { href: '/security/threats', labelKey: 'threats', icon: ShieldAlert },
-        { href: '/security/access', labelKey: 'access', icon: KeyRound },
+        { 
+            href: '/security/overview', 
+            labelKey: 'overview', 
+            icon: ShieldCheck,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
+        { 
+            href: '/security/threats', 
+            labelKey: 'threats', 
+            icon: ShieldAlert,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
+        { 
+            href: '/security/access', 
+            labelKey: 'access', 
+            icon: KeyRound,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
     ],
     '/persona': [
-        { href: '/persona/profile', labelKey: 'profile', icon: User },
-        { href: '/persona/team', labelKey: 'team', icon: Users },
-        { href: '/persona/settings', labelKey: 'settings', icon: Settings },
+        { 
+            href: '/persona/profile', 
+            labelKey: 'profile', 
+            icon: User,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_PERSONA
+            ]),
+        },
+        { 
+            href: '/persona/team', 
+            labelKey: 'team', 
+            icon: Users,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_PERSONA
+            ]),
+        },
+        { 
+            href: '/persona/settings', 
+            labelKey: 'settings', 
+            icon: Settings,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_PERSONA
+            ]),
+        },
+    ],
+    '/knowledge': [
+        { 
+            href: '/knowledge/articles', 
+            labelKey: 'articles', 
+            icon: FileText,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
+            ]),
+        },
+        { 
+            href: '/knowledge/faqs', 
+            labelKey: 'faqs', 
+            icon: HelpCircle,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
+            ]),
+        },
     ],
 };
 
@@ -31,6 +99,7 @@ export function Sidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
     const { theme } = useTheme();
+    const { checkMenuAccess } = useMenuAuthorization();
     const isLight = theme === 'light';
 
     // Determine which main section is active
@@ -38,10 +107,12 @@ export function Sidebar() {
         pathname.startsWith(section)
     );
 
-    // Get sub-menu items for active section
-    const currentSubMenu = activeSection ? subMenuItems[activeSection] : [];
+    // Get sub-menu items for active section and filter by permissions
+    const currentSubMenu = activeSection 
+        ? subMenuItems[activeSection].filter(item => checkMenuAccess(item.permissions))
+        : [];
 
-    // Don't render sidebar if no active section with sub-menu
+    // Don't render sidebar if no active section with authorized sub-menu items
     if (!activeSection || currentSubMenu.length === 0) {
         return null;
     }
@@ -65,7 +136,7 @@ export function Sidebar() {
                             }`}
                         >
                             <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : isLight ? 'text-slate-500' : 'text-gray-500'}`} />
-                            <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                            <span className="text-sm font-medium">{item.labelKey ? t(item.labelKey) : item.label}</span>
                         </Link>
                     );
                 })}

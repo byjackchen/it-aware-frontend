@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, LogOut, Shield, UserCircle } from 'lucide-react';
+import { Bell, BookOpen, LogOut, Shield, UserCircle } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { useTranslations } from 'next-intl';
@@ -9,6 +9,9 @@ import { logout } from '@/app/actions/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useMenuAuthorization } from './AuthorizedMenuItem';
+import { PERMISSIONS } from '@/lib/config/permissions';
+import { type MenuItem, requireAnyPermission } from '@/lib/types/menu';
 
 export function TopBar() {
   const t = useTranslations('TopBar');
@@ -16,6 +19,7 @@ export function TopBar() {
   const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
   const { theme } = useTheme();
+  const { checkMenuAccess } = useMenuAuthorization();
   const isLight = theme === 'light';
 
   // Use consistent initial value to avoid hydration mismatch
@@ -32,10 +36,38 @@ export function TopBar() {
     router.push('/login');
   };
 
-  const navItems = [
-    { href: '/security', label: t('security'), icon: Shield },
-    { href: '/persona', label: t('persona'), icon: UserCircle },
+  // Navigation items with permission requirements
+  // Security menu requires either 'auth:all:read' OR 'auth:all:edit'
+  // Persona menu requires either 'persona:all:read' OR 'persona:all:edit'
+  const navItems: MenuItem[] = [
+    { 
+      href: '/security', 
+      label: t('security'), 
+      icon: Shield,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_SECURITY
+      ]),
+    },
+    { 
+      href: '/persona', 
+      label: t('persona'), 
+      icon: UserCircle,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_PERSONA
+      ]),
+    },
+    { 
+      href: '/knowledge', 
+      label: t('knowledge'), 
+      icon: BookOpen,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
+      ]),
+    },
   ];
+
+  // Filter nav items based on user permissions
+  const authorizedNavItems = navItems.filter(item => checkMenuAccess(item.permissions));
 
   return (
     <header className="h-16 glass-dark px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
@@ -48,9 +80,9 @@ export function TopBar() {
           <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
         </div>
 
-        {/* Main Navigation */}
+        {/* Main Navigation - Only show authorized items */}
         <nav className="flex items-center gap-1">
-          {navItems.map((item) => {
+          {authorizedNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
