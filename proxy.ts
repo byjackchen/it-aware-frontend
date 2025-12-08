@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 
-const AUTH_URL = RUNTIME_CONFIG.auth.serviceUrl
+const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 
 // Cookie names
 const COOKIES = {
@@ -37,7 +37,7 @@ function shouldSkipMiddleware(pathname: string): boolean {
 }
 
 async function fetchJwtTokens(username: string): Promise<Response> {
-  return fetch(`${AUTH_URL}/auth/session/token`, {
+  return fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username }),
@@ -46,7 +46,7 @@ async function fetchJwtTokens(username: string): Promise<Response> {
 
 async function fetchUserData(accessTokenCookie: string): Promise<object | null> {
   try {
-    const response = await fetch(`${AUTH_URL}/auth/me`, {
+    const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
       headers: { 'Cookie': accessTokenCookie.split(';')[0] },
     })

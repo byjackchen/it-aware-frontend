@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 
-const AUTH_URL = RUNTIME_CONFIG.auth.serviceUrl
+const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 const ACCESS_TOKEN_COOKIE = 'it_aware_access'
 
 export async function GET() {
@@ -20,7 +20,7 @@ export async function GET() {
       .map(c => `${c.name}=${c.value}`)
       .join('; ')
 
-    const response = await fetch(`${AUTH_URL}/auth/me`, {
+    const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
       headers: { Cookie: cookieHeader },
     })

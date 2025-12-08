@@ -4,7 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 import { getUserIdentity, TaihuHeaders } from '@/lib/auth/taihu'
 
-const AUTH_URL = RUNTIME_CONFIG.auth.serviceUrl
+const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 
 async function parseCookies(response: Response, cookieStore: Awaited<ReturnType<typeof cookies>>) {
     for (const cookieStr of response.headers.getSetCookie()) {
@@ -23,7 +23,7 @@ export async function login(formData: FormData) {
     console.log(`[Auth] Calling backend auth service /auth/session/token for user: ${username}`)
 
     try {
-        const response = await fetch(`${AUTH_URL}/auth/session/token`, {
+        const response = await fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ username }),
@@ -52,7 +52,7 @@ export async function logout() {
         const cookieStore = await cookies()
         const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
-        await fetch(`${AUTH_URL}/auth/session/logout`, {
+        await fetch(`${BACKEND_DOMAIN}/auth/session/logout`, {
             method: 'POST',
             headers: { 'Cookie': cookieHeader }
         })
@@ -83,7 +83,7 @@ export async function refresh() {
         const cookieStore = await cookies()
         const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
-        const response = await fetch(`${AUTH_URL}/auth/session/refresh`, {
+        const response = await fetch(`${BACKEND_DOMAIN}/auth/session/refresh`, {
             method: 'POST',
             headers: { 'Cookie': cookieHeader }
         })
