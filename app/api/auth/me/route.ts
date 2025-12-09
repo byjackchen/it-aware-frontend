@@ -28,7 +28,11 @@ export async function GET() {
     if (!response.ok) {
       const status = response.status
       if (status === 401) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+        // Return response with clear error for client-side handling
+        const errorResponse = NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+        // Clear invalid access token cookie
+        errorResponse.cookies.delete(ACCESS_TOKEN_COOKIE)
+        return errorResponse
       }
       return NextResponse.json({ error: 'Failed to fetch user info' }, { status })
     }
@@ -36,6 +40,9 @@ export async function GET() {
     return NextResponse.json(await response.json())
   } catch (error) {
     console.error('[API /auth/me] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Clear potentially corrupted cookie on error
+    const errorResponse = NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    errorResponse.cookies.delete(ACCESS_TOKEN_COOKIE)
+    return errorResponse
   }
 }
