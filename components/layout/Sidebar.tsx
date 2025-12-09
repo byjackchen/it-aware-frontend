@@ -126,12 +126,12 @@ export function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 ${
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 focus:outline-none ${
                                 isActive
                                     ? 'nav-active text-blue-500'
                                     : isLight
-                                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                             }`}
                         >
                             <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : isLight ? 'text-slate-500' : 'text-gray-500'}`} />

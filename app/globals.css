@@ -189,6 +189,13 @@
   border-color: rgba(99, 102, 241, 0.5);
 }
 
+/* Navigation link base styles - remove focus outline */
+.nav-active,
+a:focus-visible,
+button:focus-visible {
+  outline: none;
+}
+
 /* Active nav item - Dark */
 .dark .nav-active,
 .theme-dark .nav-active {
