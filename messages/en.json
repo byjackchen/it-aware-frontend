@@ -42,8 +42,7 @@
             "descriptionPlaceholder": "Enter description...",
             "name": "Name",
             "namePlaceholder": "Enter name...",
-            "uniqueIdentifier": "Unique identifier (cannot be changed later)",
-            "confirmDelete": "Confirm delete?"
+            "uniqueIdentifier": "Unique identifier (cannot be changed later)"
         },
         "users": {
             "title": "Users",

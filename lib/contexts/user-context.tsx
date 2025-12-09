@@ -37,7 +37,6 @@ interface UserContextType {
 const COOKIES = {
   USER_DATA: 'it_aware_user_data',
   LOGGED_OUT: 'it_aware_logged_out',
-  ACCESS: 'it_aware_access',
 } as const
 
 // --- Cookie Helpers ---
@@ -88,11 +87,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const userData = JSON.parse(jsonString) as User
       deleteCookie(COOKIES.USER_DATA) // One-time use
       return userData
-    } catch (error) {
-      console.error('[UserContext] Failed to parse user data cookie:', error)
+    } catch {
       deleteCookie(COOKIES.USER_DATA)
-      // Also clear potentially corrupted access token
-      deleteCookie(COOKIES.ACCESS)
       return null
     }
   }, [])
@@ -127,23 +123,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Clear potentially invalid cookies on authentication failure
-          deleteCookie(COOKIES.ACCESS)
-          deleteCookie(COOKIES.USER_DATA)
           setUser(null)
           return
         }
         throw new Error(`Failed to fetch user: ${response.status}`)
       }
 
-      const userData = await response.json()
-      setUser(userData)
+      setUser(await response.json())
     } catch (err) {
-      console.error('[UserContext] Failed to fetch user:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch user')
-      // Clear cookies on fetch failure to allow fresh authentication
-      deleteCookie(COOKIES.ACCESS)
-      deleteCookie(COOKIES.USER_DATA)
       setUser(null)
     } finally {
       setIsLoading(false)
