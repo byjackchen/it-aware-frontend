@@ -21,11 +21,11 @@ function hasNonAscii(str: string): { hasNonAscii: boolean; firstNonAsciiIndex: n
 }
 
 // Helper function to safely encode non-ASCII string for HTTP headers
-function encodeForHeader(str: string): string {
+function encodeForHeader(str: string, requestId: string): string {
   // Check if encoding is needed
   const check = hasNonAscii(str)
   if (check.hasNonAscii) {
-    console.log(`[Middleware] String contains non-ASCII, encoding: index=${check.firstNonAsciiIndex}, charCode=${check.charCode}, char='${check.char}'`)
+    console.log(`[Middleware:${requestId}] String contains non-ASCII, encoding: index=${check.firstNonAsciiIndex}, charCode=${check.charCode}, char='${check.char}'`)
     // Use encodeURIComponent for safe header encoding
     return encodeURIComponent(str)
   }
@@ -72,44 +72,44 @@ async function fetchJwtTokens(username: string): Promise<Response> {
   })
 }
 
-async function fetchUserData(accessTokenCookie: string): Promise<object | null> {
+async function fetchUserData(accessTokenCookie: string, requestId: string): Promise<object | null> {
   const startTime = Date.now()
   try {
-    console.log(`[Middleware:fetchUserData] Starting, cookie length=${accessTokenCookie.length}`)
+    console.log(`[Middleware:${requestId}] fetchUserData: Starting, cookie length=${accessTokenCookie.length}`)
     const cookieValue = accessTokenCookie.split(';')[0]
-    console.log(`[Middleware:fetchUserData] Cookie value (first 50 chars): ${cookieValue.substring(0, 50)}...`)
+    console.log(`[Middleware:${requestId}] fetchUserData: Cookie value (first 50 chars): ${cookieValue.substring(0, 50)}...`)
     
     // Check cookie value for non-ASCII
     const cookieCheck = hasNonAscii(cookieValue)
     if (cookieCheck.hasNonAscii) {
-      console.log(`[Middleware:fetchUserData] Cookie has non-ASCII: index=${cookieCheck.firstNonAsciiIndex}, charCode=${cookieCheck.charCode}`)
+      console.log(`[Middleware:${requestId}] fetchUserData: Cookie has non-ASCII: index=${cookieCheck.firstNonAsciiIndex}, charCode=${cookieCheck.charCode}`)
     }
     
-    console.log(`[Middleware:fetchUserData] Calling backend: ${BACKEND_DOMAIN}/auth/me`)
+    console.log(`[Middleware:${requestId}] fetchUserData: Calling backend: ${BACKEND_DOMAIN}/auth/me`)
     const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
       headers: { 'Cookie': cookieValue },
     })
     
     const duration = Date.now() - startTime
-    console.log(`[Middleware:fetchUserData] Response: status=${response.status}, duration=${duration}ms`)
+    console.log(`[Middleware:${requestId}] fetchUserData: Response: status=${response.status}, duration=${duration}ms`)
     
     if (response.ok) {
       const userData = await response.json()
-      console.log(`[Middleware:fetchUserData] Success, username=${(userData as Record<string, unknown>).username}, keys: ${Object.keys(userData).join(', ')}`)
+      console.log(`[Middleware:${requestId}] fetchUserData: Success, username=${(userData as Record<string, unknown>).username}, keys: ${Object.keys(userData).join(', ')}`)
       return userData
     }
     
     // Log why the response was not OK
     const errorText = await response.text().catch(() => 'Failed to read response body')
-    console.error(`[Middleware:fetchUserData] Backend returned non-OK: status=${response.status}, body=${errorText.substring(0, 200)}`)
+    console.error(`[Middleware:${requestId}] fetchUserData: Backend returned non-OK: status=${response.status}, body=${errorText.substring(0, 200)}`)
     return null
   } catch (error) {
     const duration = Date.now() - startTime
-    console.error(`[Middleware:fetchUserData] Exception after ${duration}ms:`, error)
-    console.error(`[Middleware:fetchUserData] Error type: ${error?.constructor?.name}`)
+    console.error(`[Middleware:${requestId}] fetchUserData: Exception after ${duration}ms:`, error)
+    console.error(`[Middleware:${requestId}] fetchUserData: Error type: ${error?.constructor?.name}`)
     if (error instanceof Error) {
-      console.error(`[Middleware:fetchUserData] Error message: ${error.message}`)
+      console.error(`[Middleware:${requestId}] fetchUserData: Error message: ${error.message}`)
     }
     return null
   }
@@ -121,31 +121,31 @@ function forwardAuthCookies(response: NextResponse, setCookies: string[]): void 
   }
 }
 
-function setUserDataCookie(response: NextResponse, userData: object): void {
+function setUserDataCookie(response: NextResponse, userData: object, requestId: string): void {
   try {
     // Use Base64 encoding to handle Chinese characters in user data
     const jsonString = JSON.stringify(userData)
-    console.log(`[Middleware] setUserDataCookie: JSON string length=${jsonString.length}`)
+    console.log(`[Middleware:${requestId}] setUserDataCookie: JSON string length=${jsonString.length}`)
     
     // Check for non-ASCII in JSON
     const jsonCheck = hasNonAscii(jsonString)
     if (jsonCheck.hasNonAscii) {
-      console.log(`[Middleware] setUserDataCookie JSON has non-ASCII: index=${jsonCheck.firstNonAsciiIndex}, charCode=${jsonCheck.charCode}, char='${jsonCheck.char}'`)
+      console.log(`[Middleware:${requestId}] setUserDataCookie JSON has non-ASCII: index=${jsonCheck.firstNonAsciiIndex}, charCode=${jsonCheck.charCode}, char='${jsonCheck.char}'`)
     }
     
     const encoded = Buffer.from(jsonString).toString('base64')
-    console.log(`[Middleware] setUserDataCookie: Base64 encoded length=${encoded.length}`)
+    console.log(`[Middleware:${requestId}] setUserDataCookie: Base64 encoded length=${encoded.length}`)
     
     // Verify base64 is ASCII-safe
     const encodedCheck = hasNonAscii(encoded)
     if (encodedCheck.hasNonAscii) {
-      console.error(`[Middleware] UNEXPECTED: Base64 encoded string has non-ASCII!`)
+      console.error(`[Middleware:${requestId}] UNEXPECTED: Base64 encoded string has non-ASCII!`)
     }
     
     response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
-    console.log(`[Middleware] setUserDataCookie: Cookie set successfully`)
+    console.log(`[Middleware:${requestId}] setUserDataCookie: Cookie set successfully`)
   } catch (error) {
-    console.error('[Middleware] setUserDataCookie error:', error)
+    console.error(`[Middleware:${requestId}] setUserDataCookie error:`, error)
     throw error
   }
 }
@@ -212,24 +212,24 @@ export async function middleware(request: NextRequest) {
     try {
       const identity = await getIdentityFromHeaders(taihuHeaders)
       
-      console.log(`[Middleware] Identity retrieved: staffId=${identity.staffId}, loginName length=${identity.loginName?.length}`)
+      console.log(`[Middleware:${requestId}] Identity retrieved: staffId=${identity.staffId}, loginName length=${identity.loginName?.length}`)
       
       // Check for non-ASCII in loginName
       const loginNameCheck = hasNonAscii(identity.loginName || '')
       if (loginNameCheck.hasNonAscii) {
-        console.log(`[Middleware] loginName contains non-ASCII: index=${loginNameCheck.firstNonAsciiIndex}, charCode=${loginNameCheck.charCode}, char='${loginNameCheck.char}'`)
+        console.log(`[Middleware:${requestId}] loginName contains non-ASCII: index=${loginNameCheck.firstNonAsciiIndex}, charCode=${loginNameCheck.charCode}, char='${loginNameCheck.char}'`)
       }
       
       // Set user info headers (encode to handle non-ASCII characters)
       try {
         response.headers.set('x-user-staff-id', identity.staffId.toString())
         // Encode loginName to handle potential non-ASCII characters
-        const encodedLoginName = encodeForHeader(identity.loginName)
+        const encodedLoginName = encodeForHeader(identity.loginName, requestId)
         response.headers.set('x-user-login-name', encodedLoginName)
-        console.log(`[Middleware] Headers set successfully, encoded loginName length=${encodedLoginName.length}`)
+        console.log(`[Middleware:${requestId}] Headers set successfully, encoded loginName length=${encodedLoginName.length}`)
       } catch (headerError) {
-        console.error(`[Middleware] Failed to set headers:`, headerError)
-        console.error(`[Middleware] loginName value: '${identity.loginName}'`)
+        console.error(`[Middleware:${requestId}] Failed to set headers:`, headerError)
+        console.error(`[Middleware:${requestId}] loginName value: '${identity.loginName}'`)
         throw headerError
       }
 
@@ -265,10 +265,10 @@ export async function middleware(request: NextRequest) {
           const accessTokenCookie = setCookies.find(c => c.startsWith(`${COOKIES.ACCESS}=`))
           console.log(`[Middleware:${requestId}] Access token cookie found in response: ${!!accessTokenCookie}`)
           if (accessTokenCookie) {
-            const userData = await fetchUserData(accessTokenCookie)
+            const userData = await fetchUserData(accessTokenCookie, requestId)
             if (userData) {
               console.log(`[Middleware:${requestId}] Setting user data cookie for SSO user`)
-              setUserDataCookie(response, userData)
+              setUserDataCookie(response, userData, requestId)
               // Set SSO user identifier for persistent recognition
               response.headers.append('Set-Cookie', `${COOKIES.SSO_USER}=true; Path=/; Max-Age=86400; SameSite=lax`)
             } else {
@@ -280,7 +280,7 @@ export async function middleware(request: NextRequest) {
         }
       }
     } catch (error) {
-      console.error('[Middleware] Taihu auth failed:', error)
+      console.error(`[Middleware:${requestId}] Taihu auth failed:`, error)
       // Always redirect to login when Taihu headers are present but invalid
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
       const loginUrl = new URL('/login', request.url)
@@ -302,10 +302,10 @@ export async function middleware(request: NextRequest) {
       const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
       console.log(`[Middleware:${requestId}] Access token length: ${accessTokenValue?.length || 0}`)
       const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
-      const userData = await fetchUserData(accessTokenCookie)
+      const userData = await fetchUserData(accessTokenCookie, requestId)
       if (userData) {
         console.log(`[Middleware:${requestId}] SSO user: Successfully fetched user data, setting cookie`)
-        setUserDataCookie(response, userData)
+        setUserDataCookie(response, userData, requestId)
       } else {
         console.error(`[Middleware:${requestId}] SSO user: Failed to fetch user data (returned null)`)
       }
@@ -321,10 +321,10 @@ export async function middleware(request: NextRequest) {
       const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
       console.log(`[Middleware:${requestId}] Regular user: Access token length: ${accessTokenValue?.length || 0}`)
       const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
-      const userData = await fetchUserData(accessTokenCookie)
+      const userData = await fetchUserData(accessTokenCookie, requestId)
       if (userData) {
         console.log(`[Middleware:${requestId}] Regular user: Successfully fetched user data, setting cookie`)
-        setUserDataCookie(response, userData)
+        setUserDataCookie(response, userData, requestId)
       } else {
         console.error(`[Middleware:${requestId}] Regular user: Failed to fetch user data (returned null)`)
       }
