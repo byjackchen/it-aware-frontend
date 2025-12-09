@@ -37,6 +37,8 @@ interface UserContextType {
 const COOKIES = {
   USER_DATA: 'it_aware_user_data',
   LOGGED_OUT: 'it_aware_logged_out',
+  ACCESS: 'it_aware_access',
+  SSO_USER: 'it_aware_sso_user',
 } as const
 
 // --- Cookie Helpers ---
@@ -55,6 +57,17 @@ function hasCookie(name: string): boolean {
   return document.cookie.includes(`${name}=`)
 }
 
+// Debug helper to log all cookies
+function logAllCookies(context: string): void {
+  if (typeof window === 'undefined') return
+  console.log(`[UserContext:${context}] All cookies:`, document.cookie)
+  console.log(`[UserContext:${context}] Cookie breakdown:`)
+  console.log(`  - it_aware_access: ${hasCookie(COOKIES.ACCESS) ? 'EXISTS' : 'MISSING'}`)
+  console.log(`  - it_aware_user_data: ${hasCookie(COOKIES.USER_DATA) ? 'EXISTS' : 'MISSING'}`)
+  console.log(`  - it_aware_logged_out: ${hasCookie(COOKIES.LOGGED_OUT) ? 'EXISTS' : 'MISSING'}`)
+  console.log(`  - it_aware_sso_user: ${hasCookie(COOKIES.SSO_USER) ? 'EXISTS' : 'MISSING'}`)
+}
+
 // --- Context ---
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -66,79 +79,120 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    console.log('[UserContext] Component mounted, setting isMounted=true')
+    logAllCookies('mount')
     setIsMounted(true)
   }, [])
 
   // Try to get user data from middleware cookie (set during login redirect)
   const getInitialUserData = useCallback((): User | null => {
+    console.log('[UserContext:getInitialUserData] Checking for pre-fetched user data cookie')
     const cookieValue = getCookie(COOKIES.USER_DATA)
-    if (!cookieValue) return null
+    
+    if (!cookieValue) {
+      console.log('[UserContext:getInitialUserData] No user data cookie found')
+      return null
+    }
+
+    console.log(`[UserContext:getInitialUserData] Found user data cookie, length=${cookieValue.length}`)
 
     try {
       // Try Base64 decoding first (new format), fallback to URL decoding (old format)
       let jsonString: string
       try {
         jsonString = Buffer.from(cookieValue, 'base64').toString('utf-8')
-      } catch {
+        console.log('[UserContext:getInitialUserData] Successfully decoded Base64')
+      } catch (base64Error) {
+        console.log('[UserContext:getInitialUserData] Base64 decode failed, trying URL decode:', base64Error)
         // Fallback to old URL decoding format
         jsonString = decodeURIComponent(cookieValue)
       }
       
       const userData = JSON.parse(jsonString) as User
+      console.log(`[UserContext:getInitialUserData] Parsed user data: username=${userData.username}`)
       deleteCookie(COOKIES.USER_DATA) // One-time use
+      console.log('[UserContext:getInitialUserData] Deleted user data cookie (one-time use)')
       return userData
-    } catch {
+    } catch (parseError) {
+      console.error('[UserContext:getInitialUserData] Failed to parse user data:', parseError)
       deleteCookie(COOKIES.USER_DATA)
       return null
     }
   }, [])
 
   const fetchUser = useCallback(async (): Promise<void> => {
-    if (typeof window === 'undefined') return
+    console.log('[UserContext:fetchUser] Starting fetchUser')
+    logAllCookies('fetchUser-start')
+
+    if (typeof window === 'undefined') {
+      console.log('[UserContext:fetchUser] SSR detected, skipping')
+      return
+    }
 
     // Respect explicit logout
     if (hasCookie(COOKIES.LOGGED_OUT)) {
+      console.log('[UserContext:fetchUser] LOGGED_OUT cookie found, clearing user')
       setIsLoading(false)
       setUser(null)
       return
     }
 
     // Check for pre-fetched user data from middleware
+    console.log('[UserContext:fetchUser] Checking for initial user data from middleware')
     const initialData = getInitialUserData()
     if (initialData) {
+      console.log(`[UserContext:fetchUser] Using initial data from cookie: username=${initialData.username}`)
       setUser(initialData)
       setIsLoading(false)
       return
     }
 
+    console.log('[UserContext:fetchUser] No initial data, fetching from /api/auth/me')
     // Fetch from API
     setIsLoading(true)
     setError(null)
 
     try {
+      const startTime = Date.now()
+      console.log('[UserContext:fetchUser] Making API request to /api/auth/me')
+      
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
       })
 
+      const duration = Date.now() - startTime
+      console.log(`[UserContext:fetchUser] API response: status=${response.status}, duration=${duration}ms`)
+      console.log(`[UserContext:fetchUser] Response headers:`, Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
+        console.log(`[UserContext:fetchUser] API returned non-OK status: ${response.status}`)
         if (response.status === 401) {
+          console.log('[UserContext:fetchUser] 401 Unauthorized - setting user to null')
           setUser(null)
           return
         }
+        const errorText = await response.text()
+        console.error(`[UserContext:fetchUser] API error response: ${errorText}`)
         throw new Error(`Failed to fetch user: ${response.status}`)
       }
 
-      setUser(await response.json())
+      const userData = await response.json()
+      console.log(`[UserContext:fetchUser] API returned user data: username=${userData.username}, keys=${Object.keys(userData).join(',')}`)
+      setUser(userData)
     } catch (err) {
+      console.error('[UserContext:fetchUser] Exception during fetch:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch user')
       setUser(null)
     } finally {
       setIsLoading(false)
+      console.log('[UserContext:fetchUser] Completed, isLoading=false')
+      logAllCookies('fetchUser-end')
     }
   }, [getInitialUserData])
 
   const clearUser = useCallback(() => {
+    console.log('[UserContext:clearUser] Clearing user state')
     setUser(null)
     setError(null)
   }, [])
@@ -167,8 +221,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch user on mount
   useEffect(() => {
-    if (isMounted) fetchUser()
+    if (isMounted) {
+      console.log('[UserContext] isMounted is true, calling fetchUser')
+      fetchUser()
+    }
   }, [isMounted, fetchUser])
+
+  // Log user state changes
+  useEffect(() => {
+    console.log(`[UserContext] User state changed: user=${user ? user.username : 'null'}, isLoading=${isLoading}, error=${error}`)
+  }, [user, isLoading, error])
 
   const value = useMemo<UserContextType>(
     () => ({

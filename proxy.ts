@@ -5,6 +5,33 @@ import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 
 const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 
+// Helper function to check if string contains non-ASCII characters
+function hasNonAscii(str: string): { hasNonAscii: boolean; firstNonAsciiIndex: number; charCode: number; char: string } {
+  for (let i = 0; i < str.length; i++) {
+    if (str.charCodeAt(i) > 127) {
+      return {
+        hasNonAscii: true,
+        firstNonAsciiIndex: i,
+        charCode: str.charCodeAt(i),
+        char: str[i]
+      }
+    }
+  }
+  return { hasNonAscii: false, firstNonAsciiIndex: -1, charCode: 0, char: '' }
+}
+
+// Helper function to safely encode non-ASCII string for HTTP headers
+function encodeForHeader(str: string): string {
+  // Check if encoding is needed
+  const check = hasNonAscii(str)
+  if (check.hasNonAscii) {
+    console.log(`[Middleware] String contains non-ASCII, encoding: index=${check.firstNonAsciiIndex}, charCode=${check.charCode}, char='${check.char}'`)
+    // Use encodeURIComponent for safe header encoding
+    return encodeURIComponent(str)
+  }
+  return str
+}
+
 // Cookie names
 const COOKIES = {
   ACCESS: 'it_aware_access',
@@ -46,13 +73,44 @@ async function fetchJwtTokens(username: string): Promise<Response> {
 }
 
 async function fetchUserData(accessTokenCookie: string): Promise<object | null> {
+  const startTime = Date.now()
   try {
+    console.log(`[Middleware:fetchUserData] Starting, cookie length=${accessTokenCookie.length}`)
+    const cookieValue = accessTokenCookie.split(';')[0]
+    console.log(`[Middleware:fetchUserData] Cookie value (first 50 chars): ${cookieValue.substring(0, 50)}...`)
+    
+    // Check cookie value for non-ASCII
+    const cookieCheck = hasNonAscii(cookieValue)
+    if (cookieCheck.hasNonAscii) {
+      console.log(`[Middleware:fetchUserData] Cookie has non-ASCII: index=${cookieCheck.firstNonAsciiIndex}, charCode=${cookieCheck.charCode}`)
+    }
+    
+    console.log(`[Middleware:fetchUserData] Calling backend: ${BACKEND_DOMAIN}/auth/me`)
     const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
-      headers: { 'Cookie': accessTokenCookie.split(';')[0] },
+      headers: { 'Cookie': cookieValue },
     })
-    return response.ok ? await response.json() : null
-  } catch {
+    
+    const duration = Date.now() - startTime
+    console.log(`[Middleware:fetchUserData] Response: status=${response.status}, duration=${duration}ms`)
+    
+    if (response.ok) {
+      const userData = await response.json()
+      console.log(`[Middleware:fetchUserData] Success, username=${(userData as Record<string, unknown>).username}, keys: ${Object.keys(userData).join(', ')}`)
+      return userData
+    }
+    
+    // Log why the response was not OK
+    const errorText = await response.text().catch(() => 'Failed to read response body')
+    console.error(`[Middleware:fetchUserData] Backend returned non-OK: status=${response.status}, body=${errorText.substring(0, 200)}`)
+    return null
+  } catch (error) {
+    const duration = Date.now() - startTime
+    console.error(`[Middleware:fetchUserData] Exception after ${duration}ms:`, error)
+    console.error(`[Middleware:fetchUserData] Error type: ${error?.constructor?.name}`)
+    if (error instanceof Error) {
+      console.error(`[Middleware:fetchUserData] Error message: ${error.message}`)
+    }
     return null
   }
 }
@@ -64,10 +122,32 @@ function forwardAuthCookies(response: NextResponse, setCookies: string[]): void 
 }
 
 function setUserDataCookie(response: NextResponse, userData: object): void {
-  // Use Base64 encoding to handle Chinese characters in user data
-  const jsonString = JSON.stringify(userData)
-  const encoded = Buffer.from(jsonString).toString('base64')
-  response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
+  try {
+    // Use Base64 encoding to handle Chinese characters in user data
+    const jsonString = JSON.stringify(userData)
+    console.log(`[Middleware] setUserDataCookie: JSON string length=${jsonString.length}`)
+    
+    // Check for non-ASCII in JSON
+    const jsonCheck = hasNonAscii(jsonString)
+    if (jsonCheck.hasNonAscii) {
+      console.log(`[Middleware] setUserDataCookie JSON has non-ASCII: index=${jsonCheck.firstNonAsciiIndex}, charCode=${jsonCheck.charCode}, char='${jsonCheck.char}'`)
+    }
+    
+    const encoded = Buffer.from(jsonString).toString('base64')
+    console.log(`[Middleware] setUserDataCookie: Base64 encoded length=${encoded.length}`)
+    
+    // Verify base64 is ASCII-safe
+    const encodedCheck = hasNonAscii(encoded)
+    if (encodedCheck.hasNonAscii) {
+      console.error(`[Middleware] UNEXPECTED: Base64 encoded string has non-ASCII!`)
+    }
+    
+    response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
+    console.log(`[Middleware] setUserDataCookie: Cookie set successfully`)
+  } catch (error) {
+    console.error('[Middleware] setUserDataCookie error:', error)
+    throw error
+  }
 }
 
 // --- Main Middleware ---
@@ -75,25 +155,46 @@ function setUserDataCookie(response: NextResponse, userData: object): void {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
+  const requestId = Math.random().toString(36).substring(7) // For log correlation
+
+  console.log(`[Middleware:${requestId}] ========== REQUEST START ==========`)
+  console.log(`[Middleware:${requestId}] pathname=${pathname}, isPublicRoute=${isPublicRoute}`)
 
   if (shouldSkipMiddleware(pathname)) {
+    console.log(`[Middleware:${requestId}] Skipping middleware for path: ${pathname}`)
     return NextResponse.next()
   }
 
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
   const hasLoggedOut = request.cookies.has(COOKIES.LOGGED_OUT)
   const isSSOUser = request.cookies.has(COOKIES.SSO_USER)
+  const hasUserDataCookie = request.cookies.has(COOKIES.USER_DATA)
   const taihuHeaders = extractTaihuHeaders(request)
   // Skip Taihu headers check for public routes (like /login) to allow username/password auth
   const hasTaihuHeaders = !isPublicRoute && !!taihuHeaders['x-tai-identity']
 
+  console.log(`[Middleware:${requestId}] Cookie state:`, {
+    hasAccessToken,
+    hasLoggedOut,
+    isSSOUser,
+    hasUserDataCookie,
+    hasTaihuHeaders,
+    taihuIdentityPresent: !!taihuHeaders['x-tai-identity']
+  })
+
+  // Log all cookies for debugging
+  const allCookies = request.cookies.getAll()
+  console.log(`[Middleware:${requestId}] All cookies (${allCookies.length}):`, allCookies.map(c => `${c.name}=${c.value.substring(0, 20)}...`))
+
   // Redirect to login if not authenticated (skip for public routes)
   if (!isPublicRoute && !hasAccessToken && !hasTaihuHeaders) {
+    console.log(`[Middleware:${requestId}] No access token and no Taihu headers, redirecting to login`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Redirect logged-out users without SSO headers to login
   if (hasLoggedOut && !hasTaihuHeaders) {
+    console.log(`[Middleware:${requestId}] User logged out without Taihu headers, redirecting to login`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -101,49 +202,81 @@ export async function middleware(request: NextRequest) {
 
   // Skip Taihu SSO authentication for public routes (allow username/password login)
   if (isPublicRoute) {
+    console.log(`[Middleware:${requestId}] Public route, skipping auth processing`)
     return response
   }
 
   // Process Taihu SSO authentication
   if (hasTaihuHeaders) {
+    console.log(`[Middleware:${requestId}] Processing Taihu SSO authentication`)
     try {
       const identity = await getIdentityFromHeaders(taihuHeaders)
       
-      // Set user info headers
-      response.headers.set('x-user-staff-id', identity.staffId.toString())
-      response.headers.set('x-user-login-name', identity.loginName)
+      console.log(`[Middleware] Identity retrieved: staffId=${identity.staffId}, loginName length=${identity.loginName?.length}`)
+      
+      // Check for non-ASCII in loginName
+      const loginNameCheck = hasNonAscii(identity.loginName || '')
+      if (loginNameCheck.hasNonAscii) {
+        console.log(`[Middleware] loginName contains non-ASCII: index=${loginNameCheck.firstNonAsciiIndex}, charCode=${loginNameCheck.charCode}, char='${loginNameCheck.char}'`)
+      }
+      
+      // Set user info headers (encode to handle non-ASCII characters)
+      try {
+        response.headers.set('x-user-staff-id', identity.staffId.toString())
+        // Encode loginName to handle potential non-ASCII characters
+        const encodedLoginName = encodeForHeader(identity.loginName)
+        response.headers.set('x-user-login-name', encodedLoginName)
+        console.log(`[Middleware] Headers set successfully, encoded loginName length=${encodedLoginName.length}`)
+      } catch (headerError) {
+        console.error(`[Middleware] Failed to set headers:`, headerError)
+        console.error(`[Middleware] loginName value: '${identity.loginName}'`)
+        throw headerError
+      }
 
       // Determine if we need to fetch new JWT tokens
       const needsNewTokens = !hasAccessToken || (hasLoggedOut && !hasAccessToken)
       const skipTokenFetch = hasLoggedOut && hasAccessToken
 
+      console.log(`[Middleware:${requestId}] Token decision: needsNewTokens=${needsNewTokens}, skipTokenFetch=${skipTokenFetch}`)
+
       if (skipTokenFetch) {
         // User logged out but still has valid token - respect logout
+        console.log(`[Middleware:${requestId}] Skipping token fetch (logged out with valid token)`)
         return response
       }
 
       if (needsNewTokens) {
+        console.log(`[Middleware:${requestId}] Fetching new JWT tokens for user: ${identity.loginName}`)
         const authResponse = await fetchJwtTokens(identity.loginName)
 
+        console.log(`[Middleware:${requestId}] JWT token response status: ${authResponse.status}`)
         if (authResponse.ok) {
           const setCookies = authResponse.headers.getSetCookie()
+          console.log(`[Middleware:${requestId}] Received ${setCookies.length} Set-Cookie headers from backend`)
           forwardAuthCookies(response, setCookies)
 
           // Clear logged_out cookie on re-authentication
           if (hasLoggedOut) {
+            console.log(`[Middleware:${requestId}] Clearing logged_out cookie`)
             response.cookies.delete(COOKIES.LOGGED_OUT)
           }
 
           // Fetch and set user data for immediate client hydration
           const accessTokenCookie = setCookies.find(c => c.startsWith(`${COOKIES.ACCESS}=`))
+          console.log(`[Middleware:${requestId}] Access token cookie found in response: ${!!accessTokenCookie}`)
           if (accessTokenCookie) {
             const userData = await fetchUserData(accessTokenCookie)
             if (userData) {
+              console.log(`[Middleware:${requestId}] Setting user data cookie for SSO user`)
               setUserDataCookie(response, userData)
               // Set SSO user identifier for persistent recognition
               response.headers.append('Set-Cookie', `${COOKIES.SSO_USER}=true; Path=/; Max-Age=86400; SameSite=lax`)
+            } else {
+              console.error(`[Middleware:${requestId}] Failed to fetch user data after token acquisition`)
             }
           }
+        } else {
+          console.error(`[Middleware:${requestId}] JWT token fetch failed: ${authResponse.status}`)
         }
       }
     } catch (error) {
@@ -156,40 +289,54 @@ export async function middleware(request: NextRequest) {
     }
   } else if (isSSOUser && !hasLoggedOut) {
     // Handle SSO user page refresh - SSO headers may not be present on refresh
+    console.log(`[Middleware:${requestId}] SSO user refresh flow (no Taihu headers)`)
     try {
       if (!hasAccessToken) {
         // SSO user without valid token - redirect to login to re-authenticate
-        console.error('[Middleware] SSO user without valid access token')
+        console.error(`[Middleware:${requestId}] SSO user without valid access token - redirecting to login`)
         return NextResponse.redirect(new URL('/login', request.url))
       }
       
       // SSO user with valid token - ensure user data is available
-      const accessTokenCookie = `${COOKIES.ACCESS}=${request.cookies.get(COOKIES.ACCESS)?.value}`
+      console.log(`[Middleware:${requestId}] SSO user has access token, fetching user data`)
+      const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
+      console.log(`[Middleware:${requestId}] Access token length: ${accessTokenValue?.length || 0}`)
+      const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
       const userData = await fetchUserData(accessTokenCookie)
       if (userData) {
+        console.log(`[Middleware:${requestId}] SSO user: Successfully fetched user data, setting cookie`)
         setUserDataCookie(response, userData)
       } else {
-        console.error('[Middleware] Failed to fetch user data for SSO user')
+        console.error(`[Middleware:${requestId}] SSO user: Failed to fetch user data (returned null)`)
       }
     } catch (error) {
-      console.error('[Middleware] Failed to handle SSO user refresh:', error)
+      console.error(`[Middleware:${requestId}] SSO user refresh error:`, error)
       // Don't redirect on failure, let the client handle it
     }
   } else if (hasAccessToken && !hasLoggedOut) {
     // For regular login (non-SSO), fetch and set user data if not already present
     // This ensures user data is available on page refresh
+    console.log(`[Middleware:${requestId}] Regular user refresh flow`)
     try {
-      const accessTokenCookie = `${COOKIES.ACCESS}=${request.cookies.get(COOKIES.ACCESS)?.value}`
+      const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
+      console.log(`[Middleware:${requestId}] Regular user: Access token length: ${accessTokenValue?.length || 0}`)
+      const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
       const userData = await fetchUserData(accessTokenCookie)
       if (userData) {
+        console.log(`[Middleware:${requestId}] Regular user: Successfully fetched user data, setting cookie`)
         setUserDataCookie(response, userData)
+      } else {
+        console.error(`[Middleware:${requestId}] Regular user: Failed to fetch user data (returned null)`)
       }
     } catch (error) {
-      console.error('[Middleware] Failed to fetch user data for regular login:', error)
+      console.error(`[Middleware:${requestId}] Regular user refresh error:`, error)
       // Don't redirect on failure, let the client handle it
     }
+  } else {
+    console.log(`[Middleware:${requestId}] No user data refresh needed (hasAccessToken=${hasAccessToken}, hasLoggedOut=${hasLoggedOut}, isSSOUser=${isSSOUser})`)
   }
 
+  console.log(`[Middleware:${requestId}] ========== REQUEST END ==========`)
   return response
 }
 

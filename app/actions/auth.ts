@@ -47,25 +47,70 @@ export async function login(formData: FormData) {
     }
 }
 
+// Helper function to check if string contains non-ASCII characters
+function hasNonAscii(str: string): { hasNonAscii: boolean; firstNonAsciiIndex: number; charCode: number; char: string } {
+    for (let i = 0; i < str.length; i++) {
+        if (str.charCodeAt(i) > 127) {
+            return {
+                hasNonAscii: true,
+                firstNonAsciiIndex: i,
+                charCode: str.charCodeAt(i),
+                char: str[i]
+            }
+        }
+    }
+    return { hasNonAscii: false, firstNonAsciiIndex: -1, charCode: 0, char: '' }
+}
+
 export async function logout() {
+    console.log('[Auth] Logout started')
     try {
         const cookieStore = await cookies()
-        const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+        const allCookies = cookieStore.getAll()
+        
+        console.log(`[Auth] Total cookies count: ${allCookies.length}`)
+        
+        // Log each cookie and check for non-ASCII characters
+        for (const cookie of allCookies) {
+            const nameCheck = hasNonAscii(cookie.name)
+            const valueCheck = hasNonAscii(cookie.value)
+            console.log(`[Auth] Cookie '${cookie.name}': nameLen=${cookie.name.length}, valueLen=${cookie.value.length}, nameHasNonAscii=${nameCheck.hasNonAscii}, valueHasNonAscii=${valueCheck.hasNonAscii}`)
+            if (nameCheck.hasNonAscii) {
+                console.log(`[Auth] Cookie name non-ASCII: index=${nameCheck.firstNonAsciiIndex}, charCode=${nameCheck.charCode}, char='${nameCheck.char}'`)
+            }
+            if (valueCheck.hasNonAscii) {
+                console.log(`[Auth] Cookie value non-ASCII: index=${valueCheck.firstNonAsciiIndex}, charCode=${valueCheck.charCode}, char='${valueCheck.char}'`)
+            }
+        }
+        
+        const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+        console.log(`[Auth] Cookie header length: ${cookieHeader.length}`)
+        
+        // Check the entire cookie header for non-ASCII
+        const headerCheck = hasNonAscii(cookieHeader)
+        if (headerCheck.hasNonAscii) {
+            console.log(`[Auth] Cookie header has non-ASCII at index ${headerCheck.firstNonAsciiIndex}, charCode=${headerCheck.charCode}, char='${headerCheck.char}'`)
+        }
 
+        console.log('[Auth] Calling backend logout endpoint')
         await fetch(`${BACKEND_DOMAIN}/auth/session/logout`, {
             method: 'POST',
             headers: { 'Cookie': cookieHeader }
         })
+        console.log('[Auth] Backend logout call completed')
 
         // Delete JWT cookies
+        console.log('[Auth] Deleting JWT cookies')
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
         
         // Delete SSO user identifier cookie
+        console.log('[Auth] Deleting SSO user identifier cookie')
         cookieStore.delete('it_aware_sso_user')
         
         // Set logged_out cookie to prevent auto-login from proxy.ts
         // This cookie will be checked by proxy.ts to skip automatic Taihu SSO login
+        console.log('[Auth] Setting logged_out cookie')
         cookieStore.set('it_aware_logged_out', 'true', { 
             path: '/', 
             httpOnly: true, 
@@ -73,10 +118,15 @@ export async function logout() {
             maxAge: 60 * 60 // 1 hour expiry
         })
         
-        console.log('[Auth] User logged out, set it_aware_logged_out cookie')
+        console.log('[Auth] User logged out successfully, set it_aware_logged_out cookie')
         return { success: true }
     } catch (error) {
-        console.error('Logout error:', error)
+        console.error('[Auth] Logout error:', error)
+        console.error('[Auth] Logout error type:', error?.constructor?.name)
+        console.error('[Auth] Logout error message:', error instanceof Error ? error.message : String(error))
+        if (error instanceof Error && error.stack) {
+            console.error('[Auth] Logout error stack:', error.stack)
+        }
         return { error: 'Logout failed' }
     }
 }
