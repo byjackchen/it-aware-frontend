@@ -27,7 +27,7 @@ export default async function PermissionsPage({ searchParams }: PageProps) {
         isCreating ? (
           <PermissionForm />
         ) : selected ? (
-          <PermissionDetail permission={selected} />
+          <PermissionDetail key={selected.permission_code} permission={selected} />
         ) : (
           <EmptyState />
         )

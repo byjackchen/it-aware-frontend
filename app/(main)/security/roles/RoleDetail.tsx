@@ -7,6 +7,7 @@
 
 import { useState, useTransition } from 'react';
 import { Save, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Role, Permission } from '@/lib/types/security';
 import { updateRole, deleteRole, assignPermissionToRole, removePermissionFromRole } from '../actions';
 import { DeleteButton, AssignmentManager } from '@/components/security';
@@ -18,6 +19,7 @@ interface RoleDetailProps {
 }
 
 export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDetailProps) {
+  const t = useTranslations('Security');
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description);
   const [isPending, startTransition] = useTransition();
@@ -61,7 +63,7 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Role Details</h2>
+        <h2 className="text-lg font-semibold text-white">{t('roles.details')}</h2>
         <div className="flex items-center gap-2">
           {hasChanges && (
             <button
@@ -70,7 +72,7 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors disabled:opacity-50"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
+              {t('common.save')}
             </button>
           )}
           <DeleteButton onDelete={handleDelete} itemName={role.name} />
@@ -89,7 +91,7 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
           <div className="space-y-4">
             {/* Role Code (read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Role Code</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('roles.roleCode')}</label>
               <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
                 {role.role_code}
               </div>
@@ -97,25 +99,25 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
 
             {/* Name (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.name')}</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Enter name..."
+                placeholder={t('common.namePlaceholder')}
               />
             </div>
 
             {/* Description (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.description')}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
-                placeholder="Enter description..."
+                placeholder={t('common.descriptionPlaceholder')}
               />
             </div>
           </div>
@@ -123,7 +125,7 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
 
         {/* Permission Assignments */}
         <AssignmentManager
-          title="Permissions"
+          title={t('permissions.title')}
           assigned={assignedPermissions}
           available={allPermissions}
           getId={(p) => p.permission_code}

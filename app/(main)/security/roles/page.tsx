@@ -39,6 +39,7 @@ export default async function RolesPage({ searchParams }: PageProps) {
           <RoleForm />
         ) : selected ? (
           <RoleDetail
+            key={selected.role_code}
             role={selected}
             assignedPermissions={assignedPermissions}
             allPermissions={permissions}

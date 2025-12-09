@@ -38,7 +38,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
         isCreating ? (
           <UserForm />
         ) : selected ? (
-          <UserDetail user={selected} assignedRoles={assignedRoles} allRoles={roles} />
+          <UserDetail key={selected.username} user={selected} assignedRoles={assignedRoles} allRoles={roles} />
         ) : (
           <EmptyState />
         )

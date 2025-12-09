@@ -8,6 +8,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { User } from '@/lib/types/security';
 
 interface UserListProps {
@@ -16,6 +17,7 @@ interface UserListProps {
 }
 
 export function UserList({ items, selectedId }: UserListProps) {
+  const t = useTranslations('Security');
   const router = useRouter();
   const baseUrl = '/security/users';
 
@@ -27,11 +29,11 @@ export function UserList({ items, selectedId }: UserListProps) {
     <>
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Users</h2>
+        <h2 className="text-lg font-semibold text-white">{t('users.title')}</h2>
         <button
           onClick={handleCreate}
           className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
-          title="Create new"
+          title={t('common.create')}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -40,7 +42,7 @@ export function UserList({ items, selectedId }: UserListProps) {
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">No users found</div>
+          <div className="p-4 text-center text-gray-500">{t('users.noUsersFound')}</div>
         ) : (
           <ul className="divide-y divide-white/5">
             {items.map((user) => {
@@ -60,7 +62,7 @@ export function UserList({ items, selectedId }: UserListProps) {
                       {user.full_name || user.username}
                     </div>
                     <div className="text-sm text-gray-500 truncate">
-                      {user.email || (user.is_system_user ? 'System User' : user.username)}
+                      {user.email || (user.is_system_user ? t('common.systemUser') : user.username)}
                     </div>
                   </Link>
                 </li>

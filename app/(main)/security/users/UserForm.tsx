@@ -8,9 +8,11 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, X, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createUser } from '../actions';
 
 export function UserForm() {
+  const t = useTranslations('Security');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function UserForm() {
 
     // Validate password for system users
     if (isSystemUser && !password) {
-      setError('Password is required for system users');
+      setError(t('users.passwordRequired'));
       return;
     }
 
@@ -58,7 +60,7 @@ export function UserForm() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Create User</h2>
+        <h2 className="text-lg font-semibold text-white">{t('users.createUser')}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSubmit}
@@ -66,14 +68,14 @@ export function UserForm() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors disabled:opacity-50"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Create
+            {t('common.create')}
           </button>
           <button
             onClick={handleCancel}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-colors"
           >
             <X className="w-4 h-4" />
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -90,40 +92,40 @@ export function UserForm() {
           {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">
-              Username <span className="text-red-400">*</span>
+              {t('users.username')} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-              placeholder="e.g., john.doe"
+              placeholder={t('users.usernamePlaceholder')}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Unique identifier (cannot be changed later)</p>
+            <p className="mt-1 text-xs text-gray-500">{t('common.uniqueIdentifier')}</p>
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.fullName')}</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-              placeholder="e.g., John Doe"
+              placeholder={t('users.fullNamePlaceholder')}
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.email')}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-              placeholder="e.g., john.doe@example.com"
+              placeholder={t('users.emailPlaceholder')}
             />
           </div>
 
@@ -136,7 +138,7 @@ export function UserForm() {
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
               />
-              <span className="text-sm text-gray-400">Active</span>
+              <span className="text-sm text-gray-400">{t('common.active')}</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -146,7 +148,7 @@ export function UserForm() {
                 onChange={(e) => setIsSystemUser(e.target.checked)}
                 className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
               />
-              <span className="text-sm text-gray-400">System User (Service Account)</span>
+              <span className="text-sm text-gray-400">{t('users.systemUserLabel')}</span>
             </label>
           </div>
 
@@ -154,7 +156,7 @@ export function UserForm() {
           {isSystemUser && (
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                Password (API Key) <span className="text-red-400">*</span>
+                {t('users.password')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="password"
@@ -164,7 +166,7 @@ export function UserForm() {
                 placeholder="Enter password (min 8 characters)"
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">Required for system users to authenticate via API</p>
+              <p className="mt-1 text-xs text-gray-500">{t('users.passwordMinHint')}</p>
             </div>
           )}
         </div>

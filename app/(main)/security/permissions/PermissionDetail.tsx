@@ -7,6 +7,7 @@
 
 import { useState, useTransition } from 'react';
 import { Save, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Permission } from '@/lib/types/security';
 import { updatePermission, deletePermission } from '../actions';
 import { DeleteButton } from '@/components/security';
@@ -16,6 +17,7 @@ interface PermissionDetailProps {
 }
 
 export function PermissionDetail({ permission }: PermissionDetailProps) {
+  const t = useTranslations('Security');
   const [description, setDescription] = useState(permission.description);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Permission Details</h2>
+        <h2 className="text-lg font-semibold text-white">{t('permissions.details')}</h2>
         <div className="flex items-center gap-2">
           {hasChanges && (
             <button
@@ -52,7 +54,7 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors disabled:opacity-50"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
+              {t('common.save')}
             </button>
           )}
           <DeleteButton onDelete={handleDelete} itemName={permission.permission_code} />
@@ -70,7 +72,7 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
         <div className="space-y-4">
           {/* Permission Code (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Permission Code</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.permissionCode')}</label>
             <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
               {permission.permission_code}
             </div>
@@ -79,19 +81,19 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
           {/* Domain (read-only) */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Domain</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.domain')}</label>
               <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
                 {permission.domain}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Resource</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.resource')}</label>
               <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
                 {permission.resource}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Action</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.action')}</label>
               <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
                 {permission.action}
               </div>
@@ -100,13 +102,13 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
 
           {/* Description (editable) */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
-              placeholder="Enter description..."
+              placeholder={t('common.descriptionPlaceholder')}
             />
           </div>
         </div>

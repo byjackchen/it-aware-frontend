@@ -7,6 +7,7 @@
 
 import { useState, useTransition } from 'react';
 import { Plus, X, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface AssignmentManagerProps<T> {
   title: string;
@@ -27,6 +28,7 @@ export function AssignmentManager<T>({
   onAssign,
   onRemove,
 }: AssignmentManagerProps<T>) {
+  const t = useTranslations('Security');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -63,7 +65,7 @@ export function AssignmentManager<T>({
           <button
             onClick={() => setIsAdding(true)}
             className="p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
-            title={`Add ${title.toLowerCase()}`}
+            title={t('assignments.addTitle', { title: title.toLowerCase() })}
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -78,7 +80,7 @@ export function AssignmentManager<T>({
             onChange={(e) => setSelectedId(e.target.value)}
             className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
           >
-            <option value="">Select...</option>
+            <option value="">{t('assignments.select')}</option>
             {unassigned.map((item) => (
               <option key={getId(item)} value={getId(item)}>
                 {getLabel(item)}
@@ -93,7 +95,7 @@ export function AssignmentManager<T>({
             {isPending && pendingId === selectedId ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              'Add'
+              t('common.add')
             )}
           </button>
           <button
@@ -103,14 +105,16 @@ export function AssignmentManager<T>({
             }}
             className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 text-sm transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       )}
 
       {/* Assigned items */}
       {assigned.length === 0 ? (
-        <div className="text-sm text-gray-500">No {title.toLowerCase()} assigned</div>
+        <div className="text-sm text-gray-500">
+          {title === t('roles.title') ? t('roles.noRolesAssigned') : t('permissions.noPermissionsAssigned')}
+        </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {assigned.map((item) => {

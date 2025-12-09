@@ -7,6 +7,7 @@
 
 import { useState, useTransition } from 'react';
 import { Save, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { User, Role } from '@/lib/types/security';
 import { updateUser, deleteUser, assignRoleToUser, removeRoleFromUser } from '../actions';
 import { DeleteButton, AssignmentManager } from '@/components/security';
@@ -18,6 +19,7 @@ interface UserDetailProps {
 }
 
 export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
+  const t = useTranslations('Security');
   const [email, setEmail] = useState(user.email || '');
   const [fullName, setFullName] = useState(user.full_name || '');
   const [isActive, setIsActive] = useState(user.is_active);
@@ -74,19 +76,19 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-white">User Details</h2>
+          <h2 className="text-lg font-semibold text-white">{t('users.details')}</h2>
           {user.is_active ? (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs">
-              <CheckCircle className="w-3 h-3" /> Active
+              <CheckCircle className="w-3 h-3" /> {t('common.active')}
             </span>
           ) : (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs">
-              <XCircle className="w-3 h-3" /> Inactive
+              <XCircle className="w-3 h-3" /> {t('common.inactive')}
             </span>
           )}
           {user.is_system_user && (
             <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs">
-              System User
+              {t('common.systemUser')}
             </span>
           )}
         </div>
@@ -98,7 +100,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors disabled:opacity-50"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
+              {t('common.save')}
             </button>
           )}
           <DeleteButton onDelete={handleDelete} itemName={user.username} />
@@ -117,7 +119,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
           <div className="space-y-4">
             {/* Username (read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.username')}</label>
               <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
                 {user.username}
               </div>
@@ -125,25 +127,25 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
 
             {/* Full Name (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.fullName')}</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Enter full name..."
+                placeholder={t('users.fullNamePlaceholder')}
               />
             </div>
 
             {/* Email (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-                placeholder="Enter email..."
+                placeholder={t('users.emailPlaceholder')}
               />
             </div>
 
@@ -156,7 +158,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
                 />
-                <span className="text-sm text-gray-400">Active</span>
+                <span className="text-sm text-gray-400">{t('common.active')}</span>
               </label>
             </div>
 
@@ -164,16 +166,16 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
             {user.is_system_user && (
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Password (API Key)
+                  {t('users.password')}
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Enter new password to change..."
+                  placeholder={t('users.passwordPlaceholder')}
                 />
-                <p className="mt-1 text-xs text-gray-500">Leave empty to keep current password</p>
+                <p className="mt-1 text-xs text-gray-500">{t('users.passwordHint')}</p>
               </div>
             )}
 
@@ -182,7 +184,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                 {user.created_at && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Created At</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{t('common.createdAt')}</label>
                     <div className="text-sm text-gray-400">
                       {new Date(user.created_at).toLocaleString()}
                     </div>
@@ -190,7 +192,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
                 )}
                 {user.updated_at && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Updated At</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{t('common.updatedAt')}</label>
                     <div className="text-sm text-gray-400">
                       {new Date(user.updated_at).toLocaleString()}
                     </div>
@@ -203,7 +205,7 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
 
         {/* Role Assignments */}
         <AssignmentManager
-          title="Roles"
+          title={t('roles.title')}
           assigned={assignedRoles}
           available={allRoles}
           getId={(r) => r.role_code}
