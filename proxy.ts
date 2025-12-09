@@ -11,6 +11,7 @@ const COOKIES = {
   REFRESH: 'it_aware_refresh',
   LOGGED_OUT: 'it_aware_logged_out',
   USER_DATA: 'it_aware_user_data',
+  SSO_USER: 'it_aware_sso_user',
 } as const
 
 // Routes that don't require authentication
@@ -81,6 +82,7 @@ export async function middleware(request: NextRequest) {
 
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
   const hasLoggedOut = request.cookies.has(COOKIES.LOGGED_OUT)
+  const isSSOUser = request.cookies.has(COOKIES.SSO_USER)
   const taihuHeaders = extractTaihuHeaders(request)
   // Skip Taihu headers check for public routes (like /login) to allow username/password auth
   const hasTaihuHeaders = !isPublicRoute && !!taihuHeaders['x-tai-identity']
@@ -138,6 +140,8 @@ export async function middleware(request: NextRequest) {
             const userData = await fetchUserData(accessTokenCookie)
             if (userData) {
               setUserDataCookie(response, userData)
+              // Set SSO user identifier for persistent recognition
+              response.headers.append('Set-Cookie', `${COOKIES.SSO_USER}=true; Path=/; Max-Age=86400; SameSite=lax`)
             }
           }
         }
@@ -149,6 +153,40 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('error', errorMessage)
       return NextResponse.redirect(loginUrl)
+    }
+  } else if (isSSOUser && !hasLoggedOut) {
+    // Handle SSO user page refresh - SSO headers may not be present on refresh
+    try {
+      if (!hasAccessToken) {
+        // SSO user without valid token - redirect to login to re-authenticate
+        console.error('[Middleware] SSO user without valid access token')
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+      
+      // SSO user with valid token - ensure user data is available
+      const accessTokenCookie = `${COOKIES.ACCESS}=${request.cookies.get(COOKIES.ACCESS)?.value}`
+      const userData = await fetchUserData(accessTokenCookie)
+      if (userData) {
+        setUserDataCookie(response, userData)
+      } else {
+        console.error('[Middleware] Failed to fetch user data for SSO user')
+      }
+    } catch (error) {
+      console.error('[Middleware] Failed to handle SSO user refresh:', error)
+      // Don't redirect on failure, let the client handle it
+    }
+  } else if (hasAccessToken && !hasLoggedOut) {
+    // For regular login (non-SSO), fetch and set user data if not already present
+    // This ensures user data is available on page refresh
+    try {
+      const accessTokenCookie = `${COOKIES.ACCESS}=${request.cookies.get(COOKIES.ACCESS)?.value}`
+      const userData = await fetchUserData(accessTokenCookie)
+      if (userData) {
+        setUserDataCookie(response, userData)
+      }
+    } catch (error) {
+      console.error('[Middleware] Failed to fetch user data for regular login:', error)
+      // Don't redirect on failure, let the client handle it
     }
   }
 

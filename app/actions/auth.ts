@@ -61,6 +61,9 @@ export async function logout() {
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
         
+        // Delete SSO user identifier cookie
+        cookieStore.delete('it_aware_sso_user')
+        
         // Set logged_out cookie to prevent auto-login from proxy.ts
         // This cookie will be checked by proxy.ts to skip automatic Taihu SSO login
         cookieStore.set('it_aware_logged_out', 'true', { 
