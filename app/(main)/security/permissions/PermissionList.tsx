@@ -17,7 +17,7 @@ export function PermissionList({ items, selectedId }: PermissionListProps) {
   const baseUrl = '/security/permissions';
 
   const handleCreate = () => {
-    router.push(`${baseUrl}?selected=__new__`);
+    router.push(`${baseUrl}?action=create`);
   };
 
   return (

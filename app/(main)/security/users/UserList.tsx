@@ -17,7 +17,7 @@ export function UserList({ items, selectedId }: UserListProps) {
   const baseUrl = '/security/users';
 
   const handleCreate = () => {
-    router.push(`${baseUrl}?selected=__new__`);
+    router.push(`${baseUrl}?action=create`);
   };
 
   return (

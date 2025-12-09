@@ -17,7 +17,7 @@ export function RoleList({ items, selectedId }: RoleListProps) {
   const baseUrl = '/security/roles';
 
   const handleCreate = () => {
-    router.push(`${baseUrl}?selected=__new__`);
+    router.push(`${baseUrl}?action=create`);
   };
 
   return (
