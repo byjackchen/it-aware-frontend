@@ -76,7 +76,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!cookieValue) return null
 
     try {
-      const userData = JSON.parse(decodeURIComponent(cookieValue)) as User
+      // Try Base64 decoding first (new format), fallback to URL decoding (old format)
+      let jsonString: string
+      try {
+        jsonString = Buffer.from(cookieValue, 'base64').toString('utf-8')
+      } catch {
+        // Fallback to old URL decoding format
+        jsonString = decodeURIComponent(cookieValue)
+      }
+      
+      const userData = JSON.parse(jsonString) as User
       deleteCookie(COOKIES.USER_DATA) // One-time use
       return userData
     } catch (error) {

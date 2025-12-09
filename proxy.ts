@@ -63,7 +63,9 @@ function forwardAuthCookies(response: NextResponse, setCookies: string[]): void 
 }
 
 function setUserDataCookie(response: NextResponse, userData: object): void {
-  const encoded = encodeURIComponent(JSON.stringify(userData))
+  // Use Base64 encoding to handle Chinese characters in user data
+  const jsonString = JSON.stringify(userData)
+  const encoded = Buffer.from(jsonString).toString('base64')
   response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
 }
 
