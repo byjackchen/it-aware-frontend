@@ -84,10 +84,10 @@
   --glass-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.2);
   
   /* Text colors */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --text-label: #475569;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-label: #1e293b;
   --text-placeholder: #94a3b8;
   
   /* Card and surface */
@@ -179,6 +179,27 @@
   background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #f1f5f9 50%, #dbeafe 75%, #f8fafc 100%);
   background-attachment: fixed;
   min-height: 100vh;
+}
+
+/* Login page brand text colors */
+.light .brand-text-primary,
+.theme-light .brand-text-primary {
+  color: #1e293b;
+}
+
+.dark .brand-text-primary,
+.theme-dark .brand-text-primary {
+  color: #ffffff;
+}
+
+.light .brand-text-secondary,
+.theme-light .brand-text-secondary {
+  color: #475569;
+}
+
+.dark .brand-text-secondary,
+.theme-dark .brand-text-secondary {
+  color: #d1d5db;
 }
 
 /* ========================================
