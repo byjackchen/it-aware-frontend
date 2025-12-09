@@ -26,14 +26,14 @@ export async function login(formData: FormData) {
     const startTime = Date.now()
     
     const username = formData.get('username') as string
-    console.log(`[ServerAction:Auth:login:${requestId}] Login started - username: ${username}`)
+    console.log(`[Action:Auth:login:${requestId}] Login started - username: ${username}`)
     
     if (!username) {
-        console.log(`[ServerAction:Auth:login:${requestId}] Login failed - username is required`)
+        console.log(`[Action:Auth:login:${requestId}] Login failed - username is required`)
         return { error: 'Username is required' }
     }
 
-    console.log(`[ServerAction:Auth:login:${requestId}] Calling backend: ${BACKEND_DOMAIN}/auth/session/token`)
+    console.log(`[Action:Auth:login:${requestId}] Calling backend: ${BACKEND_DOMAIN}/auth/session/token`)
 
     try {
         const response = await fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
@@ -42,11 +42,11 @@ export async function login(formData: FormData) {
             body: new URLSearchParams({ username }),
         })
 
-        console.log(`[ServerAction:Auth:login:${requestId}] Backend response status: ${response.status}`)
+        console.log(`[Action:Auth:login:${requestId}] Backend response status: ${response.status}`)
 
         if (!response.ok) {
             const responseText = await response.text()
-            console.log(`[ServerAction:Auth:login:${requestId}] Login failed - status: ${response.status}, body: ${responseText.substring(0, 200)}`)
+            console.log(`[Action:Auth:login:${requestId}] Login failed - status: ${response.status}, body: ${responseText.substring(0, 200)}`)
             return { error: `Login failed: ${response.status} ${responseText}` }
         }
 
@@ -54,7 +54,7 @@ export async function login(formData: FormData) {
         
         // Log set-cookie headers from response
         const setCookies = response.headers.getSetCookie()
-        console.log(`[ServerAction:Auth:login:${requestId}] Response set-cookie count: ${setCookies.length}`)
+        console.log(`[Action:Auth:login:${requestId}] Response set-cookie count: ${setCookies.length}`)
         
         await parseCookies(response, cookieStore)
         
@@ -62,16 +62,16 @@ export async function login(formData: FormData) {
         cookieStore.delete('it_aware_logged_out')
         
         const duration = Date.now() - startTime
-        console.log(`[ServerAction:Auth:login:${requestId}] Login succeeded in ${duration}ms, deleted it_aware_logged_out cookie`)
+        console.log(`[Action:Auth:login:${requestId}] Login succeeded in ${duration}ms, deleted it_aware_logged_out cookie`)
         
         return { success: true }
     } catch (error) {
         const duration = Date.now() - startTime
-        console.error(`[ServerAction:Auth:login:${requestId}] Login error after ${duration}ms:`, error)
-        console.error(`[ServerAction:Auth:login:${requestId}] Error type:`, error?.constructor?.name)
-        console.error(`[ServerAction:Auth:login:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
+        console.error(`[Action:Auth:login:${requestId}] Login error after ${duration}ms:`, error)
+        console.error(`[Action:Auth:login:${requestId}] Error type:`, error?.constructor?.name)
+        console.error(`[Action:Auth:login:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
         if (error instanceof Error && error.stack) {
-            console.error(`[ServerAction:Auth:login:${requestId}] Error stack:`, error.stack)
+            console.error(`[Action:Auth:login:${requestId}] Error stack:`, error.stack)
         }
         return { error: 'Internal server error' }
     }
@@ -95,56 +95,56 @@ function hasNonAscii(str: string): { hasNonAscii: boolean; firstNonAsciiIndex: n
 export async function logout() {
     const requestId = generateRequestId()
     const startTime = Date.now()
-    console.log(`[ServerAction:Auth:logout:${requestId}] Logout started`)
+    console.log(`[Action:Auth:logout:${requestId}] Logout started`)
     
     try {
         const cookieStore = await cookies()
         const allCookies = cookieStore.getAll()
         
-        console.log(`[ServerAction:Auth:logout:${requestId}] Total cookies count: ${allCookies.length}`)
+        console.log(`[Action:Auth:logout:${requestId}] Total cookies count: ${allCookies.length}`)
         
         // Log each cookie and check for non-ASCII characters
-        console.log(`[ServerAction:Auth:logout:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
+        console.log(`[Action:Auth:logout:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
         for (const cookie of allCookies) {
             const nameCheck = hasNonAscii(cookie.name)
             const valueCheck = hasNonAscii(cookie.value)
-            console.log(`[ServerAction:Auth:logout:${requestId}] Cookie '${cookie.name}': nameLen=${cookie.name.length}, valueLen=${cookie.value.length}, nameHasNonAscii=${nameCheck.hasNonAscii}, valueHasNonAscii=${valueCheck.hasNonAscii}`)
+            console.log(`[Action:Auth:logout:${requestId}] Cookie '${cookie.name}': nameLen=${cookie.name.length}, valueLen=${cookie.value.length}, nameHasNonAscii=${nameCheck.hasNonAscii}, valueHasNonAscii=${valueCheck.hasNonAscii}`)
             if (nameCheck.hasNonAscii) {
-                console.log(`[ServerAction:Auth:logout:${requestId}] Cookie name non-ASCII: index=${nameCheck.firstNonAsciiIndex}, charCode=${nameCheck.charCode}, char='${nameCheck.char}'`)
+                console.log(`[Action:Auth:logout:${requestId}] Cookie name non-ASCII: index=${nameCheck.firstNonAsciiIndex}, charCode=${nameCheck.charCode}, char='${nameCheck.char}'`)
             }
             if (valueCheck.hasNonAscii) {
-                console.log(`[ServerAction:Auth:logout:${requestId}] Cookie value non-ASCII: index=${valueCheck.firstNonAsciiIndex}, charCode=${valueCheck.charCode}, char='${valueCheck.char}'`)
+                console.log(`[Action:Auth:logout:${requestId}] Cookie value non-ASCII: index=${valueCheck.firstNonAsciiIndex}, charCode=${valueCheck.charCode}, char='${valueCheck.char}'`)
             }
         }
         
         const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-        console.log(`[ServerAction:Auth:logout:${requestId}] Cookie header length: ${cookieHeader.length}`)
+        console.log(`[Action:Auth:logout:${requestId}] Cookie header length: ${cookieHeader.length}`)
         
         // Check the entire cookie header for non-ASCII
         const headerCheck = hasNonAscii(cookieHeader)
         if (headerCheck.hasNonAscii) {
-            console.log(`[ServerAction:Auth:logout:${requestId}] Cookie header has non-ASCII at index ${headerCheck.firstNonAsciiIndex}, charCode=${headerCheck.charCode}, char='${headerCheck.char}'`)
+            console.log(`[Action:Auth:logout:${requestId}] Cookie header has non-ASCII at index ${headerCheck.firstNonAsciiIndex}, charCode=${headerCheck.charCode}, char='${headerCheck.char}'`)
         }
 
-        console.log(`[ServerAction:Auth:logout:${requestId}] Calling backend: ${BACKEND_DOMAIN}/auth/session/logout`)
+        console.log(`[Action:Auth:logout:${requestId}] Calling backend: ${BACKEND_DOMAIN}/auth/session/logout`)
         await fetch(`${BACKEND_DOMAIN}/auth/session/logout`, {
             method: 'POST',
             headers: { 'Cookie': cookieHeader }
         })
-        console.log(`[ServerAction:Auth:logout:${requestId}] Backend logout call completed`)
+        console.log(`[Action:Auth:logout:${requestId}] Backend logout call completed`)
 
         // Delete JWT cookies
-        console.log(`[ServerAction:Auth:logout:${requestId}] Deleting JWT cookies`)
+        console.log(`[Action:Auth:logout:${requestId}] Deleting JWT cookies`)
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
         
         // Delete SSO user identifier cookie
-        console.log(`[ServerAction:Auth:logout:${requestId}] Deleting SSO user identifier cookie`)
+        console.log(`[Action:Auth:logout:${requestId}] Deleting SSO user identifier cookie`)
         cookieStore.delete('it_aware_sso_user')
         
         // Set logged_out cookie to prevent auto-login from proxy.ts
         // This cookie will be checked by proxy.ts to skip automatic Taihu SSO login
-        console.log(`[ServerAction:Auth:logout:${requestId}] Setting logged_out cookie`)
+        console.log(`[Action:Auth:logout:${requestId}] Setting logged_out cookie`)
         cookieStore.set('it_aware_logged_out', 'true', { 
             path: '/', 
             httpOnly: true, 
@@ -153,15 +153,15 @@ export async function logout() {
         })
         
         const duration = Date.now() - startTime
-        console.log(`[ServerAction:Auth:logout:${requestId}] Logout succeeded in ${duration}ms, set it_aware_logged_out cookie`)
+        console.log(`[Action:Auth:logout:${requestId}] Logout succeeded in ${duration}ms, set it_aware_logged_out cookie`)
         return { success: true }
     } catch (error) {
         const duration = Date.now() - startTime
-        console.error(`[ServerAction:Auth:logout:${requestId}] Logout error after ${duration}ms:`, error)
-        console.error(`[ServerAction:Auth:logout:${requestId}] Error type:`, error?.constructor?.name)
-        console.error(`[ServerAction:Auth:logout:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
+        console.error(`[Action:Auth:logout:${requestId}] Logout error after ${duration}ms:`, error)
+        console.error(`[Action:Auth:logout:${requestId}] Error type:`, error?.constructor?.name)
+        console.error(`[Action:Auth:logout:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
         if (error instanceof Error && error.stack) {
-            console.error(`[ServerAction:Auth:logout:${requestId}] Error stack:`, error.stack)
+            console.error(`[Action:Auth:logout:${requestId}] Error stack:`, error.stack)
         }
         return { error: 'Logout failed' }
     }
@@ -170,14 +170,14 @@ export async function logout() {
 export async function refresh() {
     const requestId = generateRequestId()
     const startTime = Date.now()
-    console.log(`[ServerAction:Auth:refresh:${requestId}] Refresh started`)
+    console.log(`[Action:Auth:refresh:${requestId}] Refresh started`)
     
     try {
         const cookieStore = await cookies()
         const allCookies = cookieStore.getAll()
         
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Total cookies count: ${allCookies.length}`)
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Total cookies count: ${allCookies.length}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
         
         // Check for key cookies
         const hasAccessToken = allCookies.some(c => c.name === 'it_aware_access')
@@ -185,41 +185,41 @@ export async function refresh() {
         const hasSsoUser = allCookies.some(c => c.name === 'it_aware_sso_user')
         const hasLoggedOut = allCookies.some(c => c.name === 'it_aware_logged_out')
         
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Key cookies - access: ${hasAccessToken}, refresh: ${hasRefreshToken}, ssoUser: ${hasSsoUser}, loggedOut: ${hasLoggedOut}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Key cookies - access: ${hasAccessToken}, refresh: ${hasRefreshToken}, ssoUser: ${hasSsoUser}, loggedOut: ${hasLoggedOut}`)
         
         const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Cookie header length: ${cookieHeader.length}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Cookie header length: ${cookieHeader.length}`)
 
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Calling backend refresh endpoint: ${BACKEND_DOMAIN}/auth/session/refresh`)
+        console.log(`[Action:Auth:refresh:${requestId}] Calling backend refresh endpoint: ${BACKEND_DOMAIN}/auth/session/refresh`)
         const response = await fetch(`${BACKEND_DOMAIN}/auth/session/refresh`, {
             method: 'POST',
             headers: { 'Cookie': cookieHeader }
         })
 
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Backend response status: ${response.status}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Backend response status: ${response.status}`)
         
         if (!response.ok) {
             const responseText = await response.text()
-            console.log(`[ServerAction:Auth:refresh:${requestId}] Refresh failed - status: ${response.status}, body: ${responseText.substring(0, 200)}`)
+            console.log(`[Action:Auth:refresh:${requestId}] Refresh failed - status: ${response.status}, body: ${responseText.substring(0, 200)}`)
             return { error: 'Refresh failed' }
         }
         
         // Log set-cookie headers from response
         const setCookies = response.headers.getSetCookie()
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Response set-cookie count: ${setCookies.length}`)
+        console.log(`[Action:Auth:refresh:${requestId}] Response set-cookie count: ${setCookies.length}`)
         
         await parseCookies(response, cookieStore)
         
         const duration = Date.now() - startTime
-        console.log(`[ServerAction:Auth:refresh:${requestId}] Refresh succeeded in ${duration}ms`)
+        console.log(`[Action:Auth:refresh:${requestId}] Refresh succeeded in ${duration}ms`)
         return { success: true }
     } catch (error) {
         const duration = Date.now() - startTime
-        console.error(`[ServerAction:Auth:refresh:${requestId}] Refresh error after ${duration}ms:`, error)
-        console.error(`[ServerAction:Auth:refresh:${requestId}] Error type:`, error?.constructor?.name)
-        console.error(`[ServerAction:Auth:refresh:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
+        console.error(`[Action:Auth:refresh:${requestId}] Refresh error after ${duration}ms:`, error)
+        console.error(`[Action:Auth:refresh:${requestId}] Error type:`, error?.constructor?.name)
+        console.error(`[Action:Auth:refresh:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
         if (error instanceof Error && error.stack) {
-            console.error(`[ServerAction:Auth:refresh:${requestId}] Error stack:`, error.stack)
+            console.error(`[Action:Auth:refresh:${requestId}] Error stack:`, error.stack)
         }
         return { error: 'Refresh error' }
     }
@@ -228,7 +228,7 @@ export async function refresh() {
 export async function getCurrentUser() {
     const requestId = generateRequestId()
     const startTime = Date.now()
-    console.log(`[ServerAction:Auth:getCurrentUser:${requestId}] getCurrentUser started`)
+    console.log(`[Action:Auth:getCurrentUser:${requestId}] getCurrentUser started`)
     
     try {
         const headerStore = await headers()
@@ -240,12 +240,12 @@ export async function getCurrentUser() {
             'x-rio-seq': headerStore.get('x-rio-seq') || undefined,
         }
 
-        console.log(`[ServerAction:Auth:getCurrentUser:${requestId}] Taihu headers present - x-tai-identity: ${!!taihuHeaders['x-tai-identity']}, timestamp: ${!!taihuHeaders.timestamp}, signature: ${!!taihuHeaders.signature}`)
+        console.log(`[Action:Auth:getCurrentUser:${requestId}] Taihu headers present - x-tai-identity: ${!!taihuHeaders['x-tai-identity']}, timestamp: ${!!taihuHeaders.timestamp}, signature: ${!!taihuHeaders.signature}`)
 
         const identity = await getUserIdentity(taihuHeaders)
         
         const duration = Date.now() - startTime
-        console.log(`[ServerAction:Auth:getCurrentUser:${requestId}] Got user identity in ${duration}ms - loginName: ${identity.loginName}, staffId: ${identity.staffId}`)
+        console.log(`[Action:Auth:getCurrentUser:${requestId}] Got user identity in ${duration}ms - loginName: ${identity.loginName}, staffId: ${identity.staffId}`)
         
         return { 
             success: true, 
@@ -253,9 +253,9 @@ export async function getCurrentUser() {
         }
     } catch (error) {
         const duration = Date.now() - startTime
-        console.error(`[ServerAction:Auth:getCurrentUser:${requestId}] getCurrentUser error after ${duration}ms:`, error)
-        console.error(`[ServerAction:Auth:getCurrentUser:${requestId}] Error type:`, error?.constructor?.name)
-        console.error(`[ServerAction:Auth:getCurrentUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
+        console.error(`[Action:Auth:getCurrentUser:${requestId}] getCurrentUser error after ${duration}ms:`, error)
+        console.error(`[Action:Auth:getCurrentUser:${requestId}] Error type:`, error?.constructor?.name)
+        console.error(`[Action:Auth:getCurrentUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error))
         return { error: error instanceof Error ? error.message : 'Failed to get user identity' }
     }
 }
