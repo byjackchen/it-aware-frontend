@@ -1,26 +1,58 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Encapsulation, Modulization, Coding Guidance
 
-First, run the development server:
+### Theme
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Uses CSS variables with `dark`/`light` class toggling on `<html>` element.
+
+| File | Purpose |
+|------|---------|
+| `lib/contexts/theme-context.tsx` | React context + cookie persistence (`it-aware-theme`) |
+| `components/layout/ThemeSwitcher.tsx` | Toggle button component |
+| `app/globals.css` | CSS variables (`.dark`, `.light`) and utility classes |
+
+**Usage:**
+- Use CSS variables: `var(--text-primary)`, `var(--glass-bg)`
+- Use utility classes: `.theme-text-primary`, `.theme-input`, `.glass-card`
+- Access in components: `const { theme, toggleTheme } = useTheme()`
+
+### Internationalization
+
+Uses `next-intl` with cookie-based locale detection (no URL prefix).
+
+| File | Purpose |
+|------|---------|
+| `i18n/routing.ts` | Locale config (`en`, `zh`), `localePrefix: 'never'` |
+| `i18n/request.ts` | Server-side locale from cookie (`IT_AWARE_LOCALE`) |
+| `messages/en.json`, `messages/zh.json` | Translation strings |
+| `components/layout/LanguageSwitcher.tsx` | Toggle button component |
+
+**Usage:**
+- In components: `const t = useTranslations('Security'); t('common.save')`
+- Nest translations by module: `TopBar`, `Sidebar`, `Security.users`, etc.
+
+### Server Components vs. Client Components
+
+| Component Type | Use When | Marker |
+|----------------|----------|--------|
+| **Server Component** | Data fetching, no interactivity, access to backend | (default, no directive) |
+| **Client Component** | Hooks, event handlers, browser APIs | `'use client'` at top |
+
+**Patterns in this codebase:**
+- **Pages** (`page.tsx`): Server Components - fetch data, pass to children
+- **Forms/Interactive UI**: Client Components - handle state, events
+- **Layouts**: Server Components - wrap with providers
+
+**Example:** `app/(main)/security/users/`
+```
+page.tsx          → Server Component (fetches users, roles)
+UserList.tsx      → Client Component (click handling, navigation)
+UserDetail.tsx    → Client Component (form state, submission)
+UserForm.tsx      → Client Component (form inputs, validation)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Server Actions Organization
+### Server Actions
 
 | Action Type | Location | Example |
 |-------------|----------|---------|
@@ -30,20 +62,26 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - Place shared actions (auth, logging) in `app/actions/`
 - Place domain-specific actions alongside their module in `app/(main)/[module]/actions.ts`
 
-## Learn More
+### Logging
 
-To learn more about Next.js, take a look at the following resources:
+Uses `console.log` with structured prefixes for traceability.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Format:** `[Layer:Module:requestId] Message`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Layer | Format | Example |
+|-------|--------|---------|
+| Middleware | `[Middleware:requestId]` | `[Middleware:gwj0mk] Request started` |
+| API Route | `[APIRoute:/path:requestId]` | `[APIRoute:/auth/me:abc123] Fetching user` |
+| Server Action | `[Action:Module:action:requestId]` | `[Action:Auth:login:xyz789] Login started` |
 
-## Deploy on Vercel
+**Request ID:** 6-char random string generated per request for log correlation.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Guidelines:**
+- Always include `requestId` for traceability across async operations
+- Log at request start, key decision points, and completion
+- Include relevant context: `username`, `status`, `duration`
+- Avoid logging sensitive data (passwords, full tokens)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 ## Docker
 
 Build and run the image:
