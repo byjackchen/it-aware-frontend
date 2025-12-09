@@ -32,7 +32,7 @@ export function LanguageSwitcher() {
             title={locale === 'en' ? 'Switch to Chinese' : 'Switch to English'}
         >
             <Globe className="w-5 h-5" />
-            <span className="text-sm font-medium uppercase">{locale}</span>
+            <span className="text-sm font-medium">{locale === 'en' ? 'EN' : '中文'}</span>
         </button>
     );
 }

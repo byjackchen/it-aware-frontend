@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Delete button with confirmation dialog.
- * Client Component - handles confirmation state and click interactions.
- */
-
 import { useState, useTransition } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -22,27 +17,26 @@ export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
   const handleDelete = () => {
     startTransition(async () => {
       await onDelete();
-      setShowConfirm(false);
     });
   };
 
   if (showConfirm) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-sm text-red-400">{t('common.delete')} {itemName}?</span>
+        <span className="text-sm text-red-400">{t('common.confirmDelete')}</span>
+        <button
+          onClick={() => setShowConfirm(false)}
+          disabled={isPending}
+          className="px-3 py-1.5 text-sm rounded-lg theme-btn-neutral disabled:opacity-50"
+        >
+          {t('common.no')}
+        </button>
         <button
           onClick={handleDelete}
           disabled={isPending}
           className="px-3 py-1.5 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.yes')}
-        </button>
-        <button
-          onClick={() => setShowConfirm(false)}
-          disabled={isPending}
-          className="px-3 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-colors disabled:opacity-50"
-        >
-          {t('common.no')}
         </button>
       </div>
     );
@@ -51,7 +45,7 @@ export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
   return (
     <button
       onClick={() => setShowConfirm(true)}
-      className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+      className="p-2 rounded-lg text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
       title={t('common.delete')}
     >
       <Trash2 className="w-4 h-4" />

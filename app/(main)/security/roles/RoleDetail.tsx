@@ -62,8 +62,8 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{t('roles.details')}</h2>
+      <div className="p-4 border-b theme-border-panel flex items-center justify-between">
+        <h2 className="text-lg font-semibold theme-text-primary">{t('roles.details')}</h2>
         <div className="flex items-center gap-2">
           {hasChanges && (
             <button
@@ -91,32 +91,32 @@ export function RoleDetail({ role, assignedPermissions, allPermissions }: RoleDe
           <div className="space-y-4">
             {/* Role Code (read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('roles.roleCode')}</label>
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('roles.roleCode')}</label>
+              <div className="px-3 py-2 rounded-lg font-mono text-sm theme-input-readonly">
                 {role.role_code}
               </div>
             </div>
 
             {/* Name (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.name')}</label>
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('common.name')}</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-lg text-sm theme-input"
                 placeholder={t('common.namePlaceholder')}
               />
             </div>
 
             {/* Description (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.description')}</label>
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('common.description')}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
+                className="w-full px-3 py-2 rounded-lg text-sm resize-none theme-input"
                 placeholder={t('common.descriptionPlaceholder')}
               />
             </div>

@@ -74,9 +74,9 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="p-4 border-b theme-border-panel flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-white">{t('users.details')}</h2>
+          <h2 className="text-lg font-semibold theme-text-primary">{t('users.details')}</h2>
           {user.is_active ? (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs">
               <CheckCircle className="w-3 h-3" /> {t('common.active')}
@@ -119,32 +119,32 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
           <div className="space-y-4">
             {/* Username (read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.username')}</label>
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('users.username')}</label>
+              <div className="px-3 py-2 rounded-lg font-mono text-sm theme-input-readonly">
                 {user.username}
               </div>
             </div>
 
             {/* Full Name (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.fullName')}</label>
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('users.fullName')}</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-lg text-sm theme-input"
                 placeholder={t('users.fullNamePlaceholder')}
               />
             </div>
 
             {/* Email (editable) */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.email')}</label>
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('users.email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-lg text-sm theme-input"
                 placeholder={t('users.emailPlaceholder')}
               />
             </div>
@@ -156,44 +156,44 @@ export function UserDetail({ user, assignedRoles, allRoles }: UserDetailProps) {
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                  className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-0 theme-checkbox"
                 />
-                <span className="text-sm text-gray-400">{t('common.active')}</span>
+                <span className="text-sm theme-text-label">{t('common.active')}</span>
               </label>
             </div>
 
             {/* Password (for system users) */}
             {user.is_system_user && (
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
+                <label className="block text-sm font-medium mb-1 theme-text-label">
                   {t('users.password')}
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-lg text-sm theme-input"
                   placeholder={t('users.passwordPlaceholder')}
                 />
-                <p className="mt-1 text-xs text-gray-500">{t('users.passwordHint')}</p>
+                <p className="mt-1 text-xs theme-text-muted">{t('users.passwordHint')}</p>
               </div>
             )}
 
             {/* Timestamps */}
             {(user.created_at || user.updated_at) && (
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t theme-border-panel">
                 {user.created_at && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">{t('common.createdAt')}</label>
-                    <div className="text-sm text-gray-400">
+                    <label className="block text-xs font-medium mb-1 theme-text-muted">{t('common.createdAt')}</label>
+                    <div className="text-sm theme-text-secondary">
                       {new Date(user.created_at).toLocaleString()}
                     </div>
                   </div>
                 )}
                 {user.updated_at && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">{t('common.updatedAt')}</label>
-                    <div className="text-sm text-gray-400">
+                    <label className="block text-xs font-medium mb-1 theme-text-muted">{t('common.updatedAt')}</label>
+                    <div className="text-sm theme-text-secondary">
                       {new Date(user.updated_at).toLocaleString()}
                     </div>
                   </div>

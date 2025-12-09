@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * User create form.
- * Client Component - handles form state and submission.
- */
-
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, X, Loader2 } from 'lucide-react';
@@ -14,25 +9,18 @@ import { createUser } from '../actions';
 export function UserForm() {
   const t = useTranslations('Security');
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSystemUser, setIsSystemUser] = useState(false);
   const [password, setPassword] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    // Validate password for system users
-    if (isSystemUser && !password) {
-      setError(t('users.passwordRequired'));
-      return;
-    }
 
     const formData = new FormData();
     formData.set('username', username);
@@ -59,23 +47,23 @@ export function UserForm() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{t('users.createUser')}</h2>
+      <div className="p-4 border-b theme-border-panel flex items-center justify-between">
+        <h2 className="text-lg font-semibold theme-text-primary">{t('users.createUser')}</h2>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleCancel}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg theme-btn-neutral"
+          >
+            <X className="w-4 h-4" />
+            {t('common.cancel')}
+          </button>
+          <button
             onClick={handleSubmit}
-            disabled={isPending || !username || (isSystemUser && !password)}
+            disabled={isPending || !username}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors disabled:opacity-50"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {t('common.create')}
-          </button>
-          <button
-            onClick={handleCancel}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-colors"
-          >
-            <X className="w-4 h-4" />
-            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -91,40 +79,40 @@ export function UserForm() {
         <div className="space-y-4">
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">
+            <label className="block text-sm font-medium mb-1 theme-text-label">
               {t('users.username')} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg text-sm theme-input"
               placeholder={t('users.usernamePlaceholder')}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">{t('common.uniqueIdentifier')}</p>
+            <p className="mt-1 text-xs theme-text-muted">{t('common.uniqueIdentifier')}</p>
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.fullName')}</label>
+            <label className="block text-sm font-medium mb-1 theme-text-label">{t('users.fullName')}</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg text-sm theme-input"
               placeholder={t('users.fullNamePlaceholder')}
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">{t('users.email')}</label>
+            <label className="block text-sm font-medium mb-1 theme-text-label">{t('users.email')}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg text-sm theme-input"
               placeholder={t('users.emailPlaceholder')}
             />
           </div>
@@ -136,9 +124,9 @@ export function UserForm() {
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-0 theme-checkbox"
               />
-              <span className="text-sm text-gray-400">{t('common.active')}</span>
+              <span className="text-sm theme-text-label">{t('common.active')}</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -146,27 +134,27 @@ export function UserForm() {
                 type="checkbox"
                 checked={isSystemUser}
                 onChange={(e) => setIsSystemUser(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-0 theme-checkbox"
               />
-              <span className="text-sm text-gray-400">{t('users.systemUserLabel')}</span>
+              <span className="text-sm theme-text-label">{t('users.systemUserLabel')}</span>
             </label>
           </div>
 
           {/* Password (only for system users) */}
           {isSystemUser && (
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">
+              <label className="block text-sm font-medium mb-1 theme-text-label">
                 {t('users.password')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-lg text-sm theme-input"
                 placeholder="Enter password (min 8 characters)"
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">{t('users.passwordMinHint')}</p>
+              <p className="mt-1 text-xs theme-text-muted">{t('users.passwordMinHint')}</p>
             </div>
           )}
         </div>

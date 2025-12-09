@@ -1,34 +1,140 @@
 @import "tailwindcss";
 
+/* ========================================
+   CSS Variables - Theme System
+   ======================================== */
+
 /* Dark theme (default) */
 :root,
-.dark {
+.dark,
+.theme-dark {
+  /* Base colors */
   --background: #0f0f23;
   --foreground: #ededed;
+  
+  /* Glass effect */
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  /* Text colors */
   --text-primary: #ffffff;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
+  --text-label: #9ca3af;
+  --text-placeholder: #6b7280;
+  
+  /* Card and surface */
   --card-bg: rgba(255, 255, 255, 0.03);
-  --hover-bg: rgba(255, 255, 255, 0.08);
+  --surface-bg: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  
+  /* Borders */
   --border-color: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-input: rgba(255, 255, 255, 0.1);
+  --border-panel: rgba(255, 255, 255, 0.1);
+  
+  /* Form elements */
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-bg-readonly: rgba(255, 255, 255, 0.05);
+  --input-text: #ffffff;
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-focus-border: #3b82f6;
+  
+  /* Buttons */
+  --btn-neutral-bg: rgba(255, 255, 255, 0.1);
+  --btn-neutral-bg-hover: rgba(255, 255, 255, 0.2);
+  --btn-neutral-text: #9ca3af;
+  
+  /* List items */
+  --list-divider: rgba(255, 255, 255, 0.05);
+  --list-hover: rgba(255, 255, 255, 0.05);
+  --list-selected: rgba(59, 130, 246, 0.2);
+  --list-selected-text: #60a5fa;
+  
+  /* Tags and badges */
+  --tag-bg: rgba(255, 255, 255, 0.05);
+  --tag-border: rgba(255, 255, 255, 0.1);
+  --tag-text: #ffffff;
+  
+  /* Select dropdown */
+  --select-option-bg: #1e1e3f;
+  --select-option-text: #ffffff;
+  
+  /* Checkbox */
+  --checkbox-border: rgba(255, 255, 255, 0.2);
+  --checkbox-bg: rgba(255, 255, 255, 0.05);
+  
+  /* Empty state */
+  --empty-bg: rgba(255, 255, 255, 0.05);
+  --empty-icon: #6b7280;
 }
 
 /* Light theme */
-.light {
+.light,
+.theme-light {
+  /* Base colors */
   --background: #f8fafc;
   --foreground: #1e293b;
+  
+  /* Glass effect */
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(148, 163, 184, 0.3);
   --glass-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.2);
+  
+  /* Text colors */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
+  --text-label: #475569;
+  --text-placeholder: #94a3b8;
+  
+  /* Card and surface */
   --card-bg: rgba(255, 255, 255, 0.8);
-  --hover-bg: rgba(99, 102, 241, 0.08);
+  --surface-bg: rgba(255, 255, 255, 0.9);
+  --surface-hover: rgba(99, 102, 241, 0.08);
+  
+  /* Borders */
   --border-color: rgba(148, 163, 184, 0.3);
+  --border-subtle: rgba(148, 163, 184, 0.2);
+  --border-input: rgba(148, 163, 184, 0.4);
+  --border-panel: rgba(203, 213, 225, 1);
+  
+  /* Form elements */
+  --input-bg: rgba(255, 255, 255, 1);
+  --input-bg-readonly: rgba(241, 245, 249, 1);
+  --input-text: #1e293b;
+  --input-border: rgba(203, 213, 225, 1);
+  --input-focus-border: #3b82f6;
+  
+  /* Buttons */
+  --btn-neutral-bg: rgba(226, 232, 240, 1);
+  --btn-neutral-bg-hover: rgba(203, 213, 225, 1);
+  --btn-neutral-text: #475569;
+  
+  /* List items */
+  --list-divider: rgba(226, 232, 240, 1);
+  --list-hover: rgba(99, 102, 241, 0.08);
+  --list-selected: rgba(59, 130, 246, 0.15);
+  --list-selected-text: #3b82f6;
+  
+  /* Tags and badges */
+  --tag-bg: rgba(99, 102, 241, 0.1);
+  --tag-border: rgba(99, 102, 241, 0.2);
+  --tag-text: #1e293b;
+  
+  /* Select dropdown */
+  --select-option-bg: #ffffff;
+  --select-option-text: #1e293b;
+  
+  /* Checkbox */
+  --checkbox-border: rgba(203, 213, 225, 1);
+  --checkbox-bg: #ffffff;
+  
+  /* Empty state */
+  --empty-bg: rgba(241, 245, 249, 1);
+  --empty-icon: #94a3b8;
 }
 
 @theme inline {
@@ -38,7 +144,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Gradient Background - Dark */
+/* ========================================
+   Gradient Backgrounds
+   ======================================== */
+
+/* Dark theme gradient */
+.dark .gradient-bg,
+.dark.gradient-bg,
 .theme-dark .gradient-bg,
 .theme-dark.gradient-bg {
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 25%, #0d2137 50%, #0a1628 75%, #0f0f23 100%);
@@ -46,7 +158,8 @@
   min-height: 100vh;
 }
 
-/* Static gradient background - Dark */
+.dark .gradient-bg-animated,
+.dark.gradient-bg-animated,
 .theme-dark .gradient-bg-animated,
 .theme-dark.gradient-bg-animated {
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 30%, #0d2137 60%, #1e3a5f 100%);
@@ -54,7 +167,11 @@
   min-height: 100vh;
 }
 
-/* Gradient Background - Light */
+/* Light theme gradient */
+.light .gradient-bg,
+.light.gradient-bg,
+.light .gradient-bg-animated,
+.light.gradient-bg-animated,
 .theme-light .gradient-bg,
 .theme-light.gradient-bg,
 .theme-light .gradient-bg-animated,
@@ -64,65 +181,41 @@
   min-height: 100vh;
 }
 
-/* Glass effect utilities - Dark */
-.dark .glass,
-.theme-dark .glass {
-  background: rgba(255, 255, 255, 0.05);
+/* ========================================
+   Glass Effect Utilities
+   ======================================== */
+
+.glass {
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
 }
 
-.dark .glass-dark,
-.theme-dark .glass-dark {
-  background: rgba(15, 15, 35, 0.7);
+.glass-dark {
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
 }
 
-.dark .glass-card,
-.theme-dark .glass-card {
-  background: rgba(255, 255, 255, 0.03);
+.glass-card {
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-}
-
-/* Glass effect utilities - Light */
-.light .glass,
-.theme-light .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.light .glass-dark,
-.theme-light .glass-dark {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  box-shadow: 0 4px 24px 0 rgba(148, 163, 184, 0.15);
-}
-
-.light .glass-card,
-.theme-light .glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.15);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-hover:hover {
-  background: var(--hover-bg);
+  background: var(--surface-hover);
   border-color: var(--glass-border);
 }
 
-/* Glow effects */
+/* ========================================
+   Glow Effects
+   ======================================== */
+
 .glow-blue {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
@@ -135,7 +228,10 @@
   box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
 }
 
-/* Text gradients */
+/* ========================================
+   Text Gradients
+   ======================================== */
+
 .text-gradient {
   background: linear-gradient(135deg, #60a5fa, #a78bfa, #22d3ee);
   -webkit-background-clip: text;
@@ -150,7 +246,80 @@
   background-clip: text;
 }
 
-/* Button styles */
+/* ========================================
+   Theme-Aware Text Utilities
+   ======================================== */
+
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--text-muted);
+}
+
+.theme-text-label {
+  color: var(--text-label);
+}
+
+/* ========================================
+   Theme-Aware Form Elements
+   ======================================== */
+
+/* Input fields */
+.theme-input {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+
+.theme-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.theme-input:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+}
+
+/* Read-only input fields */
+.theme-input-readonly {
+  background: var(--input-bg-readonly);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+
+/* Select dropdowns */
+.theme-select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+
+.theme-select:focus {
+  outline: none;
+  border-color: var(--input-focus-border);
+}
+
+.theme-select option {
+  background: var(--select-option-bg);
+  color: var(--select-option-text);
+}
+
+/* Checkbox */
+.theme-checkbox {
+  border-color: var(--checkbox-border);
+  background: var(--checkbox-bg);
+}
+
+/* ========================================
+   Theme-Aware Button Utilities
+   ======================================== */
+
 .btn-glass {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(139, 92, 246, 0.8));
   backdrop-filter: blur(10px);
@@ -166,51 +335,120 @@
 
 .btn-glass-outline {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--glass-border);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 .btn-glass-outline:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--surface-hover);
+  border-color: var(--glass-border);
 }
 
-/* Light theme button adjustments */
-.light .btn-glass-outline,
-.theme-light .btn-glass-outline {
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #4f46e5;
+/* Neutral/Cancel button */
+.theme-btn-neutral {
+  background: var(--btn-neutral-bg);
+  color: var(--btn-neutral-text);
+  transition: background 0.2s ease;
 }
 
-.light .btn-glass-outline:hover,
-.theme-light .btn-glass-outline:hover {
-  background: rgba(99, 102, 241, 0.1);
-  border-color: rgba(99, 102, 241, 0.5);
+.theme-btn-neutral:hover {
+  background: var(--btn-neutral-bg-hover);
 }
 
-/* Navigation link base styles - remove focus outline */
+/* ========================================
+   Theme-Aware Border Utilities
+   ======================================== */
+
+.theme-border {
+  border-color: var(--border-color);
+}
+
+.theme-border-panel {
+  border-color: var(--border-panel);
+}
+
+.theme-border-subtle {
+  border-color: var(--border-subtle);
+}
+
+.theme-border-input {
+  border-color: var(--input-border);
+}
+
+/* ========================================
+   Theme-Aware List Utilities
+   ======================================== */
+
+.theme-divide > * + * {
+  border-top: 1px solid var(--list-divider);
+}
+
+.theme-list-hover:hover {
+  background: var(--list-hover);
+}
+
+.theme-list-selected {
+  background: var(--list-selected);
+}
+
+/* ========================================
+   Theme-Aware Tag/Badge Utilities
+   ======================================== */
+
+.theme-tag {
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  color: var(--tag-text);
+}
+
+/* ========================================
+   Theme-Aware Surface Utilities
+   ======================================== */
+
+.theme-surface {
+  background: var(--surface-bg);
+}
+
+.theme-surface-hover:hover {
+  background: var(--surface-hover);
+}
+
+.theme-card {
+  background: var(--card-bg);
+}
+
+/* Empty state background */
+.theme-empty-bg {
+  background: var(--empty-bg);
+}
+
+.theme-empty-icon {
+  color: var(--empty-icon);
+}
+
+/* ========================================
+   Navigation Styles
+   ======================================== */
+
+/* Remove focus outline on nav elements */
 .nav-active,
 a:focus-visible,
 button:focus-visible {
   outline: none;
 }
 
-/* Active nav item - Dark */
-.dark .nav-active,
-.theme-dark .nav-active {
+/* Active nav item */
+.nav-active {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
-/* Active nav item - Light */
-.light .nav-active,
-.theme-light .nav-active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
-  border: 1px solid rgba(99, 102, 241, 0.3);
-}
+/* ========================================
+   Scrollbar Styling
+   ======================================== */
 
-/* Scrollbar styling - Dark */
+/* Dark theme scrollbar */
 .dark ::-webkit-scrollbar,
 .theme-dark ::-webkit-scrollbar {
   width: 6px;
@@ -233,7 +471,7 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Scrollbar styling - Light */
+/* Light theme scrollbar */
 .light ::-webkit-scrollbar,
 .theme-light ::-webkit-scrollbar {
   width: 6px;
@@ -256,6 +494,10 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.5);
 }
 
+/* ========================================
+   Base Body Styles
+   ======================================== */
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -274,4 +516,117 @@ body {
 
 .theme-text-muted {
   color: var(--text-muted);
+}
+
+/* ========================================
+   Security Module Theme-Aware Utilities
+   ======================================== */
+
+/* Input and form field backgrounds */
+.dark .input-bg,
+.theme-dark .input-bg {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.light .input-bg,
+.theme-light .input-bg {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #1e293b;
+}
+
+/* Panel/section borders */
+.dark .panel-border,
+.theme-dark .panel-border {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .panel-border,
+.theme-light .panel-border {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Divider lines */
+.dark .divider,
+.theme-dark .divider {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.light .divider,
+.theme-light .divider {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* List item hover background */
+.dark .list-hover:hover,
+.theme-dark .list-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light .list-hover:hover,
+.theme-light .list-hover:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* Tag/badge backgrounds */
+.dark .tag-bg,
+.theme-dark .tag-bg {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .tag-bg,
+.theme-light .tag-bg {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Selected item in list */
+.dark .list-selected,
+.theme-dark .list-selected {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.light .list-selected,
+.theme-light .list-selected {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+/* Cancel/neutral button */
+.dark .btn-neutral,
+.theme-dark .btn-neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+}
+
+.dark .btn-neutral:hover,
+.theme-dark .btn-neutral:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.light .btn-neutral,
+.theme-light .btn-neutral {
+  background: rgba(148, 163, 184, 0.2);
+  color: #475569;
+}
+
+.light .btn-neutral:hover,
+.theme-light .btn-neutral:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+/* Form select dropdown - Dark */
+.dark select option,
+.theme-dark select option {
+  background: #1e1e3f;
+  color: #ffffff;
+}
+
+/* Form select dropdown - Light */
+.light select option,
+.theme-light select option {
+  background: #ffffff;
+  color: #1e293b;
 }

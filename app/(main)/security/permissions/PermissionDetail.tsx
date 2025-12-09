@@ -44,8 +44,8 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{t('permissions.details')}</h2>
+      <div className="p-4 border-b theme-border-panel flex items-center justify-between">
+        <h2 className="text-lg font-semibold theme-text-primary">{t('permissions.details')}</h2>
         <div className="flex items-center gap-2">
           {hasChanges && (
             <button
@@ -72,8 +72,8 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
         <div className="space-y-4">
           {/* Permission Code (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.permissionCode')}</label>
-            <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono text-sm">
+            <label className="block text-sm font-medium mb-1 theme-text-label">{t('permissions.permissionCode')}</label>
+            <div className="px-3 py-2 rounded-lg font-mono text-sm theme-input-readonly">
               {permission.permission_code}
             </div>
           </div>
@@ -81,20 +81,20 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
           {/* Domain (read-only) */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.domain')}</label>
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('permissions.domain')}</label>
+              <div className="px-3 py-2 rounded-lg text-sm theme-input-readonly">
                 {permission.domain}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.resource')}</label>
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('permissions.resource')}</label>
+              <div className="px-3 py-2 rounded-lg text-sm theme-input-readonly">
                 {permission.resource}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">{t('permissions.action')}</label>
-              <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm">
+              <label className="block text-sm font-medium mb-1 theme-text-label">{t('permissions.action')}</label>
+              <div className="px-3 py-2 rounded-lg text-sm theme-input-readonly">
                 {permission.action}
               </div>
             </div>
@@ -102,12 +102,12 @@ export function PermissionDetail({ permission }: PermissionDetailProps) {
 
           {/* Description (editable) */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">{t('common.description')}</label>
+            <label className="block text-sm font-medium mb-1 theme-text-label">{t('common.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
+              className="w-full px-3 py-2 rounded-lg text-sm resize-none theme-input"
               placeholder={t('common.descriptionPlaceholder')}
             />
           </div>

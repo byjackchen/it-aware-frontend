@@ -58,9 +58,9 @@ export function AssignmentManager<T>({
   };
 
   return (
-    <div className="border-t border-white/10 p-4">
+    <div className="border-t p-4 theme-border-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{title}</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide theme-text-label">{title}</h3>
         {!isAdding && unassigned.length > 0 && (
           <button
             onClick={() => setIsAdding(true)}
@@ -78,7 +78,7 @@ export function AssignmentManager<T>({
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500"
+            className="flex-1 px-3 py-2 rounded-lg text-sm theme-select"
           >
             <option value="">{t('assignments.select')}</option>
             {unassigned.map((item) => (
@@ -103,7 +103,7 @@ export function AssignmentManager<T>({
               setIsAdding(false);
               setSelectedId('');
             }}
-            className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 text-sm transition-colors"
+            className="px-3 py-2 rounded-lg text-sm theme-btn-neutral"
           >
             {t('common.cancel')}
           </button>
@@ -112,7 +112,7 @@ export function AssignmentManager<T>({
 
       {/* Assigned items */}
       {assigned.length === 0 ? (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm theme-text-muted">
           {title === t('roles.title') ? t('roles.noRolesAssigned') : t('permissions.noPermissionsAssigned')}
         </div>
       ) : (
@@ -122,13 +122,13 @@ export function AssignmentManager<T>({
             return (
               <div
                 key={id}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg theme-tag"
               >
-                <span className="text-sm text-white">{getLabel(item)}</span>
+                <span className="text-sm">{getLabel(item)}</span>
                 <button
                   onClick={() => handleRemove(id)}
                   disabled={isPending && pendingId === id}
-                  className="p-0.5 rounded hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                  className="p-0.5 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-50 theme-text-muted"
                 >
                   {isPending && pendingId === id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Role list component with selection support.
- * Client Component - handles click interactions and navigation.
- */
-
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
@@ -22,18 +17,18 @@ export function RoleList({ items, selectedId }: RoleListProps) {
   const baseUrl = '/security/roles';
 
   const handleCreate = () => {
-    router.push(`${baseUrl}?selected=__new__`);
+    router.push(`${baseUrl}?action=create`);
   };
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{t('roles.title')}</h2>
+      <div className="p-4 border-b theme-border-panel flex items-center justify-between">
+        <h2 className="text-lg font-semibold theme-text-primary">{t('roles.title')}</h2>
         <button
           onClick={handleCreate}
-          className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
-          title={t('common.create')}
+          className="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+          title={t('roles.createRole')}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -42,9 +37,9 @@ export function RoleList({ items, selectedId }: RoleListProps) {
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">{t('roles.noRolesFound')}</div>
+          <div className="p-4 text-center theme-text-muted">{t('roles.noRolesFound')}</div>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="theme-divide">
             {items.map((role) => {
               const id = role.role_code;
               const isSelected = id === selectedId;
@@ -54,14 +49,14 @@ export function RoleList({ items, selectedId }: RoleListProps) {
                     href={`${baseUrl}?selected=${encodeURIComponent(id)}`}
                     className={`block px-4 py-3 transition-colors ${
                       isSelected
-                        ? 'bg-blue-500/20 border-l-2 border-blue-500'
-                        : 'hover:bg-white/5 border-l-2 border-transparent'
+                        ? 'theme-list-selected border-l-2 border-blue-500'
+                        : 'theme-list-hover border-l-2 border-transparent'
                     }`}
                   >
-                    <div className={`font-medium ${isSelected ? 'text-blue-400' : 'text-white'}`}>
+                    <div className={`font-medium ${isSelected ? 'text-blue-500' : 'theme-text-primary'}`}>
                       {role.name}
                     </div>
-                    <div className="text-sm text-gray-500 truncate">
+                    <div className="text-sm theme-text-muted truncate">
                       {role.role_code}
                     </div>
                   </Link>
@@ -71,6 +66,6 @@ export function RoleList({ items, selectedId }: RoleListProps) {
           </ul>
         )}
       </div>
-    </>
+    </div>
   );
 }
