@@ -230,17 +230,6 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  className="w-4 h-4 theme-checkbox rounded focus:ring-blue-500 focus:ring-offset-0"
-                />
-                <span className="ml-2 text-sm theme-text-muted">Remember me for 14 days</span>
-              </label>
-            </div>
-
             <button
               type="submit"
               disabled={isLoading}
