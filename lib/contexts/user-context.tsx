@@ -170,6 +170,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (response.status === 401) {
           console.log('[UserContext:fetchUser] 401 Unauthorized - setting user to null')
           setUser(null)
+          
+          // If this is an SSO user (has sso_user cookie), redirect to login with error
+          // This handles the case where Taihu authentication succeeded but user doesn't exist in backend
+          if (hasCookie(COOKIES.SSO_USER)) {
+            console.log('[UserContext:fetchUser] SSO user detected with 401 - redirecting to login with error')
+            // Clear SSO cookie to prevent redirect loop
+            deleteCookie(COOKIES.SSO_USER)
+            const errorMessage = encodeURIComponent('User not found. Please contact your administrator to request access.')
+            window.location.href = `/login?error=${errorMessage}`
+          }
           return
         }
         const errorText = await response.text()

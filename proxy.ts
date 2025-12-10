@@ -276,7 +276,22 @@ export async function middleware(request: NextRequest) {
             }
           }
         } else {
+          // Handle user not found / unauthorized cases from backend
           console.error(`[Middleware:${requestId}] JWT token fetch failed: ${authResponse.status}`)
+          const errorText = await authResponse.text().catch(() => '')
+          console.error(`[Middleware:${requestId}] JWT token fetch error body: ${errorText.substring(0, 200)}`)
+          
+          // Map HTTP status to user-friendly error message
+          let errorMessage = 'Authentication failed. Please try again or contact your administrator.'
+          if (authResponse.status === 404) {
+            errorMessage = 'User not found. Please contact your administrator to request access.'
+          } else if (authResponse.status === 401 || authResponse.status === 403) {
+            errorMessage = 'You are not authorized to access this application. Please contact your administrator.'
+          }
+          
+          const loginUrl = new URL('/login', request.url)
+          loginUrl.searchParams.set('error', errorMessage)
+          return NextResponse.redirect(loginUrl)
         }
       }
     } catch (error) {
