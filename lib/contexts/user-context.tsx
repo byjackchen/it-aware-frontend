@@ -90,7 +90,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const getInitialUserData = useCallback((): User | null => {
     console.log('[UserContext:getInitialUserData] Checking for pre-fetched user data cookie')
     const cookieValue = getCookie(COOKIES.USER_DATA)
-    
+
     if (!cookieValue) {
       console.log('[UserContext:getInitialUserData] No user data cookie found')
       return null
@@ -109,7 +109,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Fallback to old URL decoding format
         jsonString = decodeURIComponent(cookieValue)
       }
-      
+
       const userData = JSON.parse(jsonString) as User
       console.log(`[UserContext:getInitialUserData] Parsed user data: username=${userData.username}`)
       deleteCookie(COOKIES.USER_DATA) // One-time use
@@ -157,7 +157,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       const startTime = Date.now()
       console.log('[UserContext:fetchUser] Making API request to /api/auth/me')
-      
+
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
@@ -172,7 +172,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (response.status === 401) {
           console.log('[UserContext:fetchUser] 401 Unauthorized - setting user to null')
           setUser(null)
-          
+
           // If this is an SSO user (has sso_user cookie), redirect to login with error
           // This handles the case where Taihu authentication succeeded but user doesn't exist in backend
           if (hasCookie(COOKIES.SSO_USER)) {
@@ -211,20 +211,67 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // --- Permission Helpers ---
 
+  /**
+   * Check if a user permission matches a required permission.
+   * Supports wildcards (*) at any segment level.
+   * Examples:
+   * - User has "ui:*" -> matches "ui:navigation:auth"
+   * - User has "*" -> matches anything
+   * - User has "data:read:*" -> matches "data:read:organizations"
+   */
+  const permissionMatches = useCallback(
+    (userPermission: string, requiredPermission: string): boolean => {
+      // Exact match
+      if (userPermission === requiredPermission) return true;
+
+      // Full wildcard matches everything
+      if (userPermission === '*') return true;
+
+      // Check wildcard patterns (e.g., "ui:*" matches "ui:navigation:auth")
+      if (userPermission.includes('*')) {
+        // Convert permission pattern to regex
+        // Replace * with regex pattern that matches one or more segments
+        const pattern = userPermission
+          .split(':')
+          .map(segment => segment === '*' ? '.*' : segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join(':');
+
+        const regex = new RegExp(`^${pattern}$`);
+        return regex.test(requiredPermission);
+      }
+
+      return false;
+    },
+    []
+  );
+
   const hasPermission = useCallback(
-    (permission: string) => Array.isArray(user?.permissions) && user.permissions.includes(permission),
-    [user]
-  )
+    (permission: string) => {
+      if (!Array.isArray(user?.permissions)) return false;
+      return user.permissions.some(p => permissionMatches(p, permission));
+    },
+    [user, permissionMatches]
+  );
 
   const hasAnyPermission = useCallback(
-    (permissions: string[]) => Array.isArray(user?.permissions) && permissions.some(p => user.permissions.includes(p)),
-    [user]
-  )
+    (permissions: string[]) => {
+      if (!Array.isArray(user?.permissions)) return false;
+      return permissions.some(required =>
+        user.permissions.some(userPerm => permissionMatches(userPerm, required))
+      );
+    },
+    [user, permissionMatches]
+  );
 
   const hasAllPermissions = useCallback(
-    (permissions: string[]) => Array.isArray(user?.permissions) && permissions.every(p => user.permissions.includes(p)),
-    [user]
-  )
+    (permissions: string[]) => {
+      if (!Array.isArray(user?.permissions)) return false;
+      return permissions.every(required =>
+        user.permissions.some(userPerm => permissionMatches(userPerm, required))
+      );
+    },
+    [user, permissionMatches]
+  );
 
   const hasGroup = useCallback(
     (groupName: string) => user?.groups?.some(g => g.name === groupName) ?? false,

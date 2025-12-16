@@ -14,6 +14,8 @@
         "groups": "分组",
         "roles": "角色",
         "permissions": "权限",
+        "hierarchies": "层级结构",
+        "objects": "对象",
         "organizations": "组织",
         "locations": "地点",
         "workers": "员工",
