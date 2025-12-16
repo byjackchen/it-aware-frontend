@@ -214,33 +214,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   /**
    * Check if a user permission matches a required permission.
    * Supports wildcards (*) at any segment level.
+   * IMPORTANT: Both permissions must have the same number of segments.
    * Examples:
-   * - User has "ui:*" -> matches "ui:navigation:auth"
-   * - User has "*" -> matches anything
-   * - User has "data:read:*" -> matches "data:read:organizations"
+   * - User has "*:*:*" -> matches "ui:navigation:auth"
+   * - User has "ui:*:*" -> matches "ui:navigation:auth"
+   * - User has "ui:navigation:*" -> matches "ui:navigation:auth"
+   * - User has "ui:*" -> does NOT match "ui:navigation:auth" (different segment count)
    */
   const permissionMatches = useCallback(
     (userPermission: string, requiredPermission: string): boolean => {
       // Exact match
       if (userPermission === requiredPermission) return true;
 
-      // Full wildcard matches everything
-      if (userPermission === '*') return true;
+      const userSegments = userPermission.split(':');
+      const requiredSegments = requiredPermission.split(':');
 
-      // Check wildcard patterns (e.g., "ui:*" matches "ui:navigation:auth")
-      if (userPermission.includes('*')) {
-        // Convert permission pattern to regex
-        // Replace * with regex pattern that matches one or more segments
-        const pattern = userPermission
-          .split(':')
-          .map(segment => segment === '*' ? '.*' : segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-          .join(':');
+      // Must have same number of segments
+      if (userSegments.length !== requiredSegments.length) return false;
 
-        const regex = new RegExp(`^${pattern}$`);
-        return regex.test(requiredPermission);
-      }
-
-      return false;
+      // Check each segment - * matches any value at that position
+      return userSegments.every((userSeg, index) => {
+        if (userSeg === '*') return true;
+        return userSeg === requiredSegments[index];
+      });
     },
     []
   );
