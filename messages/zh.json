@@ -141,7 +141,7 @@
             "levelsDeep": "{count} 层深",
             "levelsDeepPlural": "{count} 层深",
             "noRelationships": "未找到关系",
-            "graphRelationships": "图关系",
+            "edgeRelationships": "图关系",
             "roleAssignments": "角色分配",
             "filter": "筛选",
             "all": "全部",

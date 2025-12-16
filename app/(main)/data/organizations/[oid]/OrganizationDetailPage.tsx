@@ -257,7 +257,7 @@ export function OrganizationDetailPage({
           ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}
         `}>
                     <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                        {t('common.graphRelationships')}
+                        {t('common.edgeRelationships')}
                     </h2>
                     <ObjectGraph
                         oid={organization.oid}

@@ -1,6 +1,6 @@
 /**
  * Type definitions for Objects module (organizations, locations, workers, tickets).
- * Also includes edges and registry types for graph relationships.
+ * Also includes edges and registry types for Edge Relationships.
  */
 
 // ============================================================================

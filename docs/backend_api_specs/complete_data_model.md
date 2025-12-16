@@ -37,7 +37,7 @@ The IT-Aware Backend uses a PostgreSQL database organized into **four schemas**:
                          ▼               ▼                ▼
                     ┌─────────────────────────────────────────────┐
                     │             edges.global_edges              │
-                    │   (Graph relationships between any objects) │
+                    │   (Edge Relationships between any objects) │
                     └─────────────────────────────────────────────┘
 
                     ┌─────────────────────────────────────────────┐

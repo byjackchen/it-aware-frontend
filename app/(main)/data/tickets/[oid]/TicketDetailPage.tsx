@@ -182,7 +182,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
 
                 {/* Graph */}
                 <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('common.graphRelationships')}</h2>
+                    <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('common.edgeRelationships')}</h2>
                     <ObjectGraph
                         oid={ticket.oid}
                         objectType="ticket"
