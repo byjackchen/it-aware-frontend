@@ -139,7 +139,7 @@
             "levelsDeep": "{count} level deep",
             "levelsDeepPlural": "{count} levels deep",
             "noRelationships": "No relationships found",
-            "edgeRelationships": "Edge Relationships",
+            "graphRelationships": "Graph Relationships",
             "roleAssignments": "Role Assignments",
             "filter": "Filter",
             "all": "All",
