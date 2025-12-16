@@ -1,42 +1,48 @@
 /**
- * Server-side API client for Security module (RBAC configuration).
+ * Server-side API client for Security module (ABAC configuration).
  * Uses cookies from next/headers for session authentication.
  */
 
 import { cookies } from 'next/headers';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import type {
-  Permission,
+  Account,
+  AccountCreate,
+  AccountUpdate,
+  Group,
+  GroupCreate,
+  GroupUpdate,
   Role,
-  User,
-  RolePermissionAssignment,
-  UserRoleAssignment,
-  CreatePermissionInput,
-  UpdatePermissionInput,
-  CreateRoleInput,
-  UpdateRoleInput,
-  CreateUserInput,
-  UpdateUserInput,
+  RoleCreate,
+  RoleUpdate,
+  Permission,
+  PermissionCreate,
+  Worker,
+  AccountWorker,
+  AccountGroup,
+  GroupPermission,
+  GroupRole,
 } from '@/lib/types/security';
 
-const BASE_URL = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
+const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
+const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
 
 // ============================================================================
 // Core API Fetch Function
 // ============================================================================
 
-async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
+async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       Cookie: cookieHeader,
       ...options?.headers,
     },
-    cache: 'no-store', // Disable caching for fresh data
+    cache: 'no-store',
   });
 
   if (!res.ok) {
@@ -44,7 +50,6 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(error.detail || `API Error: ${res.status}`);
   }
 
-  // Handle 204 No Content responses
   if (res.status === 204) {
     return null as T;
   }
@@ -53,33 +58,69 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ============================================================================
-// Permission APIs
+// Account APIs
 // ============================================================================
 
-export async function getPermissions(): Promise<Permission[]> {
-  return fetchApi<Permission[]>('/permissions?limit=1000');
+export async function getAccounts(isSystem?: boolean): Promise<Account[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (isSystem !== undefined) {
+    params.set('is_system', String(isSystem));
+  }
+  return fetchApi<Account[]>(`${AUTH_CONFIG_BASE}/accounts?${params.toString()}`);
 }
 
-export async function getPermission(code: string): Promise<Permission> {
-  return fetchApi<Permission>(`/permissions/${encodeURIComponent(code)}`);
+export async function getAccount(oid: string): Promise<Account> {
+  return fetchApi<Account>(`${AUTH_CONFIG_BASE}/accounts/${encodeURIComponent(oid)}`);
 }
 
-export async function createPermission(data: CreatePermissionInput): Promise<Permission> {
-  return fetchApi<Permission>('/permissions', {
+export async function createAccount(data: AccountCreate): Promise<Account> {
+  return fetchApi<Account>(`${AUTH_CONFIG_BASE}/accounts`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function updatePermission(code: string, data: UpdatePermissionInput): Promise<Permission> {
-  return fetchApi<Permission>(`/permissions/${encodeURIComponent(code)}`, {
+export async function updateAccount(oid: string, data: AccountUpdate): Promise<Account> {
+  return fetchApi<Account>(`${AUTH_CONFIG_BASE}/accounts/${encodeURIComponent(oid)}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 }
 
-export async function deletePermission(code: string): Promise<void> {
-  return fetchApi<void>(`/permissions/${encodeURIComponent(code)}`, {
+export async function deleteAccount(oid: string): Promise<void> {
+  return fetchApi<void>(`${AUTH_CONFIG_BASE}/accounts/${encodeURIComponent(oid)}`, {
+    method: 'DELETE',
+  });
+}
+
+// ============================================================================
+// Group APIs
+// ============================================================================
+
+export async function getGroups(): Promise<Group[]> {
+  return fetchApi<Group[]>(`${AUTH_CONFIG_BASE}/groups?limit=1000`);
+}
+
+export async function getGroup(oid: string): Promise<Group> {
+  return fetchApi<Group>(`${AUTH_CONFIG_BASE}/groups/${encodeURIComponent(oid)}`);
+}
+
+export async function createGroup(data: GroupCreate): Promise<Group> {
+  return fetchApi<Group>(`${AUTH_CONFIG_BASE}/groups`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateGroup(oid: string, data: GroupUpdate): Promise<Group> {
+  return fetchApi<Group>(`${AUTH_CONFIG_BASE}/groups/${encodeURIComponent(oid)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteGroup(oid: string): Promise<void> {
+  return fetchApi<void>(`${AUTH_CONFIG_BASE}/groups/${encodeURIComponent(oid)}`, {
     method: 'DELETE',
   });
 }
@@ -89,120 +130,173 @@ export async function deletePermission(code: string): Promise<void> {
 // ============================================================================
 
 export async function getRoles(): Promise<Role[]> {
-  return fetchApi<Role[]>('/roles?limit=1000');
+  return fetchApi<Role[]>(`${AUTH_CONFIG_BASE}/roles?limit=1000`);
 }
 
-export async function getRole(code: string): Promise<Role> {
-  return fetchApi<Role>(`/roles/${encodeURIComponent(code)}`);
+export async function getRole(oid: string): Promise<Role> {
+  return fetchApi<Role>(`${AUTH_CONFIG_BASE}/roles/${encodeURIComponent(oid)}`);
 }
 
-export async function createRole(data: CreateRoleInput): Promise<Role> {
-  return fetchApi<Role>('/roles', {
+export async function createRole(data: RoleCreate): Promise<Role> {
+  return fetchApi<Role>(`${AUTH_CONFIG_BASE}/roles`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function updateRole(code: string, data: UpdateRoleInput): Promise<Role> {
-  return fetchApi<Role>(`/roles/${encodeURIComponent(code)}`, {
+export async function updateRole(oid: string, data: RoleUpdate): Promise<Role> {
+  return fetchApi<Role>(`${AUTH_CONFIG_BASE}/roles/${encodeURIComponent(oid)}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteRole(code: string): Promise<void> {
-  return fetchApi<void>(`/roles/${encodeURIComponent(code)}`, {
+export async function deleteRole(oid: string): Promise<void> {
+  return fetchApi<void>(`${AUTH_CONFIG_BASE}/roles/${encodeURIComponent(oid)}`, {
     method: 'DELETE',
   });
 }
 
 // ============================================================================
-// User APIs
+// Permission APIs
 // ============================================================================
 
-export async function getUsers(isSystemUser?: boolean): Promise<User[]> {
-  const params = new URLSearchParams({ limit: '1000' });
-  if (isSystemUser !== undefined) {
-    params.set('is_system_user', String(isSystemUser));
-  }
-  return fetchApi<User[]>(`/users?${params.toString()}`);
+export async function getPermissions(): Promise<Permission[]> {
+  return fetchApi<Permission[]>(`${AUTH_CONFIG_BASE}/permissions?limit=1000`);
 }
 
-export async function getUser(username: string): Promise<User> {
-  return fetchApi<User>(`/users/${encodeURIComponent(username)}`);
+export async function getPermission(oid: string): Promise<Permission> {
+  return fetchApi<Permission>(`${AUTH_CONFIG_BASE}/permissions/${encodeURIComponent(oid)}`);
 }
 
-export async function createUser(data: CreateUserInput): Promise<User> {
-  return fetchApi<User>('/users', {
+export async function createPermission(data: PermissionCreate): Promise<Permission> {
+  return fetchApi<Permission>(`${AUTH_CONFIG_BASE}/permissions`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function updateUser(username: string, data: UpdateUserInput): Promise<User> {
-  return fetchApi<User>(`/users/${encodeURIComponent(username)}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-}
-
-export async function deleteUser(username: string): Promise<void> {
-  return fetchApi<void>(`/users/${encodeURIComponent(username)}`, {
+export async function deletePermission(oid: string): Promise<void> {
+  return fetchApi<void>(`${AUTH_CONFIG_BASE}/permissions/${encodeURIComponent(oid)}`, {
     method: 'DELETE',
   });
 }
 
 // ============================================================================
-// Role-Permission Assignment APIs
+// Account-Worker Link APIs
 // ============================================================================
 
-export async function getRolePermissions(roleCode?: string): Promise<RolePermissionAssignment[]> {
+export async function getAccountWorkers(accountOid?: string): Promise<AccountWorker[]> {
   const params = new URLSearchParams({ limit: '1000' });
-  if (roleCode) {
-    params.set('role_code', roleCode);
+  if (accountOid) {
+    params.set('account_oid', accountOid);
   }
-  return fetchApi<RolePermissionAssignment[]>(`/role-permissions?${params.toString()}`);
+  return fetchApi<AccountWorker[]>(`${AUTH_CONFIG_BASE}/account_workers?${params.toString()}`);
 }
 
-export async function assignPermissionToRole(
-  roleCode: string,
-  permissionCode: string
-): Promise<RolePermissionAssignment> {
-  return fetchApi<RolePermissionAssignment>('/role-permissions', {
+export async function linkAccountWorker(accountOid: string, workerOid: string): Promise<AccountWorker> {
+  return fetchApi<AccountWorker>(`${AUTH_CONFIG_BASE}/account_workers`, {
     method: 'POST',
-    body: JSON.stringify({ role_code: roleCode, permission_code: permissionCode }),
+    body: JSON.stringify({ account_oid: accountOid, worker_oid: workerOid }),
   });
 }
 
-export async function removePermissionFromRole(roleCode: string, permissionCode: string): Promise<void> {
+export async function unlinkAccountWorker(accountOid: string): Promise<void> {
+  return fetchApi<void>(`${AUTH_CONFIG_BASE}/account_workers/${encodeURIComponent(accountOid)}`, {
+    method: 'DELETE',
+  });
+}
+
+// ============================================================================
+// Account-Group Assignment APIs
+// ============================================================================
+
+export async function getAccountGroups(accountOid?: string): Promise<AccountGroup[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (accountOid) {
+    params.set('account_oid', accountOid);
+  }
+  return fetchApi<AccountGroup[]>(`${AUTH_CONFIG_BASE}/account_groups?${params.toString()}`);
+}
+
+export async function assignAccountGroup(accountOid: string, groupOid: string): Promise<AccountGroup> {
+  return fetchApi<AccountGroup>(`${AUTH_CONFIG_BASE}/account_groups`, {
+    method: 'POST',
+    body: JSON.stringify({ account_oid: accountOid, group_oid: groupOid }),
+  });
+}
+
+export async function removeAccountGroup(accountOid: string, groupOid: string): Promise<void> {
   return fetchApi<void>(
-    `/role-permissions/${encodeURIComponent(roleCode)}/${encodeURIComponent(permissionCode)}`,
+    `${AUTH_CONFIG_BASE}/account_groups/${encodeURIComponent(accountOid)}/${encodeURIComponent(groupOid)}`,
     { method: 'DELETE' }
   );
 }
 
 // ============================================================================
-// User-Role Assignment APIs
+// Group-Permission Assignment APIs
 // ============================================================================
 
-export async function getUserRoles(username?: string): Promise<UserRoleAssignment[]> {
+export async function getGroupPermissions(groupOid?: string): Promise<GroupPermission[]> {
   const params = new URLSearchParams({ limit: '1000' });
-  if (username) {
-    params.set('username', username);
+  if (groupOid) {
+    params.set('group_oid', groupOid);
   }
-  return fetchApi<UserRoleAssignment[]>(`/user-roles?${params.toString()}`);
+  return fetchApi<GroupPermission[]>(`${AUTH_CONFIG_BASE}/group_permissions?${params.toString()}`);
 }
 
-export async function assignRoleToUser(username: string, roleCode: string): Promise<UserRoleAssignment> {
-  return fetchApi<UserRoleAssignment>('/user-roles', {
+export async function assignGroupPermission(groupOid: string, permissionOid: string): Promise<GroupPermission> {
+  return fetchApi<GroupPermission>(`${AUTH_CONFIG_BASE}/group_permissions`, {
     method: 'POST',
-    body: JSON.stringify({ username, role_code: roleCode }),
+    body: JSON.stringify({ group_oid: groupOid, permission_oid: permissionOid }),
   });
 }
 
-export async function removeRoleFromUser(username: string, roleCode: string): Promise<void> {
+export async function removeGroupPermission(groupOid: string, permissionOid: string): Promise<void> {
   return fetchApi<void>(
-    `/user-roles/${encodeURIComponent(username)}/${encodeURIComponent(roleCode)}`,
+    `${AUTH_CONFIG_BASE}/group_permissions/${encodeURIComponent(groupOid)}/${encodeURIComponent(permissionOid)}`,
     { method: 'DELETE' }
   );
+}
+
+// ============================================================================
+// Group-Role Link APIs
+// ============================================================================
+
+export async function getGroupRoles(groupOid?: string): Promise<GroupRole[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (groupOid) {
+    params.set('group_oid', groupOid);
+  }
+  return fetchApi<GroupRole[]>(`${AUTH_CONFIG_BASE}/group_roles?${params.toString()}`);
+}
+
+export async function linkGroupRole(groupOid: string, roleOid: string): Promise<GroupRole> {
+  return fetchApi<GroupRole>(`${AUTH_CONFIG_BASE}/group_roles`, {
+    method: 'POST',
+    body: JSON.stringify({ group_oid: groupOid, role_oid: roleOid }),
+  });
+}
+
+export async function unlinkGroupRole(groupOid: string, roleOid: string): Promise<void> {
+  return fetchApi<void>(
+    `${AUTH_CONFIG_BASE}/group_roles/${encodeURIComponent(groupOid)}/${encodeURIComponent(roleOid)}`,
+    { method: 'DELETE' }
+  );
+}
+
+// ============================================================================
+// Worker APIs (Read-Only, from Objects domain)
+// ============================================================================
+
+export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (isActive !== undefined) {
+    params.set('is_active', String(isActive));
+  }
+  return fetchApi<Worker[]>(`${OBJECTS_BASE}/workers?${params.toString()}`);
+}
+
+export async function getWorker(oid: string): Promise<Worker> {
+  return fetchApi<Worker>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`);
 }

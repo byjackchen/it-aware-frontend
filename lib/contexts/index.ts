@@ -3,5 +3,5 @@ export {
   useUser, 
   usePermissions,
   type User,
-  type UserRole,
+  type UserGroup,
 } from './user-context'

@@ -4,19 +4,21 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 
 // --- Types ---
 
-export interface UserRole {
-  role_code: string
+export interface UserGroup {
+  oid: string
   name: string
-  description: string
+  scope_type: string
 }
 
 export interface User {
+  oid: string
   username: string
   email: string
   full_name: string
   is_active: boolean
+  is_system_user: boolean
   created_at: string
-  roles: UserRole[]
+  groups: UserGroup[]
   permissions: string[]
 }
 
@@ -29,7 +31,7 @@ interface UserContextType {
   hasPermission: (permission: string) => boolean
   hasAnyPermission: (permissions: string[]) => boolean
   hasAllPermissions: (permissions: string[]) => boolean
-  hasRole: (roleCode: string) => boolean
+  hasGroup: (groupName: string) => boolean
 }
 
 // --- Constants ---
@@ -210,22 +212,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // --- Permission Helpers ---
 
   const hasPermission = useCallback(
-    (permission: string) => user?.permissions?.includes(permission) ?? false,
+    (permission: string) => Array.isArray(user?.permissions) && user.permissions.includes(permission),
     [user]
   )
 
   const hasAnyPermission = useCallback(
-    (permissions: string[]) => permissions.some(p => user?.permissions?.includes(p)),
+    (permissions: string[]) => Array.isArray(user?.permissions) && permissions.some(p => user.permissions.includes(p)),
     [user]
   )
 
   const hasAllPermissions = useCallback(
-    (permissions: string[]) => permissions.every(p => user?.permissions?.includes(p)),
+    (permissions: string[]) => Array.isArray(user?.permissions) && permissions.every(p => user.permissions.includes(p)),
     [user]
   )
 
-  const hasRole = useCallback(
-    (roleCode: string) => user?.roles?.some(r => r.role_code === roleCode) ?? false,
+  const hasGroup = useCallback(
+    (groupName: string) => user?.groups?.some(g => g.name === groupName) ?? false,
     [user]
   )
 
@@ -252,9 +254,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       hasPermission,
       hasAnyPermission,
       hasAllPermissions,
-      hasRole,
+      hasGroup,
     }),
-    [user, isLoading, error, fetchUser, clearUser, hasPermission, hasAnyPermission, hasAllPermissions, hasRole]
+    [user, isLoading, error, fetchUser, clearUser, hasPermission, hasAnyPermission, hasAllPermissions, hasGroup]
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>
@@ -271,13 +273,13 @@ export function useUser() {
 }
 
 export function usePermissions() {
-  const { hasPermission, hasAnyPermission, hasAllPermissions, hasRole, user } = useUser()
+  const { hasPermission, hasAnyPermission, hasAllPermissions, hasGroup, user } = useUser()
   return {
     permissions: user?.permissions ?? [],
-    roles: user?.roles ?? [],
+    groups: user?.groups ?? [],
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
-    hasRole,
+    hasGroup,
   }
 }

@@ -1,52 +1,38 @@
 'use client';
 
 /**
- * Generic entity list component with selection support.
- * Client Component - handles click interactions and navigation.
+ * Generic entity list component with selection callback for drawer opening.
+ * Client Component - handles click interactions.
  */
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
 interface EntityListProps<T> {
   items: T[];
-  selectedId?: string;
-  baseUrl: string;
   getId: (item: T) => string;
   getLabel: (item: T) => string;
   getSubLabel?: (item: T) => string;
   title: string;
-  onCreateClick?: () => void;
+  onSelectItem: (item: T) => void;
+  onCreateClick: () => void;
 }
 
 export function EntityList<T>({
   items,
-  selectedId,
-  baseUrl,
   getId,
   getLabel,
   getSubLabel,
   title,
+  onSelectItem,
   onCreateClick,
 }: EntityListProps<T>) {
-  const router = useRouter();
-
-  const handleCreate = () => {
-    if (onCreateClick) {
-      onCreateClick();
-    } else {
-      router.push(`${baseUrl}?selected=__new__`);
-    }
-  };
-
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">{title}</h2>
         <button
-          onClick={handleCreate}
+          onClick={onCreateClick}
           className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
           title="Create new"
         >
@@ -62,30 +48,25 @@ export function EntityList<T>({
           <ul className="divide-y divide-white/5">
             {items.map((item) => {
               const id = getId(item);
-              const isSelected = id === selectedId;
               return (
                 <li key={id}>
-                  <Link
-                    href={`${baseUrl}?selected=${encodeURIComponent(id)}`}
-                    className={`block px-4 py-3 transition-colors ${
-                      isSelected
-                        ? 'bg-blue-500/20 border-l-2 border-blue-500'
-                        : 'hover:bg-white/5 border-l-2 border-transparent'
-                    }`}
+                  <button
+                    onClick={() => onSelectItem(item)}
+                    className="w-full text-left block px-4 py-3 transition-colors hover:bg-white/5 border-l-2 border-transparent"
                   >
-                    <div className={`font-medium ${isSelected ? 'text-blue-400' : 'text-white'}`}>
+                    <div className="font-medium text-white">
                       {getLabel(item)}
                     </div>
                     {getSubLabel && (
                       <div className="text-sm text-gray-500 truncate">{getSubLabel(item)}</div>
                     )}
-                  </Link>
+                  </button>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
-    </>
+    </div>
   );
 }

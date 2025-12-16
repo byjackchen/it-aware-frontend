@@ -1,93 +1,121 @@
 /**
- * Security module type definitions for RBAC management.
+ * Security module type definitions for ABAC (Attribute-Based Access Control).
  */
 
 // ============================================================================
 // Core Entities
 // ============================================================================
 
-export interface Permission {
-  permission_code: string; // e.g., "inventory:items:read"
-  domain: string;
-  resource: string;
-  action: string;
-  description: string;
+export interface Account {
+  oid: string;
+  username: string;
+  is_active: boolean;
+  is_system: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Group {
+  oid: string;
+  name: string;
+  scope_type: 'unconstrained' | 'self_scoped' | 'role_based';
 }
 
 export interface Role {
-  role_code: string;
+  oid: string;
   name: string;
-  description: string;
+  include_desc: boolean;
 }
 
-export interface User {
-  username: string;
+export interface Permission {
+  oid: string;
+  domain: string;
+  resource: string;
+  action: string;
+  permission_code: string; // Computed: {domain}:{resource}:{action}
+}
+
+// Worker is from objects domain, read-only on account page
+export interface Worker {
+  oid: string;
+  worker_id: string | null;
+  full_name: string;
   email: string | null;
-  full_name: string | null;
+  org_oid: string;
+  manager_oid: string | null;
   is_active: boolean;
-  is_system_user: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// ============================================================================
-// Assignment Entities
-// ============================================================================
-
-export interface RolePermissionAssignment {
-  role_code: string;
-  permission_code: string;
-  granted_at: string;
-  granted_by: string;
-}
-
-export interface UserRoleAssignment {
-  username: string;
-  role_code: string;
-  assigned_at: string;
-  assigned_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================================================
 // Input Types (for create/update operations)
 // ============================================================================
 
-export interface CreatePermissionInput {
+export interface AccountCreate {
+  username: string;
+  is_active?: boolean;
+  is_system?: boolean;
+  password?: string; // Required for system accounts
+}
+
+export interface AccountUpdate {
+  is_active?: boolean;
+  password?: string;
+}
+
+export interface GroupCreate {
+  name: string;
+  scope_type: 'unconstrained' | 'self_scoped' | 'role_based';
+}
+
+export interface GroupUpdate {
+  name?: string;
+  scope_type?: 'unconstrained' | 'self_scoped' | 'role_based';
+}
+
+export interface RoleCreate {
+  name: string;
+  include_desc?: boolean;
+}
+
+export interface RoleUpdate {
+  name?: string;
+  include_desc?: boolean;
+}
+
+export interface PermissionCreate {
   domain: string;
   resource: string;
   action: string;
-  description: string;
 }
 
-export interface UpdatePermissionInput {
-  description: string;
+// ============================================================================
+// Relationship Types
+// ============================================================================
+
+export interface AccountWorker {
+  account_oid: string;
+  worker_oid: string;
+  linked_at: string;
 }
 
-export interface CreateRoleInput {
-  role_code: string;
-  name: string;
-  description: string;
+export interface AccountGroup {
+  account_oid: string;
+  group_oid: string;
+  assigned_at: string;
 }
 
-export interface UpdateRoleInput {
-  name?: string;
-  description?: string;
+export interface GroupPermission {
+  group_oid: string;
+  permission_oid: string;
+  assigned_at: string;
 }
 
-export interface CreateUserInput {
-  username: string;
-  email?: string;
-  full_name?: string;
-  is_active?: boolean;
-  is_system_user?: boolean;
-  password?: string; // Required if is_system_user is true
-}
-
-export interface UpdateUserInput {
-  email?: string;
-  full_name?: string;
-  is_active?: boolean;
-  password?: string;
+export interface GroupRole {
+  group_oid: string;
+  role_oid: string;
+  linked_at: string;
 }
 
 // ============================================================================
@@ -97,3 +125,15 @@ export interface UpdateUserInput {
 export interface ApiError {
   detail: string;
 }
+
+// ============================================================================
+// Scope Type Options (for forms)
+// ============================================================================
+
+export const SCOPE_TYPES = [
+  { value: 'unconstrained', label: 'Unconstrained' },
+  { value: 'self_scoped', label: 'Self Scoped' },
+  { value: 'role_based', label: 'Role Based' },
+] as const;
+
+export type ScopeType = 'unconstrained' | 'self_scoped' | 'role_based';

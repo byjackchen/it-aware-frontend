@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { 
+import {
     Shield,
     Lock,
     User,
@@ -23,51 +23,59 @@ import { type MenuItem, type SubMenuConfig, requireAnyPermission } from '@/lib/t
  */
 const subMenuItems: SubMenuConfig = {
     '/security': [
-        { 
-            href: '/security/users', 
-            labelKey: 'users', 
+        {
+            href: '/security/permissions',
+            labelKey: 'permissions',
+            icon: Lock,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
+        {
+            href: '/security/accounts',
+            labelKey: 'accounts',
+            icon: User,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
+        {
+            href: '/security/groups',
+            labelKey: 'groups',
             icon: Users,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
             ]),
         },
-        { 
-            href: '/security/roles', 
-            labelKey: 'roles', 
+        {
+            href: '/security/roles',
+            labelKey: 'roles',
             icon: Shield,
-            permissions: requireAnyPermission([
-                PERMISSIONS.UI.NAVIGATION_SECURITY
-            ]),
-        },
-        { 
-            href: '/security/permissions', 
-            labelKey: 'permissions', 
-            icon: Lock,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
             ]),
         },
     ],
     '/persona': [
-        { 
-            href: '/persona/profile', 
-            labelKey: 'profile', 
+        {
+            href: '/persona/profile',
+            labelKey: 'profile',
             icon: User,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_PERSONA
             ]),
         },
-        { 
-            href: '/persona/team', 
-            labelKey: 'team', 
+        {
+            href: '/persona/team',
+            labelKey: 'team',
             icon: Users,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_PERSONA
             ]),
         },
-        { 
-            href: '/persona/settings', 
-            labelKey: 'settings', 
+        {
+            href: '/persona/settings',
+            labelKey: 'settings',
             icon: Settings,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_PERSONA
@@ -75,17 +83,17 @@ const subMenuItems: SubMenuConfig = {
         },
     ],
     '/knowledge': [
-        { 
-            href: '/knowledge/articles', 
-            labelKey: 'articles', 
+        {
+            href: '/knowledge/articles',
+            labelKey: 'articles',
             icon: FileText,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
             ]),
         },
-        { 
-            href: '/knowledge/faqs', 
-            labelKey: 'faqs', 
+        {
+            href: '/knowledge/faqs',
+            labelKey: 'faqs',
             icon: HelpCircle,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
@@ -102,12 +110,12 @@ export function Sidebar() {
     const isLight = theme === 'light';
 
     // Determine which main section is active
-    const activeSection = Object.keys(subMenuItems).find(section => 
+    const activeSection = Object.keys(subMenuItems).find(section =>
         pathname.startsWith(section)
     );
 
     // Get sub-menu items for active section and filter by permissions
-    const currentSubMenu = activeSection 
+    const currentSubMenu = activeSection
         ? subMenuItems[activeSection].filter(item => checkMenuAccess(item.permissions))
         : [];
 
@@ -126,13 +134,12 @@ export function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 focus:outline-none ${
-                                isActive
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 focus:outline-none ${isActive
                                     ? 'nav-active text-blue-500'
                                     : isLight
                                         ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                            }`}
+                                }`}
                         >
                             <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : isLight ? 'text-slate-500' : 'text-gray-500'}`} />
                             <span className="text-sm font-medium">{item.labelKey ? t(item.labelKey) : item.label}</span>

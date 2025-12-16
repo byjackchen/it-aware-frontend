@@ -1,20 +1,20 @@
 'use server';
 
 /**
- * Server Actions for Security module CRUD operations.
+ * Server Actions for Security module ABAC operations.
  * These actions handle form submissions and call the API client.
  */
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import * as api from '@/lib/api/security';
 import type {
-  CreatePermissionInput,
-  UpdatePermissionInput,
-  CreateRoleInput,
-  UpdateRoleInput,
-  CreateUserInput,
-  UpdateUserInput,
+  AccountCreate,
+  AccountUpdate,
+  GroupCreate,
+  GroupUpdate,
+  RoleCreate,
+  RoleUpdate,
+  PermissionCreate,
 } from '@/lib/types/security';
 
 // Generate a short request ID for log correlation
@@ -29,75 +29,45 @@ function generateRequestId(): string {
 export async function createPermission(formData: FormData) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const data: CreatePermissionInput = {
+
+  const data: PermissionCreate = {
     domain: formData.get('domain') as string,
     resource: formData.get('resource') as string,
     action: formData.get('action') as string,
-    description: formData.get('description') as string,
   };
 
-  console.log(`[Action:Security:createPermission:${requestId}] Started - domain: ${data.domain}, resource: ${data.resource}, action: ${data.action}`);
+  console.log(`[Action:Security:createPermission:${requestId}] Started`);
 
-  let permission;
   try {
-    permission = await api.createPermission(data);
+    const permission = await api.createPermission(data);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:createPermission:${requestId}] Success in ${duration}ms - permission_code: ${permission.permission_code}`);
+    console.log(`[Action:Security:createPermission:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/permissions');
+    return { success: true, permission };
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Action:Security:createPermission:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:createPermission:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
     return { error: error instanceof Error ? error.message : 'Failed to create permission' };
   }
-
-  revalidatePath('/security/permissions');
-  redirect(`/security/permissions?selected=${encodeURIComponent(permission.permission_code)}`);
 }
 
-export async function updatePermission(code: string, formData: FormData) {
+export async function deletePermission(oid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const data: UpdatePermissionInput = {
-    description: formData.get('description') as string,
-  };
 
-  console.log(`[Action:Security:updatePermission:${requestId}] Started - code: ${code}`);
+  console.log(`[Action:Security:deletePermission:${requestId}] Started - oid: ${oid}`);
 
   try {
-    await api.updatePermission(code, data);
+    await api.deletePermission(oid);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:updatePermission:${requestId}] Success in ${duration}ms`);
+    console.log(`[Action:Security:deletePermission:${requestId}] Success in ${duration}ms`);
     revalidatePath('/security/permissions');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:updatePermission:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:updatePermission:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to update permission' };
-  }
-}
-
-export async function deletePermission(code: string) {
-  const requestId = generateRequestId();
-  const startTime = Date.now();
-  
-  console.log(`[Action:Security:deletePermission:${requestId}] Started - code: ${code}`);
-  
-  try {
-    await api.deletePermission(code);
-    const duration = Date.now() - startTime;
-    console.log(`[Action:Security:deletePermission:${requestId}] Success in ${duration}ms`);
-  } catch (error) {
-    const duration = Date.now() - startTime;
     console.error(`[Action:Security:deletePermission:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:deletePermission:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
     return { error: error instanceof Error ? error.message : 'Failed to delete permission' };
   }
-
-  revalidatePath('/security/permissions');
-  redirect('/security/permissions');
 }
 
 // ============================================================================
@@ -107,44 +77,40 @@ export async function deletePermission(code: string) {
 export async function createRole(formData: FormData) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const data: CreateRoleInput = {
-    role_code: formData.get('role_code') as string,
+
+  const data: RoleCreate = {
     name: formData.get('name') as string,
-    description: formData.get('description') as string,
+    include_desc: formData.get('include_desc') === 'true',
   };
 
-  console.log(`[Action:Security:createRole:${requestId}] Started - role_code: ${data.role_code}, name: ${data.name}`);
+  console.log(`[Action:Security:createRole:${requestId}] Started`);
 
-  let role;
   try {
-    role = await api.createRole(data);
+    const role = await api.createRole(data);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:createRole:${requestId}] Success in ${duration}ms - role_code: ${role.role_code}`);
+    console.log(`[Action:Security:createRole:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/roles');
+    return { success: true, role };
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Action:Security:createRole:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:createRole:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
     return { error: error instanceof Error ? error.message : 'Failed to create role' };
   }
-
-  revalidatePath('/security/roles');
-  redirect(`/security/roles?selected=${encodeURIComponent(role.role_code)}`);
 }
 
-export async function updateRole(code: string, formData: FormData) {
+export async function updateRole(oid: string, formData: FormData) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const data: UpdateRoleInput = {
+
+  const data: RoleUpdate = {
     name: formData.get('name') as string,
-    description: formData.get('description') as string,
+    include_desc: formData.get('include_desc') === 'true',
   };
 
-  console.log(`[Action:Security:updateRole:${requestId}] Started - code: ${code}, name: ${data.name}`);
+  console.log(`[Action:Security:updateRole:${requestId}] Started - oid: ${oid}`);
 
   try {
-    await api.updateRole(code, data);
+    await api.updateRole(oid, data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:updateRole:${requestId}] Success in ${duration}ms`);
     revalidatePath('/security/roles');
@@ -152,205 +118,325 @@ export async function updateRole(code: string, formData: FormData) {
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Action:Security:updateRole:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:updateRole:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
     return { error: error instanceof Error ? error.message : 'Failed to update role' };
   }
 }
 
-export async function deleteRole(code: string) {
+export async function deleteRole(oid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  console.log(`[Action:Security:deleteRole:${requestId}] Started - code: ${code}`);
-  
+
+  console.log(`[Action:Security:deleteRole:${requestId}] Started - oid: ${oid}`);
+
   try {
-    await api.deleteRole(code);
+    await api.deleteRole(oid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:deleteRole:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/roles');
+    return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`[Action:Security:deleteRole:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:deleteRole:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
     return { error: error instanceof Error ? error.message : 'Failed to delete role' };
   }
-
-  revalidatePath('/security/roles');
-  redirect('/security/roles');
 }
 
 // ============================================================================
-// User Actions
+// Group Actions
 // ============================================================================
 
-export async function createUser(formData: FormData) {
+export async function createGroup(formData: FormData) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const isSystemUser = formData.get('is_system_user') === 'true';
-  const data: CreateUserInput = {
-    username: formData.get('username') as string,
-    email: (formData.get('email') as string) || undefined,
-    full_name: (formData.get('full_name') as string) || undefined,
-    is_active: formData.get('is_active') !== 'false',
-    is_system_user: isSystemUser,
-    password: isSystemUser ? (formData.get('password') as string) : undefined,
+
+  const data: GroupCreate = {
+    name: formData.get('name') as string,
+    scope_type: formData.get('scope_type') as 'unconstrained' | 'self_scoped' | 'role_based',
   };
 
-  console.log(`[Action:Security:createUser:${requestId}] Started - username: ${data.username}, isSystemUser: ${isSystemUser}`);
+  console.log(`[Action:Security:createGroup:${requestId}] Started`);
 
-  let user;
   try {
-    user = await api.createUser(data);
+    const group = await api.createGroup(data);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:createUser:${requestId}] Success in ${duration}ms - username: ${user.username}`);
+    console.log(`[Action:Security:createGroup:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true, group };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:createUser:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:createUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to create user' };
+    console.error(`[Action:Security:createGroup:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to create group' };
   }
-
-  revalidatePath('/security/users');
-  redirect(`/security/users?selected=${encodeURIComponent(user.username)}`);
 }
 
-export async function updateUser(username: string, formData: FormData) {
+export async function updateGroup(oid: string, formData: FormData) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  const data: UpdateUserInput = {
-    email: (formData.get('email') as string) || undefined,
-    full_name: (formData.get('full_name') as string) || undefined,
-    is_active: formData.get('is_active') !== 'false',
+
+  const data: GroupUpdate = {
+    name: formData.get('name') as string,
+    scope_type: formData.get('scope_type') as 'unconstrained' | 'self_scoped' | 'role_based',
   };
 
-  // Only include password if provided
+  console.log(`[Action:Security:updateGroup:${requestId}] Started - oid: ${oid}`);
+
+  try {
+    await api.updateGroup(oid, data);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:updateGroup:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:updateGroup:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to update group' };
+  }
+}
+
+export async function deleteGroup(oid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:deleteGroup:${requestId}] Started - oid: ${oid}`);
+
+  try {
+    await api.deleteGroup(oid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:deleteGroup:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:deleteGroup:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to delete group' };
+  }
+}
+
+export async function assignGroupPermission(groupOid: string, permissionOid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:assignGroupPermission:${requestId}] Started`);
+
+  try {
+    await api.assignGroupPermission(groupOid, permissionOid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:assignGroupPermission:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:assignGroupPermission:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to assign permission' };
+  }
+}
+
+export async function removeGroupPermission(groupOid: string, permissionOid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:removeGroupPermission:${requestId}] Started`);
+
+  try {
+    await api.removeGroupPermission(groupOid, permissionOid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:removeGroupPermission:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:removeGroupPermission:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to remove permission' };
+  }
+}
+
+export async function linkGroupRole(groupOid: string, roleOid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:linkGroupRole:${requestId}] Started`);
+
+  try {
+    await api.linkGroupRole(groupOid, roleOid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:linkGroupRole:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:linkGroupRole:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to link role' };
+  }
+}
+
+export async function unlinkGroupRole(groupOid: string, roleOid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:unlinkGroupRole:${requestId}] Started`);
+
+  try {
+    await api.unlinkGroupRole(groupOid, roleOid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:unlinkGroupRole:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/groups');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:unlinkGroupRole:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to unlink role' };
+  }
+}
+
+// ============================================================================
+// Account Actions
+// ============================================================================
+
+export async function createAccount(formData: FormData) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  const isSystem = formData.get('is_system') === 'true';
+  const data: AccountCreate = {
+    username: formData.get('username') as string,
+    is_system: isSystem,
+    password: isSystem ? (formData.get('password') as string) : undefined,
+  };
+
+  console.log(`[Action:Security:createAccount:${requestId}] Started`);
+
+  try {
+    const account = await api.createAccount(data);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:createAccount:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
+    return { success: true, account };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:createAccount:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to create account' };
+  }
+}
+
+export async function updateAccount(oid: string, formData: FormData) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  const data: AccountUpdate = {
+    is_active: formData.get('is_active') === 'true',
+  };
+
   const password = formData.get('password') as string;
   if (password) {
     data.password = password;
   }
 
-  console.log(`[Action:Security:updateUser:${requestId}] Started - username: ${username}, hasPassword: ${!!password}`);
+  console.log(`[Action:Security:updateAccount:${requestId}] Started - oid: ${oid}`);
 
   try {
-    await api.updateUser(username, data);
+    await api.updateAccount(oid, data);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:updateUser:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/users');
+    console.log(`[Action:Security:updateAccount:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:updateUser:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:updateUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to update user' };
+    console.error(`[Action:Security:updateAccount:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to update account' };
   }
 }
 
-export async function deleteUser(username: string) {
+export async function deleteAccount(oid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  console.log(`[Action:Security:deleteUser:${requestId}] Started - username: ${username}`);
-  
+
+  console.log(`[Action:Security:deleteAccount:${requestId}] Started - oid: ${oid}`);
+
   try {
-    await api.deleteUser(username);
+    await api.deleteAccount(oid);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:deleteUser:${requestId}] Success in ${duration}ms`);
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[Action:Security:deleteUser:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:deleteUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to delete user' };
-  }
-
-  revalidatePath('/security/users');
-  redirect('/security/users');
-}
-
-// ============================================================================
-// Role-Permission Assignment Actions
-// ============================================================================
-
-export async function assignPermissionToRole(roleCode: string, permissionCode: string) {
-  const requestId = generateRequestId();
-  const startTime = Date.now();
-  
-  console.log(`[Action:Security:assignPermissionToRole:${requestId}] Started - roleCode: ${roleCode}, permissionCode: ${permissionCode}`);
-  
-  try {
-    await api.assignPermissionToRole(roleCode, permissionCode);
-    const duration = Date.now() - startTime;
-    console.log(`[Action:Security:assignPermissionToRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/roles');
+    console.log(`[Action:Security:deleteAccount:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:assignPermissionToRole:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:assignPermissionToRole:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to assign permission' };
+    console.error(`[Action:Security:deleteAccount:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to delete account' };
   }
 }
 
-export async function removePermissionFromRole(roleCode: string, permissionCode: string) {
+export async function linkAccountWorker(accountOid: string, workerOid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  console.log(`[Action:Security:removePermissionFromRole:${requestId}] Started - roleCode: ${roleCode}, permissionCode: ${permissionCode}`);
-  
+
+  console.log(`[Action:Security:linkAccountWorker:${requestId}] Started`);
+
   try {
-    await api.removePermissionFromRole(roleCode, permissionCode);
+    await api.linkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:removePermissionFromRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/roles');
+    console.log(`[Action:Security:linkAccountWorker:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:removePermissionFromRole:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:removePermissionFromRole:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to remove permission' };
+    console.error(`[Action:Security:linkAccountWorker:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to link worker' };
   }
 }
 
-// ============================================================================
-// User-Role Assignment Actions
-// ============================================================================
-
-export async function assignRoleToUser(username: string, roleCode: string) {
+export async function unlinkAccountWorker(accountOid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  console.log(`[Action:Security:assignRoleToUser:${requestId}] Started - username: ${username}, roleCode: ${roleCode}`);
-  
+
+  console.log(`[Action:Security:unlinkAccountWorker:${requestId}] Started`);
+
   try {
-    await api.assignRoleToUser(username, roleCode);
+    await api.unlinkAccountWorker(accountOid);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:assignRoleToUser:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/users');
+    console.log(`[Action:Security:unlinkAccountWorker:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:assignRoleToUser:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:assignRoleToUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to assign role' };
+    console.error(`[Action:Security:unlinkAccountWorker:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to unlink worker' };
   }
 }
 
-export async function removeRoleFromUser(username: string, roleCode: string) {
+export async function assignAccountGroup(accountOid: string, groupOid: string) {
   const requestId = generateRequestId();
   const startTime = Date.now();
-  
-  console.log(`[Action:Security:removeRoleFromUser:${requestId}] Started - username: ${username}, roleCode: ${roleCode}`);
-  
+
+  console.log(`[Action:Security:assignAccountGroup:${requestId}] Started`);
+
   try {
-    await api.removeRoleFromUser(username, roleCode);
+    await api.assignAccountGroup(accountOid, groupOid);
     const duration = Date.now() - startTime;
-    console.log(`[Action:Security:removeRoleFromUser:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/users');
+    console.log(`[Action:Security:assignAccountGroup:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[Action:Security:removeRoleFromUser:${requestId}] Failed after ${duration}ms:`, error);
-    console.error(`[Action:Security:removeRoleFromUser:${requestId}] Error message:`, error instanceof Error ? error.message : String(error));
-    return { error: error instanceof Error ? error.message : 'Failed to remove role' };
+    console.error(`[Action:Security:assignAccountGroup:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to assign group' };
+  }
+}
+
+export async function removeAccountGroup(accountOid: string, groupOid: string) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  console.log(`[Action:Security:removeAccountGroup:${requestId}] Started`);
+
+  try {
+    await api.removeAccountGroup(accountOid, groupOid);
+    const duration = Date.now() - startTime;
+    console.log(`[Action:Security:removeAccountGroup:${requestId}] Success in ${duration}ms`);
+    revalidatePath('/security/accounts');
+    return { success: true };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[Action:Security:removeAccountGroup:${requestId}] Failed after ${duration}ms:`, error);
+    return { error: error instanceof Error ? error.message : 'Failed to remove group' };
   }
 }

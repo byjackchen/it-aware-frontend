@@ -108,9 +108,28 @@ export async function GET() {
     // Check for non-ASCII characters in the response data
     logNonAsciiInObject(userData as Record<string, unknown>, 'userData', requestId)
     
+    // Transform nested backend response to flat frontend User format
+    // Backend returns: { account: {...}, worker: {...}, groups: [...], permissions: [...] }
+    // Frontend expects: { oid, username, email, full_name, is_active, is_system_user, created_at, groups, permissions }
+    const transformedUser = {
+      oid: userData.account?.oid ?? '',
+      username: userData.account?.username ?? '',
+      email: userData.worker?.email ?? '',
+      full_name: userData.worker?.full_name ?? userData.account?.username ?? '',
+      is_active: userData.account?.is_active ?? false,
+      is_system_user: userData.account?.is_system ?? false,
+      created_at: userData.account?.created_at ?? '',
+      groups: userData.groups ?? [],
+      // Backend returns permissions as { unconstrained: [...], self_scoped: [...] }
+      // Frontend expects a flat string array, so extract unconstrained permissions
+      permissions: userData.permissions?.unconstrained ?? [],
+    }
+    
+    console.log(`[APIRoute:/auth/me:${requestId}] Transformed user: username=${transformedUser.username}, groups=${transformedUser.groups?.length}, permissions=${transformedUser.permissions?.length}`)
+    
     // Safely stringify userData to check for issues
     try {
-      const jsonString = JSON.stringify(userData)
+      const jsonString = JSON.stringify(transformedUser)
       console.log(`[APIRoute:/auth/me:${requestId}] JSON string length: ${jsonString.length}`)
       const jsonCheck = hasNonAscii(jsonString)
       if (jsonCheck.hasNonAscii) {
@@ -122,7 +141,7 @@ export async function GET() {
 
     const duration = Date.now() - startTime
     console.log(`[APIRoute:/auth/me:${requestId}] Returning successful response in ${duration}ms`)
-    return NextResponse.json(userData)
+    return NextResponse.json(transformedUser)
   } catch (error) {
     const duration = Date.now() - startTime
     console.error(`[APIRoute:/auth/me:${requestId}] Error after ${duration}ms:`, error)

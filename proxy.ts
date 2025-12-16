@@ -78,28 +78,47 @@ async function fetchUserData(accessTokenCookie: string, requestId: string): Prom
     console.log(`[Middleware:${requestId}] fetchUserData: Starting, cookie length=${accessTokenCookie.length}`)
     const cookieValue = accessTokenCookie.split(';')[0]
     console.log(`[Middleware:${requestId}] fetchUserData: Cookie value (first 50 chars): ${cookieValue.substring(0, 50)}...`)
-    
+
     // Check cookie value for non-ASCII
     const cookieCheck = hasNonAscii(cookieValue)
     if (cookieCheck.hasNonAscii) {
       console.log(`[Middleware:${requestId}] fetchUserData: Cookie has non-ASCII: index=${cookieCheck.firstNonAsciiIndex}, charCode=${cookieCheck.charCode}`)
     }
-    
+
     console.log(`[Middleware:${requestId}] fetchUserData: Calling backend: ${BACKEND_DOMAIN}/auth/me`)
     const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
       headers: { 'Cookie': cookieValue },
     })
-    
+
     const duration = Date.now() - startTime
     console.log(`[Middleware:${requestId}] fetchUserData: Response: status=${response.status}, duration=${duration}ms`)
-    
+
     if (response.ok) {
       const userData = await response.json()
-      console.log(`[Middleware:${requestId}] fetchUserData: Success, username=${(userData as Record<string, unknown>).username}, keys: ${Object.keys(userData).join(', ')}`)
-      return userData
+      console.log(`[Middleware:${requestId}] fetchUserData: Success, raw keys: ${Object.keys(userData).join(', ')}`)
+
+      // Transform nested backend response to flat frontend User format
+      // Backend returns: { account: {...}, worker: {...}, groups: [...], permissions: [...] }
+      // Frontend expects: { oid, username, email, full_name, is_active, is_system_user, created_at, groups, permissions }
+      const transformedUser = {
+        oid: userData.account?.oid ?? '',
+        username: userData.account?.username ?? '',
+        email: userData.worker?.email ?? '',
+        full_name: userData.worker?.full_name ?? userData.account?.username ?? '',
+        is_active: userData.account?.is_active ?? false,
+        is_system_user: userData.account?.is_system ?? false,
+        created_at: userData.account?.created_at ?? '',
+        groups: userData.groups ?? [],
+        // Backend returns permissions as { unconstrained: [...], self_scoped: [...] }
+        // Frontend expects a flat string array, so extract unconstrained permissions
+        permissions: userData.permissions?.unconstrained ?? [],
+      }
+
+      console.log(`[Middleware:${requestId}] fetchUserData: Transformed user: username=${transformedUser.username}, groups=${transformedUser.groups?.length}, permissions=${transformedUser.permissions?.length}`)
+      return transformedUser
     }
-    
+
     // Log why the response was not OK
     const errorText = await response.text().catch(() => 'Failed to read response body')
     console.error(`[Middleware:${requestId}] fetchUserData: Backend returned non-OK: status=${response.status}, body=${errorText.substring(0, 200)}`)
@@ -126,22 +145,22 @@ function setUserDataCookie(response: NextResponse, userData: object, requestId: 
     // Use Base64 encoding to handle Chinese characters in user data
     const jsonString = JSON.stringify(userData)
     console.log(`[Middleware:${requestId}] setUserDataCookie: JSON string length=${jsonString.length}`)
-    
+
     // Check for non-ASCII in JSON
     const jsonCheck = hasNonAscii(jsonString)
     if (jsonCheck.hasNonAscii) {
       console.log(`[Middleware:${requestId}] setUserDataCookie JSON has non-ASCII: index=${jsonCheck.firstNonAsciiIndex}, charCode=${jsonCheck.charCode}, char='${jsonCheck.char}'`)
     }
-    
+
     const encoded = Buffer.from(jsonString).toString('base64')
     console.log(`[Middleware:${requestId}] setUserDataCookie: Base64 encoded length=${encoded.length}`)
-    
+
     // Verify base64 is ASCII-safe
     const encodedCheck = hasNonAscii(encoded)
     if (encodedCheck.hasNonAscii) {
       console.error(`[Middleware:${requestId}] UNEXPECTED: Base64 encoded string has non-ASCII!`)
     }
-    
+
     response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
     console.log(`[Middleware:${requestId}] setUserDataCookie: Cookie set successfully`)
   } catch (error) {
@@ -211,15 +230,15 @@ export async function middleware(request: NextRequest) {
     console.log(`[Middleware:${requestId}] Processing Taihu SSO authentication`)
     try {
       const identity = await getIdentityFromHeaders(taihuHeaders)
-      
+
       console.log(`[Middleware:${requestId}] Identity retrieved: staffId=${identity.staffId}, loginName length=${identity.loginName?.length}`)
-      
+
       // Check for non-ASCII in loginName
       const loginNameCheck = hasNonAscii(identity.loginName || '')
       if (loginNameCheck.hasNonAscii) {
         console.log(`[Middleware:${requestId}] loginName contains non-ASCII: index=${loginNameCheck.firstNonAsciiIndex}, charCode=${loginNameCheck.charCode}, char='${loginNameCheck.char}'`)
       }
-      
+
       // Set user info headers (encode to handle non-ASCII characters)
       try {
         response.headers.set('x-user-staff-id', identity.staffId.toString())
@@ -280,7 +299,7 @@ export async function middleware(request: NextRequest) {
           console.error(`[Middleware:${requestId}] JWT token fetch failed: ${authResponse.status}`)
           const errorText = await authResponse.text().catch(() => '')
           console.error(`[Middleware:${requestId}] JWT token fetch error body: ${errorText.substring(0, 200)}`)
-          
+
           // Map HTTP status to user-friendly error message
           let errorMessage = 'Authentication failed. Please try again or contact your administrator.'
           if (authResponse.status === 404) {
@@ -288,7 +307,7 @@ export async function middleware(request: NextRequest) {
           } else if (authResponse.status === 401 || authResponse.status === 403) {
             errorMessage = 'You are not authorized to access this application. Please contact your administrator.'
           }
-          
+
           const loginUrl = new URL('/login', request.url)
           loginUrl.searchParams.set('error', errorMessage)
           return NextResponse.redirect(loginUrl)
@@ -311,7 +330,7 @@ export async function middleware(request: NextRequest) {
         console.error(`[Middleware:${requestId}] SSO user without valid access token - redirecting to login`)
         return NextResponse.redirect(new URL('/login', request.url))
       }
-      
+
       // SSO user with valid token - ensure user data is available
       console.log(`[Middleware:${requestId}] SSO user has access token, fetching user data`)
       const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
@@ -341,11 +360,18 @@ export async function middleware(request: NextRequest) {
         console.log(`[Middleware:${requestId}] Regular user: Successfully fetched user data, setting cookie`)
         setUserDataCookie(response, userData, requestId)
       } else {
-        console.error(`[Middleware:${requestId}] Regular user: Failed to fetch user data (returned null)`)
+        // Token is invalid or expired - redirect to login
+        console.error(`[Middleware:${requestId}] Regular user: Failed to fetch user data (token invalid/expired), redirecting to login`)
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('error', 'Your session has expired. Please log in again.')
+        return NextResponse.redirect(loginUrl)
       }
     } catch (error) {
       console.error(`[Middleware:${requestId}] Regular user refresh error:`, error)
-      // Don't redirect on failure, let the client handle it
+      // Auth error - redirect to login
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('error', 'Authentication error. Please log in again.')
+      return NextResponse.redirect(loginUrl)
     }
   } else {
     console.log(`[Middleware:${requestId}] No user data refresh needed (hasAccessToken=${hasAccessToken}, hasLoggedOut=${hasLoggedOut}, isSSOUser=${isSSOUser})`)
