@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, BookOpen, LogOut, Shield, UserCircle } from 'lucide-react';
+import { Bell, BookOpen, Database, LogOut, Shield, UserCircle } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { useTranslations } from 'next-intl';
@@ -25,9 +25,9 @@ export function TopBar() {
   // Use consistent initial value to avoid hydration mismatch
   const initials = !isLoading && user?.username
     ? user.username
-        .split('.')
-        .map((part: string) => part.charAt(0).toUpperCase())
-        .join('')
+      .split('.')
+      .map((part: string) => part.charAt(0).toUpperCase())
+      .join('')
     : 'U';
 
   const handleLogout = async () => {
@@ -40,25 +40,33 @@ export function TopBar() {
   // Security menu requires either 'auth:all:read' OR 'auth:all:edit'
   // Persona menu requires either 'persona:all:read' OR 'persona:all:edit'
   const navItems: MenuItem[] = [
-    { 
-      href: '/security', 
-      label: t('security'), 
+    {
+      href: '/security',
+      label: t('security'),
       icon: Shield,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_SECURITY
       ]),
     },
-    { 
-      href: '/persona', 
-      label: t('persona'), 
+    {
+      href: '/data',
+      label: t('data'),
+      icon: Database,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_DATA
+      ]),
+    },
+    {
+      href: '/persona',
+      label: t('persona'),
       icon: UserCircle,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_PERSONA
       ]),
     },
-    { 
-      href: '/knowledge', 
-      label: t('knowledge'), 
+    {
+      href: '/knowledge',
+      label: t('knowledge'),
       icon: BookOpen,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
@@ -89,13 +97,12 @@ export function TopBar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${
-                  isActive
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${isActive
                     ? 'nav-active text-blue-500'
-                    : isLight 
+                    : isLight
                       ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
                       : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="font-medium">{item.label}</span>

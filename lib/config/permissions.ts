@@ -7,12 +7,26 @@
  */
 
 export const PERMISSIONS = {
-  // Persona domain
+  // UI Navigation permissions
   UI: {
     NAVIGATION_DEFAULT: 'ui:navigation:default',
     NAVIGATION_SECURITY: 'ui:navigation:security',
     NAVIGATION_PERSONA: 'ui:navigation:persona',
     NAVIGATION_KNOWLEDGE: 'ui:navigation:knowledge',
+    NAVIGATION_DATA: 'ui:navigation:data',
+  },
+  // Objects domain permissions
+  OBJECTS: {
+    ORGANIZATIONS_READ: 'objects:organizations:read',
+    ORGANIZATIONS_EDIT: 'objects:organizations:edit',
+    LOCATIONS_READ: 'objects:locations:read',
+    LOCATIONS_EDIT: 'objects:locations:edit',
+    WORKERS_READ: 'objects:workers:read',
+    WORKERS_EDIT: 'objects:workers:edit',
+    WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
+    WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
+    TICKETS_READ: 'objects:tickets:read',
+    TICKETS_WRITE: 'objects:tickets:write',
   },
 } as const;
 

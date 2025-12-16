@@ -10,7 +10,10 @@ import {
     Users,
     Settings,
     FileText,
-    HelpCircle
+    HelpCircle,
+    Building2,
+    MapPin,
+    Ticket
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useMenuAuthorization } from './AuthorizedMenuItem';
@@ -53,6 +56,40 @@ const subMenuItems: SubMenuConfig = {
             icon: Shield,
             permissions: requireAnyPermission([
                 PERMISSIONS.UI.NAVIGATION_SECURITY
+            ]),
+        },
+    ],
+    '/data': [
+        {
+            href: '/data/organizations',
+            labelKey: 'organizations',
+            icon: Building2,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_DATA
+            ]),
+        },
+        {
+            href: '/data/locations',
+            labelKey: 'locations',
+            icon: MapPin,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_DATA
+            ]),
+        },
+        {
+            href: '/data/workers',
+            labelKey: 'workers',
+            icon: Users,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_DATA
+            ]),
+        },
+        {
+            href: '/data/tickets',
+            labelKey: 'tickets',
+            icon: Ticket,
+            permissions: requireAnyPermission([
+                PERMISSIONS.UI.NAVIGATION_DATA
             ]),
         },
     ],
@@ -135,10 +172,10 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 focus:outline-none ${isActive
-                                    ? 'nav-active text-blue-500'
-                                    : isLight
-                                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                                ? 'nav-active text-blue-500'
+                                : isLight
+                                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                                 }`}
                         >
                             <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : isLight ? 'text-slate-500' : 'text-gray-500'}`} />

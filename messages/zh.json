@@ -2,6 +2,7 @@
     "TopBar": {
         "title": "IT Aware",
         "security": "安全",
+        "data": "数据",
         "persona": "用户画像",
         "knowledge": "知识库"
     },
@@ -13,6 +14,10 @@
         "groups": "分组",
         "roles": "角色",
         "permissions": "权限",
+        "organizations": "组织",
+        "locations": "地点",
+        "workers": "员工",
+        "tickets": "工单",
         "profile": "个人资料",
         "team": "团队",
         "settings": "设置",
@@ -119,6 +124,83 @@
         "assignments": {
             "select": "选择...",
             "addTitle": "添加{title}"
+        }
+    },
+    "Data": {
+        "common": {
+            "save": "保存",
+            "edit": "编辑",
+            "cancel": "取消",
+            "delete": "删除",
+            "created": "创建时间",
+            "updated": "更新时间",
+            "name": "名称",
+            "hierarchyPath": "层级路径",
+            "levelsDeep": "{count} 层深",
+            "levelsDeepPlural": "{count} 层深",
+            "noRelationships": "未找到关系",
+            "edgeRelationships": "边关系",
+            "roleAssignments": "角色分配",
+            "filter": "筛选",
+            "all": "全部",
+            "search": "搜索...",
+            "refresh": "刷新",
+            "back": "返回"
+        },
+        "organizations": {
+            "title": "组织",
+            "detail": "组织详情",
+            "new": "新建组织",
+            "empty": "未找到组织。创建您的第一个组织开始使用。",
+            "deleteConfirm": "确定要删除此组织吗？此操作无法撤销。",
+            "rootCount": "{count} 个根组织",
+            "rootCountPlural": "{count} 个根组织"
+        },
+        "locations": {
+            "title": "地点",
+            "detail": "地点详情",
+            "new": "新建地点",
+            "empty": "未找到地点。创建您的第一个地点开始使用。",
+            "deleteConfirm": "确定要删除此地点吗？此操作无法撤销。",
+            "rootCount": "{count} 个根地点",
+            "rootCountPlural": "{count} 个根地点"
+        },
+        "workers": {
+            "title": "员工",
+            "detail": "员工详情",
+            "new": "新建员工",
+            "empty": "未找到员工",
+            "deleteConfirm": "确定要删除此员工吗？",
+            "fullName": "全名",
+            "email": "邮箱",
+            "workerId": "员工ID",
+            "organization": "组织",
+            "status": "状态",
+            "active": "活跃",
+            "inactive": "未激活",
+            "notSet": "未设置",
+            "count": "{filtered} / {total} 员工",
+            "countPlural": "{filtered} / {total} 员工"
+        },
+        "tickets": {
+            "title": "工单",
+            "detail": "工单详情",
+            "new": "新建工单",
+            "empty": "未找到工单",
+            "deleteConfirm": "确定要删除此工单吗？",
+            "ticketTitle": "标题",
+            "status": "状态",
+            "owner": "负责人",
+            "count": "{filtered} / {total} 工单",
+            "countPlural": "{filtered} / {total} 工单"
+        },
+        "roles": {
+            "noRoles": "没有可用角色。请先在安全模块创建角色。",
+            "addWorker": "添加员工",
+            "noWorkers": "此角色未分配员工。",
+            "workersCount": "{count} 员工",
+            "workersCountPlural": "{count} 员工",
+            "noWorkersAvailable": "没有可用员工"
         }
     }
 }
