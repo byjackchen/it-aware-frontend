@@ -177,6 +177,7 @@
             "email": "Email",
             "workerId": "Worker ID",
             "organization": "Organization",
+            "location": "Location",
             "status": "Status",
             "active": "Active",
             "inactive": "Inactive",

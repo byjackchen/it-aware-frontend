@@ -16,6 +16,7 @@ import {
     Loader2,
     Calendar,
     Building2,
+    MapPin,
     Mail,
     Hash,
     Check,
@@ -23,16 +24,17 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
-import type { Worker, GlobalEdge, Organization } from '@/lib/types/objects';
+import type { Worker, GlobalEdge, Organization, Location } from '@/lib/types/objects';
 import { updateWorkerAction, deleteWorkerAction } from '../../actions';
 
 interface WorkerDetailPageProps {
     worker: Worker;
     edges: GlobalEdge[];
     organizations: Organization[];
+    locations: Location[];
 }
 
-export function WorkerDetailPage({ worker, edges, organizations }: WorkerDetailPageProps) {
+export function WorkerDetailPage({ worker, edges, organizations, locations }: WorkerDetailPageProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const t = useTranslations('Data');
@@ -42,10 +44,14 @@ export function WorkerDetailPage({ worker, edges, organizations }: WorkerDetailP
     const [fullName, setFullName] = useState(worker.full_name);
     const [email, setEmail] = useState(worker.email || '');
     const [workerId, setWorkerId] = useState(worker.worker_id || '');
+    const [locationOid, setLocationOid] = useState(worker.location_oid || '');
     const [isActive, setIsActive] = useState(worker.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
     const orgName = organizations.find((o) => o.oid === worker.org_oid)?.name || 'Unknown';
+    const locationName = worker.location_oid
+        ? locations.find((l) => l.oid === worker.location_oid)?.name || 'Unknown'
+        : null;
     const filteredEdges = edgeFilter ? edges.filter((e) => e.edge_type === edgeFilter) : edges;
 
     const handleSave = async () => {
@@ -55,6 +61,7 @@ export function WorkerDetailPage({ worker, edges, organizations }: WorkerDetailP
             formData.set('full_name', fullName);
             formData.set('email', email);
             formData.set('worker_id', workerId);
+            formData.set('location_oid', locationOid);
             formData.set('is_active', String(isActive));
             await updateWorkerAction(worker.oid, formData);
             setIsEditing(false);
@@ -79,6 +86,7 @@ export function WorkerDetailPage({ worker, edges, organizations }: WorkerDetailP
         setFullName(worker.full_name);
         setEmail(worker.email || '');
         setWorkerId(worker.worker_id || '');
+        setLocationOid(worker.location_oid || '');
         setIsActive(worker.is_active);
         setIsEditing(false);
     };
@@ -163,24 +171,46 @@ export function WorkerDetailPage({ worker, edges, organizations }: WorkerDetailP
                             </div>
                         </div>
 
-                        {/* Status */}
+                        {/* Location */}
                         <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('workers.status')}</label>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('workers.location')}</label>
                             {isEditing ? (
-                                <label className="flex items-center gap-2 px-3 py-2">
-                                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
-                                    <span className={isLight ? 'text-slate-700' : 'text-gray-300'}>{t('workers.active')}</span>
-                                </label>
+                                <select
+                                    value={locationOid}
+                                    onChange={(e) => setLocationOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`}
+                                >
+                                    <option value="">{t('workers.notSet')}</option>
+                                    {locations.map((loc) => (
+                                        <option key={loc.oid} value={loc.oid}>{loc.name}</option>
+                                    ))}
+                                </select>
                             ) : (
                                 <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                    {worker.is_active ? (
-                                        <span className="flex items-center gap-1 text-green-500"><Check className="w-4 h-4" /> {t('workers.active')}</span>
-                                    ) : (
-                                        <span className="flex items-center gap-1 text-red-500"><X className="w-4 h-4" /> {t('workers.inactive')}</span>
-                                    )}
+                                    <MapPin className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{locationName || t('workers.notSet')}</span>
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Status Row */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('workers.status')}</label>
+                        {isEditing ? (
+                            <label className="flex items-center gap-2 px-3 py-2">
+                                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
+                                <span className={isLight ? 'text-slate-700' : 'text-gray-300'}>{t('workers.active')}</span>
+                            </label>
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                {worker.is_active ? (
+                                    <span className="flex items-center gap-1 text-green-500"><Check className="w-4 h-4" /> {t('workers.active')}</span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-red-500"><X className="w-4 h-4" /> {t('workers.inactive')}</span>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Timestamps */}

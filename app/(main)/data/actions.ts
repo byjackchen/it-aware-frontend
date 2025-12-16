@@ -86,6 +86,7 @@ export async function createWorkerAction(formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const orgOid = formData.get('org_oid') as string;
+    const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
     const isActive = formData.get('is_active') === 'true';
 
@@ -94,6 +95,7 @@ export async function createWorkerAction(formData: FormData) {
         worker_id: workerId || null,
         email: email || null,
         org_oid: orgOid,
+        location_oid: locationOid || null,
         manager_oid: managerOid || null,
         is_active: isActive,
     });
@@ -104,6 +106,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const orgOid = formData.get('org_oid') as string | null;
+    const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
     const isActiveStr = formData.get('is_active');
 
@@ -112,6 +115,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
         worker_id: workerId,
         email: email,
         org_oid: orgOid || undefined,
+        location_oid: locationOid === '' ? '' : (locationOid || undefined),
         manager_oid: managerOid,
         is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
     });

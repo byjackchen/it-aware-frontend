@@ -3,7 +3,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { getWorker, getConnectedEdges, getOrganizations } from '@/lib/api/objects';
+import { getWorker, getConnectedEdges, getOrganizations, getLocations } from '@/lib/api/objects';
 import { WorkerDetailPage } from './WorkerDetailPage';
 
 interface PageProps {
@@ -14,10 +14,11 @@ export default async function WorkerPage({ params }: PageProps) {
     const { oid } = await params;
 
     try {
-        const [worker, edgesResponse, organizations] = await Promise.all([
+        const [worker, edgesResponse, organizations, locations] = await Promise.all([
             getWorker(oid),
             getConnectedEdges(oid),
             getOrganizations(),
+            getLocations(),
         ]);
 
         return (
@@ -25,9 +26,11 @@ export default async function WorkerPage({ params }: PageProps) {
                 worker={worker}
                 edges={edgesResponse.items}
                 organizations={organizations}
+                locations={locations}
             />
         );
     } catch {
         notFound();
     }
 }
+

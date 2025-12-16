@@ -72,6 +72,7 @@ export interface Worker {
     full_name: string;
     email: string | null;
     org_oid: string;
+    location_oid: string | null;
     manager_oid: string | null;
     is_active: boolean;
     created_at: string;
@@ -83,6 +84,7 @@ export interface WorkerCreate {
     full_name: string;
     email?: string | null;
     org_oid: string;
+    location_oid?: string | null;
     manager_oid?: string | null;
     is_active?: boolean;
 }
@@ -92,6 +94,7 @@ export interface WorkerUpdate {
     full_name?: string;
     email?: string | null;
     org_oid?: string;
+    location_oid?: string | null;
     manager_oid?: string | null;
     is_active?: boolean;
 }
