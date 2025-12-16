@@ -10,6 +10,7 @@ import {
     getGroupPermissions,
     getGroupRoles,
 } from '@/lib/api/security';
+import type { GroupPermission, GroupRole, Permission, Role } from '@/lib/types/security';
 import { GroupDetailPage } from './GroupDetailPage';
 
 interface PageProps {
@@ -29,12 +30,12 @@ export default async function GroupPage({ params }: PageProps) {
         ]);
 
         // Get assigned permissions
-        const assignedPermissionOids = groupPermissions.map((gp) => gp.permission_oid);
-        const assignedPermissions = permissions.filter((p) => assignedPermissionOids.includes(p.oid));
+        const assignedPermissionOids = groupPermissions.map((gp: GroupPermission) => gp.permission_oid);
+        const assignedPermissions = permissions.filter((p: Permission) => assignedPermissionOids.includes(p.oid));
 
         // Get linked roles
-        const linkedRoleOids = groupRoles.map((gr) => gr.role_oid);
-        const linkedRoles = roles.filter((r) => linkedRoleOids.includes(r.oid));
+        const linkedRoleOids = groupRoles.map((gr: GroupRole) => gr.role_oid);
+        const linkedRoles = roles.filter((r: Role) => linkedRoleOids.includes(r.oid));
 
         return (
             <GroupDetailPage

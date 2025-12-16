@@ -13,7 +13,7 @@ import { SCOPE_TYPES } from '@/lib/types/security';
 import { createGroup } from '../../actions';
 
 export function GroupCreatePage() {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [name, setName] = useState('');
@@ -27,7 +27,7 @@ export function GroupCreatePage() {
         startTransition(async () => {
             const result = await createGroup(formData);
             if (result.success) {
-                router.push('/security/groups');
+                router.push('/auth/groups');
             }
         });
     };
@@ -38,7 +38,7 @@ export function GroupCreatePage() {
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => router.push('/security/groups')}
+                        onClick={() => router.push('/auth/groups')}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-400" />
@@ -102,7 +102,7 @@ export function GroupCreatePage() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.push('/security/groups')}
+                            onClick={() => router.push('/auth/groups')}
                             disabled={isPending}
                             className="px-4 py-2 rounded-lg theme-btn-neutral"
                         >

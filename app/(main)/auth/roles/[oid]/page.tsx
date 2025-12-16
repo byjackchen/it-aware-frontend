@@ -4,6 +4,7 @@
 
 import { notFound } from 'next/navigation';
 import { getRole, getGroups, getGroupRoles } from '@/lib/api/security';
+import type { GroupRole, Group } from '@/lib/types/security';
 import { RoleDetailPage } from './RoleDetailPage';
 
 interface PageProps {
@@ -22,9 +23,9 @@ export default async function RolePage({ params }: PageProps) {
 
         // Get groups linked to this role
         const linkedGroupOids = groupRoles
-            .filter((gr) => gr.role_oid === oid)
-            .map((gr) => gr.group_oid);
-        const linkedGroups = groups.filter((g) => linkedGroupOids.includes(g.oid));
+            .filter((gr: GroupRole) => gr.role_oid === oid)
+            .map((gr: GroupRole) => gr.group_oid);
+        const linkedGroups = groups.filter((g: Group) => linkedGroupOids.includes(g.oid));
 
         return (
             <RoleDetailPage

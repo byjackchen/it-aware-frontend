@@ -11,7 +11,7 @@ import { ArrowLeft, User, Loader2 } from 'lucide-react';
 import { createAccount } from '../../actions';
 
 export function AccountCreatePage() {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [username, setUsername] = useState('');
@@ -30,7 +30,7 @@ export function AccountCreatePage() {
         startTransition(async () => {
             const result = await createAccount(formData);
             if (result.success) {
-                router.push('/security/accounts');
+                router.push('/auth/accounts');
             }
         });
     };
@@ -41,7 +41,7 @@ export function AccountCreatePage() {
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => router.push('/security/accounts')}
+                        onClick={() => router.push('/auth/accounts')}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-400" />
@@ -121,7 +121,7 @@ export function AccountCreatePage() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.push('/security/accounts')}
+                            onClick={() => router.push('/auth/accounts')}
                             disabled={isPending}
                             className="px-4 py-2 rounded-lg theme-btn-neutral"
                         >

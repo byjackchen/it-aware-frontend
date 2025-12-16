@@ -5,6 +5,7 @@
 
 import { notFound } from 'next/navigation';
 import { getPermission, getGroups, getGroupPermissions } from '@/lib/api/security';
+import type { GroupPermission, Group } from '@/lib/types/security';
 import { PermissionDetailPage } from './PermissionDetailPage';
 
 interface PageProps {
@@ -23,9 +24,9 @@ export default async function PermissionPage({ params }: PageProps) {
 
         // Get groups assigned to this permission
         const assignedGroupOids = groupPermissions
-            .filter((gp) => gp.permission_oid === oid)
-            .map((gp) => gp.group_oid);
-        const assignedGroups = groups.filter((g) => assignedGroupOids.includes(g.oid));
+            .filter((gp: GroupPermission) => gp.permission_oid === oid)
+            .map((gp: GroupPermission) => gp.group_oid);
+        const assignedGroups = groups.filter((g: Group) => assignedGroupOids.includes(g.oid));
 
         return (
             <PermissionDetailPage

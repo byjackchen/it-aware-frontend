@@ -49,7 +49,7 @@ export function AccountDetailPage({
     assignedGroups,
     allGroups,
 }: AccountDetailPageProps) {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
@@ -75,7 +75,7 @@ export function AccountDetailPage({
         if (!confirm(t('common.deleteConfirm'))) return;
         startTransition(async () => {
             await deleteAccount(account.oid);
-            router.push('/security/accounts');
+            router.push('/auth/accounts');
         });
     };
 
@@ -119,7 +119,7 @@ export function AccountDetailPage({
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => router.push('/security/accounts')}
+                            onClick={() => router.push('/auth/accounts')}
                             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5 text-gray-400" />

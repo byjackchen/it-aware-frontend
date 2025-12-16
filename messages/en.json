@@ -1,7 +1,7 @@
 {
     "TopBar": {
         "title": "IT Aware",
-        "security": "Security",
+        "auth": "Auth",
         "data": "Data",
         "persona": "Persona",
         "knowledge": "Knowledge"
@@ -29,7 +29,7 @@
         "placeholder": "How can I help you today?",
         "inputPlaceholder": "Type a message..."
     },
-    "Security": {
+    "Auth": {
         "common": {
             "save": "Save",
             "create": "Create",

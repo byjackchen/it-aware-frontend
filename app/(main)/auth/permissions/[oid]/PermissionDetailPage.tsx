@@ -20,7 +20,7 @@ export function PermissionDetailPage({
     permission,
     assignedGroups,
 }: PermissionDetailPageProps) {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -28,7 +28,7 @@ export function PermissionDetailPage({
         if (!confirm(t('common.deleteConfirm'))) return;
         startTransition(async () => {
             await deletePermission(permission.oid);
-            router.push('/security/permissions');
+            router.push('/auth/permissions');
         });
     };
 
@@ -38,7 +38,7 @@ export function PermissionDetailPage({
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => router.push('/security/permissions')}
+                        onClick={() => router.push('/auth/permissions')}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-400" />

@@ -14,15 +14,15 @@ interface RolesListPageProps {
 }
 
 export function RolesListPage({ roles }: RolesListPageProps) {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
 
     const handleRowClick = (role: Role) => {
-        router.push(`/security/roles/${role.oid}`);
+        router.push(`/auth/roles/${role.oid}`);
     };
 
     const handleCreateClick = () => {
-        router.push('/security/roles/new');
+        router.push('/auth/roles/new');
     };
 
     return (

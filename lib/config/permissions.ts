@@ -10,7 +10,7 @@ export const PERMISSIONS = {
   // UI Navigation permissions
   UI: {
     NAVIGATION_DEFAULT: 'ui:navigation:default',
-    NAVIGATION_SECURITY: 'ui:navigation:security',
+    NAVIGATION_AUTH: 'ui:navigation:auth',
     NAVIGATION_PERSONA: 'ui:navigation:persona',
     NAVIGATION_KNOWLEDGE: 'ui:navigation:knowledge',
     NAVIGATION_DATA: 'ui:navigation:data',

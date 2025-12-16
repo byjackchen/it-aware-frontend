@@ -17,7 +17,7 @@ interface RoleDetailPageProps {
 }
 
 export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
@@ -39,7 +39,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
         if (!confirm(t('common.deleteConfirm'))) return;
         startTransition(async () => {
             await deleteRole(role.oid);
-            router.push('/security/roles');
+            router.push('/auth/roles');
         });
     };
 
@@ -56,7 +56,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => router.push('/security/roles')}
+                            onClick={() => router.push('/auth/roles')}
                             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5 text-gray-400" />

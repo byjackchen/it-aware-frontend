@@ -11,7 +11,7 @@ import { ArrowLeft, Lock, Loader2 } from 'lucide-react';
 import { createPermission } from '../../actions';
 
 export function PermissionCreatePage() {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [domain, setDomain] = useState('');
@@ -29,7 +29,7 @@ export function PermissionCreatePage() {
         startTransition(async () => {
             const result = await createPermission(formData);
             if (result.success) {
-                router.push('/security/permissions');
+                router.push('/auth/permissions');
             }
         });
     };
@@ -40,7 +40,7 @@ export function PermissionCreatePage() {
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => router.push('/security/permissions')}
+                        onClick={() => router.push('/auth/permissions')}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-400" />
@@ -121,7 +121,7 @@ export function PermissionCreatePage() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.push('/security/permissions')}
+                            onClick={() => router.push('/auth/permissions')}
                             disabled={isPending}
                             className="px-4 py-2 rounded-lg theme-btn-neutral"
                         >

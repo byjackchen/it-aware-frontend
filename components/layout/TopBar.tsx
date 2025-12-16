@@ -41,11 +41,11 @@ export function TopBar() {
   // Persona menu requires either 'persona:all:read' OR 'persona:all:edit'
   const navItems: MenuItem[] = [
     {
-      href: '/security',
-      label: t('security'),
+      href: '/auth',
+      label: t('auth'),
       icon: Shield,
       permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_SECURITY
+        PERMISSIONS.UI.NAVIGATION_AUTH
       ]),
     },
     {
@@ -98,10 +98,10 @@ export function TopBar() {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${isActive
-                    ? 'nav-active text-blue-500'
-                    : isLight
-                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
+                  ? 'nav-active text-blue-500'
+                  : isLight
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
                   }`}
               >
                 <Icon className="w-4 h-4" />

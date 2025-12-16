@@ -20,7 +20,7 @@ export function AccountsListPage({
     workers,
     accountWorkers,
 }: AccountsListPageProps) {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
 
     const getLinkedWorker = (accountOid: string): Worker | null => {
@@ -30,11 +30,11 @@ export function AccountsListPage({
     };
 
     const handleRowClick = (account: Account) => {
-        router.push(`/security/accounts/${account.oid}`);
+        router.push(`/auth/accounts/${account.oid}`);
     };
 
     const handleCreateClick = () => {
-        router.push('/security/accounts/new');
+        router.push('/auth/accounts/new');
     };
 
     return (

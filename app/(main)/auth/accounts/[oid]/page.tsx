@@ -10,6 +10,7 @@ import {
     getAccountWorkers,
     getAccountGroups,
 } from '@/lib/api/security';
+import type { AccountWorker, AccountGroup, Worker, Group } from '@/lib/types/security';
 import { AccountDetailPage } from './AccountDetailPage';
 
 interface PageProps {
@@ -29,18 +30,18 @@ export default async function AccountPage({ params }: PageProps) {
         ]);
 
         // Get linked worker
-        const workerLink = accountWorkers.find((aw) => aw.account_oid === oid);
+        const workerLink = accountWorkers.find((aw: AccountWorker) => aw.account_oid === oid);
         const linkedWorker = workerLink
-            ? workers.find((w) => w.oid === workerLink.worker_oid) || null
+            ? workers.find((w: Worker) => w.oid === workerLink.worker_oid) || null
             : null;
 
         // Get all linked worker OIDs for filtering
         const allAccountWorkers = await getAccountWorkers();
-        const linkedWorkerOids = allAccountWorkers.map((aw) => aw.worker_oid);
+        const linkedWorkerOids = allAccountWorkers.map((aw: AccountWorker) => aw.worker_oid);
 
         // Get assigned groups
-        const assignedGroupOids = accountGroups.map((ag) => ag.group_oid);
-        const assignedGroups = groups.filter((g) => assignedGroupOids.includes(g.oid));
+        const assignedGroupOids = accountGroups.map((ag: AccountGroup) => ag.group_oid);
+        const assignedGroups = groups.filter((g: Group) => assignedGroupOids.includes(g.oid));
 
         return (
             <AccountDetailPage

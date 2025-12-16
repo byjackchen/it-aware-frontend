@@ -11,7 +11,7 @@ import { ArrowLeft, Shield, Loader2 } from 'lucide-react';
 import { createRole } from '../../actions';
 
 export function RoleCreatePage() {
-    const t = useTranslations('Security');
+    const t = useTranslations('Auth');
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [name, setName] = useState('');
@@ -25,7 +25,7 @@ export function RoleCreatePage() {
         startTransition(async () => {
             const result = await createRole(formData);
             if (result.success) {
-                router.push('/security/roles');
+                router.push('/auth/roles');
             }
         });
     };
@@ -36,7 +36,7 @@ export function RoleCreatePage() {
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                     <button
-                        onClick={() => router.push('/security/roles')}
+                        onClick={() => router.push('/auth/roles')}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5 text-gray-400" />
@@ -97,7 +97,7 @@ export function RoleCreatePage() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.push('/security/roles')}
+                            onClick={() => router.push('/auth/roles')}
                             disabled={isPending}
                             className="px-4 py-2 rounded-lg theme-btn-neutral"
                         >

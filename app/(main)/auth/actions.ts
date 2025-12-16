@@ -42,7 +42,7 @@ export async function createPermission(formData: FormData) {
     const permission = await api.createPermission(data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:createPermission:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/permissions');
+    revalidatePath('/auth/permissions');
     return { success: true, permission };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -61,7 +61,7 @@ export async function deletePermission(oid: string) {
     await api.deletePermission(oid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:deletePermission:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/permissions');
+    revalidatePath('/auth/permissions');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -89,7 +89,7 @@ export async function createRole(formData: FormData) {
     const role = await api.createRole(data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:createRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/roles');
+    revalidatePath('/auth/roles');
     return { success: true, role };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -113,7 +113,7 @@ export async function updateRole(oid: string, formData: FormData) {
     await api.updateRole(oid, data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:updateRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/roles');
+    revalidatePath('/auth/roles');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -132,7 +132,7 @@ export async function deleteRole(oid: string) {
     await api.deleteRole(oid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:deleteRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/roles');
+    revalidatePath('/auth/roles');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -160,7 +160,7 @@ export async function createGroup(formData: FormData) {
     const group = await api.createGroup(data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:createGroup:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true, group };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -184,7 +184,7 @@ export async function updateGroup(oid: string, formData: FormData) {
     await api.updateGroup(oid, data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:updateGroup:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -203,7 +203,7 @@ export async function deleteGroup(oid: string) {
     await api.deleteGroup(oid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:deleteGroup:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -222,7 +222,7 @@ export async function assignGroupPermission(groupOid: string, permissionOid: str
     await api.assignGroupPermission(groupOid, permissionOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:assignGroupPermission:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -241,7 +241,7 @@ export async function removeGroupPermission(groupOid: string, permissionOid: str
     await api.removeGroupPermission(groupOid, permissionOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:removeGroupPermission:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -260,7 +260,7 @@ export async function linkGroupRole(groupOid: string, roleOid: string) {
     await api.linkGroupRole(groupOid, roleOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:linkGroupRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -279,7 +279,7 @@ export async function unlinkGroupRole(groupOid: string, roleOid: string) {
     await api.unlinkGroupRole(groupOid, roleOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:unlinkGroupRole:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/groups');
+    revalidatePath('/auth/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -309,7 +309,7 @@ export async function createAccount(formData: FormData) {
     const account = await api.createAccount(data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:createAccount:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true, account };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -337,7 +337,7 @@ export async function updateAccount(oid: string, formData: FormData) {
     await api.updateAccount(oid, data);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:updateAccount:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -356,7 +356,7 @@ export async function deleteAccount(oid: string) {
     await api.deleteAccount(oid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:deleteAccount:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -375,7 +375,7 @@ export async function linkAccountWorker(accountOid: string, workerOid: string) {
     await api.linkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:linkAccountWorker:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -394,7 +394,7 @@ export async function unlinkAccountWorker(accountOid: string) {
     await api.unlinkAccountWorker(accountOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:unlinkAccountWorker:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -413,7 +413,7 @@ export async function assignAccountGroup(accountOid: string, groupOid: string) {
     await api.assignAccountGroup(accountOid, groupOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:assignAccountGroup:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -432,7 +432,7 @@ export async function removeAccountGroup(accountOid: string, groupOid: string) {
     await api.removeAccountGroup(accountOid, groupOid);
     const duration = Date.now() - startTime;
     console.log(`[Action:Security:removeAccountGroup:${requestId}] Success in ${duration}ms`);
-    revalidatePath('/security/accounts');
+    revalidatePath('/auth/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;

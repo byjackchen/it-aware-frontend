@@ -1,28 +1,34 @@
 'use client';
 
 /**
- * Permissions list page with navigation to detail and create pages.
+ * Groups list page with navigation to detail and create pages.
  */
 
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Plus, Lock } from 'lucide-react';
-import type { Permission } from '@/lib/types/security';
+import { Plus, Users } from 'lucide-react';
+import type { Group } from '@/lib/types/security';
 
-interface PermissionsListPageProps {
-    permissions: Permission[];
+interface GroupsListPageProps {
+    groups: Group[];
 }
 
-export function PermissionsListPage({ permissions }: PermissionsListPageProps) {
-    const t = useTranslations('Security');
+const scopeTypeColors: Record<string, string> = {
+    unconstrained: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    self_scoped: 'bg-green-500/20 text-green-400 border-green-500/30',
+    role_based: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+};
+
+export function GroupsListPage({ groups }: GroupsListPageProps) {
+    const t = useTranslations('Auth');
     const router = useRouter();
 
-    const handleRowClick = (permission: Permission) => {
-        router.push(`/security/permissions/${permission.oid}`);
+    const handleRowClick = (group: Group) => {
+        router.push(`/auth/groups/${group.oid}`);
     };
 
     const handleCreateClick = () => {
-        router.push('/security/permissions/new');
+        router.push('/auth/groups/new');
     };
 
     return (
@@ -31,8 +37,8 @@ export function PermissionsListPage({ permissions }: PermissionsListPageProps) {
                 {/* Header */}
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Lock className="w-5 h-5 text-blue-400" />
-                        <h1 className="text-xl font-semibold text-white">{t('permissions.title')}</h1>
+                        <Users className="w-5 h-5 text-blue-400" />
+                        <h1 className="text-xl font-semibold text-white">{t('groups.title')}</h1>
                     </div>
                     <button
                         onClick={handleCreateClick}
@@ -45,36 +51,37 @@ export function PermissionsListPage({ permissions }: PermissionsListPageProps) {
 
                 {/* Table */}
                 <div className="flex-1 overflow-auto">
-                    {permissions.length === 0 ? (
+                    {groups.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                            <Lock className="w-12 h-12 mb-4 opacity-50" />
-                            <p>{t('permissions.empty')}</p>
+                            <Users className="w-12 h-12 mb-4 opacity-50" />
+                            <p>{t('groups.empty')}</p>
                         </div>
                     ) : (
                         <table className="w-full">
                             <thead className="sticky top-0 bg-inherit">
                                 <tr className="text-left text-sm text-gray-400 border-b border-white/10">
-                                    <th className="px-4 py-3 font-medium">{t('permissions.code')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('permissions.domain')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('permissions.resource')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('permissions.action')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('groups.name')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('groups.scopeType')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {permissions.map((permission) => (
+                                {groups.map((group) => (
                                     <tr
-                                        key={permission.oid}
-                                        onClick={() => handleRowClick(permission)}
+                                        key={group.oid}
+                                        onClick={() => handleRowClick(group)}
                                         className="hover:bg-white/5 cursor-pointer transition-colors"
                                     >
                                         <td className="px-4 py-3">
-                                            <span className="font-mono text-sm text-blue-400">
-                                                {permission.permission_code}
+                                            <span className="font-medium text-white">{group.name}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className={`px-2 py-1 rounded-md text-xs font-medium border ${scopeTypeColors[group.scope_type] || 'bg-gray-500/20 text-gray-400'
+                                                    }`}
+                                            >
+                                                {t(`groups.scope.${group.scope_type}`)}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-white">{permission.domain}</td>
-                                        <td className="px-4 py-3 text-white">{permission.resource}</td>
-                                        <td className="px-4 py-3 text-white">{permission.action}</td>
                                     </tr>
                                 ))}
                             </tbody>

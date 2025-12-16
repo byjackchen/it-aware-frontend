@@ -25,37 +25,37 @@ import { type MenuItem, type SubMenuConfig, requireAnyPermission } from '@/lib/t
  * Each item includes permission requirements for authorization.
  */
 const subMenuItems: SubMenuConfig = {
-    '/security': [
+    '/auth': [
         {
-            href: '/security/permissions',
+            href: '/auth/permissions',
             labelKey: 'permissions',
             icon: Lock,
             permissions: requireAnyPermission([
-                PERMISSIONS.UI.NAVIGATION_SECURITY
+                PERMISSIONS.UI.NAVIGATION_AUTH
             ]),
         },
         {
-            href: '/security/accounts',
+            href: '/auth/accounts',
             labelKey: 'accounts',
             icon: User,
             permissions: requireAnyPermission([
-                PERMISSIONS.UI.NAVIGATION_SECURITY
+                PERMISSIONS.UI.NAVIGATION_AUTH
             ]),
         },
         {
-            href: '/security/groups',
+            href: '/auth/groups',
             labelKey: 'groups',
             icon: Users,
             permissions: requireAnyPermission([
-                PERMISSIONS.UI.NAVIGATION_SECURITY
+                PERMISSIONS.UI.NAVIGATION_AUTH
             ]),
         },
         {
-            href: '/security/roles',
+            href: '/auth/roles',
             labelKey: 'roles',
             icon: Shield,
             permissions: requireAnyPermission([
-                PERMISSIONS.UI.NAVIGATION_SECURITY
+                PERMISSIONS.UI.NAVIGATION_AUTH
             ]),
         },
     ],

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 
 // Define which paths have sub-menus
-const pathsWithSubMenu = ['/security', '/persona'];
+const pathsWithSubMenu = ['/auth', '/persona'];
 
 export function MainContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
