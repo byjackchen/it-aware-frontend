@@ -27,6 +27,7 @@ import type {
 import type { Role } from '@/lib/types/security';
 
 const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
+const HIERARCHIES_BASE = `${RUNTIME_CONFIG.backend.domain}/hierarchies`;
 const EDGES_BASE = `${RUNTIME_CONFIG.backend.domain}/edges`;
 const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
 
@@ -69,29 +70,29 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
 // ============================================================================
 
 export async function getOrganizations(): Promise<Organization[]> {
-    return fetchApi<Organization[]>(`${OBJECTS_BASE}/organizations?limit=1000`);
+    return fetchApi<Organization[]>(`${HIERARCHIES_BASE}/organizations?limit=1000`);
 }
 
 export async function getOrganization(oid: string): Promise<Organization> {
-    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`);
+    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`);
 }
 
 export async function createOrganization(data: OrganizationCreate): Promise<Organization> {
-    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations`, {
+    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
 export async function updateOrganization(oid: string, data: OrganizationUpdate): Promise<Organization> {
-    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`, {
+    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteOrganization(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
@@ -101,29 +102,29 @@ export async function deleteOrganization(oid: string): Promise<void> {
 // ============================================================================
 
 export async function getLocations(): Promise<Location[]> {
-    return fetchApi<Location[]>(`${OBJECTS_BASE}/locations?limit=1000`);
+    return fetchApi<Location[]>(`${HIERARCHIES_BASE}/locations?limit=1000`);
 }
 
 export async function getLocation(oid: string): Promise<Location> {
-    return fetchApi<Location>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`);
+    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`);
 }
 
 export async function createLocation(data: LocationCreate): Promise<Location> {
-    return fetchApi<Location>(`${OBJECTS_BASE}/locations`, {
+    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
 export async function updateLocation(oid: string, data: LocationUpdate): Promise<Location> {
-    return fetchApi<Location>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`, {
+    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteLocation(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }

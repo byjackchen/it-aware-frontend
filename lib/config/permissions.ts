@@ -17,10 +17,10 @@ export const PERMISSIONS = {
   },
   // Objects domain permissions
   OBJECTS: {
-    ORGANIZATIONS_READ: 'objects:organizations:read',
-    ORGANIZATIONS_EDIT: 'objects:organizations:edit',
-    LOCATIONS_READ: 'objects:locations:read',
-    LOCATIONS_EDIT: 'objects:locations:edit',
+    ORGANIZATIONS_READ: 'hierarchies:organizations:read',
+    ORGANIZATIONS_EDIT: 'hierarchies:organizations:edit',
+    LOCATIONS_READ: 'hierarchies:locations:read',
+    LOCATIONS_EDIT: 'hierarchies:locations:edit',
     WORKERS_READ: 'objects:workers:read',
     WORKERS_EDIT: 'objects:workers:edit',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
