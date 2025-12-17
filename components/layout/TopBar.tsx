@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Bell, BookOpen, Database, LogOut, Shield, UserCircle } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -111,6 +112,9 @@ export function TopBar() {
           })}
         </nav>
       </div>
+
+      {/* Global Search - Center */}
+      <GlobalSearch />
 
       <div className="flex items-center gap-4">
         <ThemeSwitcher />

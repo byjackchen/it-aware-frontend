@@ -6,6 +6,15 @@
         "persona": "Persona",
         "knowledge": "Knowledge"
     },
+    "GlobalSearch": {
+        "placeholder": "Search Data Objects...",
+        "noResults": "No results found",
+        "searching": "Searching...",
+        "organizations": "Organizations",
+        "locations": "Locations",
+        "workers": "Workers",
+        "tickets": "Tickets"
+    },
     "Sidebar": {
         "overview": "Overview",
         "threats": "Threats",
