@@ -32,6 +32,7 @@ export interface UserWorker {
 export interface UserPermissions {
   unconstrained: string[]
   self_scoped: string[]
+  role_based: string[]
 }
 
 // Backend nested format: { account, worker, permissions, groups }
@@ -266,11 +267,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Get permissions array from nested structure
+  // Get all permissions from nested structure (combine unconstrained, self_scoped, and role_based)
   const getUserPermissions = useCallback((): string[] => {
-    if (!user?.permissions?.unconstrained) return [];
-    if (!Array.isArray(user.permissions.unconstrained)) return [];
-    return user.permissions.unconstrained;
+    const permissions: string[] = [];
+
+    // Add unconstrained permissions
+    if (Array.isArray(user?.permissions?.unconstrained)) {
+      permissions.push(...user.permissions.unconstrained);
+    }
+
+    // Add self_scoped permissions
+    if (Array.isArray(user?.permissions?.self_scoped)) {
+      permissions.push(...user.permissions.self_scoped);
+    }
+
+    // Add role_based permissions
+    if (Array.isArray(user?.permissions?.role_based)) {
+      permissions.push(...user.permissions.role_based);
+    }
+
+    // Return unique permissions
+    return [...new Set(permissions)];
   }, [user]);
 
   const hasPermission = useCallback(
@@ -349,8 +366,16 @@ export function useUser() {
 
 export function usePermissions() {
   const { hasPermission, hasAnyPermission, hasAllPermissions, hasGroup, user } = useUser()
+
+  // Combine unconstrained, self_scoped, and role_based permissions
+  const allPermissions = [
+    ...(user?.permissions?.unconstrained ?? []),
+    ...(user?.permissions?.self_scoped ?? []),
+    ...(user?.permissions?.role_based ?? []),
+  ]
+
   return {
-    permissions: user?.permissions?.unconstrained ?? [],
+    permissions: [...new Set(allPermissions)], // Deduplicated
     groups: user?.groups ?? [],
     hasPermission,
     hasAnyPermission,
