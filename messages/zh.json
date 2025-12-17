@@ -137,6 +137,9 @@
             "created": "创建时间",
             "updated": "更新时间",
             "name": "名称",
+            "parent": "父节点",
+            "noParent": "无父节点（根级别）",
+            "searchParent": "搜索父节点...",
             "hierarchyPath": "层级路径",
             "levelsDeep": "{count} 层深",
             "levelsDeepPlural": "{count} 层深",
@@ -148,6 +151,18 @@
             "search": "搜索...",
             "refresh": "刷新",
             "back": "返回"
+        },
+        "roleAssignment": {
+            "noRoles": "没有可用的角色。请先在权限模块中创建角色。",
+            "noWorkers": "此角色尚未分配员工。",
+            "noAvailable": "没有可分配的员工",
+            "noAssignments": "暂无角色分配。使用下方搜索查找角色。",
+            "unassignedRoles": "未分配的角色",
+            "searchRoles": "搜索角色...",
+            "searchWorkers": "搜索员工...",
+            "addWorker": "添加员工",
+            "moreRoles": "+{count} 个角色",
+            "noMatchingRoles": "未找到匹配的角色"
         },
         "organizations": {
             "title": "组织",

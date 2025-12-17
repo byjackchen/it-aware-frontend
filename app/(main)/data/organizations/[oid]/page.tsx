@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation';
 import {
     getOrganization,
+    getOrganizations,
     getConnectedEdges,
     getWorkerHierarchyRoles,
     getWorkers,
@@ -20,8 +21,9 @@ export default async function OrganizationPage({ params }: PageProps) {
     const { oid } = await params;
 
     try {
-        const [organization, edgesResponse, assignments, workers, roles] = await Promise.all([
+        const [organization, organizations, edgesResponse, assignments, workers, roles] = await Promise.all([
             getOrganization(oid),
+            getOrganizations(),
             getConnectedEdges(oid),
             getWorkerHierarchyRoles(undefined, undefined, oid),
             getWorkers(true),
@@ -31,6 +33,7 @@ export default async function OrganizationPage({ params }: PageProps) {
         return (
             <OrganizationDetailPage
                 organization={organization}
+                organizations={organizations}
                 edges={edgesResponse.items}
                 assignments={assignments}
                 workers={workers}
@@ -41,3 +44,4 @@ export default async function OrganizationPage({ params }: PageProps) {
         notFound();
     }
 }
+

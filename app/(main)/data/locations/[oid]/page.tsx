@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation';
 import {
     getLocation,
+    getLocations,
     getConnectedEdges,
     getWorkerHierarchyRoles,
     getWorkers,
@@ -20,8 +21,9 @@ export default async function LocationPage({ params }: PageProps) {
     const { oid } = await params;
 
     try {
-        const [location, edgesResponse, assignments, workers, roles] = await Promise.all([
+        const [location, locations, edgesResponse, assignments, workers, roles] = await Promise.all([
             getLocation(oid),
+            getLocations(),
             getConnectedEdges(oid),
             getWorkerHierarchyRoles(undefined, undefined, oid),
             getWorkers(true),
@@ -31,6 +33,7 @@ export default async function LocationPage({ params }: PageProps) {
         return (
             <LocationDetailPage
                 location={location}
+                locations={locations}
                 edges={edgesResponse.items}
                 assignments={assignments}
                 workers={workers}
@@ -41,3 +44,4 @@ export default async function LocationPage({ params }: PageProps) {
         notFound();
     }
 }
+

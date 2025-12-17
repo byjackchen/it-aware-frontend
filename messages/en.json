@@ -137,6 +137,9 @@
             "created": "Created",
             "updated": "Updated",
             "name": "Name",
+            "parent": "Parent",
+            "noParent": "No parent (root level)",
+            "searchParent": "Search for parent...",
             "hierarchyPath": "Hierarchy Path",
             "levelsDeep": "{count} level deep",
             "levelsDeepPlural": "{count} levels deep",
@@ -148,6 +151,18 @@
             "search": "Search...",
             "refresh": "Refresh",
             "back": "Back"
+        },
+        "roleAssignment": {
+            "noRoles": "No roles available. Create roles in the Auth section first.",
+            "noWorkers": "No workers assigned to this role.",
+            "noAvailable": "No workers available",
+            "noAssignments": "No role assignments yet. Use the search below to find roles.",
+            "unassignedRoles": "Unassigned Roles",
+            "searchRoles": "Search roles...",
+            "searchWorkers": "Search workers...",
+            "addWorker": "Add Worker",
+            "moreRoles": "+{count} more roles",
+            "noMatchingRoles": "No matching roles found"
         },
         "organizations": {
             "title": "Organizations",

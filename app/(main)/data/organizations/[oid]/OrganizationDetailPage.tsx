@@ -18,13 +18,14 @@ import {
     GitBranch,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { ObjectGraph, RoleWorkerAssignment } from '@/components/data';
+import { ObjectGraph, RoleWorkerAssignment, HierarchySelect } from '@/components/data';
 import type { Organization, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 import { updateOrganizationAction, deleteOrganizationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '../../actions';
 
 interface OrganizationDetailPageProps {
     organization: Organization;
+    organizations: Organization[];
     edges: GlobalEdge[];
     assignments: WorkerHierarchyRole[];
     workers: Worker[];
@@ -33,6 +34,7 @@ interface OrganizationDetailPageProps {
 
 export function OrganizationDetailPage({
     organization,
+    organizations,
     edges,
     assignments,
     workers,
@@ -45,7 +47,13 @@ export function OrganizationDetailPage({
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const [name, setName] = useState(organization.name);
+    const [parentOid, setParentOid] = useState<string | null>(organization.parent_oid);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
+
+    // Get parent name for display
+    const parentName = organization.parent_oid
+        ? organizations.find((o) => o.oid === organization.parent_oid)?.name
+        : null;
 
     const filteredEdges = edgeFilter
         ? edges.filter((e) => e.edge_type === edgeFilter)
@@ -56,6 +64,9 @@ export function OrganizationDetailPage({
         try {
             const formData = new FormData();
             formData.set('name', name);
+            if (parentOid !== organization.parent_oid) {
+                formData.set('parent_oid', parentOid || '');
+            }
             await updateOrganizationAction(organization.oid, formData);
             setIsEditing(false);
             router.refresh();
@@ -77,6 +88,7 @@ export function OrganizationDetailPage({
 
     const handleCancel = () => {
         setName(organization.name);
+        setParentOid(organization.parent_oid);
         setIsEditing(false);
     };
 
@@ -96,18 +108,12 @@ export function OrganizationDetailPage({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/data/organizations')}
-                            className={`
-                p-2 rounded-lg transition-colors
-                ${isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}
-              `}
+                            className={`p-2 rounded-lg transition-colors ${isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
                         >
                             <ArrowLeft className={`w-5 h-5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`} />
                         </button>
                         <div className="flex items-center gap-3">
-                            <div className={`
-                w-10 h-10 rounded-xl flex items-center justify-center
-                ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}
-              `}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
                                 <Building2 className="w-5 h-5" />
                             </div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
@@ -127,10 +133,7 @@ export function OrganizationDetailPage({
                 </div>
 
                 {/* Details Card */}
-                <div className={`
-          rounded-xl border p-6 space-y-4
-          ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}
-        `}>
+                <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     {/* Name */}
                     <div>
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -141,17 +144,33 @@ export function OrganizationDetailPage({
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className={`
-                  w-full px-3 py-2 rounded-lg text-lg
-                  ${isLight
-                                        ? 'bg-slate-100 text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500'
-                                        : 'bg-white/10 text-white focus:bg-white/20 focus:ring-2 focus:ring-blue-500'
-                                    }
-                `}
+                                className={`w-full px-3 py-2 rounded-lg text-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`}
                             />
                         ) : (
                             <div className={`px-3 py-2 rounded-lg text-lg ${isLight ? 'text-slate-800 bg-slate-50' : 'text-white bg-white/5'}`}>
                                 {organization.name}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Parent */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {t('common.parent')}
+                        </label>
+                        {isEditing ? (
+                            <HierarchySelect
+                                items={organizations}
+                                value={parentOid}
+                                onChange={setParentOid}
+                                excludeOid={organization.oid}
+                            />
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                    {parentName || t('common.noParent')}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -234,10 +253,7 @@ export function OrganizationDetailPage({
                 </div>
 
                 {/* Role Assignments */}
-                <div className={`
-          rounded-xl border p-6
-          ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}
-        `}>
+                <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>
                         {t('common.roleAssignments')}
                     </h2>
@@ -252,10 +268,7 @@ export function OrganizationDetailPage({
                 </div>
 
                 {/* Relationships Graph */}
-                <div className={`
-          rounded-xl border p-6
-          ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}
-        `}>
+                <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>
                         {t('common.edgeRelationships')}
                     </h2>
