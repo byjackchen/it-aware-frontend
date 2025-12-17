@@ -19,7 +19,7 @@ interface AuthorizedMenuItemProps {
  * @example
  * // Menu item visible if user has either 'auth:all:read' OR 'auth:all:edit'
  * <AuthorizedMenuItem permissions={{ requiredPermissions: ['auth:all:read', 'auth:all:edit'], checkType: 'any' }}>
- *   <Link href="/security">Security</Link>
+ *   <Link href="/auth">Security</Link>
  * </AuthorizedMenuItem>
  * 
  * @example
