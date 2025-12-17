@@ -204,9 +204,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
           return
         }
-        const errorText = await response.text()
-        console.error(`[UserContext:fetchUser] API error response: ${errorText}`)
-        throw new Error(`Failed to fetch user: ${response.status}`)
+        // For other errors (500, etc.), redirect to login
+        console.error(`[UserContext:fetchUser] Server error ${response.status} - redirecting to login`)
+        const errorMessage = encodeURIComponent(`Authentication failed (Error ${response.status}). Please try again.`)
+        window.location.href = `/login?error=${errorMessage}`
+        return
       }
 
       const userData = await response.json()
@@ -216,6 +218,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error('[UserContext:fetchUser] Exception during fetch:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch user')
       setUser(null)
+      // Redirect to login on fetch exception
+      const errorMessage = encodeURIComponent('Failed to authenticate. Please try again.')
+      window.location.href = `/login?error=${errorMessage}`
     } finally {
       setIsLoading(false)
       console.log('[UserContext:fetchUser] Completed, isLoading=false')
