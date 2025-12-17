@@ -10,16 +10,36 @@ export interface UserGroup {
   scope_type: string
 }
 
-export interface User {
+export interface UserAccount {
   oid: string
   username: string
-  email: string
-  full_name: string
   is_active: boolean
-  is_system_user: boolean
-  created_at: string
-  groups: UserGroup[]
-  permissions: string[]
+  is_system: boolean
+  created_at?: string
+}
+
+export interface UserWorker {
+  oid: string
+  worker_id: string
+  full_name: string
+  email: string
+  org_oid: string | null
+  location_oid: string | null
+  manager_oid: string | null
+  is_active: boolean
+}
+
+export interface UserPermissions {
+  unconstrained: string[]
+  self_scoped: string[]
+}
+
+// Backend nested format: { account, worker, permissions, groups }
+export interface User {
+  account: UserAccount
+  worker?: UserWorker
+  permissions: UserPermissions
+  groups?: UserGroup[]
 }
 
 interface UserContextType {
@@ -111,7 +131,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = JSON.parse(jsonString) as User
-      console.log(`[UserContext:getInitialUserData] Parsed user data: username=${userData.username}`)
+      console.log(`[UserContext:getInitialUserData] Parsed user data: username=${userData.account?.username}`)
       deleteCookie(COOKIES.USER_DATA) // One-time use
       console.log('[UserContext:getInitialUserData] Deleted user data cookie (one-time use)')
       return userData
@@ -143,7 +163,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     console.log('[UserContext:fetchUser] Checking for initial user data from middleware')
     const initialData = getInitialUserData()
     if (initialData) {
-      console.log(`[UserContext:fetchUser] Using initial data from cookie: username=${initialData.username}`)
+      console.log(`[UserContext:fetchUser] Using initial data from cookie: username=${initialData.account?.username}`)
       setUser(initialData)
       setIsLoading(false)
       return
@@ -190,7 +210,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       const userData = await response.json()
-      console.log(`[UserContext:fetchUser] API returned user data: username=${userData.username}, keys=${Object.keys(userData).join(',')}`)
+      console.log(`[UserContext:fetchUser] API returned user data: username=${userData.account?.username}, keys=${Object.keys(userData).join(',')}`)
       setUser(userData)
     } catch (err) {
       console.error('[UserContext:fetchUser] Exception during fetch:', err)
@@ -241,32 +261,39 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  // Get permissions array from nested structure
+  const getUserPermissions = useCallback((): string[] => {
+    if (!user?.permissions?.unconstrained) return [];
+    if (!Array.isArray(user.permissions.unconstrained)) return [];
+    return user.permissions.unconstrained;
+  }, [user]);
+
   const hasPermission = useCallback(
     (permission: string) => {
-      if (!Array.isArray(user?.permissions)) return false;
-      return user.permissions.some(p => permissionMatches(p, permission));
+      const perms = getUserPermissions();
+      return perms.some(p => permissionMatches(p, permission));
     },
-    [user, permissionMatches]
+    [getUserPermissions, permissionMatches]
   );
 
   const hasAnyPermission = useCallback(
     (permissions: string[]) => {
-      if (!Array.isArray(user?.permissions)) return false;
+      const userPerms = getUserPermissions();
       return permissions.some(required =>
-        user.permissions.some(userPerm => permissionMatches(userPerm, required))
+        userPerms.some(userPerm => permissionMatches(userPerm, required))
       );
     },
-    [user, permissionMatches]
+    [getUserPermissions, permissionMatches]
   );
 
   const hasAllPermissions = useCallback(
     (permissions: string[]) => {
-      if (!Array.isArray(user?.permissions)) return false;
+      const userPerms = getUserPermissions();
       return permissions.every(required =>
-        user.permissions.some(userPerm => permissionMatches(userPerm, required))
+        userPerms.some(userPerm => permissionMatches(userPerm, required))
       );
     },
-    [user, permissionMatches]
+    [getUserPermissions, permissionMatches]
   );
 
   const hasGroup = useCallback(
@@ -284,7 +311,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Log user state changes
   useEffect(() => {
-    console.log(`[UserContext] User state changed: user=${user ? user.username : 'null'}, isLoading=${isLoading}, error=${error}`)
+    console.log(`[UserContext] User state changed: user=${user ? user.account?.username : 'null'}, isLoading=${isLoading}, error=${error}`)
   }, [user, isLoading, error])
 
   const value = useMemo<UserContextType>(
@@ -318,7 +345,7 @@ export function useUser() {
 export function usePermissions() {
   const { hasPermission, hasAnyPermission, hasAllPermissions, hasGroup, user } = useUser()
   return {
-    permissions: user?.permissions ?? [],
+    permissions: user?.permissions?.unconstrained ?? [],
     groups: user?.groups ?? [],
     hasPermission,
     hasAnyPermission,

@@ -24,8 +24,8 @@ export function TopBar() {
   const isLight = theme === 'light';
 
   // Use consistent initial value to avoid hydration mismatch
-  const initials = !isLoading && user?.username
-    ? user.username
+  const initials = !isLoading && user?.account?.username
+    ? user.account.username
       .split('.')
       .map((part: string) => part.charAt(0).toUpperCase())
       .join('')
@@ -133,13 +133,13 @@ export function TopBar() {
           <div className="absolute right-0 top-full mt-2 w-64 glass-dark rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right">
             <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
               <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                {user?.full_name || '\u00A0'}
+                {user?.worker?.full_name || user?.account?.username || '\u00A0'}
               </p>
               <p className={`text-sm truncate ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
-                {user?.username || '\u00A0'}
+                {user?.account?.username || '\u00A0'}
               </p>
               <p className={`text-xs truncate mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                {user?.email || '\u00A0'}
+                {user?.worker?.email || '\u00A0'}
               </p>
             </div>
             <button

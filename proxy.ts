@@ -98,25 +98,10 @@ async function fetchUserData(accessTokenCookie: string, requestId: string): Prom
       const userData = await response.json()
       console.log(`[Middleware:${requestId}] fetchUserData: Success, raw keys: ${Object.keys(userData).join(', ')}`)
 
-      // Transform nested backend response to flat frontend User format
-      // Backend returns: { account: {...}, worker: {...}, groups: [...], permissions: [...] }
-      // Frontend expects: { oid, username, email, full_name, is_active, is_system_user, created_at, groups, permissions }
-      const transformedUser = {
-        oid: userData.account?.oid ?? '',
-        username: userData.account?.username ?? '',
-        email: userData.worker?.email ?? '',
-        full_name: userData.worker?.full_name ?? userData.account?.username ?? '',
-        is_active: userData.account?.is_active ?? false,
-        is_system_user: userData.account?.is_system ?? false,
-        created_at: userData.account?.created_at ?? '',
-        groups: userData.groups ?? [],
-        // Backend returns permissions as { unconstrained: [...], self_scoped: [...] }
-        // Frontend expects a flat string array, so extract unconstrained permissions
-        permissions: userData.permissions?.unconstrained ?? [],
-      }
-
-      console.log(`[Middleware:${requestId}] fetchUserData: Transformed user: username=${transformedUser.username}, groups=${transformedUser.groups?.length}, permissions=${transformedUser.permissions?.length}`)
-      return transformedUser
+      // Pass through backend response directly (nested format: { account, worker, permissions, groups })
+      // Frontend now expects the nested format
+      console.log(`[Middleware:${requestId}] fetchUserData: username=${userData.account?.username}, permissions count=${userData.permissions?.unconstrained?.length}`)
+      return userData
     }
 
     // Log why the response was not OK

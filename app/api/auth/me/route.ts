@@ -43,11 +43,11 @@ export async function GET() {
   const requestId = generateRequestId()
   const startTime = Date.now()
   console.log(`[APIRoute:/auth/me:${requestId}] Request started`)
-  
+
   try {
     const cookieStore = await cookies()
     const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)
-    
+
     console.log(`[APIRoute:/auth/me:${requestId}] Access token present: ${!!accessToken}`)
 
     if (!accessToken) {
@@ -59,7 +59,7 @@ export async function GET() {
     const allCookies = cookieStore.getAll()
     console.log(`[APIRoute:/auth/me:${requestId}] Total cookies count: ${allCookies.length}`)
     console.log(`[APIRoute:/auth/me:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
-    
+
     // Log each cookie name and check for non-ASCII in values
     for (const cookie of allCookies) {
       const nameCheck = hasNonAscii(cookie.name)
@@ -72,11 +72,11 @@ export async function GET() {
         console.log(`[APIRoute:/auth/me:${requestId}] Cookie value non-ASCII: index=${valueCheck.firstNonAsciiIndex}, charCode=${valueCheck.charCode}`)
       }
     }
-    
+
     const cookieHeader = allCookies
       .map(c => `${c.name}=${c.value}`)
       .join('; ')
-    
+
     console.log(`[APIRoute:/auth/me:${requestId}] Cookie header length: ${cookieHeader.length}`)
     const cookieHeaderCheck = hasNonAscii(cookieHeader)
     if (cookieHeaderCheck.hasNonAscii) {
@@ -84,7 +84,7 @@ export async function GET() {
     }
 
     console.log(`[APIRoute:/auth/me:${requestId}] Fetching from backend: ${BACKEND_DOMAIN}/auth/me`)
-    
+
     const response = await fetch(`${BACKEND_DOMAIN}/auth/me`, {
       method: 'GET',
       headers: { Cookie: cookieHeader },
@@ -104,32 +104,17 @@ export async function GET() {
 
     const userData = await response.json()
     console.log(`[APIRoute:/auth/me:${requestId}] Backend response data keys: ${Object.keys(userData).join(', ')}`)
-    
+
     // Check for non-ASCII characters in the response data
     logNonAsciiInObject(userData as Record<string, unknown>, 'userData', requestId)
-    
-    // Transform nested backend response to flat frontend User format
-    // Backend returns: { account: {...}, worker: {...}, groups: [...], permissions: [...] }
-    // Frontend expects: { oid, username, email, full_name, is_active, is_system_user, created_at, groups, permissions }
-    const transformedUser = {
-      oid: userData.account?.oid ?? '',
-      username: userData.account?.username ?? '',
-      email: userData.worker?.email ?? '',
-      full_name: userData.worker?.full_name ?? userData.account?.username ?? '',
-      is_active: userData.account?.is_active ?? false,
-      is_system_user: userData.account?.is_system ?? false,
-      created_at: userData.account?.created_at ?? '',
-      groups: userData.groups ?? [],
-      // Backend returns permissions as { unconstrained: [...], self_scoped: [...] }
-      // Frontend expects a flat string array, so extract unconstrained permissions
-      permissions: userData.permissions?.unconstrained ?? [],
-    }
-    
-    console.log(`[APIRoute:/auth/me:${requestId}] Transformed user: username=${transformedUser.username}, groups=${transformedUser.groups?.length}, permissions=${transformedUser.permissions?.length}`)
-    
+
+    // Pass through backend response directly (nested format: { account, worker, permissions, groups })
+    // Frontend now expects the nested format
+    console.log(`[APIRoute:/auth/me:${requestId}] User: username=${userData.account?.username}, permissions count=${userData.permissions?.unconstrained?.length}`)
+
     // Safely stringify userData to check for issues
     try {
-      const jsonString = JSON.stringify(transformedUser)
+      const jsonString = JSON.stringify(userData)
       console.log(`[APIRoute:/auth/me:${requestId}] JSON string length: ${jsonString.length}`)
       const jsonCheck = hasNonAscii(jsonString)
       if (jsonCheck.hasNonAscii) {
@@ -141,7 +126,7 @@ export async function GET() {
 
     const duration = Date.now() - startTime
     console.log(`[APIRoute:/auth/me:${requestId}] Returning successful response in ${duration}ms`)
-    return NextResponse.json(transformedUser)
+    return NextResponse.json(userData)
   } catch (error) {
     const duration = Date.now() - startTime
     console.error(`[APIRoute:/auth/me:${requestId}] Error after ${duration}ms:`, error)
