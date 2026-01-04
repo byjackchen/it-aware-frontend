@@ -66,11 +66,60 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 // ============================================================================
+// Pagination Helper
+// ============================================================================
+
+const PAGE_SIZE = 1000; // API maximum
+const MAX_PAGES = 100; // Safety limit: 100k max items
+
+async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promise<T[]> {
+    const allResults: T[] = [];
+    const seenOids = new Set<string>();
+    let skip = 0;
+    let pageCount = 0;
+    let consecutiveDuplicatePages = 0;
+
+    while (pageCount < MAX_PAGES) {
+        const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=${PAGE_SIZE}&skip=${skip}`;
+        const page = await fetchApi<T[]>(url);
+
+        // Add only new items (deduplicate)
+        const newItems = page.filter(item => !seenOids.has(item.oid));
+        newItems.forEach(item => {
+            seenOids.add(item.oid);
+            allResults.push(item);
+        });
+
+        // Track consecutive pages with all duplicates (indicates API issue)
+        if (newItems.length === 0 && page.length > 0) {
+            consecutiveDuplicatePages++;
+            // Only stop if we see 3+ consecutive duplicate pages (API definitely broken)
+            if (consecutiveDuplicatePages >= 3) {
+                console.warn(`[fetchAllPages] 3+ consecutive duplicate pages at skip=${skip}. Stopping.`);
+                break;
+            }
+        } else {
+            consecutiveDuplicatePages = 0;
+        }
+
+        // If we got fewer than PAGE_SIZE, we've reached the end
+        if (page.length < PAGE_SIZE) {
+            break;
+        }
+        skip += PAGE_SIZE;
+        pageCount++;
+    }
+
+    console.log(`[fetchAllPages] Fetched ${allResults.length} unique items in ${pageCount + 1} pages from ${baseUrl}`);
+    return allResults;
+}
+
+// ============================================================================
 // Organization APIs
 // ============================================================================
 
 export async function getOrganizations(): Promise<Organization[]> {
-    return fetchApi<Organization[]>(`${HIERARCHIES_BASE}/organizations?limit=1000`);
+    return fetchAllPages<Organization>(`${HIERARCHIES_BASE}/organizations`);
 }
 
 export async function getOrganization(oid: string): Promise<Organization> {
@@ -102,7 +151,7 @@ export async function deleteOrganization(oid: string): Promise<void> {
 // ============================================================================
 
 export async function getLocations(): Promise<Location[]> {
-    return fetchApi<Location[]>(`${HIERARCHIES_BASE}/locations?limit=1000`);
+    return fetchAllPages<Location>(`${HIERARCHIES_BASE}/locations`);
 }
 
 export async function getLocation(oid: string): Promise<Location> {

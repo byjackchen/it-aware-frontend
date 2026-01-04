@@ -87,7 +87,7 @@ Uses `console.log` with structured prefixes for traceability.
 Build and run the image:
 
 ```bash
-docker build -t it-aware-frontend:latest .
+docker build --no-cache -t it-aware-frontend:latest .
 docker stop it-aware-frontend && docker rm it-aware-frontend
 docker run -d -p 3007:3000 --network dev-net --env-file ./.env.local_docker --name it-aware-frontend it-aware-frontend:latest
 ```

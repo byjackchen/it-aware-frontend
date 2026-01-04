@@ -15,6 +15,11 @@ interface OrganizationsListPageProps {
     treeNodes: HierarchyTreeNode[];
 }
 
+// Count all nodes in the tree recursively
+function countNodes(nodes: HierarchyTreeNode[]): number {
+    return nodes.reduce((count, node) => count + 1 + countNodes(node.children), 0);
+}
+
 // Filter tree nodes by search query, keeping matching nodes and their ancestors
 function filterTree(nodes: HierarchyTreeNode[], query: string): HierarchyTreeNode[] {
     if (!query.trim()) return nodes;
@@ -55,6 +60,8 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
         [treeNodes, searchQuery]
     );
 
+    const totalNodes = useMemo(() => countNodes(treeNodes), [treeNodes]);
+
     const handleRefresh = () => {
         setIsRefreshing(true);
         router.refresh();
@@ -86,7 +93,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
                                 Organizations
                             </h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {treeNodes.length} root organization{treeNodes.length !== 1 ? 's' : ''}
+                                {totalNodes} total node{totalNodes !== 1 ? 's' : ''} • {treeNodes.length} root{treeNodes.length !== 1 ? 's' : ''}
                             </p>
                         </div>
                     </div>
