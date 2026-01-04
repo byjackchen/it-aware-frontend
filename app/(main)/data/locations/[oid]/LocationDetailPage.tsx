@@ -16,10 +16,14 @@ import {
     Loader2,
     Calendar,
     GitBranch,
+    Globe,
+    Building2,
+    Home,
+    Clock,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { ObjectGraph, RoleWorkerAssignment, HierarchySelect } from '@/components/data';
-import type { Location, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
+import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
+import type { Location, LocationType, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 import { updateLocationAction, deleteLocationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '../../actions';
 
@@ -31,6 +35,15 @@ interface LocationDetailPageProps {
     workers: Worker[];
     roles: Role[];
 }
+
+// Location type display configuration
+const LOCATION_TYPE_CONFIG: Record<LocationType, { label: string; icon: typeof Globe; color: string }> = {
+    root: { label: 'Root', icon: Globe, color: 'text-purple-500' },
+    region: { label: 'Region', icon: Globe, color: 'text-blue-500' },
+    country: { label: 'Country', icon: MapPin, color: 'text-green-500' },
+    office_location: { label: 'Office', icon: Building2, color: 'text-orange-500' },
+    remote_location: { label: 'Remote', icon: Home, color: 'text-cyan-500' },
+};
 
 export function LocationDetailPage({
     location,
@@ -47,6 +60,8 @@ export function LocationDetailPage({
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const [name, setName] = useState(location.name);
+    const [type, setType] = useState<LocationType>(location.type);
+    const [timezone, setTimezone] = useState(location.timezone);
     const [parentOid, setParentOid] = useState<string | null>(location.parent_oid);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
@@ -59,11 +74,20 @@ export function LocationDetailPage({
         ? edges.filter((e) => e.edge_type === edgeFilter)
         : edges;
 
+    // Get type display config
+    const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG.office_location;
+    const TypeIcon = typeConfig.icon;
+
+    // Determine if timezone is required based on type
+    const requiresTimezone = type === 'office_location' || type === 'remote_location';
+
     const handleSave = async () => {
         setIsPending(true);
         try {
             const formData = new FormData();
             formData.set('name', name);
+            formData.set('type', type);
+            formData.set('timezone', timezone);
             if (parentOid !== location.parent_oid) {
                 formData.set('parent_oid', parentOid || '');
             }
@@ -88,6 +112,8 @@ export function LocationDetailPage({
 
     const handleCancel = () => {
         setName(location.name);
+        setType(location.type);
+        setTimezone(location.timezone);
         setParentOid(location.parent_oid);
         setIsEditing(false);
     };
@@ -149,6 +175,44 @@ export function LocationDetailPage({
                         ) : (
                             <div className={`px-3 py-2 rounded-lg text-lg ${isLight ? 'text-slate-800 bg-slate-50' : 'text-white bg-white/5'}`}>
                                 {location.name}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Type */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Type
+                        </label>
+                        {isEditing ? (
+                            <LocationTypeSelect value={type} onChange={setType} />
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                <TypeIcon className={`w-4 h-4 ${typeConfig.color}`} />
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                    {typeConfig.label}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Timezone */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Timezone
+                        </label>
+                        {isEditing ? (
+                            <TimezoneSelect
+                                value={timezone}
+                                onChange={setTimezone}
+                                allowEmpty={!requiresTimezone}
+                            />
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                <Clock className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                    {location.timezone || 'No timezone specified'}
+                                </span>
                             </div>
                         )}
                     </div>

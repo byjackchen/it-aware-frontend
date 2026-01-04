@@ -43,9 +43,13 @@ export interface OrganizationUpdate {
 // Location Types
 // ============================================================================
 
+export type LocationType = "root" | "region" | "country" | "office_location" | "remote_location";
+
 export interface Location {
     oid: string;
     name: string;
+    type: LocationType;
+    timezone: string; // IANA timezone ID or empty string for non-timezone-sensitive locations
     parent_oid: string | null;
     path: string[];
     created_at: string;
@@ -54,11 +58,15 @@ export interface Location {
 
 export interface LocationCreate {
     name: string;
+    type: LocationType;
+    timezone: string;
     parent_oid?: string | null;
 }
 
 export interface LocationUpdate {
     name?: string;
+    type?: LocationType;
+    timezone?: string;
     parent_oid?: string | null;
 }
 

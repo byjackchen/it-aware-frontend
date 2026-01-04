@@ -56,9 +56,13 @@ export async function deleteOrganizationAction(oid: string) {
 export async function createLocationAction(formData: FormData) {
     const name = formData.get('name') as string;
     const parentOid = formData.get('parent_oid') as string | null;
+    const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location';
+    const timezone = formData.get('timezone') as string;
 
     return createLocation({
         name,
+        type,
+        timezone,
         parent_oid: parentOid || null,
     });
 }
@@ -66,9 +70,13 @@ export async function createLocationAction(formData: FormData) {
 export async function updateLocationAction(oid: string, formData: FormData) {
     const name = formData.get('name') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
+    const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location' | null;
+    const timezone = formData.get('timezone') as string | null;
 
     return updateLocation(oid, {
         name: name || undefined,
+        type: type || undefined,
+        timezone: timezone !== null ? timezone : undefined,
         parent_oid: parentOid,
     });
 }

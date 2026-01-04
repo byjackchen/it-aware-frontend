@@ -72,6 +72,8 @@ class Location(Base):
 
     oid = Column(BYTEA(16), ForeignKey("objects.hierarchies.oid", ondelete="CASCADE"), primary_key=True)
     name = Column(Text, nullable=False)
+    type = Column(Text, nullable=False)  # root/region/country/office_location/remote_location
+    timezone = Column(Text, nullable=False)  # IANA Time Zone ID (e.g., "America/New_York")
 ```
 
 ### Worker
@@ -247,14 +249,32 @@ When `parent_oid` is changed, paths are automatically recalculated via `objects.
 class LocationCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_oid: Optional[str] = None
+    type: str = Field(
+        ...,
+        description="Location type: root/region/country/office_location/remote_location (mandatory)"
+    )
+    timezone: str = Field(
+        ...,
+        description="IANA Time Zone ID (e.g., 'America/New_York'), use empty string if not applicable (mandatory)"
+    )
 
 class LocationUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_oid: Optional[str] = None
+    type: Optional[str] = Field(
+        None,
+        description="Location type: root/region/country/office_location/remote_location"
+    )
+    timezone: Optional[str] = Field(
+        None,
+        description="IANA Time Zone ID (e.g., 'America/New_York')"
+    )
 
 class LocationResponse(BaseModel):
     oid: str
     name: str
+    type: str
+    timezone: str
     parent_oid: Optional[str] = None
     path: List[str] = []
     created_at: datetime
@@ -276,6 +296,88 @@ class LocationResponse(BaseModel):
 ### 2.1-2.5 Location CRUD
 
 Same patterns as Organizations. Endpoints operate on `/objects/locations` with `objects:locations:*` permissions.
+
+---
+
+### Location Type Values
+
+The `type` field indicates the hierarchy level of a location:
+
+| Type | Description | Example | Parent Type |
+|------|-------------|---------|-------------|
+| `root` | Root hierarchy node | "Tencent Location Hierarchy" | None |
+| `region` | Geographic region | "Americas", "Europe", "APAC 1" | root |
+| `country` | Country | "USA", "China", "Japan" | region |
+| `office_location` | Physical office location | "US-California-Palo Alto" | country |
+| `remote_location` | Remote work location | "US-Idaho" | country |
+
+**Notes**:
+- Only leaf nodes can be `office_location` or `remote_location`
+- Root, region, and country are hierarchy containers
+- Type is automatically determined by the Workday load script based on hierarchy depth and source data
+- Type is **mandatory** - all locations must have a type value
+- Timezone is also **mandatory** - use empty string if timezone is not applicable
+
+---
+
+### Location Request/Response Examples
+
+**Create Root Location**:
+```json
+{
+  "name": "Tencent Location Hierarchy",
+  "type": "root",
+  "timezone": ""
+}
+```
+
+**Create Country Location**:
+```json
+{
+  "name": "USA",
+  "parent_oid": "01JFXYZ123456789ABCDEF",
+  "type": "country",
+  "timezone": ""
+}
+```
+
+**Create Office Location with Timezone**:
+```json
+{
+  "name": "US-California-Palo Alto",
+  "parent_oid": "01JFXYZ987654321GHIJKL",
+  "type": "office_location",
+  "timezone": "America/Los_Angeles"
+}
+```
+
+**Create Remote Location**:
+```json
+{
+  "name": "US-Idaho",
+  "parent_oid": "01JFXYZ987654321GHIJKL",
+  "type": "remote_location",
+  "timezone": "America/Denver"
+}
+```
+
+**Response Example**:
+```json
+{
+  "oid": "01JFZYX987654321GHIJKL",
+  "name": "US-California-Palo Alto",
+  "type": "office_location",
+  "timezone": "America/Los_Angeles",
+  "parent_oid": "01JFXYZ987654321GHIJKL",
+  "path": [
+    "01JFXYZ123456789ABCDEF",
+    "01JFXYZ987654321GHIJKL",
+    "01JFZYX987654321GHIJKL"
+  ],
+  "created_at": "2026-01-04T00:00:00Z",
+  "updated_at": "2026-01-04T00:00:00Z"
+}
+```
 
 ---
 
