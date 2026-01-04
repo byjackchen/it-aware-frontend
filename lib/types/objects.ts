@@ -20,9 +20,19 @@ export interface Hierarchy {
 // Organization Types
 // ============================================================================
 
+export type OrganizationType =
+    | "Top Level"
+    | "Business Group"
+    | "Line"
+    | "Department"
+    | "Center"
+    | "Team";
+
 export interface Organization {
     oid: string;
     name: string;
+    type: OrganizationType;
+    stable_id: string | null;
     parent_oid: string | null;
     path: string[];
     created_at: string;
@@ -31,11 +41,15 @@ export interface Organization {
 
 export interface OrganizationCreate {
     name: string;
+    type: OrganizationType;
+    stable_id?: string | null;
     parent_oid?: string | null;
 }
 
 export interface OrganizationUpdate {
     name?: string;
+    type?: OrganizationType;
+    stable_id?: string | null;
     parent_oid?: string | null;
 }
 
@@ -50,6 +64,7 @@ export interface Location {
     name: string;
     type: LocationType;
     timezone: string; // IANA timezone ID or empty string for non-timezone-sensitive locations
+    stable_id: string | null;
     parent_oid: string | null;
     path: string[];
     created_at: string;
@@ -60,6 +75,7 @@ export interface LocationCreate {
     name: string;
     type: LocationType;
     timezone: string;
+    stable_id?: string | null;
     parent_oid?: string | null;
 }
 
@@ -67,6 +83,7 @@ export interface LocationUpdate {
     name?: string;
     type?: LocationType;
     timezone?: string;
+    stable_id?: string | null;
     parent_oid?: string | null;
 }
 

@@ -27,20 +27,28 @@ import {
 
 export async function createOrganizationAction(formData: FormData) {
     const name = formData.get('name') as string;
+    const type = formData.get('type') as 'Top Level' | 'Business Group' | 'Line' | 'Department' | 'Center' | 'Team';
+    const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
 
     return createOrganization({
         name,
+        type,
+        stable_id: stableId || null,
         parent_oid: parentOid || null,
     });
 }
 
 export async function updateOrganizationAction(oid: string, formData: FormData) {
     const name = formData.get('name') as string | null;
+    const type = formData.get('type') as 'Top Level' | 'Business Group' | 'Line' | 'Department' | 'Center' | 'Team' | null;
+    const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
 
     return updateOrganization(oid, {
         name: name || undefined,
+        type: type || undefined,
+        stable_id: stableId,
         parent_oid: parentOid,
     });
 }
@@ -58,11 +66,13 @@ export async function createLocationAction(formData: FormData) {
     const parentOid = formData.get('parent_oid') as string | null;
     const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location';
     const timezone = formData.get('timezone') as string;
+    const stableId = formData.get('stable_id') as string | null;
 
     return createLocation({
         name,
         type,
         timezone,
+        stable_id: stableId || null,
         parent_oid: parentOid || null,
     });
 }
@@ -72,11 +82,13 @@ export async function updateLocationAction(oid: string, formData: FormData) {
     const parentOid = formData.get('parent_oid') as string | null;
     const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location' | null;
     const timezone = formData.get('timezone') as string | null;
+    const stableId = formData.get('stable_id') as string | null;
 
     return updateLocation(oid, {
         name: name || undefined,
         type: type || undefined,
         timezone: timezone !== null ? timezone : undefined,
+        stable_id: stableId,
         parent_oid: parentOid,
     });
 }

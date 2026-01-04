@@ -16,10 +16,12 @@ import {
     Loader2,
     Calendar,
     GitBranch,
+    Tag,
+    Hash,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { ObjectGraph, RoleWorkerAssignment, HierarchySelect } from '@/components/data';
-import type { Organization, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
+import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, OrganizationTypeSelect } from '@/components/data';
+import type { Organization, OrganizationType, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 import { updateOrganizationAction, deleteOrganizationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '../../actions';
 
@@ -47,6 +49,8 @@ export function OrganizationDetailPage({
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const [name, setName] = useState(organization.name);
+    const [type, setType] = useState<OrganizationType>(organization.type);
+    const [stableId, setStableId] = useState(organization.stable_id || '');
     const [parentOid, setParentOid] = useState<string | null>(organization.parent_oid);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
@@ -64,6 +68,8 @@ export function OrganizationDetailPage({
         try {
             const formData = new FormData();
             formData.set('name', name);
+            formData.set('type', type);
+            formData.set('stable_id', stableId);
             if (parentOid !== organization.parent_oid) {
                 formData.set('parent_oid', parentOid || '');
             }
@@ -88,6 +94,8 @@ export function OrganizationDetailPage({
 
     const handleCancel = () => {
         setName(organization.name);
+        setType(organization.type);
+        setStableId(organization.stable_id || '');
         setParentOid(organization.parent_oid);
         setIsEditing(false);
     };
@@ -149,6 +157,46 @@ export function OrganizationDetailPage({
                         ) : (
                             <div className={`px-3 py-2 rounded-lg text-lg ${isLight ? 'text-slate-800 bg-slate-50' : 'text-white bg-white/5'}`}>
                                 {organization.name}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Type */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Type
+                        </label>
+                        {isEditing ? (
+                            <OrganizationTypeSelect value={type} onChange={setType} />
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                <Tag className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                    {organization.type}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Stable ID */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Stable ID
+                        </label>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={stableId}
+                                onChange={(e) => setStableId(e.target.value)}
+                                placeholder="External identifier (optional)"
+                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800 placeholder:text-slate-400' : 'bg-white/10 text-white placeholder:text-gray-500'}`}
+                            />
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                <Hash className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                    {organization.stable_id || '—'}
+                                </span>
                             </div>
                         )}
                     </div>

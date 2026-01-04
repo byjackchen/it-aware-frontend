@@ -57,10 +57,12 @@ class Hierarchy(Base):
 ```python
 class Organization(Base):
     __tablename__ = "organizations"
-    __table_args__ = {"schema": "objects"}
+    __table_args__ = {"schema": "hierarchies"}
 
-    oid = Column(BYTEA(16), ForeignKey("objects.hierarchies.oid", ondelete="CASCADE"), primary_key=True)
+    oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid", ondelete="CASCADE"), primary_key=True)
     name = Column(Text, nullable=False)
+    stable_id = Column(Text, unique=True, nullable=True)  # External ID (e.g., Workday tencent_org_id)
+    type = Column(Text, nullable=False)  # Top Level/Business Group/Line/Center/Department/Team
 ```
 
 ### Location
@@ -68,12 +70,13 @@ class Organization(Base):
 ```python
 class Location(Base):
     __tablename__ = "locations"
-    __table_args__ = {"schema": "objects"}
+    __table_args__ = {"schema": "hierarchies"}
 
-    oid = Column(BYTEA(16), ForeignKey("objects.hierarchies.oid", ondelete="CASCADE"), primary_key=True)
+    oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid", ondelete="CASCADE"), primary_key=True)
     name = Column(Text, nullable=False)
     type = Column(Text, nullable=False)  # root/region/country/office_location/remote_location
     timezone = Column(Text, nullable=False)  # IANA Time Zone ID (e.g., "America/New_York")
+    stable_id = Column(Text, unique=True, nullable=True)  # External identifier for stable referencing
 ```
 
 ### Worker
@@ -119,14 +122,20 @@ class Ticket(Base):
 class OrganizationCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_oid: Optional[str] = None  # 22-char base64url
+    stable_id: Optional[str] = None  # External stable identifier
+    type: str  # Top Level/Business Group/Line/Center/Department/Team
 
 class OrganizationUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_oid: Optional[str] = None  # null/empty to make root
+    stable_id: Optional[str] = None
+    type: Optional[str] = None
 
 class OrganizationResponse(BaseModel):
     oid: str
     name: str
+    stable_id: Optional[str] = None
+    type: str
     parent_oid: Optional[str] = None
     path: List[str] = []  # Ancestry from root to self
     created_at: datetime
@@ -156,7 +165,9 @@ class OrganizationResponse(BaseModel):
 ```json
 {
   "name": "Engineering",
-  "parent_oid": "01JFXYZ123456789ABCDEF"
+  "parent_oid": "01JFXYZ123456789ABCDEF",
+  "stable_id": "1263",
+  "type": "Department"
 }
 ```
 
@@ -166,6 +177,8 @@ class OrganizationResponse(BaseModel):
 {
   "oid": "01JFXYZ987654321GHIJKL",
   "name": "Engineering",
+  "stable_id": "1263",
+  "type": "Department",
   "parent_oid": "01JFXYZ123456789ABCDEF",
   "path": ["01JFXYZ123456789ABCDEF", "01JFXYZ987654321GHIJKL"],
   "created_at": "2025-01-01T00:00:00Z",

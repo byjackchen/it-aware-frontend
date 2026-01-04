@@ -1,23 +1,23 @@
 'use client';
 
 /**
- * Location creation page client component.
+ * Organization creation page client component.
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, MapPin, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
-import type { Location, LocationType } from '@/lib/types/objects';
-import { createLocationAction } from '../../actions';
+import { HierarchySelect, OrganizationTypeSelect } from '@/components/data';
+import type { Organization, OrganizationType } from '@/lib/types/objects';
+import { createOrganizationAction } from '../../actions';
 
-interface LocationCreatePageProps {
-    locations: Location[];
+interface OrganizationCreatePageProps {
+    organizations: Organization[];
 }
 
-export function LocationCreatePage({ locations }: LocationCreatePageProps) {
+export function OrganizationCreatePage({ organizations }: OrganizationCreatePageProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const t = useTranslations('Data');
@@ -28,13 +28,9 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
 
     // Form state
     const [name, setName] = useState('');
-    const [type, setType] = useState<LocationType>('office_location');
-    const [timezone, setTimezone] = useState('');
+    const [type, setType] = useState<OrganizationType>('Team');
     const [stableId, setStableId] = useState('');
     const [parentOid, setParentOid] = useState<string | null>(null);
-
-    // Determine if timezone should be required based on type
-    const requiresTimezone = type === 'office_location' || type === 'remote_location';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,17 +41,12 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
             setError('Name is required');
             return;
         }
-        if (requiresTimezone && !timezone) {
-            setError('Timezone is required for office and remote locations');
-            return;
-        }
 
         setIsPending(true);
         try {
             const formData = new FormData();
             formData.set('name', name.trim());
             formData.set('type', type);
-            formData.set('timezone', timezone);
             if (stableId.trim()) {
                 formData.set('stable_id', stableId.trim());
             }
@@ -63,11 +54,11 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                 formData.set('parent_oid', parentOid);
             }
 
-            await createLocationAction(formData);
-            router.push('/data/locations');
+            await createOrganizationAction(formData);
+            router.push('/data/organizations');
             router.refresh();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create location');
+            setError(err instanceof Error ? err.message : 'Failed to create organization');
         } finally {
             setIsPending(false);
         }
@@ -79,17 +70,17 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => router.push('/data/locations')}
+                        onClick={() => router.push('/data/organizations')}
                         className={`p-2 rounded-lg transition-colors ${isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
                     >
                         <ArrowLeft className={`w-5 h-5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`} />
                     </button>
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
-                            <MapPin className="w-5 h-5" />
+                            <Building2 className="w-5 h-5" />
                         </div>
                         <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                            New Location
+                            New Organization
                         </h1>
                     </div>
                 </div>
@@ -112,7 +103,7 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter location name..."
+                            placeholder="Enter organization name..."
                             className={`
                                 w-full px-3 py-2 rounded-lg text-lg
                                 ${isLight ? 'bg-slate-100 text-slate-800 placeholder:text-slate-400' : 'bg-white/10 text-white placeholder:text-gray-500'}
@@ -126,24 +117,7 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                         <label className={`block text-sm font-medium mb-3 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                             Type <span className="text-red-500">*</span>
                         </label>
-                        <LocationTypeSelect value={type} onChange={setType} />
-                    </div>
-
-                    {/* Timezone Field */}
-                    <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                        <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                            Timezone {requiresTimezone && <span className="text-red-500">*</span>}
-                        </label>
-                        <p className={`text-xs mb-3 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                            {requiresTimezone
-                                ? 'Select the timezone for this office or remote location.'
-                                : 'Timezone is optional for regions and countries. Leave empty if not applicable.'}
-                        </p>
-                        <TimezoneSelect
-                            value={timezone}
-                            onChange={setTimezone}
-                            allowEmpty={!requiresTimezone}
-                        />
+                        <OrganizationTypeSelect value={type} onChange={setType} />
                     </div>
 
                     {/* Stable ID Field */}
@@ -152,13 +126,13 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                             Stable ID
                         </label>
                         <p className={`text-xs mb-3 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                            Optional external identifier (e.g., a slugified name like &quot;us-california-palo-alto&quot;)
+                            Optional external identifier (e.g., Workday org ID)
                         </p>
                         <input
                             type="text"
                             value={stableId}
                             onChange={(e) => setStableId(e.target.value)}
-                            placeholder="e.g., us-california-palo-alto"
+                            placeholder="e.g., 1263"
                             className={`
                                 w-full px-3 py-2 rounded-lg
                                 ${isLight ? 'bg-slate-100 text-slate-800 placeholder:text-slate-400' : 'bg-white/10 text-white placeholder:text-gray-500'}
@@ -170,13 +144,13 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                     {/* Parent Field */}
                     <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                            Parent Location
+                            Parent Organization
                         </label>
                         <p className={`text-xs mb-3 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                            Optional. Select a parent location to create a hierarchy.
+                            Optional. Select a parent organization to create a hierarchy.
                         </p>
                         <HierarchySelect
-                            items={locations}
+                            items={organizations}
                             value={parentOid}
                             onChange={setParentOid}
                             placeholder={t('common.noParent')}
@@ -191,11 +165,11 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                             className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50"
                         >
                             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Create Location</span>
+                            <span>Create Organization</span>
                         </button>
                         <button
                             type="button"
-                            onClick={() => router.push('/data/locations')}
+                            onClick={() => router.push('/data/organizations')}
                             disabled={isPending}
                             className={`px-6 py-2.5 rounded-lg transition-colors ${isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-white/10 hover:bg-white/20 text-gray-300'}`}
                         >
