@@ -63,6 +63,7 @@ class Organization(Base):
     name = Column(Text, nullable=False)
     stable_id = Column(Text, unique=True, nullable=True)  # External ID (e.g., Workday tencent_org_id)
     type = Column(Text, nullable=False)  # Top Level/Business Group/Line/Center/Department/Team
+    is_active = Column(Boolean, default=True)  # Soft deletion flag
 ```
 
 ### Location
@@ -77,6 +78,7 @@ class Location(Base):
     type = Column(Text, nullable=False)  # root/region/country/office_location/remote_location
     timezone = Column(Text, nullable=False)  # IANA Time Zone ID (e.g., "America/New_York")
     stable_id = Column(Text, unique=True, nullable=True)  # External identifier for stable referencing
+    is_active = Column(Boolean, default=True)  # Soft deletion flag
 ```
 
 ### Worker
@@ -109,6 +111,7 @@ class Ticket(Base):
     worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=False)
     status = Column(Text, default="open")
     title = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)  # Soft deletion flag
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 ```
 
@@ -124,12 +127,14 @@ class OrganizationCreate(BaseModel):
     parent_oid: Optional[str] = None  # 22-char base64url
     stable_id: Optional[str] = None  # External stable identifier
     type: str  # Top Level/Business Group/Line/Center/Department/Team
+    is_active: bool = True  # Soft deletion flag
 
 class OrganizationUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_oid: Optional[str] = None  # null/empty to make root
     stable_id: Optional[str] = None
     type: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class OrganizationResponse(BaseModel):
     oid: str
@@ -138,6 +143,7 @@ class OrganizationResponse(BaseModel):
     type: str
     parent_oid: Optional[str] = None
     path: List[str] = []  # Ancestry from root to self
+    is_active: bool
     created_at: datetime
     updated_at: datetime
 ```
@@ -270,6 +276,7 @@ class LocationCreate(BaseModel):
         ...,
         description="IANA Time Zone ID (e.g., 'America/New_York'), use empty string if not applicable (mandatory)"
     )
+    is_active: bool = True  # Soft deletion flag
 
 class LocationUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
@@ -282,6 +289,7 @@ class LocationUpdate(BaseModel):
         None,
         description="IANA Time Zone ID (e.g., 'America/New_York')"
     )
+    is_active: Optional[bool] = None
 
 class LocationResponse(BaseModel):
     oid: str
@@ -290,6 +298,7 @@ class LocationResponse(BaseModel):
     timezone: str
     parent_oid: Optional[str] = None
     path: List[str] = []
+    is_active: bool
     created_at: datetime
     updated_at: datetime
 ```
@@ -519,10 +528,12 @@ class TicketCreate(BaseModel):
     org_oid: str  # Organization OID
     status: str = "open"
     title: str
+    is_active: bool = True  # Soft deletion flag
 
 class TicketUpdate(BaseModel):
     status: Optional[str] = None
     title: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class TicketResponse(BaseModel):
     oid: str
@@ -530,6 +541,7 @@ class TicketResponse(BaseModel):
     worker_oid: str  # Automatically set to current user's linked worker
     status: str
     title: str
+    is_active: bool
     created_at: datetime
 ```
 

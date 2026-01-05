@@ -21,6 +21,8 @@ import {
     Home,
     Clock,
     Hash,
+    CheckCircle,
+    XCircle,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
@@ -65,6 +67,7 @@ export function LocationDetailPage({
     const [timezone, setTimezone] = useState(location.timezone);
     const [stableId, setStableId] = useState(location.stable_id || '');
     const [parentOid, setParentOid] = useState<string | null>(location.parent_oid);
+    const [isActive, setIsActive] = useState(location.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
     // Get parent name for display
@@ -91,6 +94,7 @@ export function LocationDetailPage({
             formData.set('type', type);
             formData.set('timezone', timezone);
             formData.set('stable_id', stableId);
+            formData.set('is_active', String(isActive));
             if (parentOid !== location.parent_oid) {
                 formData.set('parent_oid', parentOid || '');
             }
@@ -119,6 +123,7 @@ export function LocationDetailPage({
         setTimezone(location.timezone);
         setStableId(location.stable_id || '');
         setParentOid(location.parent_oid);
+        setIsActive(location.is_active);
         setIsEditing(false);
     };
 
@@ -159,6 +164,14 @@ export function LocationDetailPage({
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
                         </button>
+                    )}
+
+                    {/* Status Badge */}
+                    {!isEditing && (
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${location.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {location.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            {location.is_active ? 'Active' : 'Inactive'}
+                        </div>
                     )}
                 </div>
 
@@ -279,6 +292,30 @@ export function LocationDetailPage({
                                     : t('common.levelsDeepPlural', { count: location.path.length })}
                             </span>
                         </div>
+                    </div>
+
+                    {/* Status (Active/Inactive) */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Status
+                        </label>
+                        {isEditing ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsActive(!isActive)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                            >
+                                {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
+                            </button>
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                {location.is_active ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
+                                <span className={`text-sm ${location.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                                    {location.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Timestamps */}

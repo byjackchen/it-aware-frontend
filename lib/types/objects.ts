@@ -35,6 +35,7 @@ export interface Organization {
     stable_id: string | null;
     parent_oid: string | null;
     path: string[];
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -44,6 +45,7 @@ export interface OrganizationCreate {
     type: OrganizationType;
     stable_id?: string | null;
     parent_oid?: string | null;
+    is_active?: boolean;
 }
 
 export interface OrganizationUpdate {
@@ -51,6 +53,7 @@ export interface OrganizationUpdate {
     type?: OrganizationType;
     stable_id?: string | null;
     parent_oid?: string | null;
+    is_active?: boolean;
 }
 
 // ============================================================================
@@ -67,6 +70,7 @@ export interface Location {
     stable_id: string | null;
     parent_oid: string | null;
     path: string[];
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -77,6 +81,7 @@ export interface LocationCreate {
     timezone: string;
     stable_id?: string | null;
     parent_oid?: string | null;
+    is_active?: boolean;
 }
 
 export interface LocationUpdate {
@@ -85,6 +90,7 @@ export interface LocationUpdate {
     timezone?: string;
     stable_id?: string | null;
     parent_oid?: string | null;
+    is_active?: boolean;
 }
 
 // ============================================================================
@@ -134,6 +140,7 @@ export interface Ticket {
     worker_oid: string;
     status: string;
     title: string;
+    is_active: boolean;
     created_at: string;
 }
 
@@ -141,11 +148,13 @@ export interface TicketCreate {
     org_oid: string;
     status?: string;
     title: string;
+    is_active?: boolean;
 }
 
 export interface TicketUpdate {
     status?: string;
     title?: string;
+    is_active?: boolean;
 }
 
 // ============================================================================

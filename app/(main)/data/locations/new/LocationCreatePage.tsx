@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, MapPin, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Save, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
 import type { Location, LocationType } from '@/lib/types/objects';
@@ -32,6 +32,7 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
     const [timezone, setTimezone] = useState('');
     const [stableId, setStableId] = useState('');
     const [parentOid, setParentOid] = useState<string | null>(null);
+    const [isActive, setIsActive] = useState(true);
 
     // Determine if timezone should be required based on type
     const requiresTimezone = type === 'Office Location' || type === 'Remote Location';
@@ -62,6 +63,7 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
             if (parentOid) {
                 formData.set('parent_oid', parentOid);
             }
+            formData.set('is_active', String(isActive));
 
             await createLocationAction(formData);
             router.push('/data/locations');
@@ -181,6 +183,24 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                             onChange={setParentOid}
                             placeholder={t('common.noParent')}
                         />
+                    </div>
+
+                    {/* Status (Active/Inactive) */}
+                    <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            Status
+                        </label>
+                        <p className={`text-xs mb-3 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            Set to inactive to hide this location from normal views
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsActive(!isActive)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                        >
+                            {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
+                        </button>
                     </div>
 
                     {/* Actions */}

@@ -17,6 +17,8 @@ import {
     Calendar,
     Building2,
     User,
+    CheckCircle,
+    XCircle,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
@@ -41,6 +43,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
     const [isPending, setIsPending] = useState(false);
     const [title, setTitle] = useState(ticket.title);
     const [status, setStatus] = useState(ticket.status);
+    const [isActive, setIsActive] = useState(ticket.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
     const orgName = organizations.find((o) => o.oid === ticket.org_oid)?.name || 'Unknown';
@@ -53,6 +56,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
             const formData = new FormData();
             formData.set('title', title);
             formData.set('status', status);
+            formData.set('is_active', String(isActive));
             await updateTicketAction(ticket.oid, formData);
             setIsEditing(false);
             router.refresh();
@@ -75,6 +79,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
     const handleCancel = () => {
         setTitle(ticket.title);
         setStatus(ticket.status);
+        setIsActive(ticket.is_active);
         setIsEditing(false);
     };
 
@@ -99,6 +104,14 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
                         </button>
+                    )}
+
+                    {/* Status Badge */}
+                    {!isEditing && (
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${ticket.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {ticket.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            {ticket.is_active ? 'Active' : 'Inactive'}
+                        </div>
                     )}
                 </div>
 
@@ -159,6 +172,28 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
                                 <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{workerName}</span>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Status (Active/Inactive) */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Status</label>
+                        {isEditing ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsActive(!isActive)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                            >
+                                {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
+                            </button>
+                        ) : (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                {ticket.is_active ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
+                                <span className={`text-sm ${ticket.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                                    {ticket.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Actions */}

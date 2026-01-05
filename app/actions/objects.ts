@@ -35,6 +35,7 @@ export async function createOrganizationAction(formData: FormData) {
     const type = formData.get('type') as 'Top Level' | 'Business Group' | 'Line' | 'Department' | 'Center' | 'Team';
     const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started`, { requestId, action });
 
@@ -44,6 +45,7 @@ export async function createOrganizationAction(formData: FormData) {
             type,
             stable_id: stableId || null,
             parent_oid: parentOid || null,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -64,6 +66,7 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
     const type = formData.get('type') as 'Top Level' | 'Business Group' | 'Line' | 'Department' | 'Center' | 'Team' | null;
     const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
@@ -73,6 +76,7 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
             type: type || undefined,
             stable_id: stableId,
             parent_oid: parentOid,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -117,6 +121,7 @@ export async function createLocationAction(formData: FormData) {
     const type = formData.get('type') as 'Root' | 'Region' | 'Country' | 'Office Location' | 'Remote Location';
     const timezone = formData.get('timezone') as string;
     const stableId = formData.get('stable_id') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started`, { requestId, action });
 
@@ -127,6 +132,7 @@ export async function createLocationAction(formData: FormData) {
             timezone,
             stable_id: stableId || null,
             parent_oid: parentOid || null,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -148,6 +154,7 @@ export async function updateLocationAction(oid: string, formData: FormData) {
     const type = formData.get('type') as 'Root' | 'Region' | 'Country' | 'Office Location' | 'Remote Location' | null;
     const timezone = formData.get('timezone') as string | null;
     const stableId = formData.get('stable_id') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
@@ -158,6 +165,7 @@ export async function updateLocationAction(oid: string, formData: FormData) {
             timezone: timezone !== null ? timezone : undefined,
             stable_id: stableId,
             parent_oid: parentOid,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -293,6 +301,7 @@ export async function createTicketAction(formData: FormData) {
     const title = formData.get('title') as string;
     const orgOid = formData.get('org_oid') as string;
     const status = formData.get('status') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started`, { requestId, action });
 
@@ -301,6 +310,7 @@ export async function createTicketAction(formData: FormData) {
             title,
             org_oid: orgOid,
             status: status || undefined,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -319,6 +329,7 @@ export async function updateTicketAction(oid: string, formData: FormData) {
 
     const title = formData.get('title') as string | null;
     const status = formData.get('status') as string | null;
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
@@ -326,6 +337,7 @@ export async function updateTicketAction(oid: string, formData: FormData) {
         const result = await updateTicket(oid, {
             title: title || undefined,
             status: status || undefined,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
