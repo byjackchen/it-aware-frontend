@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import type { ScopeType } from '@/lib/types/security';
 import { SCOPE_TYPES } from '@/lib/types/security';
-import { createGroup } from '../../actions';
+import { createGroup } from '@/app/actions/security';
 
 export function GroupCreatePage() {
     const t = useTranslations('Auth');

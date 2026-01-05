@@ -8,7 +8,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, User, Loader2 } from 'lucide-react';
-import { createAccount } from '../../actions';
+import { createAccount } from '@/app/actions/security';
 
 export function AccountCreatePage() {
     const t = useTranslations('Auth');

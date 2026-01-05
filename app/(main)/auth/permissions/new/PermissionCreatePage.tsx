@@ -8,7 +8,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Lock, Loader2 } from 'lucide-react';
-import { createPermission } from '../../actions';
+import { createPermission } from '@/app/actions/security';
 
 export function PermissionCreatePage() {
     const t = useTranslations('Auth');

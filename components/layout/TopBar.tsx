@@ -6,7 +6,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
-import { logout } from '@/app/actions/auth';
+import { logout } from '@/app/actions/session';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';

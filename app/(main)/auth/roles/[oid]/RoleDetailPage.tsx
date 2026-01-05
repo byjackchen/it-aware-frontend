@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Trash2, Pencil, Loader2, Shield, Check, X, Save } from 'lucide-react';
 import type { Role, Group } from '@/lib/types/security';
-import { updateRole, deleteRole } from '../../actions';
+import { updateRole, deleteRole } from '@/app/actions/security';
 
 interface RoleDetailPageProps {
     role: Role;

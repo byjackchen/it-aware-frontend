@@ -3,7 +3,7 @@
  * Uses cookies from next/headers for session authentication.
  */
 
-import { cookies } from 'next/headers';
+// cookies removed as they are now used in core.ts
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import type {
   Account,
@@ -31,31 +31,13 @@ const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
 // Core API Fetch Function
 // ============================================================================
 
-async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+import { fetchApi } from '@/lib/api/core';
 
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-      ...options?.headers,
-    },
-    cache: 'no-store',
-  });
+// ============================================================================
+// Core API Fetch Function
+// ============================================================================
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(error.detail || `API Error: ${res.status}`);
-  }
-
-  if (res.status === 204) {
-    return null as T;
-  }
-
-  return res.json();
-}
+// fetchApi moved to @/lib/api/core.ts
 
 // ============================================================================
 // Account APIs

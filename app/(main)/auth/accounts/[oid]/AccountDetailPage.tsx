@@ -30,7 +30,7 @@ import {
     unlinkAccountWorker,
     assignAccountGroup,
     removeAccountGroup,
-} from '../../actions';
+} from '@/app/actions/security';
 
 interface AccountDetailPageProps {
     account: Account;

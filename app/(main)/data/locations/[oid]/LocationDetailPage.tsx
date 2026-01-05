@@ -26,7 +26,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
 import type { Location, LocationType, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
-import { updateLocationAction, deleteLocationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '../../actions';
+import { updateLocationAction, deleteLocationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '@/app/actions/objects';
 
 interface LocationDetailPageProps {
     location: Location;

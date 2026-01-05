@@ -8,7 +8,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Shield, Loader2 } from 'lucide-react';
-import { createRole } from '../../actions';
+import { createRole } from '@/app/actions/security';
 
 export function RoleCreatePage() {
     const t = useTranslations('Auth');

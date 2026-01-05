@@ -18,7 +18,7 @@ import {
     removeGroupPermission,
     linkGroupRole,
     unlinkGroupRole,
-} from '../../actions';
+} from '@/app/actions/security';
 
 interface GroupDetailPageProps {
     group: Group;

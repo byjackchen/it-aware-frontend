@@ -21,7 +21,7 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
 import type { Ticket as TicketType, GlobalEdge, Organization, Worker } from '@/lib/types/objects';
-import { updateTicketAction, deleteTicketAction } from '../../actions';
+import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
 interface TicketDetailPageProps {
     ticket: TicketType;

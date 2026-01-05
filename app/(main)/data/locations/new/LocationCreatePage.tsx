@@ -11,7 +11,7 @@ import { ArrowLeft, MapPin, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
 import type { Location, LocationType } from '@/lib/types/objects';
-import { createLocationAction } from '../../actions';
+import { createLocationAction } from '@/app/actions/objects';
 
 interface LocationCreatePageProps {
     locations: Location[];

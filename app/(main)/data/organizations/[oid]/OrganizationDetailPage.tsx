@@ -23,7 +23,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, OrganizationTypeSelect } from '@/components/data';
 import type { Organization, OrganizationType, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
-import { updateOrganizationAction, deleteOrganizationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '../../actions';
+import { updateOrganizationAction, deleteOrganizationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '@/app/actions/objects';
 
 interface OrganizationDetailPageProps {
     organization: Organization;

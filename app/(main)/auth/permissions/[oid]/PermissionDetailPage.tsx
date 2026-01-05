@@ -9,7 +9,7 @@ import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Trash2, Loader2, Lock } from 'lucide-react';
 import type { Permission, Group } from '@/lib/types/security';
-import { deletePermission } from '../../actions';
+import { deletePermission } from '@/app/actions/security';
 
 interface PermissionDetailPageProps {
     permission: Permission;

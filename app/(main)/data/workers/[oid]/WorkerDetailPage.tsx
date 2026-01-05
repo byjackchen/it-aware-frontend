@@ -25,7 +25,7 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
 import type { Worker, GlobalEdge, Organization, Location } from '@/lib/types/objects';
-import { updateWorkerAction, deleteWorkerAction } from '../../actions';
+import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
 
 interface WorkerDetailPageProps {
     worker: Worker;

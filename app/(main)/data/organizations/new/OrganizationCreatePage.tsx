@@ -11,7 +11,7 @@ import { ArrowLeft, Building2, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchySelect, OrganizationTypeSelect } from '@/components/data';
 import type { Organization, OrganizationType } from '@/lib/types/objects';
-import { createOrganizationAction } from '../../actions';
+import { createOrganizationAction } from '@/app/actions/objects';
 
 interface OrganizationCreatePageProps {
     organizations: Organization[];
