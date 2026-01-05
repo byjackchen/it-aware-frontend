@@ -15,11 +15,11 @@ interface LocationTypeSelectProps {
 }
 
 const LOCATION_TYPES: { value: LocationType; label: string; icon: typeof Building2; description: string }[] = [
-    { value: 'root', label: 'Root', icon: Globe, description: 'Top-level location' },
-    { value: 'region', label: 'Region', icon: Globe, description: 'Regional grouping (e.g., EMEA, APAC)' },
-    { value: 'country', label: 'Country', icon: MapPin, description: 'Country-level location' },
-    { value: 'office_location', label: 'Office', icon: Building2, description: 'Physical office location' },
-    { value: 'remote_location', label: 'Remote', icon: Home, description: 'Remote work location' },
+    { value: 'Root', label: 'Root', icon: Globe, description: 'Top-level location' },
+    { value: 'Region', label: 'Region', icon: Globe, description: 'Regional grouping (e.g., EMEA, APAC)' },
+    { value: 'Country', label: 'Country', icon: MapPin, description: 'Country-level location' },
+    { value: 'Office Location', label: 'Office', icon: Building2, description: 'Physical office location' },
+    { value: 'Remote Location', label: 'Remote', icon: Home, description: 'Remote work location' },
 ];
 
 export function LocationTypeSelect({ value, onChange, disabled }: LocationTypeSelectProps) {

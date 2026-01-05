@@ -57,7 +57,7 @@ export interface OrganizationUpdate {
 // Location Types
 // ============================================================================
 
-export type LocationType = "root" | "region" | "country" | "office_location" | "remote_location";
+export type LocationType = "Root" | "Region" | "Country" | "Office Location" | "Remote Location";
 
 export interface Location {
     oid: string;

@@ -39,11 +39,11 @@ interface LocationDetailPageProps {
 
 // Location type display configuration
 const LOCATION_TYPE_CONFIG: Record<LocationType, { label: string; icon: typeof Globe; color: string }> = {
-    root: { label: 'Root', icon: Globe, color: 'text-purple-500' },
-    region: { label: 'Region', icon: Globe, color: 'text-blue-500' },
-    country: { label: 'Country', icon: MapPin, color: 'text-green-500' },
-    office_location: { label: 'Office', icon: Building2, color: 'text-orange-500' },
-    remote_location: { label: 'Remote', icon: Home, color: 'text-cyan-500' },
+    'Root': { label: 'Root', icon: Globe, color: 'text-purple-500' },
+    'Region': { label: 'Region', icon: Globe, color: 'text-blue-500' },
+    'Country': { label: 'Country', icon: MapPin, color: 'text-green-500' },
+    'Office Location': { label: 'Office', icon: Building2, color: 'text-orange-500' },
+    'Remote Location': { label: 'Remote', icon: Home, color: 'text-cyan-500' },
 };
 
 export function LocationDetailPage({
@@ -77,11 +77,11 @@ export function LocationDetailPage({
         : edges;
 
     // Get type display config
-    const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG.office_location;
+    const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG['Office Location'];
     const TypeIcon = typeConfig.icon;
 
     // Determine if timezone is required based on type
-    const requiresTimezone = type === 'office_location' || type === 'remote_location';
+    const requiresTimezone = type === 'Office Location' || type === 'Remote Location';
 
     const handleSave = async () => {
         setIsPending(true);
