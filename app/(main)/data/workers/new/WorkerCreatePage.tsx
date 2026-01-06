@@ -96,7 +96,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
                             <User className="w-5 h-5" />
                         </div>
-                        <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>New Worker</h1>
+                        <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('workers.new')}</h1>
                     </div>
                 </div>
 
@@ -110,10 +110,10 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
                     {/* Required Fields */}
                     <div className="space-y-4">
-                        <h3 className={`text-sm font-semibold uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>Required</h3>
+                        <h3 className={`text-sm font-semibold uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('workers.required')}</h3>
 
                         <div>
-                            <label className={labelClass}>Stable ID *</label>
+                            <label className={labelClass}>{t('workers.stableId')} *</label>
                             <input
                                 type="text"
                                 value={stableId}
@@ -126,7 +126,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className={labelClass}>Legal First Name *</label>
+                                <label className={labelClass}>{t('workers.legalFirstName')} *</label>
                                 <input
                                     type="text"
                                     value={legalFirstName}
@@ -136,7 +136,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Legal Last Name *</label>
+                                <label className={labelClass}>{t('workers.legalLastName')} *</label>
                                 <input
                                     type="text"
                                     value={legalLastName}
@@ -165,11 +165,11 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
                     {/* Optional Fields */}
                     <div className="space-y-4 pt-4">
-                        <h3 className={`text-sm font-semibold uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>Optional</h3>
+                        <h3 className={`text-sm font-semibold uppercase tracking-wide ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('workers.optional')}</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className={labelClass}>Preferred First Name</label>
+                                <label className={labelClass}>{t('workers.preferredFirstName')}</label>
                                 <input
                                     type="text"
                                     value={preferredFirstName}
@@ -215,7 +215,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                         </div>
 
                         <div>
-                            <label className={labelClass}>Manager</label>
+                            <label className={labelClass}>{t('workers.manager')}</label>
                             <select
                                 value={managerOid}
                                 onChange={(e) => setManagerOid(e.target.value)}
@@ -232,7 +232,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className={labelClass}>Gender</label>
+                                <label className={labelClass}>{t('workers.gender')}</label>
                                 <input
                                     type="text"
                                     value={gender}
@@ -241,7 +241,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Management Level</label>
+                                <label className={labelClass}>{t('workers.managementLevel')}</label>
                                 <input
                                     type="text"
                                     value={managementLevel}
@@ -250,7 +250,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Professional Level</label>
+                                <label className={labelClass}>{t('workers.professionalLevel')}</label>
                                 <input
                                     type="text"
                                     value={professionalLevel}
@@ -269,7 +269,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                             className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 transition-colors"
                         >
                             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Create Worker</span>
+                            <span>{t('workers.createWorker')}</span>
                         </button>
                     </div>
                 </form>

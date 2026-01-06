@@ -160,7 +160,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
                     <div className="grid grid-cols-2 gap-4">
                         {/* Legal First Name */}
                         <div>
-                            <label className={labelClass}>Legal First Name</label>
+                            <label className={labelClass}>{t('workers.legalFirstName')}</label>
                             {isEditing ? (
                                 <input type="text" value={legalFirstName} onChange={(e) => setLegalFirstName(e.target.value)} className={inputClass} />
                             ) : (
@@ -173,7 +173,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
 
                         {/* Legal Last Name */}
                         <div>
-                            <label className={labelClass}>Legal Last Name</label>
+                            <label className={labelClass}>{t('workers.legalLastName')}</label>
                             {isEditing ? (
                                 <input type="text" value={legalLastName} onChange={(e) => setLegalLastName(e.target.value)} className={inputClass} />
                             ) : (
@@ -188,7 +188,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
                     <div className="grid grid-cols-2 gap-4">
                         {/* Preferred Name */}
                         <div>
-                            <label className={labelClass}>Preferred First Name</label>
+                            <label className={labelClass}>{t('workers.preferredFirstName')}</label>
                             {isEditing ? (
                                 <input type="text" value={preferredFirstName} onChange={(e) => setPreferredFirstName(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
@@ -238,7 +238,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
 
                     {/* Stable ID (read-only) */}
                     <div>
-                        <label className={labelClass}>Stable ID</label>
+                        <label className={labelClass}>{t('workers.stableId')}</label>
                         <div className={displayClass}>
                             <Hash className={iconClass} />
                             <span className={textClass}>{worker.stable_id}</span>
@@ -281,7 +281,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
                     <div className="grid grid-cols-3 gap-4">
                         {/* Gender */}
                         <div>
-                            <label className={labelClass}>Gender</label>
+                            <label className={labelClass}>{t('workers.gender')}</label>
                             {isEditing ? (
                                 <input type="text" value={gender} onChange={(e) => setGender(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
@@ -294,7 +294,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
 
                         {/* Management Level */}
                         <div>
-                            <label className={labelClass}>Management Level</label>
+                            <label className={labelClass}>{t('workers.managementLevel')}</label>
                             {isEditing ? (
                                 <input type="text" value={managementLevel} onChange={(e) => setManagementLevel(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
@@ -307,7 +307,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
 
                         {/* Professional Level */}
                         <div>
-                            <label className={labelClass}>Professional Level</label>
+                            <label className={labelClass}>{t('workers.professionalLevel')}</label>
                             {isEditing ? (
                                 <input type="text" value={professionalLevel} onChange={(e) => setProfessionalLevel(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
