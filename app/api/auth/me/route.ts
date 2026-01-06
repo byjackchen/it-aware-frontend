@@ -61,7 +61,8 @@ export async function GET() {
     console.log(`[APIRoute:/auth/me:${requestId}] Cookie names: ${allCookies.map(c => c.name).join(', ')}`)
 
     // Log each cookie name and check for non-ASCII in values
-    for (const cookie of allCookies) {
+    // Also filter to only include ASCII-safe cookies
+    const asciiSafeCookies = allCookies.filter(cookie => {
       const nameCheck = hasNonAscii(cookie.name)
       const valueCheck = hasNonAscii(cookie.value)
       console.log(`[APIRoute:/auth/me:${requestId}] Cookie '${cookie.name}': nameLen=${cookie.name.length}, valueLen=${cookie.value.length}, nameHasNonAscii=${nameCheck.hasNonAscii}, valueHasNonAscii=${valueCheck.hasNonAscii}`)
@@ -70,18 +71,23 @@ export async function GET() {
       }
       if (valueCheck.hasNonAscii) {
         console.log(`[APIRoute:/auth/me:${requestId}] Cookie value non-ASCII: index=${valueCheck.firstNonAsciiIndex}, charCode=${valueCheck.charCode}`)
+        console.log(`[APIRoute:/auth/me:${requestId}] Skipping cookie '${cookie.name}' due to non-ASCII value`)
+        return false // Skip cookies with non-ASCII values
       }
-    }
+      if (nameCheck.hasNonAscii) {
+        console.log(`[APIRoute:/auth/me:${requestId}] Skipping cookie '${cookie.name}' due to non-ASCII name`)
+        return false // Skip cookies with non-ASCII names
+      }
+      return true
+    })
 
-    const cookieHeader = allCookies
+    console.log(`[APIRoute:/auth/me:${requestId}] ASCII-safe cookies: ${asciiSafeCookies.length} of ${allCookies.length}`)
+
+    const cookieHeader = asciiSafeCookies
       .map(c => `${c.name}=${c.value}`)
       .join('; ')
 
     console.log(`[APIRoute:/auth/me:${requestId}] Cookie header length: ${cookieHeader.length}`)
-    const cookieHeaderCheck = hasNonAscii(cookieHeader)
-    if (cookieHeaderCheck.hasNonAscii) {
-      console.log(`[APIRoute:/auth/me:${requestId}] Cookie header has non-ASCII at index ${cookieHeaderCheck.firstNonAsciiIndex}, charCode=${cookieHeaderCheck.charCode}, char='${cookieHeaderCheck.char}'`)
-    }
 
     console.log(`[APIRoute:/auth/me:${requestId}] Fetching from backend: ${BACKEND_DOMAIN}/auth/me`)
 
