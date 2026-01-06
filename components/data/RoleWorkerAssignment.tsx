@@ -17,6 +17,7 @@ import { ChevronDown, ChevronRight, Plus, X, User, Loader2, Search, Shield } fro
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { Role } from '@/lib/types/security';
 import type { Worker, WorkerHierarchyRole } from '@/lib/types/objects';
+import { getWorkerFullName } from '@/lib/types/objects';
 
 interface RoleWithWorkers {
     role: Role;
@@ -90,11 +91,12 @@ export function RoleWorkerAssignment({
         );
         return workers
             .filter((w) => !assignedOids.has(w.oid) && w.is_active)
-            .filter((w) =>
-                workerSearchQuery === '' ||
-                w.full_name.toLowerCase().includes(workerSearchQuery.toLowerCase()) ||
-                (w.email && w.email.toLowerCase().includes(workerSearchQuery.toLowerCase()))
-            );
+            .filter((w) => {
+                const fullName = getWorkerFullName(w);
+                return workerSearchQuery === '' ||
+                    fullName.toLowerCase().includes(workerSearchQuery.toLowerCase()) ||
+                    (w.email && w.email.toLowerCase().includes(workerSearchQuery.toLowerCase()));
+            });
     };
 
     const toggleRole = (roleOid: string) => {
@@ -169,7 +171,7 @@ export function RoleWorkerAssignment({
                                     key={worker.oid}
                                     className={`text-xs px-2 py-0.5 rounded-full truncate max-w-24 ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-300'}`}
                                 >
-                                    {worker.full_name.split(' ')[0]}
+                                    {getWorkerFullName(worker).split(' ')[0]}
                                 </span>
                             ))}
                             {assignedWorkers.length > 3 && (
@@ -193,7 +195,7 @@ export function RoleWorkerAssignment({
                                         className={`inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-full text-xs ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-200'}`}
                                     >
                                         <User className="w-3 h-3" />
-                                        <span className="max-w-28 truncate">{worker.full_name}</span>
+                                        <span className="max-w-28 truncate">{getWorkerFullName(worker)}</span>
                                         <button
                                             onClick={() => handleRemove(worker.oid, role.oid)}
                                             disabled={isPending}
@@ -245,7 +247,7 @@ export function RoleWorkerAssignment({
                                             >
                                                 <User className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                                 <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>
-                                                    {worker.full_name}
+                                                    {getWorkerFullName(worker)}
                                                 </span>
                                                 {worker.email && (
                                                     <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>

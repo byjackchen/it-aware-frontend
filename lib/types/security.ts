@@ -39,9 +39,13 @@ export interface Permission {
 export interface Worker {
   oid: string;
   worker_id: string | null;
-  full_name: string;
+  stable_id: string;
+  legal_first_name: string;
+  legal_last_name: string;
+  preferred_first_name: string | null;
   email: string | null;
   org_oid: string;
+  location_oid: string | null;
   manager_oid: string | null;
   is_active: boolean;
   created_at: string;

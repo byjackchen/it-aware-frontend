@@ -9,6 +9,11 @@ import { useTranslations } from 'next-intl';
 import { Plus, User, Check, X, Bot, UserCircle } from 'lucide-react';
 import type { Account, Worker, AccountWorker } from '@/lib/types/security';
 
+// Helper function to get full name (matches objects.ts)
+function getWorkerFullName(worker: Worker): string {
+    return `${worker.legal_first_name} ${worker.legal_last_name}`;
+}
+
 interface AccountsListPageProps {
     accounts: Account[];
     workers: Worker[];
@@ -112,7 +117,7 @@ export function AccountsListPage({
                                             </td>
                                             <td className="px-4 py-3">
                                                 {worker ? (
-                                                    <span className="text-white">{worker.full_name}</span>
+                                                    <span className="text-white">{getWorkerFullName(worker)}</span>
                                                 ) : (
                                                     <span className="text-gray-500">—</span>
                                                 )}

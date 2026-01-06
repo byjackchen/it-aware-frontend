@@ -90,9 +90,16 @@ class Worker(Base):
 
     oid = Column(BYTEA(16), primary_key=True)
     worker_id = Column(Text, unique=True, nullable=True)  # External employee ID
-    full_name = Column(Text, nullable=False)
+    stable_id = Column(Text, unique=True, nullable=False)  # Stable sync identifier (wecom_id)
+    legal_first_name = Column(Text, nullable=False)
+    legal_last_name = Column(Text, nullable=False)
+    preferred_first_name = Column(Text, nullable=True)
     email = Column(Text, unique=True, nullable=True)
-    org_oid = Column(BYTEA(16), ForeignKey("objects.hierarchies.oid"), nullable=False)
+    gender = Column(Text, nullable=True)
+    management_level = Column(Text, nullable=True)
+    professional_level = Column(Text, nullable=True)
+    org_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=False)
+    location_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     manager_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -410,26 +417,47 @@ The `type` field indicates the hierarchy level of a location:
 ```python
 class WorkerCreate(BaseModel):
     worker_id: Optional[str] = Field(None, max_length=255)  # External ID
-    full_name: str = Field(..., min_length=1, max_length=255)
+    stable_id: str = Field(..., max_length=255)  # Stable sync identifier (wecom_id)
+    legal_first_name: str = Field(..., min_length=1, max_length=255)
+    legal_last_name: str = Field(..., min_length=1, max_length=255)
+    preferred_first_name: Optional[str] = Field(None, max_length=255)
     email: Optional[EmailStr] = None
+    gender: Optional[str] = Field(None, max_length=50)
+    management_level: Optional[str] = Field(None, max_length=100)
+    professional_level: Optional[str] = Field(None, max_length=100)
     org_oid: str  # Required - organization OID
+    location_oid: Optional[str] = None  # Optional - location OID
     manager_oid: Optional[str] = None
     is_active: bool = True
 
 class WorkerUpdate(BaseModel):
     worker_id: Optional[str] = None
-    full_name: Optional[str] = None
+    stable_id: Optional[str] = None
+    legal_first_name: Optional[str] = None
+    legal_last_name: Optional[str] = None
+    preferred_first_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    gender: Optional[str] = None
+    management_level: Optional[str] = None
+    professional_level: Optional[str] = None
     org_oid: Optional[str] = None
+    location_oid: Optional[str] = None  # Empty string to clear
     manager_oid: Optional[str] = None  # Empty string to clear
     is_active: Optional[bool] = None
 
 class WorkerResponse(BaseModel):
     oid: str
     worker_id: Optional[str] = None
-    full_name: str
+    stable_id: str
+    legal_first_name: str
+    legal_last_name: str
+    preferred_first_name: Optional[str] = None
     email: Optional[str] = None
+    gender: Optional[str] = None
+    management_level: Optional[str] = None
+    professional_level: Optional[str] = None
     org_oid: str
+    location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
     is_active: bool
     created_at: datetime
@@ -459,9 +487,16 @@ class WorkerResponse(BaseModel):
 ```json
 {
   "worker_id": "EMP001",
-  "full_name": "Alice Smith",
+  "stable_id": "asmith",
+  "legal_first_name": "Alice",
+  "legal_last_name": "Smith",
+  "preferred_first_name": "Ali",
   "email": "alice@example.com",
+  "gender": "Female",
+  "management_level": "Individual Contributor",
+  "professional_level": "Senior",
   "org_oid": "01JFXYZORG123456789AB",
+  "location_oid": "01JFXYZLOC123456789AB",
   "manager_oid": "01JFXYZWRK123456789AB",
   "is_active": true
 }
@@ -473,9 +508,16 @@ class WorkerResponse(BaseModel):
 {
   "oid": "01JFXYZWRK234567890AB",
   "worker_id": "EMP001",
-  "full_name": "Alice Smith",
+  "stable_id": "asmith",
+  "legal_first_name": "Alice",
+  "legal_last_name": "Smith",
+  "preferred_first_name": "Ali",
   "email": "alice@example.com",
+  "gender": "Female",
+  "management_level": "Individual Contributor",
+  "professional_level": "Senior",
   "org_oid": "01JFXYZORG123456789AB",
+  "location_oid": "01JFXYZLOC123456789AB",
   "manager_oid": "01JFXYZWRK123456789AB",
   "is_active": true,
   "created_at": "2025-01-01T00:00:00Z",

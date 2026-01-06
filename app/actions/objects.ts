@@ -205,25 +205,37 @@ export async function createWorkerAction(formData: FormData) {
     const action = 'Objects:createWorker';
     const startTime = Date.now();
 
-    const fullName = formData.get('full_name') as string;
+    const stableId = formData.get('stable_id') as string;
+    const legalFirstName = formData.get('legal_first_name') as string;
+    const legalLastName = formData.get('legal_last_name') as string;
+    const preferredFirstName = formData.get('preferred_first_name') as string | null;
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
+    const gender = formData.get('gender') as string | null;
+    const managementLevel = formData.get('management_level') as string | null;
+    const professionalLevel = formData.get('professional_level') as string | null;
     const orgOid = formData.get('org_oid') as string;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
-    const isActive = formData.get('is_active') === 'true';
+    const isActiveStr = formData.get('is_active');
 
     logger.info(`Started`, { requestId, action });
 
     try {
         const result = await createWorker({
-            full_name: fullName,
+            stable_id: stableId,
+            legal_first_name: legalFirstName,
+            legal_last_name: legalLastName,
+            preferred_first_name: preferredFirstName || null,
             worker_id: workerId || null,
             email: email || null,
+            gender: gender || null,
+            management_level: managementLevel || null,
+            professional_level: professionalLevel || null,
             org_oid: orgOid,
             location_oid: locationOid || null,
             manager_oid: managerOid || null,
-            is_active: isActive,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -240,9 +252,15 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const action = 'Objects:updateWorker';
     const startTime = Date.now();
 
-    const fullName = formData.get('full_name') as string | null;
+    const stableId = formData.get('stable_id') as string | null;
+    const legalFirstName = formData.get('legal_first_name') as string | null;
+    const legalLastName = formData.get('legal_last_name') as string | null;
+    const preferredFirstName = formData.get('preferred_first_name') as string | null;
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
+    const gender = formData.get('gender') as string | null;
+    const managementLevel = formData.get('management_level') as string | null;
+    const professionalLevel = formData.get('professional_level') as string | null;
     const orgOid = formData.get('org_oid') as string | null;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
@@ -252,9 +270,15 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
 
     try {
         const result = await updateWorker(oid, {
-            full_name: fullName || undefined,
+            stable_id: stableId || undefined,
+            legal_first_name: legalFirstName || undefined,
+            legal_last_name: legalLastName || undefined,
+            preferred_first_name: preferredFirstName,
             worker_id: workerId,
             email: email,
+            gender: gender,
+            management_level: managementLevel,
+            professional_level: professionalLevel,
             org_oid: orgOid || undefined,
             location_oid: locationOid === '' ? '' : (locationOid || undefined),
             manager_oid: managerOid,

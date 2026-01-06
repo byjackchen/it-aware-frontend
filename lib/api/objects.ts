@@ -160,11 +160,11 @@ export async function deleteLocation(oid: string): Promise<void> {
 // ============================================================================
 
 export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
-    const params = new URLSearchParams({ limit: '1000' });
+    let baseUrl = `${OBJECTS_BASE}/workers`;
     if (isActive !== undefined) {
-        params.set('is_active', String(isActive));
+        baseUrl += `?is_active=${String(isActive)}`;
     }
-    return fetchApi<Worker[]>(`${OBJECTS_BASE}/workers?${params.toString()}`);
+    return fetchAllPages<Worker>(baseUrl);
 }
 
 export async function getWorker(oid: string): Promise<Worker> {

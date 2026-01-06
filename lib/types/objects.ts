@@ -100,8 +100,14 @@ export interface LocationUpdate {
 export interface Worker {
     oid: string;
     worker_id: string | null;
-    full_name: string;
+    stable_id: string;
+    legal_first_name: string;
+    legal_last_name: string;
+    preferred_first_name: string | null;
     email: string | null;
+    gender: string | null;
+    management_level: string | null;
+    professional_level: string | null;
     org_oid: string;
     location_oid: string | null;
     manager_oid: string | null;
@@ -112,8 +118,14 @@ export interface Worker {
 
 export interface WorkerCreate {
     worker_id?: string | null;
-    full_name: string;
+    stable_id: string;
+    legal_first_name: string;
+    legal_last_name: string;
+    preferred_first_name?: string | null;
     email?: string | null;
+    gender?: string | null;
+    management_level?: string | null;
+    professional_level?: string | null;
     org_oid: string;
     location_oid?: string | null;
     manager_oid?: string | null;
@@ -122,12 +134,36 @@ export interface WorkerCreate {
 
 export interface WorkerUpdate {
     worker_id?: string | null;
-    full_name?: string;
+    stable_id?: string;
+    legal_first_name?: string;
+    legal_last_name?: string;
+    preferred_first_name?: string | null;
     email?: string | null;
+    gender?: string | null;
+    management_level?: string | null;
+    professional_level?: string | null;
     org_oid?: string;
     location_oid?: string | null;
     manager_oid?: string | null;
     is_active?: boolean;
+}
+
+// ============================================================================
+// Worker Name Helpers
+// ============================================================================
+
+/**
+ * Get the full legal name of a worker.
+ */
+export function getWorkerFullName(worker: Worker): string {
+    return `${worker.legal_first_name} ${worker.legal_last_name}`;
+}
+
+/**
+ * Get the display name (preferred name if set, otherwise legal first name).
+ */
+export function getWorkerDisplayName(worker: Worker): string {
+    return worker.preferred_first_name || worker.legal_first_name;
 }
 
 // ============================================================================

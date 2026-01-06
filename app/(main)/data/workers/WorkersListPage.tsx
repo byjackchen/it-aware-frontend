@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Users, Plus, RefreshCw, Search, Check, X } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { Worker, Organization } from '@/lib/types/objects';
+import { getWorkerFullName } from '@/lib/types/objects';
 
 interface WorkersListPageProps {
     workers: Worker[];
@@ -26,9 +27,10 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
     const orgMap = new Map(organizations.map((o) => [o.oid, o.name]));
 
     const filteredWorkers = workers.filter((w) => {
+        const fullName = getWorkerFullName(w);
         const matchesSearch =
             searchQuery === '' ||
-            w.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (w.email && w.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (w.worker_id && w.worker_id.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -138,11 +140,11 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                       w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
                       ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}
                     `}>
-                                            {worker.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                            {getWorkerFullName(worker).split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                                         </div>
                                         <div>
                                             <div className={`font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                                                {worker.full_name}
+                                                {getWorkerFullName(worker)}
                                             </div>
                                             <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {worker.email || worker.worker_id || 'No email'}
