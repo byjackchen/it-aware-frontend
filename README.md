@@ -100,8 +100,3 @@ The app will be available at http://localhost:3000. The Docker build copies `.en
 ```bash
 npx ts-node scripts/generate_headers.ts
 ```
-
-## Run Start in Demo Server (node 20 not as default)
-```bash
-rm -f ~/.npmrc && cd /data/workspace/hr-chatbot-sidebar && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 20 && export PATH="$NVM_DIR/versions/node/v20.19.6/bin:$PATH" && npm start
-```
