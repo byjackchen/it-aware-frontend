@@ -26,11 +26,17 @@ export async function login(formData: FormData) {
     const startTime = Date.now()
 
     const username = formData.get('username') as string
+    const password = formData.get('password') as string
     logger.info(`Login started - username: ${username}`, { requestId, action })
 
     if (!username) {
         logger.info(`Login failed - username is required`, { requestId, action })
         return { error: 'Username is required' }
+    }
+
+    if (!password) {
+        logger.info(`Login failed - password is required`, { requestId, action })
+        return { error: 'Password is required' }
     }
 
     logger.info(`Calling backend: ${BACKEND_DOMAIN}/auth/session/token`, { requestId, action })
@@ -39,7 +45,7 @@ export async function login(formData: FormData) {
         const response = await fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ username }),
+            body: new URLSearchParams({ grant_type: 'password', username, password }),
         })
 
         logger.info(`Backend response status: ${response.status}`, { requestId, action })

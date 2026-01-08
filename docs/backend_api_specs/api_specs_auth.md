@@ -138,23 +138,40 @@ Cookie-based authentication for web applications.
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| POST | `/auth/session/token` | Login (SSO) | No |
+| POST | `/auth/session/token` | Login (SSO/Password) | No |
 | POST | `/auth/session/refresh` | Refresh access token | Refresh cookie |
 | POST | `/auth/session/logout` | Logout | No |
 
 ---
 
-### 1.1 Login (SSO)
+### 1.1 Login
 
 **`POST /auth/session/token`**
 
-Authenticates a regular account and sets httpOnly cookies.
+Authenticates a regular account and sets httpOnly cookies. Supports both SSO and password authentication via the `grant_type` parameter.
 
 **Request Body (form-urlencoded):**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
+| `grant_type` | string | Yes | Authentication method: `sso` or `password` |
 | `username` | string | Yes | Account username |
+| `password` | string | Conditional | Required when `grant_type=password` |
+
+**Example Requests:**
+
+```bash
+# SSO login (no password)
+curl -X POST /auth/session/token \
+  -d "grant_type=sso" \
+  -d "username=alice"
+
+# Password login
+curl -X POST /auth/session/token \
+  -d "grant_type=password" \
+  -d "username=alice" \
+  -d "password=secret123"
+```
 
 **Response (200 OK):**
 
@@ -172,7 +189,11 @@ Sets cookies:
 
 | Status | Condition | Response |
 |--------|-----------|----------|
+| 400 | Invalid grant_type | `{"detail": "Invalid grant_type. Must be 'sso' or 'password'"}` |
 | 400 | Invalid username | `{"detail": "Invalid username"}` |
+| 400 | Missing password | `{"detail": "Password required for grant_type 'password'"}` |
+| 400 | No password hash | `{"detail": "Account does not support password authentication"}` |
+| 401 | Wrong password | `{"detail": "Invalid password"}` |
 | 403 | Inactive account | `{"detail": "Inactive account"}` |
 
 ---
@@ -558,7 +579,7 @@ Links groups to roles for `role_based` scope resolution.
 | # | Method | Path | Description | Permission |
 |---|--------|------|-------------|------------|
 | **Authentication** |||||
-| 1 | POST | `/auth/session/token` | Login (SSO) | - |
+| 1 | POST | `/auth/session/token` | Login (SSO/Password) | - |
 | 2 | POST | `/auth/session/refresh` | Refresh session token | Cookie |
 | 3 | POST | `/auth/session/logout` | Logout | - |
 | 4 | POST | `/auth/service/token` | Service login | API key |

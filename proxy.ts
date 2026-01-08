@@ -68,7 +68,7 @@ async function fetchJwtTokens(username: string): Promise<Response> {
   return fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ username }),
+    body: new URLSearchParams({ grant_type: 'sso', username }),
   })
 }
 
