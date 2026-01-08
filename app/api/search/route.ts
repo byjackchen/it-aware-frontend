@@ -17,7 +17,11 @@ export async function GET(request: Request) {
 
     try {
         const cookieStore = await cookies();
-        const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+        // Only forward app cookies to avoid non-ASCII characters in third-party cookies
+        const cookieHeader = cookieStore.getAll()
+            .filter(c => c.name.startsWith('it_aware_'))
+            .map(c => `${c.name}=${c.value}`)
+            .join('; ');
 
         const params = new URLSearchParams({
             q: query.trim(),
