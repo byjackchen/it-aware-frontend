@@ -8,7 +8,12 @@ import { redirect } from 'next/navigation';
 
 export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
     const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+    // Only forward app cookies to avoid non-ASCII characters in third-party cookies
+    // that cause "Cannot convert argument to a ByteString" errors
+    const cookieHeader = cookieStore.getAll()
+        .filter(c => c.name.startsWith('it_aware_'))
+        .map(c => `${c.name}=${c.value}`)
+        .join('; ');
 
     const res = await fetch(url, {
         ...options,
