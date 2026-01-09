@@ -11,6 +11,9 @@ import {
     createLocation,
     updateLocation,
     deleteLocation,
+    createServiceCatalog,
+    updateServiceCatalog,
+    deleteServiceCatalog,
     createWorker,
     updateWorker,
     deleteWorker,
@@ -186,6 +189,87 @@ export async function deleteLocationAction(oid: string) {
 
     try {
         const result = await deleteLocation(oid);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Service Catalog Actions
+// ============================================================================
+
+export async function createServiceCatalogAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createServiceCatalog';
+    const startTime = Date.now();
+
+    const name = formData.get('name') as string;
+    const stableId = formData.get('stable_id') as string | null;
+    const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
+
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const result = await createServiceCatalog({
+            name,
+            stable_id: stableId || null,
+            parent_oid: parentOid || null,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+        });
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateServiceCatalogAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateServiceCatalog';
+    const startTime = Date.now();
+
+    const name = formData.get('name') as string | null;
+    const stableId = formData.get('stable_id') as string | null;
+    const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
+
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const result = await updateServiceCatalog(oid, {
+            name: name || undefined,
+            stable_id: stableId,
+            parent_oid: parentOid,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+        });
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteServiceCatalogAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteServiceCatalog';
+    const startTime = Date.now();
+
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const result = await deleteServiceCatalog(oid);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return result;

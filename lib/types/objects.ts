@@ -9,7 +9,7 @@
 
 export interface Hierarchy {
     oid: string;
-    object_type: 'organization' | 'location';
+    object_type: 'organization' | 'location' | 'service_catalog';
     parent_oid: string | null;
     path: string[];
     created_at: string;
@@ -88,6 +88,35 @@ export interface LocationUpdate {
     name?: string;
     type?: LocationType;
     timezone?: string;
+    stable_id?: string | null;
+    parent_oid?: string | null;
+    is_active?: boolean;
+}
+
+// ============================================================================
+// Service Catalog Types
+// ============================================================================
+
+export interface ServiceCatalog {
+    oid: string;
+    name: string;
+    stable_id: string | null;
+    parent_oid: string | null;
+    path: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ServiceCatalogCreate {
+    name: string;
+    stable_id?: string | null;
+    parent_oid?: string | null;
+    is_active?: boolean;
+}
+
+export interface ServiceCatalogUpdate {
+    name?: string;
     stable_id?: string | null;
     parent_oid?: string | null;
     is_active?: boolean;

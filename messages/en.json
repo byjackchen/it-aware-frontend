@@ -13,7 +13,8 @@
         "organizations": "Organizations",
         "locations": "Locations",
         "workers": "Workers",
-        "tickets": "Tickets"
+        "tickets": "Tickets",
+        "serviceCatalogs": "Service Catalogs"
     },
     "Sidebar": {
         "overview": "Overview",
@@ -27,6 +28,7 @@
         "objects": "Objects",
         "organizations": "Organizations",
         "locations": "Locations",
+        "serviceCatalogs": "Service Catalogs",
         "workers": "Workers",
         "tickets": "Tickets",
         "profile": "Profile",
@@ -190,6 +192,15 @@
             "deleteConfirm": "Are you sure you want to delete this location? This action cannot be undone.",
             "rootCount": "{count} root location",
             "rootCountPlural": "{count} root locations"
+        },
+        "serviceCatalogs": {
+            "title": "Service Catalogs",
+            "detail": "Service Catalog Details",
+            "new": "New Service Catalog",
+            "empty": "No service catalogs found. Create your first service catalog to get started.",
+            "deleteConfirm": "Are you sure you want to delete this service catalog? This action cannot be undone.",
+            "rootCount": "{count} root service catalog",
+            "rootCountPlural": "{count} root service catalogs"
         },
         "workers": {
             "title": "Workers",

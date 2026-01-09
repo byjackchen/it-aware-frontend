@@ -14,6 +14,7 @@ import {
     Building2,
     MapPin,
     Ticket,
+    Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
@@ -91,6 +92,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/locations',
                         labelKey: 'locations',
                         icon: MapPin,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
+                    {
+                        href: '/data/service-catalogs',
+                        labelKey: 'serviceCatalogs',
+                        icon: Layers,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),

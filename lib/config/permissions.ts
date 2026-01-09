@@ -21,6 +21,8 @@ export const PERMISSIONS = {
     ORGANIZATIONS_EDIT: 'hierarchies:organizations:edit',
     LOCATIONS_READ: 'hierarchies:locations:read',
     LOCATIONS_EDIT: 'hierarchies:locations:edit',
+    SERVICE_CATALOGS_READ: 'hierarchies:service_catalogs:read',
+    SERVICE_CATALOGS_EDIT: 'hierarchies:service_catalogs:edit',
     WORKERS_READ: 'objects:workers:read',
     WORKERS_EDIT: 'objects:workers:edit',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',

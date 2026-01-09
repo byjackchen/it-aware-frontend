@@ -12,6 +12,9 @@ import type {
     Location,
     LocationCreate,
     LocationUpdate,
+    ServiceCatalog,
+    ServiceCatalogCreate,
+    ServiceCatalogUpdate,
     Worker,
     WorkerCreate,
     WorkerUpdate,
@@ -151,6 +154,38 @@ export async function updateLocation(oid: string, data: LocationUpdate): Promise
 
 export async function deleteLocation(oid: string): Promise<void> {
     return fetchApi<void>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============================================================================
+// Service Catalog APIs
+// ============================================================================
+
+export async function getServiceCatalogs(): Promise<ServiceCatalog[]> {
+    return fetchAllPages<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`);
+}
+
+export async function getServiceCatalog(oid: string): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`);
+}
+
+export async function createServiceCatalog(data: ServiceCatalogCreate): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateServiceCatalog(oid: string, data: ServiceCatalogUpdate): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteServiceCatalog(oid: string): Promise<void> {
+    return fetchApi<void>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }

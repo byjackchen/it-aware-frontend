@@ -13,7 +13,8 @@
         "organizations": "组织",
         "locations": "地点",
         "workers": "员工",
-        "tickets": "工单"
+        "tickets": "工单",
+        "serviceCatalogs": "服务目录"
     },
     "Sidebar": {
         "overview": "概览",
@@ -27,6 +28,7 @@
         "objects": "对象",
         "organizations": "组织",
         "locations": "地点",
+        "serviceCatalogs": "服务目录",
         "workers": "员工",
         "tickets": "工单",
         "profile": "个人资料",
@@ -190,6 +192,15 @@
             "deleteConfirm": "确定要删除此地点吗？此操作无法撤销。",
             "rootCount": "{count} 个根地点",
             "rootCountPlural": "{count} 个根地点"
+        },
+        "serviceCatalogs": {
+            "title": "服务目录",
+            "detail": "服务目录详情",
+            "new": "新建服务目录",
+            "empty": "未找到服务目录。创建您的第一个服务目录开始使用。",
+            "deleteConfirm": "确定要删除此服务目录吗？此操作无法撤销。",
+            "rootCount": "{count} 个根服务目录",
+            "rootCountPlural": "{count} 个根服务目录"
         },
         "workers": {
             "title": "员工",
