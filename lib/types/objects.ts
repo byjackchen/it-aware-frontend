@@ -313,3 +313,51 @@ export interface HierarchyTreeNode {
     name: string;
     children: HierarchyTreeNode[];
 }
+
+// ============================================================================
+// Article Types
+// ============================================================================
+
+export interface ArticleVersion {
+    version_number: number;
+    title: string;
+    summary: string | null;
+    markdown: string;
+    source_system: string | null;
+    source_url: string | null;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface Article {
+    oid: string;
+    stable_id: string | null;
+    service_catalog_id: string;
+    effective_version_number: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    latest_version: ArticleVersion;
+}
+
+export interface ArticleCreate {
+    service_catalog_id: string;
+    stable_id?: string | null;
+    title: string;
+    summary?: string | null;
+    markdown: string;
+    source_system?: string | null;
+    source_url?: string | null;
+    metadata?: Record<string, unknown> | null;
+    is_active?: boolean;
+}
+
+export interface ArticleUpdate {
+    title: string;
+    summary?: string | null;
+    markdown: string;
+    source_system?: string | null;
+    source_url?: string | null;
+    metadata?: Record<string, unknown> | null;
+    is_active?: boolean;
+}

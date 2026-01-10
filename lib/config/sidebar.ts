@@ -125,6 +125,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),
                     },
+                    {
+                        href: '/data/articles',
+                        labelKey: 'articles',
+                        icon: FileText,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
                 ],
             },
         ],

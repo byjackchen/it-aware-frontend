@@ -14,7 +14,8 @@
         "locations": "地点",
         "workers": "员工",
         "tickets": "工单",
-        "serviceCatalogs": "服务目录"
+        "serviceCatalogs": "服务目录",
+        "articles": "文章"
     },
     "Sidebar": {
         "overview": "概览",
@@ -250,6 +251,27 @@
             "workersCount": "{count} 员工",
             "workersCountPlural": "{count} 员工",
             "noWorkersAvailable": "没有可用员工"
+        },
+        "articles": {
+            "title": "文章",
+            "detail": "文章详情",
+            "new": "新建文章",
+            "empty": "未找到文章",
+            "deleteConfirm": "确定要删除此文章吗？",
+            "articleTitle": "标题",
+            "summary": "摘要",
+            "content": "内容 (Markdown)",
+            "serviceCatalog": "服务目录",
+            "serviceCatalogs": "服务目录",
+            "sourceSystem": "来源系统",
+            "sourceUrl": "来源链接",
+            "version": "版本",
+            "latest": "最新",
+            "status": "状态",
+            "active": "活跃",
+            "inactive": "未激活",
+            "count": "{filtered} / {total} 文章",
+            "countPlural": "{filtered} / {total} 文章"
         }
     }
 }

@@ -20,10 +20,14 @@ import {
     createTicket,
     updateTicket,
     deleteTicket,
+    createArticle,
+    updateArticle,
+    deleteArticle,
     assignWorkerHierarchyRole,
     removeWorkerHierarchyRole,
 } from '@/lib/api/objects';
 import { logger } from '@/lib/logger';
+import { revalidatePath } from 'next/cache';
 
 // ============================================================================
 // Organization Actions
@@ -515,6 +519,100 @@ export async function removeWorkerRoleAction(workerOid: string, roleOid: string,
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Article Actions
+// ============================================================================
+
+export async function createArticleAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const service_catalog_id = formData.get('service_catalog_id') as string;
+    const title = formData.get('title') as string;
+    const markdown = formData.get('markdown') as string;
+    const stable_id = formData.get('stable_id') as string | null;
+    const summary = formData.get('summary') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const source_url = formData.get('source_url') as string | null;
+    const is_active = formData.get('is_active') === 'true';
+
+    try {
+        await createArticle({
+            service_catalog_id,
+            title,
+            markdown,
+            stable_id: stable_id || undefined,
+            summary: summary || undefined,
+            source_system: source_system || undefined,
+            source_url: source_url || undefined,
+            is_active,
+        });
+        revalidatePath('/data/articles');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateArticleAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const title = formData.get('title') as string;
+    const markdown = formData.get('markdown') as string;
+    const summary = formData.get('summary') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const source_url = formData.get('source_url') as string | null;
+    const is_active_str = formData.get('is_active');
+
+    // Only include is_active if it's present in the form data
+    const is_active = is_active_str !== null ? is_active_str === 'true' : undefined;
+
+    try {
+        await updateArticle(oid, {
+            title,
+            markdown,
+            summary: summary || undefined,
+            source_system: source_system || undefined,
+            source_url: source_url || undefined,
+            is_active,
+        });
+        revalidatePath('/data/articles');
+        revalidatePath(`/data/articles/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteArticleAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteArticle(oid);
+        revalidatePath('/data/articles');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });

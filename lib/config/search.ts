@@ -3,7 +3,7 @@
  * Maps object types to their routes and icons.
  */
 
-import { Building2, MapPin, User, Ticket, Layers } from 'lucide-react';
+import { Building2, MapPin, User, Ticket, Layers, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface ObjectTypeConfig {
@@ -37,6 +37,11 @@ export const SEARCH_CONFIG: Record<string, ObjectTypeConfig> = {
         route: '/data/service-catalogs',
         icon: Layers,
         labelKey: 'serviceCatalogs',
+    },
+    article: {
+        route: '/data/articles',
+        icon: FileText,
+        labelKey: 'articles',
     },
 };
 
