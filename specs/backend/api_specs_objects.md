@@ -9,6 +9,7 @@ The Objects module manages business entities that are not hierarchical but inter
 ```
 /objects/
 ├── /workers                - Worker (employee) management
+│   └── /{worker_oid}/hardwares - Hardware assigned to workers
 ├── /tickets                - Ticket management with ABAC filtering
 └── /worker-hierarchy-roles - Role assignments at hierarchy nodes
 ```
@@ -54,6 +55,27 @@ class Worker(Base):
     org_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=False)
     location_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     manager_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+```
+
+### WorkerHardware
+
+```python
+class WorkerHardware(Base):
+    __tablename__ = "worker_hardwares"
+    __table_args__ = {"schema": "objects"}
+
+    oid = Column(BYTEA(16), primary_key=True)
+    worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid", ondelete="CASCADE"), nullable=False)
+    hardware_type = Column(Text, nullable=False)  # e.g., "Laptop", "Monitor"
+    tracking_id = Column(Text, nullable=True, unique=True)  # ServiceNow display_name
+    serial_number = Column(Text, nullable=True, unique=True)
+    model = Column(Text, nullable=True)  # e.g., "MacBook Pro 16"
+    assignment_date = Column(DateTime(timezone=True), nullable=False)
+    renew_eligible_date = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -173,6 +195,88 @@ class WorkerResponse(BaseModel):
   "email": "alice@example.com",
   "org_oid": "01JFXYZORG123456789AB",
   "location_oid": "01JFXYZLOC123456789AB"
+}
+```
+
+### Nested Resource: Worker Hardwares
+
+Hardware assets (laptops, monitors, etc.) assigned to workers.
+
+#### Schemas
+
+```python
+class WorkerHardwareCreate(BaseModel):
+    hardware_type: str = Field(..., min_length=1, max_length=100)
+    tracking_id: Optional[str] = Field(None, max_length=255)
+    serial_number: Optional[str] = Field(None, max_length=255)
+    model: Optional[str] = Field(None, max_length=255)
+    assignment_date: datetime
+    renew_eligible_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    is_active: bool = True
+
+class WorkerHardwareUpdate(BaseModel):
+    hardware_type: Optional[str] = None
+    tracking_id: Optional[str] = None
+    serial_number: Optional[str] = None
+    model: Optional[str] = None
+    assignment_date: Optional[datetime] = None
+    renew_eligible_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class WorkerHardwareResponse(BaseModel):
+    oid: str
+    worker_oid: str
+    hardware_type: str
+    tracking_id: Optional[str] = None
+    serial_number: Optional[str] = None
+    model: Optional[str] = None
+    assignment_date: datetime
+    renew_eligible_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+```
+
+#### Endpoints
+
+| Method | Path | Description | Permission |
+|--------|------|-------------|------------|
+| POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
+| GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
+| GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
+| PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
+| DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
+
+> [!NOTE]
+> Deleting a worker cascades to all associated hardware records.
+
+#### Error Responses
+
+| Status | Condition | Response |
+|--------|-----------|----------|
+| 404 | Worker not found | `{"detail": "Worker not found"}` |
+| 404 | Hardware not found | `{"detail": "Hardware not found"}` |
+| 409 | Tracking ID exists | `{"detail": "Tracking ID already exists"}` |
+| 409 | Serial number exists | `{"detail": "Serial number already exists"}` |
+
+#### Query Parameters (List)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `is_active` | boolean | null | Filter by active status |
+
+#### Create Hardware Example
+
+```json
+{
+  "hardware_type": "Laptop",
+  "tracking_id": "MacBook-001",
+  "serial_number": "C02XYZ123ABC",
+  "model": "MacBook Pro 16",
+  "assignment_date": "2024-01-15T00:00:00Z"
 }
 ```
 
@@ -296,6 +400,12 @@ class WorkerHierarchyRoleResponse(BaseModel):
 | 11 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
 | 12 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
 | 13 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
+| **Worker Hardwares** |||||
+| 14 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
+| 15 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
+| 16 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
+| 17 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
+| 18 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
 
 ---
 
