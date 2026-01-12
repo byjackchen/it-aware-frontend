@@ -411,7 +411,8 @@ export async function createTicketAction(formData: FormData) {
     const startTime = Date.now();
 
     const title = formData.get('title') as string;
-    const orgOid = formData.get('org_oid') as string;
+    // const orgOid = formData.get('org_oid') as string; // Removed
+    const requesterOid = formData.get('requester_oid') as string | null;
     const status = formData.get('status') as string | null;
     const isActiveStr = formData.get('is_active');
 
@@ -420,7 +421,8 @@ export async function createTicketAction(formData: FormData) {
     try {
         const result = await createTicket({
             title,
-            org_oid: orgOid,
+            // org_oid: orgOid,
+            requester_oid: requesterOid || undefined,
             status: status || undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });

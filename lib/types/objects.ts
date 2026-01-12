@@ -238,8 +238,8 @@ export function getWorkerDisplayName(worker: Worker): string {
 
 export interface Ticket {
     oid: string;
-    org_oid: string;
-    worker_oid: string;
+    requester_oid: string; // Renamed from worker_oid
+    // org_oid: string; // Removed
     status: string;
     title: string;
     is_active: boolean;
@@ -247,7 +247,8 @@ export interface Ticket {
 }
 
 export interface TicketCreate {
-    org_oid: string;
+    // org_oid: string; // Removed
+    requester_oid?: string; // Optional, defaults to self
     status?: string;
     title: string;
     is_active?: boolean;
