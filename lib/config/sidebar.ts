@@ -10,7 +10,6 @@ import {
     Users,
     Settings,
     FileText,
-    HelpCircle,
     Building2,
     MapPin,
     Ticket,
@@ -165,26 +164,8 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
-    '/knowledge': {
-        items: [
-            {
-                href: '/knowledge/articles',
-                labelKey: 'articles',
-                icon: FileText,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-                ]),
-            },
-            {
-                href: '/knowledge/faqs',
-                labelKey: 'faqs',
-                icon: HelpCircle,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-                ]),
-            },
-        ],
-    },
+    // Note: /knowledge is intentionally excluded - it uses its own CatalogSidebar
+    // instead of the standard navigation sidebar
 };
 
 /**
