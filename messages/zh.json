@@ -273,5 +273,37 @@
             "count": "{filtered} / {total} 文章",
             "countPlural": "{filtered} / {total} 文章"
         }
+    },
+    "Knowledge": {
+        "sidebar": {
+            "title": "服务目录"
+        },
+        "overview": {
+            "title": "知识库",
+            "description": "按服务目录浏览文章和文档。从侧边栏选择一个分类以查看相关内容。",
+            "catalogs": "目录",
+            "recentArticles": "最近文章",
+            "viewAll": "查看全部",
+            "noArticles": "暂无文章。从侧边栏选择一个目录以浏览内容。"
+        },
+        "catalog": {
+            "articleCount": "此分类下有 {count} 篇文章",
+            "articleCountPlural": "此分类下有 {count} 篇文章"
+        },
+        "articles": {
+            "title": "文章",
+            "empty": "此分类下暂无文章",
+            "article": "文章",
+            "source": "来源"
+        },
+        "faqs": {
+            "title": "常见问题",
+            "comingSoon": "常见问题即将上线",
+            "underDevelopment": "此功能正在开发中"
+        },
+        "common": {
+            "noCatalogs": "未找到目录",
+            "loadError": "加载目录失败"
+        }
     }
 }

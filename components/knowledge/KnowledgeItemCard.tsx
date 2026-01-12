@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { FileText, ExternalLink, Calendar } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { Article } from '@/lib/types/objects';
@@ -16,6 +17,7 @@ interface KnowledgeItemCardProps {
 export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
 
     const { latest_version } = article;
     const formattedDate = new Date(article.updated_at).toLocaleDateString('en-US', {
@@ -83,7 +85,7 @@ export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
                         : 'bg-blue-500/20 text-blue-300'
                     }
                 `}>
-                    Article
+                    {t('articles.article')}
                 </span>
 
                 {/* Date */}
@@ -111,7 +113,7 @@ export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
                         `}
                     >
                         <ExternalLink className="w-3 h-3" />
-                        <span>Source</span>
+                        <span>{t('articles.source')}</span>
                     </a>
                 )}
             </div>

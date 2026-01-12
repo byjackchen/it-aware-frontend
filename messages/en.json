@@ -273,5 +273,37 @@
             "count": "{filtered} of {total} article",
             "countPlural": "{filtered} of {total} articles"
         }
+    },
+    "Knowledge": {
+        "sidebar": {
+            "title": "Service Catalog"
+        },
+        "overview": {
+            "title": "Knowledge Base",
+            "description": "Browse articles and documentation organized by service catalog. Select a category from the sidebar to view related content.",
+            "catalogs": "Catalogs",
+            "recentArticles": "Recent Articles",
+            "viewAll": "View all",
+            "noArticles": "No articles yet. Select a catalog from the sidebar to browse content."
+        },
+        "catalog": {
+            "articleCount": "{count} article in this category",
+            "articleCountPlural": "{count} articles in this category"
+        },
+        "articles": {
+            "title": "Articles",
+            "empty": "No articles in this category",
+            "article": "Article",
+            "source": "Source"
+        },
+        "faqs": {
+            "title": "FAQs",
+            "comingSoon": "FAQs Coming Soon",
+            "underDevelopment": "This feature is under development"
+        },
+        "common": {
+            "noCatalogs": "No catalogs found",
+            "loadError": "Failed to load catalogs"
+        }
     }
 }

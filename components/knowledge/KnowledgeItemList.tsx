@@ -5,6 +5,7 @@
  * Shows articles section and a placeholder for FAQs.
  */
 
+import { useTranslations } from 'next-intl';
 import { FileText, HelpCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { KnowledgeItemCard } from './KnowledgeItemCard';
@@ -19,6 +20,7 @@ interface KnowledgeItemListProps {
 export function KnowledgeItemList({ articles, showFaqPlaceholder = true }: KnowledgeItemListProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
 
     return (
         <div className="space-y-8">
@@ -27,7 +29,7 @@ export function KnowledgeItemList({ articles, showFaqPlaceholder = true }: Knowl
                 <div className="flex items-center gap-2 mb-4">
                     <FileText className={`w-5 h-5 ${isLight ? 'text-blue-500' : 'text-blue-400'}`} />
                     <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                        Articles
+                        {t('articles.title')}
                     </h2>
                     <span className={`
                         text-xs px-2 py-0.5 rounded-full
@@ -45,7 +47,7 @@ export function KnowledgeItemList({ articles, showFaqPlaceholder = true }: Knowl
                             : 'border-white/10 text-gray-500'
                         }
                     `}>
-                        No articles in this category
+                        {t('articles.empty')}
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -62,7 +64,7 @@ export function KnowledgeItemList({ articles, showFaqPlaceholder = true }: Knowl
                     <div className="flex items-center gap-2 mb-4">
                         <HelpCircle className={`w-5 h-5 ${isLight ? 'text-purple-500' : 'text-purple-400'}`} />
                         <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                            FAQs
+                            {t('faqs.title')}
                         </h2>
                     </div>
                     <EmptyFaqPlaceholder />

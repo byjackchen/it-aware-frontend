@@ -6,6 +6,7 @@
  */
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { Layers, Loader2 } from 'lucide-react';
 import { CatalogTreeNode } from './CatalogTreeNode';
@@ -59,6 +60,7 @@ function buildCatalogTree(catalogs: ServiceCatalog[]): HierarchyTreeNode[] {
 export function CatalogSidebar({ catalogs, isLoading, error }: CatalogSidebarProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
 
     // Build tree from flat catalog list
     const treeNodes = useMemo(() => buildCatalogTree(catalogs), [catalogs]);
@@ -82,7 +84,7 @@ export function CatalogSidebar({ catalogs, isLoading, error }: CatalogSidebarPro
                 <div className="flex items-center gap-2">
                     <Layers className={`w-5 h-5 ${isLight ? 'text-blue-500' : 'text-blue-400'}`} />
                     <h2 className={`text-sm font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                        Service Catalog
+                        {t('sidebar.title')}
                     </h2>
                 </div>
             </div>
@@ -98,14 +100,14 @@ export function CatalogSidebar({ catalogs, isLoading, error }: CatalogSidebarPro
                         text-sm text-center py-8 px-4
                         ${isLight ? 'text-red-500' : 'text-red-400'}
                     `}>
-                        {error}
+                        {t('common.loadError')}
                     </div>
                 ) : treeNodes.length === 0 ? (
                     <div className={`
                         text-sm text-center py-8 px-4
                         ${isLight ? 'text-slate-500' : 'text-gray-500'}
                     `}>
-                        No catalogs found
+                        {t('common.noCatalogs')}
                     </div>
                 ) : (
                     <nav>

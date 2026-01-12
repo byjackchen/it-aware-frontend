@@ -4,12 +4,14 @@
  * Placeholder component for FAQ section (backend not ready yet).
  */
 
+import { useTranslations } from 'next-intl';
 import { HelpCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 
 export function EmptyFaqPlaceholder() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
 
     return (
         <div className={`
@@ -32,13 +34,13 @@ export function EmptyFaqPlaceholder() {
                 text-sm font-medium
                 ${isLight ? 'text-slate-600' : 'text-gray-400'}
             `}>
-                FAQs Coming Soon
+                {t('faqs.comingSoon')}
             </p>
             <p className={`
                 text-xs mt-1
                 ${isLight ? 'text-slate-400' : 'text-gray-500'}
             `}>
-                This feature is under development
+                {t('faqs.underDevelopment')}
             </p>
         </div>
     );

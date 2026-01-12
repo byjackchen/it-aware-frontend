@@ -4,6 +4,7 @@
  * Knowledge overview page - shows welcome message and recent articles.
  */
 
+import { useTranslations } from 'next-intl';
 import { FileText, Layers, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -18,6 +19,7 @@ interface KnowledgeOverviewProps {
 export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
 
     // Get recent articles (last 6)
     const recentArticles = [...articles]
@@ -38,11 +40,10 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                 }
             `}>
                 <h1 className={`text-2xl font-bold mb-2 ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                    Knowledge Base
+                    {t('overview.title')}
                 </h1>
                 <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
-                    Browse articles and documentation organized by service catalog.
-                    Select a category from the sidebar to view related content.
+                    {t('overview.description')}
                 </p>
 
                 {/* Stats */}
@@ -59,7 +60,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                                 {rootCatalogs.length}
                             </div>
                             <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                Catalogs
+                                {t('overview.catalogs')}
                             </div>
                         </div>
                     </div>
@@ -75,7 +76,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                                 {articles.length}
                             </div>
                             <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                Articles
+                                {t('articles.title')}
                             </div>
                         </div>
                     </div>
@@ -88,7 +89,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                     <div className="flex items-center gap-2">
                         <FileText className={`w-5 h-5 ${isLight ? 'text-blue-500' : 'text-blue-400'}`} />
                         <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                            Recent Articles
+                            {t('overview.recentArticles')}
                         </h2>
                     </div>
                     {articles.length > 6 && (
@@ -102,7 +103,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                                 }
                             `}
                         >
-                            View all
+                            {t('overview.viewAll')}
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                     )}
@@ -116,7 +117,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                             : 'border-white/10 text-gray-500'
                         }
                     `}>
-                        No articles yet. Select a catalog from the sidebar to browse content.
+                        {t('overview.noArticles')}
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, Folder } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { KnowledgeItemList } from '@/components/knowledge';
@@ -19,6 +20,11 @@ interface CatalogDetailPageProps {
 export function CatalogDetailPage({ catalog, articles, breadcrumb }: CatalogDetailPageProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('Knowledge');
+
+    const articleCountText = articles.length === 1
+        ? t('catalog.articleCount', { count: articles.length })
+        : t('catalog.articleCountPlural', { count: articles.length });
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
@@ -31,7 +37,7 @@ export function CatalogDetailPage({ catalog, articles, breadcrumb }: CatalogDeta
                         ${isLight ? 'text-slate-500 hover:text-slate-700' : 'text-gray-500 hover:text-gray-300'}
                     `}
                 >
-                    Knowledge
+                    {t('overview.title')}
                 </Link>
                 {breadcrumb.map((item, index) => (
                     <div key={item.oid} className="flex items-center gap-1">
@@ -74,7 +80,7 @@ export function CatalogDetailPage({ catalog, articles, breadcrumb }: CatalogDeta
                         {catalog.name}
                     </h1>
                     <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                        {articles.length} article{articles.length !== 1 ? 's' : ''} in this category
+                        {articleCountText}
                     </p>
                 </div>
             </div>
