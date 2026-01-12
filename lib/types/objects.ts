@@ -9,7 +9,7 @@
 
 export interface Hierarchy {
     oid: string;
-    object_type: 'organization' | 'location';
+    object_type: 'organization' | 'location' | 'service_catalog';
     parent_oid: string | null;
     path: string[];
     created_at: string;
@@ -94,6 +94,35 @@ export interface LocationUpdate {
 }
 
 // ============================================================================
+// Service Catalog Types
+// ============================================================================
+
+export interface ServiceCatalog {
+    oid: string;
+    name: string;
+    stable_id: string | null;
+    parent_oid: string | null;
+    path: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ServiceCatalogCreate {
+    name: string;
+    stable_id?: string | null;
+    parent_oid?: string | null;
+    is_active?: boolean;
+}
+
+export interface ServiceCatalogUpdate {
+    name?: string;
+    stable_id?: string | null;
+    parent_oid?: string | null;
+    is_active?: boolean;
+}
+
+// ============================================================================
 // Worker Types
 // ============================================================================
 
@@ -114,6 +143,43 @@ export interface Worker {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+}
+
+export interface WorkerHardware {
+    oid: string;
+    worker_oid: string;
+    hardware_type: string;
+    tracking_id: string | null;
+    serial_number: string | null;
+    model: string | null;
+    assignment_date: string;
+    renew_eligible_date: string | null;
+    notes: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WorkerHardwareCreate {
+    hardware_type: string;
+    tracking_id?: string;
+    serial_number?: string;
+    model?: string;
+    assignment_date: string;
+    renew_eligible_date?: string;
+    notes?: string;
+    is_active?: boolean;
+}
+
+export interface WorkerHardwareUpdate {
+    hardware_type?: string;
+    tracking_id?: string;
+    serial_number?: string;
+    model?: string;
+    assignment_date?: string;
+    renew_eligible_date?: string;
+    notes?: string;
+    is_active?: boolean;
 }
 
 export interface WorkerCreate {
@@ -172,8 +238,8 @@ export function getWorkerDisplayName(worker: Worker): string {
 
 export interface Ticket {
     oid: string;
-    org_oid: string;
-    worker_oid: string;
+    requester_oid: string; // Renamed from worker_oid
+    // org_oid: string; // Removed
     status: string;
     title: string;
     is_active: boolean;
@@ -181,7 +247,8 @@ export interface Ticket {
 }
 
 export interface TicketCreate {
-    org_oid: string;
+    // org_oid: string; // Removed
+    requester_oid?: string; // Optional, defaults to self
     status?: string;
     title: string;
     is_active?: boolean;
@@ -283,4 +350,52 @@ export interface HierarchyTreeNode {
     oid: string;
     name: string;
     children: HierarchyTreeNode[];
+}
+
+// ============================================================================
+// Article Types
+// ============================================================================
+
+export interface ArticleVersion {
+    version_number: number;
+    title: string;
+    summary: string | null;
+    markdown: string;
+    source_system: string | null;
+    source_url: string | null;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface Article {
+    oid: string;
+    stable_id: string | null;
+    service_catalog_id: string;
+    effective_version_number: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    latest_version: ArticleVersion;
+}
+
+export interface ArticleCreate {
+    service_catalog_id: string;
+    stable_id?: string | null;
+    title: string;
+    summary?: string | null;
+    markdown: string;
+    source_system?: string | null;
+    source_url?: string | null;
+    metadata?: Record<string, unknown> | null;
+    is_active?: boolean;
+}
+
+export interface ArticleUpdate {
+    title: string;
+    summary?: string | null;
+    markdown: string;
+    source_system?: string | null;
+    source_url?: string | null;
+    metadata?: Record<string, unknown> | null;
+    is_active?: boolean;
 }

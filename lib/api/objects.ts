@@ -12,16 +12,26 @@ import type {
     Location,
     LocationCreate,
     LocationUpdate,
+    ServiceCatalog,
+    ServiceCatalogCreate,
+    ServiceCatalogUpdate,
     Worker,
     WorkerCreate,
     WorkerUpdate,
     Ticket,
     TicketCreate,
     TicketUpdate,
+    WorkerHardware,
+    WorkerHardwareCreate,
+    WorkerHardwareUpdate,
     WorkerHierarchyRole,
     WorkerHierarchyRoleCreate,
     GlobalEdge,
     GlobalEdgeListResponse,
+    Article,
+    ArticleCreate,
+    ArticleUpdate,
+    ArticleVersion,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -156,6 +166,38 @@ export async function deleteLocation(oid: string): Promise<void> {
 }
 
 // ============================================================================
+// Service Catalog APIs
+// ============================================================================
+
+export async function getServiceCatalogs(): Promise<ServiceCatalog[]> {
+    return fetchAllPages<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`);
+}
+
+export async function getServiceCatalog(oid: string): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`);
+}
+
+export async function createServiceCatalog(data: ServiceCatalogCreate): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateServiceCatalog(oid: string, data: ServiceCatalogUpdate): Promise<ServiceCatalog> {
+    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteServiceCatalog(oid: string): Promise<void> {
+    return fetchApi<void>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
+}
+
+// ============================================================================
 // Worker APIs
 // ============================================================================
 
@@ -190,6 +232,41 @@ export async function deleteWorker(oid: string): Promise<void> {
         method: 'DELETE',
     });
 }
+
+// ============================================================================
+// Worker Hardware APIs
+// ============================================================================
+
+export async function getWorkerHardwares(workerOid: string, includeInactive: boolean = false): Promise<WorkerHardware[]> {
+    const params = new URLSearchParams();
+    if (includeInactive) params.append('is_active', 'false');
+    else params.append('is_active', 'true');
+
+    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares?${params.toString()}`);
+}
+
+export async function createWorkerHardware(workerOid: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateWorkerHardware(workerOid: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteWorkerHardware(workerOid: string, hardwareOid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+        method: 'DELETE',
+    });
+}
+
 
 // ============================================================================
 // Ticket APIs
@@ -307,4 +384,60 @@ export async function getEdgeTypes(): Promise<string[]> {
 
 export async function getRoles(): Promise<Role[]> {
     return fetchApi<Role[]>(`${AUTH_CONFIG_BASE}/roles?limit=1000`);
+}
+
+// ============================================================================
+// Article APIs
+// ============================================================================
+
+export async function getArticles(serviceCatalogId?: string, isActive?: boolean): Promise<Article[]> {
+    const params = new URLSearchParams();
+    if (serviceCatalogId) params.append('service_catalog_id', serviceCatalogId);
+    if (isActive !== undefined) params.append('is_active', String(isActive));
+
+    // Note: fetchAllPages expects a full URL if fetchApi expects a full URL (or base + relative).
+    // But fetchAllPages implementation simply appends query params to baseUrl.
+    // Ideally we pass full URL here.
+    const queryString = params.toString();
+    const url = `${OBJECTS_BASE}/articles${queryString ? `?${queryString}` : ''}`;
+
+    return fetchAllPages(url);
+}
+
+export async function getArticle(oid: string): Promise<Article> {
+    return fetchApi(`${OBJECTS_BASE}/articles/${oid}`);
+}
+
+export async function createArticle(data: ArticleCreate): Promise<Article> {
+    return fetchApi(`${OBJECTS_BASE}/articles`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateArticle(oid: string, data: ArticleUpdate): Promise<Article> {
+    return fetchApi(`${OBJECTS_BASE}/articles/${oid}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteArticle(oid: string): Promise<void> {
+    return fetchApi(`${OBJECTS_BASE}/articles/${oid}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function getArticleVersions(oid: string): Promise<ArticleVersion[]> {
+    return fetchApi(`${OBJECTS_BASE}/articles/${oid}/versions`);
+}
+
+export async function getArticleVersion(oid: string, versionNumber: number): Promise<ArticleVersion> {
+    return fetchApi(`${OBJECTS_BASE}/articles/${oid}/versions/${versionNumber}`);
 }

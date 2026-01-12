@@ -11,16 +11,23 @@ import {
     createLocation,
     updateLocation,
     deleteLocation,
+    createServiceCatalog,
+    updateServiceCatalog,
+    deleteServiceCatalog,
     createWorker,
     updateWorker,
     deleteWorker,
     createTicket,
     updateTicket,
     deleteTicket,
+    createArticle,
+    updateArticle,
+    deleteArticle,
     assignWorkerHierarchyRole,
     removeWorkerHierarchyRole,
 } from '@/lib/api/objects';
 import { logger } from '@/lib/logger';
+import { revalidatePath } from 'next/cache';
 
 // ============================================================================
 // Organization Actions
@@ -197,6 +204,87 @@ export async function deleteLocationAction(oid: string) {
 }
 
 // ============================================================================
+// Service Catalog Actions
+// ============================================================================
+
+export async function createServiceCatalogAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createServiceCatalog';
+    const startTime = Date.now();
+
+    const name = formData.get('name') as string;
+    const stableId = formData.get('stable_id') as string | null;
+    const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
+
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const result = await createServiceCatalog({
+            name,
+            stable_id: stableId || null,
+            parent_oid: parentOid || null,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+        });
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateServiceCatalogAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateServiceCatalog';
+    const startTime = Date.now();
+
+    const name = formData.get('name') as string | null;
+    const stableId = formData.get('stable_id') as string | null;
+    const parentOid = formData.get('parent_oid') as string | null;
+    const isActiveStr = formData.get('is_active');
+
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const result = await updateServiceCatalog(oid, {
+            name: name || undefined,
+            stable_id: stableId,
+            parent_oid: parentOid,
+            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+        });
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteServiceCatalogAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteServiceCatalog';
+    const startTime = Date.now();
+
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const result = await deleteServiceCatalog(oid);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
 // Worker Actions
 // ============================================================================
 
@@ -323,7 +411,8 @@ export async function createTicketAction(formData: FormData) {
     const startTime = Date.now();
 
     const title = formData.get('title') as string;
-    const orgOid = formData.get('org_oid') as string;
+    // const orgOid = formData.get('org_oid') as string; // Removed
+    const requesterOid = formData.get('requester_oid') as string | null;
     const status = formData.get('status') as string | null;
     const isActiveStr = formData.get('is_active');
 
@@ -332,7 +421,8 @@ export async function createTicketAction(formData: FormData) {
     try {
         const result = await createTicket({
             title,
-            org_oid: orgOid,
+            // org_oid: orgOid,
+            requester_oid: requesterOid || undefined,
             status: status || undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
@@ -431,6 +521,100 @@ export async function removeWorkerRoleAction(workerOid: string, roleOid: string,
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return result;
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Article Actions
+// ============================================================================
+
+export async function createArticleAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const service_catalog_id = formData.get('service_catalog_id') as string;
+    const title = formData.get('title') as string;
+    const markdown = formData.get('markdown') as string;
+    const stable_id = formData.get('stable_id') as string | null;
+    const summary = formData.get('summary') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const source_url = formData.get('source_url') as string | null;
+    const is_active = formData.get('is_active') === 'true';
+
+    try {
+        await createArticle({
+            service_catalog_id,
+            title,
+            markdown,
+            stable_id: stable_id || undefined,
+            summary: summary || undefined,
+            source_system: source_system || undefined,
+            source_url: source_url || undefined,
+            is_active,
+        });
+        revalidatePath('/data/articles');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateArticleAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const title = formData.get('title') as string;
+    const markdown = formData.get('markdown') as string;
+    const summary = formData.get('summary') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const source_url = formData.get('source_url') as string | null;
+    const is_active_str = formData.get('is_active');
+
+    // Only include is_active if it's present in the form data
+    const is_active = is_active_str !== null ? is_active_str === 'true' : undefined;
+
+    try {
+        await updateArticle(oid, {
+            title,
+            markdown,
+            summary: summary || undefined,
+            source_system: source_system || undefined,
+            source_url: source_url || undefined,
+            is_active,
+        });
+        revalidatePath('/data/articles');
+        revalidatePath(`/data/articles/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteArticleAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteArticle';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteArticle(oid);
+        revalidatePath('/data/articles');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });

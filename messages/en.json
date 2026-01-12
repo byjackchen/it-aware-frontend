@@ -13,7 +13,9 @@
         "organizations": "Organizations",
         "locations": "Locations",
         "workers": "Workers",
-        "tickets": "Tickets"
+        "tickets": "Tickets",
+        "serviceCatalogs": "Service Catalogs",
+        "articles": "Articles"
     },
     "Sidebar": {
         "overview": "Overview",
@@ -27,6 +29,7 @@
         "objects": "Objects",
         "organizations": "Organizations",
         "locations": "Locations",
+        "serviceCatalogs": "Service Catalogs",
         "workers": "Workers",
         "tickets": "Tickets",
         "profile": "Profile",
@@ -191,6 +194,15 @@
             "rootCount": "{count} root location",
             "rootCountPlural": "{count} root locations"
         },
+        "serviceCatalogs": {
+            "title": "Service Catalogs",
+            "detail": "Service Catalog Details",
+            "new": "New Service Catalog",
+            "empty": "No service catalogs found. Create your first service catalog to get started.",
+            "deleteConfirm": "Are you sure you want to delete this service catalog? This action cannot be undone.",
+            "rootCount": "{count} root service catalog",
+            "rootCountPlural": "{count} root service catalogs"
+        },
         "workers": {
             "title": "Workers",
             "detail": "Worker Details",
@@ -218,7 +230,19 @@
             "countPlural": "{filtered} of {total} workers",
             "required": "Required",
             "optional": "Optional",
-            "createWorker": "Create Worker"
+            "createWorker": "Create Worker",
+            "hardware": {
+                "title": "Hardware Assets",
+                "type": "Type",
+                "model": "Model",
+                "trackingId": "Tracking ID",
+                "serial": "Serial Number",
+                "assigned": "Assigned",
+                "renew": "Renew Eligible",
+                "unknown": "Unknown Device",
+                "active": "Active",
+                "empty": "No hardware assigned"
+            }
         },
         "tickets": {
             "title": "Tickets",
@@ -239,6 +263,59 @@
             "workersCount": "{count} worker",
             "workersCountPlural": "{count} workers",
             "noWorkersAvailable": "No workers available"
+        },
+        "articles": {
+            "title": "Articles",
+            "detail": "Article Details",
+            "new": "New Article",
+            "empty": "No articles found",
+            "deleteConfirm": "Are you sure you want to delete this article?",
+            "articleTitle": "Title",
+            "summary": "Summary",
+            "content": "Content (Markdown)",
+            "serviceCatalog": "Service Catalog",
+            "serviceCatalogs": "Service Catalogs",
+            "sourceSystem": "Source System",
+            "sourceUrl": "Source URL",
+            "version": "Version",
+            "latest": "Latest",
+            "status": "Status",
+            "active": "Active",
+            "inactive": "Inactive",
+            "count": "{filtered} of {total} article",
+            "countPlural": "{filtered} of {total} articles"
+        }
+    },
+    "Knowledge": {
+        "sidebar": {
+            "title": "Service Catalog"
+        },
+        "overview": {
+            "title": "Knowledge Base",
+            "description": "Browse articles and documentation organized by service catalog. Select a category from the sidebar to view related content.",
+            "catalogs": "Catalogs",
+            "recentArticles": "Recent Articles",
+            "viewAll": "View all",
+            "noArticles": "No articles yet. Select a catalog from the sidebar to browse content."
+        },
+        "catalog": {
+            "articleCount": "{count} article in this category",
+            "articleCountPlural": "{count} articles in this category"
+        },
+        "articles": {
+            "title": "Articles",
+            "empty": "No articles in this category",
+            "article": "Article",
+            "source": "Source"
+        },
+        "faqs": {
+            "title": "FAQs",
+            "comingSoon": "FAQs Coming Soon",
+            "underDevelopment": "This feature is under development"
+        },
+        "common": {
+            "noCatalogs": "No catalogs found",
+            "loadError": "Failed to load catalogs"
         }
     }
 }

@@ -120,7 +120,7 @@ export function TicketsListPage({ tickets, organizations, workers }: TicketsList
                                         <div className="flex-1 min-w-0">
                                             <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{ticket.title}</div>
                                             <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {workerMap.get(ticket.worker_oid) || 'Unknown'} • {orgMap.get(ticket.org_oid) || 'Unknown org'}
+                                                {workerMap.get(ticket.requester_oid) || 'Unknown Requester'}
                                             </div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${style.bg} ${style.text}`}>

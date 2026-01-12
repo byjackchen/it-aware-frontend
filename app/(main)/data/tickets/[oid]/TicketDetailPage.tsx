@@ -47,8 +47,8 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
     const [isActive, setIsActive] = useState(ticket.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
-    const orgName = organizations.find((o) => o.oid === ticket.org_oid)?.name || 'Unknown';
-    const worker = workers.find((w) => w.oid === ticket.worker_oid);
+    // const orgName = organizations.find((o) => o.oid === ticket.org_oid)?.name || 'Unknown';
+    const worker = workers.find((w) => w.oid === ticket.requester_oid);
     const workerName = worker ? getWorkerFullName(worker) : 'Unknown';
     const filteredEdges = edgeFilter ? edges.filter((e) => e.edge_type === edgeFilter) : edges;
 
@@ -157,18 +157,11 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        {/* Organization */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('workers.organization')}</label>
-                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{orgName}</span>
-                            </div>
-                        </div>
+                        {/* Organization - REMOVED */}
 
-                        {/* Owner */}
+                        {/* Requester */}
                         <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('tickets.owner')}</label>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Requester</label>
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                 <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                 <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{workerName}</span>

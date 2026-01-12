@@ -10,10 +10,10 @@ import {
     Users,
     Settings,
     FileText,
-    HelpCircle,
     Building2,
     MapPin,
     Ticket,
+    Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
@@ -95,6 +95,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),
                     },
+                    {
+                        href: '/data/service-catalogs',
+                        labelKey: 'serviceCatalogs',
+                        icon: Layers,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
                 ],
             },
             {
@@ -112,6 +120,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/tickets',
                         labelKey: 'tickets',
                         icon: Ticket,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
+                    {
+                        href: '/data/articles',
+                        labelKey: 'articles',
+                        icon: FileText,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),
@@ -148,26 +164,8 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
-    '/knowledge': {
-        items: [
-            {
-                href: '/knowledge/articles',
-                labelKey: 'articles',
-                icon: FileText,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-                ]),
-            },
-            {
-                href: '/knowledge/faqs',
-                labelKey: 'faqs',
-                icon: HelpCircle,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-                ]),
-            },
-        ],
-    },
+    // Note: /knowledge is intentionally excluded - it uses its own CatalogSidebar
+    // instead of the standard navigation sidebar
 };
 
 /**

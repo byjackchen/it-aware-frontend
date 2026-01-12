@@ -24,10 +24,17 @@ import {
     Briefcase,
     Users,
     Heart,
+    Laptop,
+    Monitor,
+    Smartphone,
+    Mouse,
+    Keyboard,
+    Headphones,
+    Box,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
-import type { Worker, GlobalEdge, Organization, Location } from '@/lib/types/objects';
+import type { Worker, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
 import { getWorkerFullName } from '@/lib/types/objects';
 import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
 
@@ -36,9 +43,10 @@ interface WorkerDetailPageProps {
     edges: GlobalEdge[];
     organizations: Organization[];
     locations: Location[];
+    hardwares: WorkerHardware[];
 }
 
-export function WorkerDetailPage({ worker, edges, organizations, locations }: WorkerDetailPageProps) {
+export function WorkerDetailPage({ worker, edges, organizations, locations, hardwares }: WorkerDetailPageProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const t = useTranslations('Data');
@@ -371,6 +379,84 @@ export function WorkerDetailPage({ worker, edges, organizations, locations }: Wo
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>{t('common.delete')} {t('workers.title')}</span>
                             </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Hardware Assets */}
+                <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('workers.hardware.title')}</h2>
+
+                    {hardwares.length === 0 ? (
+                        <div className={`text-center py-8 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {t('workers.hardware.empty')}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {hardwares.map((hw: WorkerHardware) => {
+                                const isRenewable = hw.renew_eligible_date ? new Date(hw.renew_eligible_date) <= new Date() : false;
+                                let Icon = Box;
+                                const type = hw.hardware_type.toLowerCase();
+                                if (type.includes('laptop') || type.includes('macbook') || type.includes('notebook')) Icon = Laptop;
+                                else if (type.includes('monitor') || type.includes('display') || type.includes('screen')) Icon = Monitor;
+                                else if (type.includes('phone') || type.includes('mobile') || type.includes('iphone')) Icon = Smartphone;
+                                else if (type.includes('mouse')) Icon = Mouse;
+                                else if (type.includes('keyboard')) Icon = Keyboard;
+                                else if (type.includes('headset') || type.includes('headphone')) Icon = Headphones;
+
+                                return (
+                                    <div key={hw.oid} className={`p-4 rounded-lg border ${isLight ? 'border-slate-100 bg-slate-50' : 'border-white/5 bg-white/5'}`}>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex gap-4">
+                                                <div className={`p-3 rounded-lg ${isLight ? 'bg-white text-slate-600' : 'bg-white/10 text-gray-300'}`}>
+                                                    <Icon className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h3 className={`font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                                        {hw.hardware_type} - {hw.model || t('workers.hardware.unknown')}
+                                                    </h3>
+                                                    <div className="flex flex-wrap gap-x-6 gap-y-1 mt-1 text-sm">
+                                                        {hw.serial_number && (
+                                                            <span className={isLight ? 'text-slate-500' : 'text-gray-400'}>
+                                                                <span className="font-medium mr-1">{t('workers.hardware.serial')}:</span>
+                                                                {hw.serial_number}
+                                                            </span>
+                                                        )}
+                                                        {hw.tracking_id && (
+                                                            <span className={isLight ? 'text-slate-500' : 'text-gray-400'}>
+                                                                <span className="font-medium mr-1">{t('workers.hardware.trackingId')}:</span>
+                                                                {hw.tracking_id}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-x-6 gap-y-1 mt-1 text-sm">
+                                                        <span className={isLight ? 'text-slate-500' : 'text-gray-400'}>
+                                                            <span className="font-medium mr-1">{t('workers.hardware.assigned')}:</span>
+                                                            {new Date(hw.assignment_date).toLocaleDateString()}
+                                                        </span>
+                                                        {hw.renew_eligible_date && (
+                                                            <span className={`${isRenewable ? 'text-green-600 font-medium' : isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                                {isRenewable && <Check className="w-3 h-3 inline mr-1" />}
+                                                                <span className="font-medium mr-1">{t('workers.hardware.renew')}:</span>
+                                                                {new Date(hw.renew_eligible_date).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {hw.is_active ? (
+                                                <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
+                                                    {t('workers.hardware.active')}
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/10 text-gray-500 border border-gray-500/20">
+                                                    {t('workers.inactive')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
