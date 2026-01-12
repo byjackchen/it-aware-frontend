@@ -21,6 +21,9 @@ import type {
     Ticket,
     TicketCreate,
     TicketUpdate,
+    WorkerHardware,
+    WorkerHardwareCreate,
+    WorkerHardwareUpdate,
     WorkerHierarchyRole,
     WorkerHierarchyRoleCreate,
     GlobalEdge,
@@ -229,6 +232,41 @@ export async function deleteWorker(oid: string): Promise<void> {
         method: 'DELETE',
     });
 }
+
+// ============================================================================
+// Worker Hardware APIs
+// ============================================================================
+
+export async function getWorkerHardwares(workerOid: string, includeInactive: boolean = false): Promise<WorkerHardware[]> {
+    const params = new URLSearchParams();
+    if (includeInactive) params.append('is_active', 'false');
+    else params.append('is_active', 'true');
+
+    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares?${params.toString()}`);
+}
+
+export async function createWorkerHardware(workerOid: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateWorkerHardware(workerOid: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteWorkerHardware(workerOid: string, hardwareOid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+        method: 'DELETE',
+    });
+}
+
 
 // ============================================================================
 // Ticket APIs

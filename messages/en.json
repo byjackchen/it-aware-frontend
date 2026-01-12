@@ -230,7 +230,19 @@
             "countPlural": "{filtered} of {total} workers",
             "required": "Required",
             "optional": "Optional",
-            "createWorker": "Create Worker"
+            "createWorker": "Create Worker",
+            "hardware": {
+                "title": "Hardware Assets",
+                "type": "Type",
+                "model": "Model",
+                "trackingId": "Tracking ID",
+                "serial": "Serial Number",
+                "assigned": "Assigned",
+                "renew": "Renew Eligible",
+                "unknown": "Unknown Device",
+                "active": "Active",
+                "empty": "No hardware assigned"
+            }
         },
         "tickets": {
             "title": "Tickets",

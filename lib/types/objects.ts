@@ -145,6 +145,43 @@ export interface Worker {
     updated_at: string;
 }
 
+export interface WorkerHardware {
+    oid: string;
+    worker_oid: string;
+    hardware_type: string;
+    tracking_id: string | null;
+    serial_number: string | null;
+    model: string | null;
+    assignment_date: string;
+    renew_eligible_date: string | null;
+    notes: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WorkerHardwareCreate {
+    hardware_type: string;
+    tracking_id?: string;
+    serial_number?: string;
+    model?: string;
+    assignment_date: string;
+    renew_eligible_date?: string;
+    notes?: string;
+    is_active?: boolean;
+}
+
+export interface WorkerHardwareUpdate {
+    hardware_type?: string;
+    tracking_id?: string;
+    serial_number?: string;
+    model?: string;
+    assignment_date?: string;
+    renew_eligible_date?: string;
+    notes?: string;
+    is_active?: boolean;
+}
+
 export interface WorkerCreate {
     worker_id?: string | null;
     stable_id: string;
