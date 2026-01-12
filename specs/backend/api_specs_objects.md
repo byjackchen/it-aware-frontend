@@ -89,8 +89,7 @@ class Ticket(Base):
     __table_args__ = {"schema": "objects"}
 
     oid = Column(BYTEA(16), primary_key=True)
-    org_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=False)
-    worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=False)
+    requester_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=False)
     status = Column(Text, default="open")
     title = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)  # Soft deletion flag
@@ -290,8 +289,7 @@ Tickets implement ABAC (Attribute-Based Access Control) filtering.
 
 ```python
 class TicketCreate(BaseModel):
-    org_oid: str
-    worker_oid: Optional[str] = None  # Optional owner (system accounts must provide this)
+    requester_oid: Optional[str] = None  # Optional owner (system accounts must provide this)
     status: str = "open"
     title: str
     is_active: bool = True
@@ -303,8 +301,7 @@ class TicketUpdate(BaseModel):
 
 class TicketResponse(BaseModel):
     oid: str
-    org_oid: str
-    worker_oid: str  # Automatically set to current user's linked worker
+    requester_oid: str  # Automatically set to current user's linked worker
     status: str
     title: str
     is_active: bool
@@ -322,23 +319,22 @@ class TicketResponse(BaseModel):
 | DELETE | `/objects/tickets/{oid}` | Delete ticket (ABAC) | `objects:tickets:write` |
 
 > [!IMPORTANT]
-> Ticket ownership defaults to the current user's linked worker. To create a ticket for a specific worker (required for **System Accounts** or **On-Behalf-Of** creation), provide a valid `worker_oid`.
+> Ticket ownership defaults to the current user's linked worker. To create a ticket for a specific worker (required for **System Accounts** or **On-Behalf-Of** creation), provide a valid `requester_oid`.
 
 ### Error Responses
 
 | Status | Condition | Response |
 |--------|-----------|----------|
-| 400 | Missing owner | `{"detail": "Cannot create ticket: must provide worker_oid or have a linked worker profile"}` |
+| 400 | Missing owner | `{"detail": "Cannot create ticket: must provide requester_oid or have a linked worker profile"}` |
 | 403 | ABAC denied | `{"detail": "Access denied to this ticket"}` |
-| 404 | Organization not found | `{"detail": "Organization not found"}` |
 | 404 | Not found | `{"detail": "Ticket not found"}` |
 
 ### ABAC Filtering
 
 Results are filtered based on user's access scope:
 - **Unconstrained**: Sees all tickets
-- **Self-scoped**: Sees only own tickets (`worker_oid` = current worker)
-- **Role-based**: Sees tickets within assigned hierarchy nodes
+- **Self-scoped**: Sees only own tickets (`requester_oid` = current worker)
+- **Role-based**: Sees tickets where the requester is within assigned hierarchy nodes (derived from requester's organization)
 
 ---
 
@@ -536,7 +532,7 @@ curl -X POST http://localhost:8000/auth/session/token \
 curl -X POST http://localhost:8000/objects/tickets \
   -b cookies.txt \
   -H "Content-Type: application/json" \
-  -d '{"org_oid": "<org_oid>", "title": "Server issue"}'
+  -d '{"title": "Server issue"}'
 
 # List tickets (ABAC filtered)
 curl http://localhost:8000/objects/tickets -b cookies.txt
