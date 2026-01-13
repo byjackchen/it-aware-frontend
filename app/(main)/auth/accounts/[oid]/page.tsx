@@ -5,11 +5,11 @@
 import { notFound } from 'next/navigation';
 import {
     getAccount,
-    getWorkers,
     getGroups,
     getAccountWorkers,
     getAccountGroups,
 } from '@/lib/api/security';
+import { getWorkers } from '@/lib/api/objects';
 import type { AccountWorker, AccountGroup, Worker, Group } from '@/lib/types/security';
 import { AccountDetailPage } from './AccountDetailPage';
 
@@ -23,7 +23,7 @@ export default async function AccountPage({ params }: PageProps) {
     try {
         const [account, workers, groups, accountWorkers, accountGroups] = await Promise.all([
             getAccount(oid),
-            getWorkers(true),
+            getWorkers(), // Fetch all workers (including inactive) for search
             getGroups(),
             getAccountWorkers(oid),
             getAccountGroups(oid),

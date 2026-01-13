@@ -119,6 +119,7 @@
             "includeDescHint": "启用后，角色将授权访问层级中的子节点",
             "linkedGroups": "关联分组",
             "noGroupsLinked": "此角色未关联任何分组",
+            "noRolesAssigned": "未分配角色",
             "manageGroupsHint": "在分组页面管理分组-角色关联"
         },
         "permissions": {
@@ -133,6 +134,7 @@
             "action": "操作",
             "assignedGroups": "已分配分组",
             "noGroupsAssigned": "未分配任何分组",
+            "noPermissionsAssigned": "未分配权限",
             "manageGroupsHint": "在分组页面管理权限分配"
         },
         "assignments": {

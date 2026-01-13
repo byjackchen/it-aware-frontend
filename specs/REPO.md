@@ -32,6 +32,11 @@ Uses `next-intl` with cookie-based locale detection (no URL prefix).
 - In components: `const t = useTranslations('Security'); t('common.save')`
 - Nest translations by module: `TopBar`, `Sidebar`, `Security.users`, etc.
 
+### Component Data Flow Reference
+
+For a comprehensive map of how data flows from backend APIs to Server Pages and Client Components, refer to:
+> [Component Data Flow](file:///Users/byjackchen/codespace/it-aware-frontend/specs/components_data_flow.md)
+
 ### Server Components vs. Client Components
 
 | Component Type | Use When | Marker |
@@ -61,6 +66,33 @@ UserForm.tsx      → Client Component (form inputs, validation)
 
 - Place shared actions (auth, logging) in `app/actions/`
 - Place domain-specific actions alongside their module in `app/(main)/[module]/actions.ts`
+
+### Loading States (Suspense)
+
+Next.js 16 App Router uses React Suspense for loading states.
+
+| File | Purpose |
+|------|---------|
+| `app/(main)/loading.tsx` | Global loading boundary for the main layout. Shows `<PageLoading />`. |
+| `components/layout/LoadingSpinner.tsx` | Reusable spinner components (`PageLoading`, `LoadingSpinner`). |
+
+**Usage:**
+- **Automatic:** The `loading.tsx` file automatically wraps page content in a Suspense boundary. It displays while server components are fetching data.
+- **Manual:** For granular loading in client components, use `useState` with `isPending` or similar flags, and render `<LoadingSpinner />` conditionally.
+
+### Error Handling
+
+The application uses a multi-layered error handling strategy.
+
+| Layer | Specific | Implementation |
+|-------|----------|----------------|
+| **Route Error Boundary** | `app/(main)/error.tsx` | Catches unhandled errors in Server Components. Displays a full-page error UI with "Try Again" and navigation options. Auto-classifies common HTTP errors (401, 403, 404, 500). |
+| **Client Toast System** | `lib/contexts/error-context.tsx` | Provides `useError()` hook for Client Components. Displays ephemeral toast notifications (top-right) for non-critical errors (e.g., form submission failures). |
+| **Helper** | `classifyError()` | Utility in `error-context.tsx` to categorize unknown errors into `auth`, `network`, `api`, or `unknown` types. |
+
+**Usage:**
+- **Server Components:** Allow errors to bubble up to `error.tsx`.
+- **Client Components:** Catch errors in handlers (e.g., `try/catch` in `onSubmit`), then call `showError(message, type)`.
 
 ### Logging
 

@@ -31,12 +31,12 @@ export function WorkerSearchDialog({
 }: WorkerSearchDialogProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Filter workers: active, not already linked, and matching search
+    // Filter workers: not already linked, and matching search (inactive workers included)
     const availableWorkers = useMemo(() => {
         const linkedSet = new Set(linkedWorkerOids);
         return workers.filter((worker) => {
-            const isAvailable = worker.is_active && !linkedSet.has(worker.oid);
-            if (!isAvailable) return false;
+            // Exclude already linked workers
+            if (linkedSet.has(worker.oid)) return false;
             if (!searchTerm) return true;
 
             const search = searchTerm.toLowerCase();
@@ -102,14 +102,25 @@ export function WorkerSearchDialog({
                                             onSelect(worker);
                                             onClose();
                                         }}
-                                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+                                        className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left ${!worker.is_active ? 'opacity-60' : ''
+                                            }`}
                                     >
-                                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                                            <User className="w-5 h-5 text-blue-400" />
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${worker.is_active ? 'bg-blue-500/20' : 'bg-gray-500/20'
+                                            }`}>
+                                            <User className={`w-5 h-5 ${worker.is_active ? 'text-blue-400' : 'text-gray-400'
+                                                }`} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-white truncate">
-                                                {getWorkerFullName(worker)}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`font-medium truncate ${worker.is_active ? 'text-white' : 'text-gray-400'
+                                                    }`}>
+                                                    {getWorkerFullName(worker)}
+                                                </span>
+                                                {!worker.is_active && (
+                                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600/50 text-gray-400">
+                                                        Inactive
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-sm text-gray-400 truncate">
                                                 {worker.email || worker.worker_id || 'No email'}

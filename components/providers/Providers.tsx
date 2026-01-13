@@ -2,6 +2,7 @@
 
 import { UserProvider } from '@/lib/contexts/user-context'
 import { ThemeProvider } from '@/lib/contexts/theme-context'
+import { ErrorProvider } from '@/lib/contexts/error-context'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -10,9 +11,12 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider>
-      <UserProvider>
-        {children}
-      </UserProvider>
+      <ErrorProvider>
+        <UserProvider>
+          {children}
+        </UserProvider>
+      </ErrorProvider>
     </ThemeProvider>
   )
 }
+
