@@ -8,7 +8,6 @@ import {
     Lock,
     User,
     Users,
-    Settings,
     FileText,
     Building2,
     MapPin,
@@ -136,34 +135,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
-    '/persona': {
-        items: [
-            {
-                href: '/persona/profile',
-                labelKey: 'profile',
-                icon: User,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_PERSONA
-                ]),
-            },
-            {
-                href: '/persona/team',
-                labelKey: 'team',
-                icon: Users,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_PERSONA
-                ]),
-            },
-            {
-                href: '/persona/settings',
-                labelKey: 'settings',
-                icon: Settings,
-                permissions: requireAnyPermission([
-                    PERMISSIONS.UI.NAVIGATION_PERSONA
-                ]),
-            },
-        ],
-    },
+    // Note: /persona is intentionally excluded - it uses the full page width for the profile view
     // Note: /knowledge is intentionally excluded - it uses its own CatalogSidebar
     // instead of the standard navigation sidebar
 };

@@ -317,5 +317,52 @@
             "noCatalogs": "No catalogs found",
             "loadError": "Failed to load catalogs"
         }
+    },
+    "Persona": {
+        "common": {
+            "yes": "Yes",
+            "no": "No"
+        },
+        "basicProfile": {
+            "title": "Basic Profile",
+            "role": "Role",
+            "experience": "Experience",
+            "workMode": "Work Mode",
+            "onCall": "On-Call"
+        },
+        "context": {
+            "title": "Context",
+            "team": "Team",
+            "product": "Product",
+            "environment": "Environment"
+        },
+        "softwares": {
+            "title": "Softwares",
+            "empty": "No software data available"
+        },
+        "hardwares": {
+            "title": "Hardwares",
+            "empty": "No hardware assigned"
+        },
+        "goals": {
+            "title": "Goals & Motivations"
+        },
+        "painPoints": {
+            "title": "Pain Points"
+        },
+        "workflow": {
+            "title": "Daily Workflow"
+        },
+        "behavior": {
+            "title": "Behavior Patterns"
+        },
+        "communication": {
+            "title": "Communication Preferences",
+            "preferred": "Preferred",
+            "avoided": "Avoided"
+        },
+        "notes": {
+            "title": "Notes / Research"
+        }
     }
 }
