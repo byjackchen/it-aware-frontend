@@ -247,14 +247,16 @@ Token-based authentication for system/service accounts.
 
 **`POST /auth/service/token`**
 
-Authenticates a system account and returns access/refresh tokens.
+Authenticates both system accounts and regular user accounts, returning access/refresh tokens.
+- **System Accounts:** Use `account_id` (username) and `api_key` (password). Token type: `service`.
+- **User Accounts:** Use `account_id` (username) and `api_key` (password). Token type: `user`.
 
 **Request Body (form-urlencoded):**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `service_name` | string | Yes | System account username |
-| `api_key` | string | Yes | System API key (password) |
+| `account_id` | string | Yes | Account username |
+| `api_key` | string | Yes | Account password (or system API key) |
 
 **Response (200 OK):**
 
@@ -262,7 +264,7 @@ Authenticates a system account and returns access/refresh tokens.
 {
   "access_token": "eyJhbGciOiJIUzI1NiIs...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "bearer",
+  "token_type": "service",
   "expires_in": 1800,
   "refresh_expires_in": 604800
 }
@@ -639,7 +641,7 @@ BASE_URL="http://localhost:8000"
 # 1. Login as admin (system account)
 echo "=== Login ==="
 TOKEN=$(curl -s -X POST "$BASE_URL/auth/service/token" \
-  -d "service_name=admin" \
+  -d "account_id=admin" \
   -d "api_key=admin_password" | jq -r '.access_token')
 
 # 2. Create a worker first (via objects API)
