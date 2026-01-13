@@ -28,7 +28,7 @@ export function AssignmentManager<T>({
   onAssign,
   onRemove,
 }: AssignmentManagerProps<T>) {
-  const t = useTranslations('Security');
+  const t = useTranslations('Auth');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [isPending, startTransition] = useTransition();

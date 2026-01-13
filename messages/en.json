@@ -119,6 +119,7 @@
             "includeDescHint": "When enabled, role grants access to child nodes in hierarchy",
             "linkedGroups": "Linked Groups",
             "noGroupsLinked": "No groups linked to this role",
+            "noRolesAssigned": "No roles assigned",
             "manageGroupsHint": "Manage group-role links from the Groups page"
         },
         "permissions": {
@@ -133,6 +134,7 @@
             "action": "Action",
             "assignedGroups": "Assigned Groups",
             "noGroupsAssigned": "No groups assigned",
+            "noPermissionsAssigned": "No permissions assigned",
             "manageGroupsHint": "Manage permission assignments from the Groups page"
         },
         "assignments": {
