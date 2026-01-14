@@ -75,9 +75,10 @@ export function LocationDetailPage({
         ? locations.find((l) => l.oid === location.parent_oid)?.name
         : null;
 
-    const filteredEdges = edgeFilter
-        ? edges.filter((e) => e.edge_type === edgeFilter)
-        : edges;
+    const filteredEdges = edgeFilter ? edges.filter((e) => {
+        const connectedObject = e.from_oid === location.oid ? e.to_object : e.from_object;
+        return connectedObject?.object_type === edgeFilter;
+    }) : edges;
 
     // Get type display config
     const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG['Office Location'];

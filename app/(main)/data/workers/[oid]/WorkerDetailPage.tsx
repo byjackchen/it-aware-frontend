@@ -76,7 +76,10 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     const locationName = worker.location_oid
         ? locations.find((l) => l.oid === worker.location_oid)?.name || 'Unknown'
         : null;
-    const filteredEdges = edgeFilter ? edges.filter((e) => e.edge_type === edgeFilter) : edges;
+    const filteredEdges = edgeFilter ? edges.filter((e) => {
+        const connectedObject = e.from_oid === worker.oid ? e.to_object : e.from_object;
+        return connectedObject?.object_type === edgeFilter;
+    }) : edges;
     const fullName = getWorkerFullName(worker);
 
     const handleSave = async () => {
