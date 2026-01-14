@@ -406,6 +406,7 @@ export function LocationDetailPage({
                         objectType="location"
                         descriptor={location.name}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

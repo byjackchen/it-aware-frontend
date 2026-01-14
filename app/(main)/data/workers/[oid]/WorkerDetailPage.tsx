@@ -472,6 +472,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                         objectType="worker"
                         descriptor={fullName}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

@@ -363,6 +363,7 @@ export function OrganizationDetailPage({
                         objectType="organization"
                         descriptor={organization.name}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

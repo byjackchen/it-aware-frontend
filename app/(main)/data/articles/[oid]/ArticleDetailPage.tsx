@@ -287,6 +287,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                         objectType="article"
                         descriptor={article.latest_version.title}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

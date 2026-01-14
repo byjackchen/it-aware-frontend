@@ -1,10 +1,15 @@
 {
     "TopBar": {
         "title": "IT Aware",
+        "dashboard": "Dashboard",
         "auth": "Auth",
         "data": "Data",
-        "persona": "Persona",
-        "knowledge": "Knowledge"
+        "application": "Applications",
+        "knowledge": "Knowledge",
+        "persona": "Persona"
+    },
+    "Dashboard": {
+        "comingSoon": "Dashboards coming soon"
     },
     "GlobalSearch": {
         "placeholder": "Search Data Objects...",
