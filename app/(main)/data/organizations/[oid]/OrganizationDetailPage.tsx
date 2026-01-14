@@ -62,9 +62,10 @@ export function OrganizationDetailPage({
         ? organizations.find((o) => o.oid === organization.parent_oid)?.name
         : null;
 
-    const filteredEdges = edgeFilter
-        ? edges.filter((e) => e.edge_type === edgeFilter)
-        : edges;
+    const filteredEdges = edgeFilter ? edges.filter((e) => {
+        const connectedObject = e.from_oid === organization.oid ? e.to_object : e.from_object;
+        return connectedObject?.object_type === edgeFilter;
+    }) : edges;
 
     const handleSave = async () => {
         setIsPending(true);

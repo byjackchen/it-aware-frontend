@@ -28,7 +28,7 @@ interface ObjectGraphProps {
     objectType: string;
     descriptor: string;
     edges: GlobalEdge[];
-    onFilterChange?: (edgeType: string | null) => void;
+    onFilterChange?: (objectType: string | null) => void;
     selectedFilter?: string | null;
 }
 
@@ -38,6 +38,7 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> 
     location: { bg: '#10b981', border: '#059669', text: '#ffffff' },
     worker: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
     ticket: { bg: '#f59e0b', border: '#d97706', text: '#ffffff' },
+    article: { bg: '#14b8a6', border: '#0d9488', text: '#ffffff' },
     default: { bg: '#6b7280', border: '#4b5563', text: '#ffffff' },
 };
 
@@ -52,6 +53,8 @@ function getObjectPath(objectType: string, oid: string): string {
             return `/data/workers/${oid}`;
         case 'ticket':
             return `/data/tickets/${oid}`;
+        case 'article':
+            return `/data/articles/${oid}`;
         default:
             return '#';
     }
@@ -70,7 +73,7 @@ export function ObjectGraph({
     const isLight = theme === 'light';
 
     // Build nodes and edges for React Flow
-    const { initialNodes, initialEdges, edgeTypes } = useMemo(() => {
+    const { initialNodes, initialEdges, linkedObjectTypes } = useMemo(() => {
         const nodeMap = new Map<string, Node>();
         const flowEdges: Edge[] = [];
         const types = new Set<string>();
@@ -101,11 +104,14 @@ export function ObjectGraph({
 
         // Process edges and create connected nodes
         edges.forEach((edge, index) => {
-            types.add(edge.edge_type);
+            // Collect connected object types instead of edge types
+            const connectedObject = edge.from_oid === oid ? edge.to_object : edge.from_object;
+            if (connectedObject) {
+                types.add(connectedObject.object_type);
+            }
 
             const isOutgoing = edge.from_oid === oid;
             const connectedOid = isOutgoing ? edge.to_oid : edge.from_oid;
-            const connectedObject = isOutgoing ? edge.to_object : edge.from_object;
 
             if (connectedObject && !nodeMap.has(connectedOid)) {
                 const nodeColors = TYPE_COLORS[connectedObject.object_type] || TYPE_COLORS.default;
@@ -168,7 +174,7 @@ export function ObjectGraph({
         return {
             initialNodes: Array.from(nodeMap.values()),
             initialEdges: flowEdges,
-            edgeTypes: Array.from(types).sort(),
+            linkedObjectTypes: Array.from(types).sort(),
         };
     }, [oid, objectType, descriptor, edges, isLight]);
 
@@ -197,8 +203,8 @@ export function ObjectGraph({
 
     return (
         <div className="space-y-3">
-            {/* Edge Type Filter */}
-            {onFilterChange && edgeTypes.length > 0 && (
+            {/* Object Type Filter */}
+            {onFilterChange && linkedObjectTypes.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                         Filter:
@@ -217,23 +223,31 @@ export function ObjectGraph({
                     >
                         All
                     </button>
-                    {edgeTypes.map((type) => (
-                        <button
-                            key={type}
-                            onClick={() => onFilterChange(type)}
-                            className={`
-                px-2 py-1 text-xs rounded-md transition-colors
-                ${selectedFilter === type
-                                    ? 'bg-blue-500 text-white'
-                                    : isLight
-                                        ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                        : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                                }
-              `}
-                        >
-                            {type.replace(/_/g, ' ')}
-                        </button>
-                    ))}
+                    {linkedObjectTypes.map((objType) => {
+                        const colors = TYPE_COLORS[objType] || TYPE_COLORS.default;
+                        return (
+                            <button
+                                key={objType}
+                                onClick={() => onFilterChange(objType)}
+                                className={`
+                  px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1.5
+                  ${selectedFilter === objType
+                                        ? 'text-white'
+                                        : isLight
+                                            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                                    }
+                `}
+                                style={selectedFilter === objType ? { backgroundColor: colors.bg } : undefined}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: colors.bg }}
+                                />
+                                {objType}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 

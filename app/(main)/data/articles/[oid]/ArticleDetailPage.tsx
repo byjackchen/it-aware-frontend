@@ -55,7 +55,10 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
     const [isActive, setIsActive] = useState(article.is_active);
 
     const catalogName = serviceCatalogs.find((c) => c.oid === article.service_catalog_id)?.name || 'Unknown';
-    const filteredEdges = edgeFilter ? edges.filter((e) => e.edge_type === edgeFilter) : edges;
+    const filteredEdges = edgeFilter ? edges.filter((e) => {
+        const connectedObject = e.from_oid === article.oid ? e.to_object : e.from_object;
+        return connectedObject?.object_type === edgeFilter;
+    }) : edges;
 
     const displayedVersion = versions.find(v => v.version_number === selectedVersionNum) || article.latest_version;
     const isLatest = selectedVersionNum === article.latest_version.version_number;

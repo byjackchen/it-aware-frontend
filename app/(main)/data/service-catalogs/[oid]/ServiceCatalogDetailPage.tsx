@@ -60,9 +60,10 @@ export function ServiceCatalogDetailPage({
         ? serviceCatalogs.find((s) => s.oid === serviceCatalog.parent_oid)?.name
         : null;
 
-    const filteredEdges = edgeFilter
-        ? edges.filter((e) => e.edge_type === edgeFilter)
-        : edges;
+    const filteredEdges = edgeFilter ? edges.filter((e) => {
+        const connectedObject = e.from_oid === serviceCatalog.oid ? e.to_object : e.from_object;
+        return connectedObject?.object_type === edgeFilter;
+    }) : edges;
 
     const handleSave = async () => {
         setIsPending(true);
