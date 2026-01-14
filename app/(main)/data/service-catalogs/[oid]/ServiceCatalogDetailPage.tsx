@@ -342,6 +342,7 @@ export function ServiceCatalogDetailPage({
                         objectType="service_catalog"
                         descriptor={serviceCatalog.name}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

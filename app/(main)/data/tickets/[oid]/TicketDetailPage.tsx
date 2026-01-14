@@ -221,6 +221,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
                         objectType="ticket"
                         descriptor={ticket.title}
                         edges={filteredEdges}
+                        allEdges={edges}
                         onFilterChange={setEdgeFilter}
                         selectedFilter={edgeFilter}
                     />

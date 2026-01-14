@@ -28,6 +28,7 @@ interface ObjectGraphProps {
     objectType: string;
     descriptor: string;
     edges: GlobalEdge[];
+    allEdges?: GlobalEdge[];  // For calculating available filter types (unfiltered)
     onFilterChange?: (objectType: string | null) => void;
     selectedFilter?: string | null;
 }
@@ -65,6 +66,7 @@ export function ObjectGraph({
     objectType,
     descriptor,
     edges,
+    allEdges,
     onFilterChange,
     selectedFilter,
 }: ObjectGraphProps) {
@@ -72,11 +74,22 @@ export function ObjectGraph({
     const router = useRouter();
     const isLight = theme === 'light';
 
+    // Use allEdges for calculating available types if provided, otherwise fall back to edges
+    const edgesForTypeCalculation = allEdges ?? edges;
+
     // Build nodes and edges for React Flow
     const { initialNodes, initialEdges, linkedObjectTypes } = useMemo(() => {
         const nodeMap = new Map<string, Node>();
         const flowEdges: Edge[] = [];
         const types = new Set<string>();
+
+        // First, calculate all available linked object types from unfiltered edges
+        edgesForTypeCalculation.forEach((edge) => {
+            const connectedObject = edge.from_oid === oid ? edge.to_object : edge.from_object;
+            if (connectedObject) {
+                types.add(connectedObject.object_type);
+            }
+        });
 
         // Central node
         const colors = TYPE_COLORS[objectType] || TYPE_COLORS.default;
@@ -104,11 +117,7 @@ export function ObjectGraph({
 
         // Process edges and create connected nodes
         edges.forEach((edge, index) => {
-            // Collect connected object types instead of edge types
             const connectedObject = edge.from_oid === oid ? edge.to_object : edge.from_object;
-            if (connectedObject) {
-                types.add(connectedObject.object_type);
-            }
 
             const isOutgoing = edge.from_oid === oid;
             const connectedOid = isOutgoing ? edge.to_oid : edge.from_oid;
@@ -176,7 +185,7 @@ export function ObjectGraph({
             initialEdges: flowEdges,
             linkedObjectTypes: Array.from(types).sort(),
         };
-    }, [oid, objectType, descriptor, edges, isLight]);
+    }, [oid, objectType, descriptor, edges, edgesForTypeCalculation, isLight]);
 
     const [nodes, , onNodesChange] = useNodesState(initialNodes);
     const [flowEdges, , onEdgesChange] = useEdgesState(initialEdges);

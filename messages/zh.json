@@ -1,10 +1,15 @@
 {
     "TopBar": {
         "title": "IT Aware",
+        "dashboard": "看板",
         "auth": "权限",
         "data": "数据",
-        "persona": "用户画像",
-        "knowledge": "知识库"
+        "application": "应用",
+        "knowledge": "知识库",
+        "persona": "用户画像"
+    },
+    "Dashboard": {
+        "comingSoon": "看板即将推出"
     },
     "GlobalSearch": {
         "placeholder": "搜索数据对象...",

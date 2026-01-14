@@ -99,11 +99,12 @@ export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
 
                 {/* Source Link */}
                 {latest_version.source_url && (
-                    <a
-                        href={latest_version.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.open(latest_version.source_url!, '_blank', 'noopener,noreferrer');
+                        }}
                         className={`
                             flex items-center gap-1 text-xs ml-auto
                             ${isLight
@@ -114,7 +115,7 @@ export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
                     >
                         <ExternalLink className="w-3 h-3" />
                         <span>{t('articles.source')}</span>
-                    </a>
+                    </button>
                 )}
             </div>
         </Link>
