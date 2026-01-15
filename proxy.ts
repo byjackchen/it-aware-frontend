@@ -331,7 +331,13 @@ export async function middleware(request: NextRequest) {
 
           const loginUrl = new URL('/login', request.url)
           loginUrl.searchParams.set('error', errorMessage)
-          return NextResponse.redirect(loginUrl)
+          const redirectResponse = NextResponse.redirect(loginUrl)
+          // Clear cookies to prevent loop
+          redirectResponse.cookies.delete(COOKIES.ACCESS)
+          redirectResponse.cookies.delete(COOKIES.REFRESH)
+          redirectResponse.cookies.delete(COOKIES.USER_DATA)
+          redirectResponse.cookies.delete(COOKIES.AUTH_MODE)
+          return redirectResponse
         }
       }
     } catch (error) {
@@ -340,7 +346,13 @@ export async function middleware(request: NextRequest) {
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed'
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('error', errorMessage)
-      return NextResponse.redirect(loginUrl)
+      const redirectResponse = NextResponse.redirect(loginUrl)
+      // Clear cookies to prevent loop
+      redirectResponse.cookies.delete(COOKIES.ACCESS)
+      redirectResponse.cookies.delete(COOKIES.REFRESH)
+      redirectResponse.cookies.delete(COOKIES.USER_DATA)
+      redirectResponse.cookies.delete(COOKIES.AUTH_MODE)
+      return redirectResponse
     }
   } else if (hasAccessToken && authMode !== AUTH_MODES.LOGGED_OUT) {
     // User has access token (either password login or SSO refresh without headers)
@@ -360,13 +372,25 @@ export async function middleware(request: NextRequest) {
         console.error(`[Middleware:${requestId}] ${flowType} user: Failed to fetch user data (token invalid/expired), redirecting to login`)
         const loginUrl = new URL('/login', request.url)
         loginUrl.searchParams.set('error', 'Your session has expired. Please log in again.')
-        return NextResponse.redirect(loginUrl)
+        const redirectResponse = NextResponse.redirect(loginUrl)
+        // Clear cookies to prevent loop
+        redirectResponse.cookies.delete(COOKIES.ACCESS)
+        redirectResponse.cookies.delete(COOKIES.REFRESH)
+        redirectResponse.cookies.delete(COOKIES.USER_DATA)
+        redirectResponse.cookies.delete(COOKIES.AUTH_MODE)
+        return redirectResponse
       }
     } catch (error) {
       console.error(`[Middleware:${requestId}] ${flowType} user refresh error:`, error)
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('error', 'Authentication error. Please log in again.')
-      return NextResponse.redirect(loginUrl)
+      const redirectResponse = NextResponse.redirect(loginUrl)
+      // Clear cookies to prevent loop
+      redirectResponse.cookies.delete(COOKIES.ACCESS)
+      redirectResponse.cookies.delete(COOKIES.REFRESH)
+      redirectResponse.cookies.delete(COOKIES.USER_DATA)
+      redirectResponse.cookies.delete(COOKIES.AUTH_MODE)
+      return redirectResponse
     }
   } else {
     console.log(`[Middleware:${requestId}] No user data refresh needed (hasAccessToken=${hasAccessToken}, authMode=${authMode})`)
