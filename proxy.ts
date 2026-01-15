@@ -36,15 +36,43 @@ function encodeForHeader(str: string, requestId: string): string {
 const COOKIES = {
   ACCESS: 'it_aware_access',
   REFRESH: 'it_aware_refresh',
-  LOGGED_OUT: 'it_aware_logged_out',
   USER_DATA: 'it_aware_user_data',
-  SSO_USER: 'it_aware_sso_user',
+  // Single cookie to track authentication mode (replaces logged_out, sso_user, password_login)
+  AUTH_MODE: 'it_aware_auth_mode',
 } as const
+
+// Authentication mode values
+const AUTH_MODES = {
+  SSO: 'sso',           // User authenticated via Taihu SSO
+  PASSWORD: 'password', // User authenticated via username/password
+  LOGGED_OUT: 'logged_out', // User explicitly logged out
+} as const
+
+type AuthMode = typeof AUTH_MODES[keyof typeof AUTH_MODES] | null
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/login']
 
 // --- Helper Functions ---
+
+// Helper to extract username from JWT token (without verification - just for comparison)
+function extractUsernameFromJwt(token: string): string | null {
+  try {
+    // JWT format: header.payload.signature
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+
+    // Decode payload (base64url)
+    const payload = parts[1]
+    const decoded = Buffer.from(payload, 'base64url').toString('utf-8')
+    const parsed = JSON.parse(decoded)
+
+    // Common JWT claims for username: sub, username, preferred_username
+    return parsed.sub || parsed.username || parsed.preferred_username || null
+  } catch {
+    return null
+  }
+}
 
 function extractTaihuHeaders(request: NextRequest): TaihuHeaders {
   return {
@@ -170,17 +198,15 @@ export async function middleware(request: NextRequest) {
   }
 
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
-  const hasLoggedOut = request.cookies.has(COOKIES.LOGGED_OUT)
-  const isSSOUser = request.cookies.has(COOKIES.SSO_USER)
   const hasUserDataCookie = request.cookies.has(COOKIES.USER_DATA)
+  const authMode = request.cookies.get(COOKIES.AUTH_MODE)?.value as AuthMode
   const taihuHeaders = extractTaihuHeaders(request)
   // Skip Taihu headers check for public routes (like /login) to allow username/password auth
   const hasTaihuHeaders = !isPublicRoute && !!taihuHeaders['x-tai-identity']
 
   console.log(`[Middleware:${requestId}] Cookie state:`, {
     hasAccessToken,
-    hasLoggedOut,
-    isSSOUser,
+    authMode,
     hasUserDataCookie,
     hasTaihuHeaders,
     taihuIdentityPresent: !!taihuHeaders['x-tai-identity']
@@ -197,7 +223,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect logged-out users without SSO headers to login
-  if (hasLoggedOut && !hasTaihuHeaders) {
+  if (authMode === AUTH_MODES.LOGGED_OUT && !hasTaihuHeaders) {
     console.log(`[Middleware:${requestId}] User logged out without Taihu headers, redirecting to login`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -211,7 +237,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Process Taihu SSO authentication
-  if (hasTaihuHeaders) {
+  // Skip if user explicitly logged in via username/password (password login takes precedence)
+  if (hasTaihuHeaders && authMode !== AUTH_MODES.PASSWORD) {
     console.log(`[Middleware:${requestId}] Processing Taihu SSO authentication`)
     try {
       const identity = await getIdentityFromHeaders(taihuHeaders)
@@ -238,10 +265,24 @@ export async function middleware(request: NextRequest) {
       }
 
       // Determine if we need to fetch new JWT tokens
-      const needsNewTokens = !hasAccessToken || (hasLoggedOut && !hasAccessToken)
-      const skipTokenFetch = hasLoggedOut && hasAccessToken
+      // Check for identity mismatch: if Taihu says user is X but JWT belongs to Y
+      let identityMismatch = false
+      if (hasAccessToken) {
+        const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
+        if (accessTokenValue) {
+          const jwtUsername = extractUsernameFromJwt(accessTokenValue)
+          if (jwtUsername && jwtUsername !== identity.loginName) {
+            identityMismatch = true
+            console.log(`[Middleware:${requestId}] IDENTITY MISMATCH: Taihu=${identity.loginName}, JWT=${jwtUsername}`)
+          }
+        }
+      }
 
-      console.log(`[Middleware:${requestId}] Token decision: needsNewTokens=${needsNewTokens}, skipTokenFetch=${skipTokenFetch}`)
+      const isLoggedOut = authMode === AUTH_MODES.LOGGED_OUT
+      const needsNewTokens = !hasAccessToken || (isLoggedOut && !hasAccessToken) || identityMismatch
+      const skipTokenFetch = isLoggedOut && hasAccessToken && !identityMismatch
+
+      console.log(`[Middleware:${requestId}] Token decision: needsNewTokens=${needsNewTokens}, skipTokenFetch=${skipTokenFetch}, identityMismatch=${identityMismatch}`)
 
       if (skipTokenFetch) {
         // User logged out but still has valid token - respect logout
@@ -259,11 +300,8 @@ export async function middleware(request: NextRequest) {
           console.log(`[Middleware:${requestId}] Received ${setCookies.length} Set-Cookie headers from backend`)
           forwardAuthCookies(response, setCookies)
 
-          // Clear logged_out cookie on re-authentication
-          if (hasLoggedOut) {
-            console.log(`[Middleware:${requestId}] Clearing logged_out cookie`)
-            response.cookies.delete(COOKIES.LOGGED_OUT)
-          }
+          // Set auth mode to SSO and clear any previous logged_out state
+          response.headers.append('Set-Cookie', `${COOKIES.AUTH_MODE}=${AUTH_MODES.SSO}; Path=/; Max-Age=86400; SameSite=lax`)
 
           // Fetch and set user data for immediate client hydration
           const accessTokenCookie = setCookies.find(c => c.startsWith(`${COOKIES.ACCESS}=`))
@@ -273,8 +311,6 @@ export async function middleware(request: NextRequest) {
             if (userData) {
               console.log(`[Middleware:${requestId}] Setting user data cookie for SSO user`)
               setUserDataCookie(response, userData, requestId)
-              // Set SSO user identifier for persistent recognition
-              response.headers.append('Set-Cookie', `${COOKIES.SSO_USER}=true; Path=/; Max-Age=86400; SameSite=lax`)
             } else {
               console.error(`[Middleware:${requestId}] Failed to fetch user data after token acquisition`)
             }
@@ -306,60 +342,34 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('error', errorMessage)
       return NextResponse.redirect(loginUrl)
     }
-  } else if (isSSOUser && !hasLoggedOut) {
-    // Handle SSO user page refresh - SSO headers may not be present on refresh
-    console.log(`[Middleware:${requestId}] SSO user refresh flow (no Taihu headers)`)
+  } else if (hasAccessToken && authMode !== AUTH_MODES.LOGGED_OUT) {
+    // User has access token (either password login or SSO refresh without headers)
+    // Fetch user data for the session
+    const flowType = authMode === AUTH_MODES.PASSWORD ? 'Password login' : authMode === AUTH_MODES.SSO ? 'SSO' : 'Regular'
+    console.log(`[Middleware:${requestId}] ${flowType} user refresh flow`)
     try {
-      if (!hasAccessToken) {
-        // SSO user without valid token - redirect to login to re-authenticate
-        console.error(`[Middleware:${requestId}] SSO user without valid access token - redirecting to login`)
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
-
-      // SSO user with valid token - ensure user data is available
-      console.log(`[Middleware:${requestId}] SSO user has access token, fetching user data`)
       const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
-      console.log(`[Middleware:${requestId}] Access token length: ${accessTokenValue?.length || 0}`)
+      console.log(`[Middleware:${requestId}] ${flowType} user: Access token length: ${accessTokenValue?.length || 0}`)
       const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
       const userData = await fetchUserData(accessTokenCookie, requestId)
       if (userData) {
-        console.log(`[Middleware:${requestId}] SSO user: Successfully fetched user data, setting cookie`)
-        setUserDataCookie(response, userData, requestId)
-      } else {
-        console.error(`[Middleware:${requestId}] SSO user: Failed to fetch user data (returned null)`)
-      }
-    } catch (error) {
-      console.error(`[Middleware:${requestId}] SSO user refresh error:`, error)
-      // Don't redirect on failure, let the client handle it
-    }
-  } else if (hasAccessToken && !hasLoggedOut) {
-    // For regular login (non-SSO), fetch and set user data if not already present
-    // This ensures user data is available on page refresh
-    console.log(`[Middleware:${requestId}] Regular user refresh flow`)
-    try {
-      const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
-      console.log(`[Middleware:${requestId}] Regular user: Access token length: ${accessTokenValue?.length || 0}`)
-      const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
-      const userData = await fetchUserData(accessTokenCookie, requestId)
-      if (userData) {
-        console.log(`[Middleware:${requestId}] Regular user: Successfully fetched user data, setting cookie`)
+        console.log(`[Middleware:${requestId}] ${flowType} user: Successfully fetched user data, setting cookie`)
         setUserDataCookie(response, userData, requestId)
       } else {
         // Token is invalid or expired - redirect to login
-        console.error(`[Middleware:${requestId}] Regular user: Failed to fetch user data (token invalid/expired), redirecting to login`)
+        console.error(`[Middleware:${requestId}] ${flowType} user: Failed to fetch user data (token invalid/expired), redirecting to login`)
         const loginUrl = new URL('/login', request.url)
         loginUrl.searchParams.set('error', 'Your session has expired. Please log in again.')
         return NextResponse.redirect(loginUrl)
       }
     } catch (error) {
-      console.error(`[Middleware:${requestId}] Regular user refresh error:`, error)
-      // Auth error - redirect to login
+      console.error(`[Middleware:${requestId}] ${flowType} user refresh error:`, error)
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('error', 'Authentication error. Please log in again.')
       return NextResponse.redirect(loginUrl)
     }
   } else {
-    console.log(`[Middleware:${requestId}] No user data refresh needed (hasAccessToken=${hasAccessToken}, hasLoggedOut=${hasLoggedOut}, isSSOUser=${isSSOUser})`)
+    console.log(`[Middleware:${requestId}] No user data refresh needed (hasAccessToken=${hasAccessToken}, authMode=${authMode})`)
   }
 
   console.log(`[Middleware:${requestId}] ========== REQUEST END ==========`)

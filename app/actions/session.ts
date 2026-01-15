@@ -64,11 +64,17 @@ export async function login(formData: FormData) {
 
         await parseCookies(response, cookieStore)
 
-        // Delete logged_out cookie to allow auto-login again
-        cookieStore.delete('it_aware_logged_out')
+        // Set auth mode to 'password' - this prevents Taihu SSO from overriding this login
+        // and indicates the user explicitly chose username/password authentication
+        cookieStore.set('it_aware_auth_mode', 'password', {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 // 24 hours expiry
+        })
 
         const duration = Date.now() - startTime
-        logger.info(`Login succeeded in ${duration}ms, deleted it_aware_logged_out cookie`, { requestId, action })
+        logger.info(`Login succeeded in ${duration}ms, set it_aware_auth_mode=password`, { requestId, action })
 
         return { success: true }
     } catch (error) {
@@ -140,14 +146,10 @@ export async function logout() {
         cookieStore.delete('it_aware_access')
         cookieStore.delete('it_aware_refresh')
 
-        // Delete SSO user identifier cookie
-        logger.info(`Deleting SSO user identifier cookie`, { requestId, action })
-        cookieStore.delete('it_aware_sso_user')
-
-        // Set logged_out cookie to prevent auto-login from proxy.ts
-        // This cookie will be checked by proxy.ts to skip automatic Taihu SSO login
-        logger.info(`Setting logged_out cookie`, { requestId, action })
-        cookieStore.set('it_aware_logged_out', 'true', {
+        // Set auth mode to 'logged_out' to prevent auto-login from proxy.ts
+        // This replaces the old separate logged_out, sso_user, and password_login cookies
+        logger.info(`Setting auth mode to logged_out`, { requestId, action })
+        cookieStore.set('it_aware_auth_mode', 'logged_out', {
             path: '/',
             httpOnly: true,
             sameSite: 'lax',
@@ -155,7 +157,7 @@ export async function logout() {
         })
 
         const duration = Date.now() - startTime
-        logger.info(`Logout succeeded in ${duration}ms, set it_aware_logged_out cookie`, { requestId, action })
+        logger.info(`Logout succeeded in ${duration}ms, set it_aware_auth_mode=logged_out`, { requestId, action })
         return { success: true }
     } catch (error) {
         const duration = Date.now() - startTime
