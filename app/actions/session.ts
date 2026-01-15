@@ -125,14 +125,11 @@ export async function logout() {
             }
         }
 
-        const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
-        logger.info(`Cookie header length: ${cookieHeader.length}`, { requestId, action })
-
-        // Check the entire cookie header for non-ASCII
-        const headerCheck = hasNonAscii(cookieHeader)
-        if (headerCheck.hasNonAscii) {
-            logger.info(`Cookie header has non-ASCII at index ${headerCheck.firstNonAsciiIndex}, charCode=${headerCheck.charCode}, char='${headerCheck.char}'`, { requestId, action })
-        }
+        // Only send it_aware_* cookies to backend to avoid non-ASCII character issues
+        // Third-party cookies (like sensorsdata) may contain Chinese characters that break ByteString conversion
+        const itAwareCookies = allCookies.filter(c => c.name.startsWith('it_aware_'))
+        const cookieHeader = itAwareCookies.map(c => `${c.name}=${c.value}`).join('; ')
+        logger.info(`Cookie header length: ${cookieHeader.length} (filtered to ${itAwareCookies.length} it_aware_* cookies)`, { requestId, action })
 
         logger.info(`Calling backend: ${BACKEND_DOMAIN}/auth/session/logout`, { requestId, action })
         await fetch(`${BACKEND_DOMAIN}/auth/session/logout`, {
