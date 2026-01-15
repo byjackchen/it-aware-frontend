@@ -160,9 +160,9 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
-              <span className="text-white font-bold text-lg">IT</span>
+              <span className="text-white font-bold text-lg">IA</span>
             </div>
-            <span className="text-2xl font-bold text-gradient">IT Aware</span>
+            <span className="text-2xl font-bold text-gradient">Ohla IT-Aware</span>
           </div>
 
           {/* Tagline */}
@@ -187,13 +187,13 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
-              <span className="text-white font-bold text-lg">IT</span>
+              <span className="text-white font-bold text-lg">IA</span>
             </div>
-            <span className="text-2xl font-bold text-gradient">IT Aware</span>
+            <span className="text-2xl font-bold text-gradient">Ohla IT-Aware</span>
           </div>
 
-          <h2 className="text-3xl font-bold theme-text-primary mb-2">Welcome Back</h2>
-          <p className="theme-text-secondary mb-8">Sign in to access your dashboard</p>
+          <h2 className="text-3xl font-bold theme-text-primary mb-2">Ohla!</h2>
+          <p className="theme-text-secondary mb-8">Your IT intelligence, one place</p>
 
           {/* Error Message */}
           {error && (
@@ -267,8 +267,8 @@ export default function LoginPage() {
           {/* Footer */}
           <p className="mt-8 text-center text-sm theme-text-muted">
             Need help? Contact{' '}
-            <a href="mailto:support@itaware.com" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">
-              support@itaware.com
+            <a href="wxwork://message?uin=8444250313321504" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors">
+              Ohla Chatbot
             </a>
           </p>
         </div>

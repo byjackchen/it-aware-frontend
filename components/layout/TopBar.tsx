@@ -143,7 +143,7 @@ export function TopBar() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
-              <span className="text-white font-bold text-lg">IT</span>
+              <span className="text-white font-bold text-lg">IA</span>
             </div>
             <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
           </div>
