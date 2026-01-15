@@ -59,9 +59,8 @@ interface UserContextType {
 
 const COOKIES = {
   USER_DATA: 'it_aware_user_data',
-  LOGGED_OUT: 'it_aware_logged_out',
   ACCESS: 'it_aware_access',
-  SSO_USER: 'it_aware_sso_user',
+  AUTH_MODE: 'it_aware_auth_mode',
 } as const
 
 // --- Cookie Helpers ---
@@ -87,8 +86,7 @@ function logAllCookies(context: string): void {
   console.log(`[UserContext:${context}] Cookie breakdown:`)
   console.log(`  - it_aware_access: ${hasCookie(COOKIES.ACCESS) ? 'EXISTS' : 'MISSING'}`)
   console.log(`  - it_aware_user_data: ${hasCookie(COOKIES.USER_DATA) ? 'EXISTS' : 'MISSING'}`)
-  console.log(`  - it_aware_logged_out: ${hasCookie(COOKIES.LOGGED_OUT) ? 'EXISTS' : 'MISSING'}`)
-  console.log(`  - it_aware_sso_user: ${hasCookie(COOKIES.SSO_USER) ? 'EXISTS' : 'MISSING'}`)
+  console.log(`  - it_aware_auth_mode: ${getCookie(COOKIES.AUTH_MODE) || 'NOT SET'}`)
 }
 
 // --- Context ---
@@ -153,8 +151,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Respect explicit logout
-    if (hasCookie(COOKIES.LOGGED_OUT)) {
-      console.log('[UserContext:fetchUser] LOGGED_OUT cookie found, clearing user')
+    const authMode = getCookie(COOKIES.AUTH_MODE)
+    if (authMode === 'logged_out') {
+      console.log('[UserContext:fetchUser] auth_mode=logged_out, clearing user')
       setIsLoading(false)
       setUser(null)
       return
@@ -194,12 +193,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.log('[UserContext:fetchUser] 401 Unauthorized - setting user to null')
           setUser(null)
 
-          // If this is an SSO user (has sso_user cookie), redirect to login with error
+          // If this is an SSO user (auth_mode=sso), redirect to login with error
           // This handles the case where Taihu authentication succeeded but user doesn't exist in backend
-          if (hasCookie(COOKIES.SSO_USER)) {
+          if (authMode === 'sso') {
             console.log('[UserContext:fetchUser] SSO user detected with 401 - redirecting to login with error')
-            // Clear SSO cookie to prevent redirect loop
-            deleteCookie(COOKIES.SSO_USER)
+            // Clear auth mode cookie to prevent redirect loop
+            deleteCookie(COOKIES.AUTH_MODE)
             const errorMessage = encodeURIComponent('User not found. Please contact your administrator to request access.')
             window.location.href = `/login?error=${errorMessage}`
           }
