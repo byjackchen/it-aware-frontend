@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IT Aware",
-  description: "IT Aware Platform",
+  title: "Ohla IT-Aware",
+  description: "Ohla IT-Aware Platform",
 };
 
 export default async function RootLayout({

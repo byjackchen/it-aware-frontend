@@ -1,6 +1,6 @@
 {
     "TopBar": {
-        "title": "IT Aware",
+        "title": "Ohla IT-Aware",
         "dashboard": "看板",
         "auth": "权限",
         "data": "数据",
@@ -44,7 +44,7 @@
         "faqs": "常见问题"
     },
     "Chatbot": {
-        "title": "IT Aware 助手",
+        "title": "Ohla IT-Aware 助手",
         "placeholder": "今天我能为您做什么？",
         "inputPlaceholder": "输入消息..."
     },

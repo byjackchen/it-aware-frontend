@@ -1,6 +1,6 @@
 {
     "TopBar": {
-        "title": "IT Aware",
+        "title": "Ohla IT-Aware",
         "dashboard": "Dashboard",
         "auth": "Auth",
         "data": "Data",
@@ -44,7 +44,7 @@
         "faqs": "FAQs"
     },
     "Chatbot": {
-        "title": "IT Aware Assistant",
+        "title": "Ohla IT-Aware Assistant",
         "placeholder": "How can I help you today?",
         "inputPlaceholder": "Type a message..."
     },
