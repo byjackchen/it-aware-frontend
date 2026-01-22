@@ -20,6 +20,8 @@ import {
     Hash,
     CheckCircle,
     XCircle,
+    Code,
+    AlertCircle,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, OrganizationTypeSelect } from '@/components/data';
@@ -55,6 +57,8 @@ export function OrganizationDetailPage({
     const [stableId, setStableId] = useState(organization.stable_id || '');
     const [parentOid, setParentOid] = useState<string | null>(organization.parent_oid);
     const [isActive, setIsActive] = useState(organization.is_active);
+    const [metadataStr, setMetadataStr] = useState(organization.metadata ? JSON.stringify(organization.metadata, null, 2) : '');
+    const [metadataError, setMetadataError] = useState<string | null>(null);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
     // Get parent name for display
@@ -78,8 +82,27 @@ export function OrganizationDetailPage({
             if (parentOid !== organization.parent_oid) {
                 formData.set('parent_oid', parentOid || '');
             }
+
+            // Validate and set metadata
+            if (metadataStr.trim()) {
+                try {
+                    const parsed = JSON.parse(metadataStr);
+                    if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+                        throw new Error('Metadata must be a JSON object');
+                    }
+                    formData.set('metadata', JSON.stringify(parsed));
+                } catch (e) {
+                    setMetadataError('Invalid JSON format');
+                    setIsPending(false);
+                    return;
+                }
+            } else {
+                formData.set('metadata', '');
+            }
+
             await updateOrganizationAction(organization.oid, formData);
             setIsEditing(false);
+            setMetadataError(null);
             router.refresh();
         } finally {
             setIsPending(false);
@@ -103,6 +126,8 @@ export function OrganizationDetailPage({
         setStableId(organization.stable_id || '');
         setParentOid(organization.parent_oid);
         setIsActive(organization.is_active);
+        setMetadataStr(organization.metadata ? JSON.stringify(organization.metadata, null, 2) : '');
+        setMetadataError(null);
         setIsEditing(false);
     };
 
@@ -272,6 +297,56 @@ export function OrganizationDetailPage({
                                 <span className={`text-sm ${organization.is_active ? 'text-green-400' : 'text-red-400'}`}>
                                     {organization.is_active ? 'Active' : 'Inactive'}
                                 </span>
+                            </div>
+                        )}
+                    </div>
+
+
+                    {/* Metadata */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Metadata (JSON)
+                        </label>
+                        {isEditing ? (
+                            <div className="space-y-2">
+                                <div className="relative">
+                                    <textarea
+                                        value={metadataStr}
+                                        onChange={(e) => {
+                                            setMetadataStr(e.target.value);
+                                            setMetadataError(null);
+                                        }}
+                                        placeholder="{}"
+                                        rows={6}
+                                        className={`w-full px-3 py-2 rounded-lg font-mono text-sm ${isLight
+                                                ? 'bg-slate-100 text-slate-800 border-slate-200'
+                                                : 'bg-white/10 text-white border-white/10'
+                                            } focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${metadataError ? 'ring-2 ring-red-500/50' : ''
+                                            }`}
+                                    />
+                                    {metadataError && (
+                                        <div className="absolute top-2 right-2 text-red-500 flex items-center gap-1 bg-white/90 dark:bg-black/90 px-2 py-1 rounded text-xs shadow-sm">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {metadataError}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                    Enter a valid JSON object.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className={`relative px-3 py-2 rounded-lg font-mono text-sm overflow-x-auto ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                {organization.metadata ? (
+                                    <pre className="whitespace-pre-wrap">
+                                        {JSON.stringify(organization.metadata, null, 2)}
+                                    </pre>
+                                ) : (
+                                    <span className="text-gray-400 italic">No metadata</span>
+                                )}
+                                <div className="absolute top-2 right-2">
+                                    <Code className={`w-4 h-4 ${isLight ? 'text-slate-300' : 'text-gray-600'}`} />
+                                </div>
                             </div>
                         )}
                     </div>

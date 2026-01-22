@@ -43,8 +43,20 @@ export async function createOrganizationAction(formData: FormData) {
     const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
     const isActiveStr = formData.get('is_active');
+    const metadataStr = formData.get('metadata') as string | null;
 
     logger.info(`Started`, { requestId, action });
+
+    // Parse metadata JSON
+    let metadata: Record<string, unknown> | null = null;
+    if (metadataStr && metadataStr.trim()) {
+        try {
+            metadata = JSON.parse(metadataStr);
+        } catch (e) {
+            logger.error(`Invalid metadata JSON`, e, { requestId, action });
+            throw new Error('Invalid metadata JSON format');
+        }
+    }
 
     try {
         const result = await createOrganization({
@@ -53,6 +65,7 @@ export async function createOrganizationAction(formData: FormData) {
             stable_id: stableId || null,
             parent_oid: parentOid || null,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+            metadata,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -74,8 +87,24 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
     const stableId = formData.get('stable_id') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
     const isActiveStr = formData.get('is_active');
+    const metadataStr = formData.get('metadata') as string | null;
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    // Parse metadata JSON - empty string means clear metadata
+    let metadata: Record<string, unknown> | null | undefined = undefined;
+    if (metadataStr !== null) {
+        if (metadataStr.trim() === '') {
+            metadata = null; // Clear metadata
+        } else {
+            try {
+                metadata = JSON.parse(metadataStr);
+            } catch (e) {
+                logger.error(`Invalid metadata JSON`, e, { requestId, action });
+                throw new Error('Invalid metadata JSON format');
+            }
+        }
+    }
 
     try {
         const result = await updateOrganization(oid, {
@@ -84,6 +113,7 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
             stable_id: stableId,
             parent_oid: parentOid,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+            metadata,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
