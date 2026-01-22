@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Building2, Save, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Building2, Save, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchySelect, OrganizationTypeSelect } from '@/components/data';
 import type { Organization, OrganizationType } from '@/lib/types/objects';
@@ -32,6 +32,8 @@ export function OrganizationCreatePage({ organizations }: OrganizationCreatePage
     const [stableId, setStableId] = useState('');
     const [parentOid, setParentOid] = useState<string | null>(null);
     const [isActive, setIsActive] = useState(true);
+    const [metadataStr, setMetadataStr] = useState('');
+    const [metadataError, setMetadataError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -55,6 +57,20 @@ export function OrganizationCreatePage({ organizations }: OrganizationCreatePage
                 formData.set('parent_oid', parentOid);
             }
             formData.set('is_active', String(isActive));
+
+            if (metadataStr.trim()) {
+                try {
+                    const parsed = JSON.parse(metadataStr);
+                    if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+                        throw new Error('Metadata must be a JSON object');
+                    }
+                    formData.set('metadata', JSON.stringify(parsed));
+                } catch (e) {
+                    setMetadataError('Invalid JSON format');
+                    setIsPending(false);
+                    return;
+                }
+            }
 
             await createOrganizationAction(formData);
             router.push('/data/organizations');
@@ -157,6 +173,40 @@ export function OrganizationCreatePage({ organizations }: OrganizationCreatePage
                             onChange={setParentOid}
                             placeholder={t('common.noParent')}
                         />
+                    </div>
+
+
+                    {/* Metadata Field */}
+                    <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            Metadata (JSON)
+                        </label>
+                        <p className={`text-xs mb-3 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            Optional additional data in JSON format
+                        </p>
+                        <div className="relative">
+                            <textarea
+                                value={metadataStr}
+                                onChange={(e) => {
+                                    setMetadataStr(e.target.value);
+                                    setMetadataError(null);
+                                }}
+                                placeholder="{}"
+                                rows={6}
+                                className={`
+                                    w-full px-3 py-2 rounded-lg font-mono text-sm
+                                    ${isLight ? 'bg-slate-100 text-slate-800 placeholder:text-slate-400' : 'bg-white/10 text-white placeholder:text-gray-500'}
+                                    focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                                    ${metadataError ? 'ring-2 ring-red-500/50' : ''}
+                                `}
+                            />
+                            {metadataError && (
+                                <div className="absolute top-2 right-2 text-red-500 flex items-center gap-1 bg-white/90 dark:bg-black/90 px-2 py-1 rounded text-xs shadow-sm">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {metadataError}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Status (Active/Inactive) */}

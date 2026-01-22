@@ -58,6 +58,7 @@ class Organization(Base):
     stable_id = Column(Text, unique=True, nullable=True)  # External ID (e.g., Workday tencent_org_id)
     type = Column(Text, nullable=False)  # Top Level/Business Group/Line/Center/Department/Team
     is_active = Column(Boolean, default=True)  # Soft deletion flag
+    metadata = Column(JSONB, nullable=True)  # Denormalized context (bg, line, department, center, team)
 ```
 
 ### Location
@@ -325,6 +326,7 @@ All list endpoints support pagination:
 |-----------|------|---------|-------------|
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+| `stable_id` | string | null | Filter by stable_id (exact match) - Organizations only |
 
 ---
 

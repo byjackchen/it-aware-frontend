@@ -36,6 +36,7 @@ export interface Organization {
     parent_oid: string | null;
     path: string[];
     is_active: boolean;
+    metadata: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
 }
@@ -46,6 +47,7 @@ export interface OrganizationCreate {
     stable_id?: string | null;
     parent_oid?: string | null;
     is_active?: boolean;
+    metadata?: Record<string, unknown> | null;
 }
 
 export interface OrganizationUpdate {
@@ -54,6 +56,7 @@ export interface OrganizationUpdate {
     stable_id?: string | null;
     parent_oid?: string | null;
     is_active?: boolean;
+    metadata?: Record<string, unknown> | null;
 }
 
 // ============================================================================
