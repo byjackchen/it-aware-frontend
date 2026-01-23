@@ -105,7 +105,7 @@ function TreeNode({ node, baseHref, level, isLight, forceExpand }: TreeNodeProps
                         ? 'text-slate-700 group-hover:text-slate-900'
                         : 'text-gray-200 group-hover:text-white'
                     }
-          ${!node.is_active ? 'text-slate-400 italic line-through decoration-slate-400/50' : ''}
+          ${!node.is_active ? 'text-slate-400 italic' : ''}
         `}>
                     {node.name}
                     {!node.is_active && (
