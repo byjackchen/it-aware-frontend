@@ -28,24 +28,27 @@ function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: 
     const lowerQuery = query.toLowerCase();
 
     function filterNode(node: HierarchyTreeNode): HierarchyTreeNode | null {
-        // First check if node should be visible based on active status
-        // A node is visible if showDeactivated is true OR the node is active
-        // BUT strict filtering might hide parents.
-        // Let's adopt logic:
-        // 1. If showDeactivated is false, and node is inactive, we ONLY show it if it has visible children?
-        //    Actually, usually if parent is filtered, children are gone.
-        //    If we hide deactivated, we hide them and their children.
-        if (!showDeactivated && !node.is_active) {
-            return null;
-        }
-
         const matchesQuery = !query.trim() || node.name.toLowerCase().includes(lowerQuery);
+
+        // Recurse first to check children
         const filteredChildren = node.children
             .map(child => filterNode(child))
             .filter((child): child is HierarchyTreeNode => child !== null);
 
-        // Include node if it matches or has matching children
-        if (matchesQuery || filteredChildren.length > 0) {
+        const hasVisibleChildren = filteredChildren.length > 0;
+
+        // Visibility check:
+        // 1. If showDeactivated is true => Visible
+        // 2. If node is active => Visible
+        // 3. If node is inactive BUT has visible children => Visible (to show path)
+        const isVisibleByStatus = showDeactivated || node.is_active || hasVisibleChildren;
+
+        if (!isVisibleByStatus) {
+            return null;
+        }
+
+        // Include node if it matches query or has matching children
+        if (matchesQuery || hasVisibleChildren) {
             return {
                 ...node,
                 children: filteredChildren,

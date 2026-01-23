@@ -28,18 +28,27 @@ function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: 
     const lowerQuery = query.toLowerCase();
 
     function filterNode(node: HierarchyTreeNode): HierarchyTreeNode | null {
-        // Filter by active status first
-        if (!showDeactivated && !node.is_active) {
-            return null;
-        }
-
         const matchesQuery = !query.trim() || node.name.toLowerCase().includes(lowerQuery);
+
+        // Recurse first to check children
         const filteredChildren = node.children
             .map(child => filterNode(child))
             .filter((child): child is HierarchyTreeNode => child !== null);
 
-        // Include node if it matches or has matching children
-        if (matchesQuery || filteredChildren.length > 0) {
+        const hasVisibleChildren = filteredChildren.length > 0;
+
+        // Visibility check:
+        // 1. If showDeactivated is true => Visible
+        // 2. If node is active => Visible
+        // 3. If node is inactive BUT has visible children => Visible (to show path)
+        const isVisibleByStatus = showDeactivated || node.is_active || hasVisibleChildren;
+
+        if (!isVisibleByStatus) {
+            return null;
+        }
+
+        // Include node if it matches query or has matching children
+        if (matchesQuery || hasVisibleChildren) {
             return {
                 ...node,
                 children: filteredChildren,

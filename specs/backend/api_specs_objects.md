@@ -318,6 +318,15 @@ class TicketResponse(BaseModel):
 | PUT | `/objects/tickets/{oid}` | Update ticket (ABAC) | `objects:tickets:write` |
 | DELETE | `/objects/tickets/{oid}` | Delete ticket (ABAC) | `objects:tickets:write` |
 
+### Query Parameters (List)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | null | Filter by ticket status |
+| `is_active` | boolean | null | Filter by active status |
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 100 | Max records (1-1000) |
+
 > [!IMPORTANT]
 > Ticket ownership defaults to the current user's linked worker. To create a ticket for a specific worker (required for **System Accounts** or **On-Behalf-Of** creation), provide a valid `requester_oid`.
 
@@ -479,6 +488,15 @@ class ArticleVersionResponse(BaseModel):
 | DELETE | `/objects/articles/{oid}` | Delete | `objects:articles:write` |
 | GET | `/objects/articles/{oid}/versions` | List versions | `objects:articles:read` |
 | GET | `/objects/articles/{oid}/versions/{ver}` | Get specific version | `objects:articles:read` |
+
+### Query Parameters (List)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `service_catalog_id` | string | null | Filter by service catalog (ULID) |
+| `is_active` | boolean | null | Filter by active status |
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 100 | Max records (1-1000) |
 
 ### ABAC Filtering
 
