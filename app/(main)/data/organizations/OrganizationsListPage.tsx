@@ -20,6 +20,14 @@ function countNodes(nodes: HierarchyTreeNode[]): number {
     return nodes.reduce((count, node) => count + 1 + countNodes(node.children), 0);
 }
 
+// Count active nodes in the tree recursively
+function countActiveNodes(nodes: HierarchyTreeNode[]): number {
+    return nodes.reduce((count, node) => {
+        const selfCount = node.is_active ? 1 : 0;
+        return count + selfCount + countActiveNodes(node.children);
+    }, 0);
+}
+
 // Filter tree nodes by search query AND active status
 function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: boolean): HierarchyTreeNode[] {
     // If we're not filtering by query and showing everything, return as is
@@ -77,6 +85,8 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
     );
 
     const totalNodes = useMemo(() => countNodes(treeNodes), [treeNodes]);
+    const activeNodes = useMemo(() => countActiveNodes(treeNodes), [treeNodes]);
+    const deactivatedNodes = totalNodes - activeNodes;
 
     const handleRefresh = () => {
         setIsRefreshing(true);
@@ -109,7 +119,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
                                 Organizations
                             </h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {totalNodes} total node{totalNodes !== 1 ? 's' : ''} • {treeNodes.length} root{treeNodes.length !== 1 ? 's' : ''}
+                                {activeNodes.toLocaleString()} Active / {totalNodes.toLocaleString()} Total
                             </p>
                         </div>
                     </div>
