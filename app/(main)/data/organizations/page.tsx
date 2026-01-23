@@ -17,6 +17,7 @@ function buildTree(organizations: Organization[]): HierarchyTreeNode[] {
             oid: org.oid,
             name: org.name,
             children: [],
+            is_active: org.is_active,
         });
     });
 

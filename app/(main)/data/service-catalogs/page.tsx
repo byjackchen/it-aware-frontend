@@ -16,6 +16,7 @@ function buildTree(items: ServiceCatalog[]): HierarchyTreeNode[] {
             oid: item.oid,
             name: item.name,
             children: [],
+            is_active: item.is_active,
         });
     });
 

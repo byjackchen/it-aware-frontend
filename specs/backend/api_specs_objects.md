@@ -476,7 +476,7 @@ class ArticleVersionResponse(BaseModel):
 | GET | `/objects/articles` | List articles (ABAC) | `objects:articles:read` |
 | GET | `/objects/articles/{oid}` | Get article | `objects:articles:read` |
 | PUT | `/objects/articles/{oid}` | Update (new version) | `objects:articles:write` |
-| DELETE | `/objects/articles/{oid}` | Soft delete | `objects:articles:write` |
+| DELETE | `/objects/articles/{oid}` | Delete | `objects:articles:write` |
 | GET | `/objects/articles/{oid}/versions` | List versions | `objects:articles:read` |
 | GET | `/objects/articles/{oid}/versions/{ver}` | Get specific version | `objects:articles:read` |
 

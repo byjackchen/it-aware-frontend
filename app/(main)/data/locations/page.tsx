@@ -16,6 +16,7 @@ function buildTree(locations: Location[]): HierarchyTreeNode[] {
             oid: loc.oid,
             name: loc.name,
             children: [],
+            is_active: loc.is_active,
         });
     });
 

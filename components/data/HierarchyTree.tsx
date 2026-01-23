@@ -105,8 +105,17 @@ function TreeNode({ node, baseHref, level, isLight, forceExpand }: TreeNodeProps
                         ? 'text-slate-700 group-hover:text-slate-900'
                         : 'text-gray-200 group-hover:text-white'
                     }
+          ${!node.is_active ? 'text-slate-400 italic line-through decoration-slate-400/50' : ''}
         `}>
                     {node.name}
+                    {!node.is_active && (
+                        <span className={`
+                            ml-2 text-xs px-1.5 py-0.5 rounded-full
+                            ${isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-gray-500'}
+                        `}>
+                            Deactivated
+                        </span>
+                    )}
                 </span>
 
                 {/* Children Count Badge */}

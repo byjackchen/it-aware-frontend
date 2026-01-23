@@ -45,7 +45,11 @@ export async function createOrganizationAction(formData: FormData) {
     const isActiveStr = formData.get('is_active');
     const metadataStr = formData.get('metadata') as string | null;
 
-    logger.info(`Started`, { requestId, action });
+    logger.info(`Started`, {
+        requestId,
+        action,
+        payload: { name, type, stableId, parentOid, isActive: isActiveStr, hasMetadata: !!metadataStr }
+    });
 
     // Parse metadata JSON
     let metadata: Record<string, unknown> | null = null;
@@ -72,7 +76,11 @@ export async function createOrganizationAction(formData: FormData) {
         return result;
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        logger.error(`Failed after ${duration}ms`, error, {
+            requestId,
+            action,
+            payload: { name, type }
+        });
         throw error;
     }
 }
@@ -89,7 +97,11 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
     const isActiveStr = formData.get('is_active');
     const metadataStr = formData.get('metadata') as string | null;
 
-    logger.info(`Started - oid: ${oid}`, { requestId, action });
+    logger.info(`Started - oid: ${oid}`, {
+        requestId,
+        action,
+        payload: { oid, name, type, stableId, parentOid, isActive: isActiveStr, hasMetadata: metadataStr !== null }
+    });
 
     // Parse metadata JSON - empty string means clear metadata
     let metadata: Record<string, unknown> | null | undefined = undefined;
@@ -120,7 +132,11 @@ export async function updateOrganizationAction(oid: string, formData: FormData) 
         return result;
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        logger.error(`Failed after ${duration}ms`, error, {
+            requestId,
+            action,
+            payload: { oid }
+        });
         throw error;
     }
 }
@@ -130,7 +146,7 @@ export async function deleteOrganizationAction(oid: string) {
     const action = 'Objects:deleteOrganization';
     const startTime = Date.now();
 
-    logger.info(`Started - oid: ${oid}`, { requestId, action });
+    logger.info(`Started - oid: ${oid}`, { requestId, action, payload: { oid } });
 
     try {
         const result = await deleteOrganization(oid);
@@ -139,7 +155,11 @@ export async function deleteOrganizationAction(oid: string) {
         return result;
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        logger.error(`Failed after ${duration}ms`, error, {
+            requestId,
+            action,
+            payload: { oid }
+        });
         throw error;
     }
 }
