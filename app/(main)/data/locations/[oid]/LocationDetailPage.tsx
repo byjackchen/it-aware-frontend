@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
-import type { Location, LocationType, GlobalEdge, WorkerHierarchyRole, Worker } from '@/lib/types/objects';
+import { type Location, type LocationType, type GlobalEdge, type WorkerHierarchyRole, type Worker, getLocationTypeLabel } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 import { updateLocationAction, deleteLocationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '@/app/actions/objects';
 
@@ -40,12 +40,12 @@ interface LocationDetailPageProps {
 }
 
 // Location type display configuration
-const LOCATION_TYPE_CONFIG: Record<LocationType, { label: string; icon: typeof Globe; color: string }> = {
-    'Root': { label: 'Root', icon: Globe, color: 'text-purple-500' },
-    'Region': { label: 'Region', icon: Globe, color: 'text-blue-500' },
-    'Country': { label: 'Country', icon: MapPin, color: 'text-green-500' },
-    'Office Location': { label: 'Office', icon: Building2, color: 'text-orange-500' },
-    'Remote Location': { label: 'Remote', icon: Home, color: 'text-cyan-500' },
+const LOCATION_TYPE_CONFIG: Record<string, { icon: typeof Globe; color: string }> = {
+    'root': { icon: Globe, color: 'text-purple-500' },
+    'region': { icon: Globe, color: 'text-blue-500' },
+    'country': { icon: MapPin, color: 'text-green-500' },
+    'office_location': { icon: Building2, color: 'text-orange-500' },
+    'remote_location': { icon: Home, color: 'text-cyan-500' },
 };
 
 export function LocationDetailPage({
@@ -81,11 +81,11 @@ export function LocationDetailPage({
     }) : edges;
 
     // Get type display config
-    const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG['Office Location'];
-    const TypeIcon = typeConfig.icon;
+    const typeConfig = LOCATION_TYPE_CONFIG[location.type] || LOCATION_TYPE_CONFIG['office_location'];
+    const TypeIcon = typeConfig?.icon || Globe;
 
     // Determine if timezone is required based on type
-    const requiresTimezone = type === 'Office Location' || type === 'Remote Location';
+    const requiresTimezone = type === 'office_location' || type === 'remote_location';
 
     const handleSave = async () => {
         setIsPending(true);
@@ -206,9 +206,12 @@ export function LocationDetailPage({
                             <LocationTypeSelect value={type} onChange={setType} />
                         ) : (
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                <TypeIcon className={`w-4 h-4 ${typeConfig.color}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                                    {typeConfig.label}
+                                <TypeIcon className={`w-4 h-4 ${typeConfig?.color || 'text-gray-400'}`} />
+                                <span className={`text-sm ${getLocationTypeLabel(type) === 'Invalid value'
+                                    ? 'text-orange-500 font-medium'
+                                    : (isLight ? 'text-slate-600' : 'text-gray-300')
+                                    }`}>
+                                    {getLocationTypeLabel(type)}
                                 </span>
                             </div>
                         )}

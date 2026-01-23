@@ -28,14 +28,14 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
 
     // Form state
     const [name, setName] = useState('');
-    const [type, setType] = useState<LocationType>('Office Location');
+    const [type, setType] = useState<LocationType>('office_location');
     const [timezone, setTimezone] = useState('');
     const [stableId, setStableId] = useState('');
     const [parentOid, setParentOid] = useState<string | null>(null);
     const [isActive, setIsActive] = useState(true);
 
     // Determine if timezone should be required based on type
-    const requiresTimezone = type === 'Office Location' || type === 'Remote Location';
+    const requiresTimezone = type === 'office_location' || type === 'remote_location';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -175,7 +175,7 @@ export async function createLocationAction(formData: FormData) {
 
     const name = formData.get('name') as string;
     const parentOid = formData.get('parent_oid') as string | null;
-    const type = formData.get('type') as 'Root' | 'Region' | 'Country' | 'Office Location' | 'Remote Location';
+    const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location';
     const timezone = formData.get('timezone') as string;
     const stableId = formData.get('stable_id') as string | null;
     const isActiveStr = formData.get('is_active');
@@ -208,7 +208,7 @@ export async function updateLocationAction(oid: string, formData: FormData) {
 
     const name = formData.get('name') as string | null;
     const parentOid = formData.get('parent_oid') as string | null;
-    const type = formData.get('type') as 'Root' | 'Region' | 'Country' | 'Office Location' | 'Remote Location' | null;
+    const type = formData.get('type') as 'root' | 'region' | 'country' | 'office_location' | 'remote_location' | null;
     const timezone = formData.get('timezone') as string | null;
     const stableId = formData.get('stable_id') as string | null;
     const isActiveStr = formData.get('is_active');

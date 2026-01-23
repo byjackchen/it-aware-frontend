@@ -63,7 +63,24 @@ export interface OrganizationUpdate {
 // Location Types
 // ============================================================================
 
-export type LocationType = "Root" | "Region" | "Country" | "Office Location" | "Remote Location";
+export type LocationType = "root" | "region" | "country" | "office_location" | "remote_location";
+
+export function getLocationTypeLabel(type: LocationType | string): string {
+    switch (type) {
+        case 'root':
+            return 'Root hierarchy node';
+        case 'region':
+            return 'Geographic region';
+        case 'country':
+            return 'Country';
+        case 'office_location':
+            return 'Physical office';
+        case 'remote_location':
+            return 'Remote work location';
+        default:
+            return 'Invalid value';
+    }
+}
 
 export interface Location {
     oid: string;
