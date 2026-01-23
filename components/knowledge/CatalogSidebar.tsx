@@ -31,6 +31,7 @@ function buildCatalogTree(catalogs: ServiceCatalog[]): HierarchyTreeNode[] {
             oid: catalog.oid,
             name: catalog.name,
             children: [],
+            is_active: catalog.is_active,
         });
     }
 

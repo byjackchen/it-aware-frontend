@@ -327,6 +327,7 @@ All list endpoints support pagination:
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
 | `stable_id` | string | null | Filter by stable_id (exact match) - Organizations only |
+| `is_active` | boolean | null | Filter by active status (true/false) |
 
 ---
 

@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Plus, RefreshCw, Search, X, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { MapPin, Plus, RefreshCw, Search, X, ChevronsUpDown, ChevronsDownUp, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchyTree } from '@/components/data';
 import type { HierarchyTreeNode } from '@/lib/types/objects';
@@ -20,20 +20,35 @@ function countNodes(nodes: HierarchyTreeNode[]): number {
     return nodes.reduce((count, node) => count + 1 + countNodes(node.children), 0);
 }
 
-// Filter tree nodes by search query, keeping matching nodes and their ancestors
-function filterTree(nodes: HierarchyTreeNode[], query: string): HierarchyTreeNode[] {
-    if (!query.trim()) return nodes;
+// Filter tree nodes by search query AND active status
+function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: boolean): HierarchyTreeNode[] {
+    // If we're not filtering by query and showing everything, return as is
+    if (!query.trim() && showDeactivated) return nodes;
 
     const lowerQuery = query.toLowerCase();
 
     function filterNode(node: HierarchyTreeNode): HierarchyTreeNode | null {
-        const matchesQuery = node.name.toLowerCase().includes(lowerQuery);
+        const matchesQuery = !query.trim() || node.name.toLowerCase().includes(lowerQuery);
+
+        // Recurse first to check children
         const filteredChildren = node.children
             .map(child => filterNode(child))
             .filter((child): child is HierarchyTreeNode => child !== null);
 
-        // Include node if it matches or has matching children
-        if (matchesQuery || filteredChildren.length > 0) {
+        const hasVisibleChildren = filteredChildren.length > 0;
+
+        // Visibility check:
+        // 1. If showDeactivated is true => Visible
+        // 2. If node is active => Visible
+        // 3. If node is inactive BUT has visible children => Visible (to show path)
+        const isVisibleByStatus = showDeactivated || node.is_active || hasVisibleChildren;
+
+        if (!isVisibleByStatus) {
+            return null;
+        }
+
+        // Include node if it matches query or has matching children
+        if (matchesQuery || hasVisibleChildren) {
             return {
                 ...node,
                 children: filteredChildren,
@@ -53,11 +68,12 @@ export function LocationsListPage({ treeNodes }: LocationsListPageProps) {
     const isLight = theme === 'light';
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showDeactivated, setShowDeactivated] = useState(false);
     const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
 
     const filteredNodes = useMemo(
-        () => filterTree(treeNodes, searchQuery),
-        [treeNodes, searchQuery]
+        () => filterTree(treeNodes, searchQuery, showDeactivated),
+        [treeNodes, searchQuery, showDeactivated]
     );
 
     const totalNodes = useMemo(() => countNodes(treeNodes), [treeNodes]);
@@ -146,6 +162,19 @@ export function LocationsListPage({ treeNodes }: LocationsListPageProps) {
                         )}
                     </div>
                     <button
+                        onClick={() => setShowDeactivated(!showDeactivated)}
+                        className={`
+                            p-2 rounded-lg transition-colors
+                            ${showDeactivated
+                                ? (isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400')
+                                : (isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10')
+                            }
+                        `}
+                        title={showDeactivated ? "Hide Deactivated" : "Show Deactivated"}
+                    >
+                        {showDeactivated ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    </button>
+                    <button
                         onClick={handleExpandAll}
                         className={`
                             p-2 rounded-lg transition-colors
@@ -192,6 +221,6 @@ export function LocationsListPage({ treeNodes }: LocationsListPageProps) {
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

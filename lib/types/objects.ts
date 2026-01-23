@@ -353,6 +353,7 @@ export interface HierarchyTreeNode {
     oid: string;
     name: string;
     children: HierarchyTreeNode[];
+    is_active: boolean;
 }
 
 // ============================================================================
