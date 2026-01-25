@@ -216,7 +216,9 @@ class WorkerResponse(BaseModel):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `stable_id` | string | null | Filter by stable_id (exact match) |
 | `org_oid` | string | null | Filter by organization |
+| `location_oid` | string | null | Filter by location |
 | `is_active` | boolean | null | Filter by active status |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
