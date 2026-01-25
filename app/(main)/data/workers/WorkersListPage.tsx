@@ -21,9 +21,11 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
     const isLight = theme === 'light';
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
+    const [workerTypeFilter, setWorkerTypeFilter] = useState<string | null>(null);
 
     const orgMap = new Map(organizations.map((o) => [o.oid, o.name]));
+    // Collect unique worker types for the filter
+    const workerTypes = Array.from(new Set(workers.map(w => w.worker_type).filter(Boolean) as string[])).sort();
 
     const filteredWorkers = workers.filter((w) => {
         const matchesSearch =
@@ -32,9 +34,9 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
             (w.email && w.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (w.worker_id && w.worker_id.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        const matchesActive = activeFilter === null || w.is_active === activeFilter;
+        const matchesType = workerTypeFilter === null || w.worker_type === workerTypeFilter;
 
-        return matchesSearch && matchesActive;
+        return matchesSearch && matchesType;
     });
 
     const handleRefresh = () => {
@@ -60,7 +62,7 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                                 Workers
                             </h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {filteredWorkers.length} of {workers.length} worker{workers.length !== 1 ? 's' : ''}
+                                {workers.filter(w => w.is_active).length} Active / {workers.length} Total
                             </p>
                         </div>
                     </div>
@@ -98,24 +100,16 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                         />
                     </div>
                     <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => setActiveFilter(null)}
-                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${activeFilter === null ? 'bg-blue-500 text-white' : isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-400'}`}
+                        <select
+                            value={workerTypeFilter || ''}
+                            onChange={(e) => setWorkerTypeFilter(e.target.value || null)}
+                            className={`px-3 py-2 text-sm rounded-lg border outline-none ${isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white'}`}
                         >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setActiveFilter(true)}
-                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${activeFilter === true ? 'bg-green-500 text-white' : isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-400'}`}
-                        >
-                            Active
-                        </button>
-                        <button
-                            onClick={() => setActiveFilter(false)}
-                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${activeFilter === false ? 'bg-red-500 text-white' : isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-400'}`}
-                        >
-                            Inactive
-                        </button>
+                            <option value="">All Types</option>
+                            {workerTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 

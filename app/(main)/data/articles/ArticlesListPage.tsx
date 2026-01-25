@@ -54,7 +54,7 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {t('countPlural', { filtered: filteredArticles.length, total: articles.length })}
+                                {articles.filter(a => a.is_active).length} Active / {articles.length} Total
                             </p>
                         </div>
                     </div>

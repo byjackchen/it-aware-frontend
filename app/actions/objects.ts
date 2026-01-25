@@ -348,6 +348,7 @@ export async function createWorkerAction(formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
+    const workerType = formData.get('worker_type') as string | null;
     const jobCategory = formData.get('job_category') as string | null;
     const jobSubcategory = formData.get('job_subcategory') as string | null;
     const jobProfessionalLevel = formData.get('job_professional_level') as string | null;
@@ -368,6 +369,7 @@ export async function createWorkerAction(formData: FormData) {
             worker_id: workerId || null,
             email: email || null,
             gender: gender || null,
+            worker_type: workerType || null,
             job_category: jobCategory || null,
             job_subcategory: jobSubcategory || null,
             job_professional_level: jobProfessionalLevel || null,
@@ -399,6 +401,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
+    const workerType = formData.get('worker_type') as string | null;
     const jobCategory = formData.get('job_category') as string | null;
     const jobSubcategory = formData.get('job_subcategory') as string | null;
     const jobProfessionalLevel = formData.get('job_professional_level') as string | null;
@@ -419,6 +422,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
             worker_id: workerId,
             email: email,
             gender: gender,
+            worker_type: workerType,
             job_category: jobCategory,
             job_subcategory: jobSubcategory,
             job_professional_level: jobProfessionalLevel,

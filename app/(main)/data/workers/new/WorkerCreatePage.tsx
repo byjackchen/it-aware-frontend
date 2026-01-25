@@ -37,6 +37,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
     const [locationOid, setLocationOid] = useState('');
     const [managerOid, setManagerOid] = useState('');
     const [gender, setGender] = useState('');
+    const [workerType, setWorkerType] = useState('');
     const [jobCategory, setJobCategory] = useState('');
     const [jobSubcategory, setJobSubcategory] = useState('');
     const [jobProfessionalLevel, setJobProfessionalLevel] = useState('');
@@ -65,6 +66,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
             if (locationOid) formData.set('location_oid', locationOid);
             if (managerOid) formData.set('manager_oid', managerOid);
             if (gender.trim()) formData.set('gender', gender.trim());
+            if (workerType.trim()) formData.set('worker_type', workerType.trim());
             if (jobCategory.trim()) formData.set('job_category', jobCategory.trim());
             if (jobSubcategory.trim()) formData.set('job_subcategory', jobSubcategory.trim());
             if (jobProfessionalLevel.trim()) formData.set('job_professional_level', jobProfessionalLevel.trim());
@@ -219,6 +221,21 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                     onChange={(e) => setGender(e.target.value)}
                                     className={inputClass}
                                 />
+                            </div>
+                            <div>
+                                <label className={labelClass}>Worker Type</label>
+                                <select
+                                    value={workerType}
+                                    onChange={(e) => setWorkerType(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">None</option>
+                                    <option value="Regular">Regular</option>
+                                    <option value="Intern">Intern</option>
+                                    <option value="Partner">Partner</option>
+                                    <option value="Contingent">Contingent</option>
+                                    <option value="Consultant">Consultant</option>
+                                </select>
                             </div>
                             <div>
                                 <label className={labelClass}>{t('workers.jobCategory')}</label>

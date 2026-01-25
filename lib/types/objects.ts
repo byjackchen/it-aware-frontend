@@ -153,6 +153,7 @@ export interface Worker {
     fullname: string;
     email: string | null;
     gender: string | null;
+    worker_type: string | null;
     // Job fields (parsed from position_title)
     job_category: string | null;
     job_subcategory: string | null;
@@ -211,6 +212,7 @@ export interface WorkerCreate {
     fullname: string;
     email?: string | null;
     gender?: string | null;
+    worker_type?: string | null;
     // Job fields (parsed from position_title)
     job_category?: string | null;
     job_subcategory?: string | null;
@@ -230,6 +232,7 @@ export interface WorkerUpdate {
     fullname?: string;
     email?: string | null;
     gender?: string | null;
+    worker_type?: string | null;
     // Job fields (parsed from position_title)
     job_category?: string | null;
     job_subcategory?: string | null;

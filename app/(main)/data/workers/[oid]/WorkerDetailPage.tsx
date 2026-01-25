@@ -62,6 +62,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
 
     // New optional fields
     const [gender, setGender] = useState(worker.gender || '');
+    const [workerType, setWorkerType] = useState(worker.worker_type || '');
     const [jobCategory, setJobCategory] = useState(worker.job_category || '');
     const [jobSubcategory, setJobSubcategory] = useState(worker.job_subcategory || '');
     const [jobProfessionalLevel, setJobProfessionalLevel] = useState(worker.job_professional_level || '');
@@ -91,6 +92,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
             formData.set('worker_id', workerId);
             formData.set('location_oid', locationOid);
             formData.set('gender', gender);
+            formData.set('worker_type', workerType);
             formData.set('job_category', jobCategory);
             formData.set('job_subcategory', jobSubcategory);
             formData.set('job_professional_level', jobProfessionalLevel);
@@ -123,6 +125,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
         setWorkerId(worker.worker_id || '');
         setLocationOid(worker.location_oid || '');
         setGender(worker.gender || '');
+        setWorkerType(worker.worker_type || '');
         setJobCategory(worker.job_category || '');
         setJobSubcategory(worker.job_subcategory || '');
         setJobProfessionalLevel(worker.job_professional_level || '');
@@ -263,6 +266,30 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                                 <div className={displayClass}>
                                     <User className={iconClass} />
                                     <span className={textClass}>{worker.gender || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Worker Type */}
+                        <div>
+                            <label className={labelClass}>Worker Type</label>
+                            {isEditing ? (
+                                <select
+                                    value={workerType}
+                                    onChange={(e) => setWorkerType(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">{t('workers.notSet')}</option>
+                                    <option value="Regular">Regular</option>
+                                    <option value="Intern">Intern</option>
+                                    <option value="Partner">Partner</option>
+                                    <option value="Contingent">Contingent</option>
+                                    <option value="Consultant">Consultant</option>
+                                </select>
+                            ) : (
+                                <div className={displayClass}>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.worker_type || t('workers.notSet')}</span>
                                 </div>
                             )}
                         </div>

@@ -63,7 +63,7 @@ export function TicketsListPage({ tickets, organizations, workers }: TicketsList
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Tickets</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {filteredTickets.length} of {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
+                                {tickets.filter(t => t.is_active).length} Active / {tickets.length} Total
                             </p>
                         </div>
                     </div>
