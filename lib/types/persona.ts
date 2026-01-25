@@ -88,11 +88,14 @@ export function buildPersonaFromWorker(
 
     // Build tags from available worker data
     const tags: string[] = [];
-    if (worker.management_level) {
-        tags.push(worker.management_level);
+    if (worker.job_management_level) {
+        tags.push(worker.job_management_level);
     }
-    if (worker.professional_level) {
-        tags.push(worker.professional_level);
+    if (worker.job_professional_level) {
+        tags.push(worker.job_professional_level);
+    }
+    if (worker.job_band) {
+        tags.push(worker.job_band);
     }
     if (worker.is_active) {
         tags.push('Active');
@@ -101,15 +104,15 @@ export function buildPersonaFromWorker(
     return {
         // Header - from Worker data
         name: fullName,
-        title: worker.professional_level || '[Title - Placeholder]',
+        title: worker.job_title || worker.job_band || '[Title - Placeholder]',
         tagline: '[Persona tagline - Placeholder: Add a brief quote or description]',
         tags: tags.length > 0 ? tags : ['[Tag - Placeholder]'],
 
         // Basic Profile - partially from Worker
         basicProfile: {
-            role: worker.professional_level || '[Role - Placeholder]',
+            role: worker.job_title || worker.job_band || '[Role - Placeholder]',
             experience: '[Experience - Placeholder]',
-            workMode: worker.management_level?.toLowerCase().includes('manager')
+            workMode: worker.job_management_level?.toLowerCase().includes('manager')
                 ? 'Manager'
                 : 'Individual Contributor',
             onCall: false, // Placeholder - no backend support

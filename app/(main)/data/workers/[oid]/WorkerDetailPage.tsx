@@ -62,8 +62,12 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
 
     // New optional fields
     const [gender, setGender] = useState(worker.gender || '');
-    const [managementLevel, setManagementLevel] = useState(worker.management_level || '');
-    const [professionalLevel, setProfessionalLevel] = useState(worker.professional_level || '');
+    const [jobCategory, setJobCategory] = useState(worker.job_category || '');
+    const [jobSubcategory, setJobSubcategory] = useState(worker.job_subcategory || '');
+    const [jobProfessionalLevel, setJobProfessionalLevel] = useState(worker.job_professional_level || '');
+    const [jobManagementLevel, setJobManagementLevel] = useState(worker.job_management_level || '');
+    const [jobBand, setJobBand] = useState(worker.job_band || '');
+    const [jobTitle, setJobTitle] = useState(worker.job_title || '');
 
     const [isActive, setIsActive] = useState(worker.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
@@ -87,8 +91,12 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
             formData.set('worker_id', workerId);
             formData.set('location_oid', locationOid);
             formData.set('gender', gender);
-            formData.set('management_level', managementLevel);
-            formData.set('professional_level', professionalLevel);
+            formData.set('job_category', jobCategory);
+            formData.set('job_subcategory', jobSubcategory);
+            formData.set('job_professional_level', jobProfessionalLevel);
+            formData.set('job_management_level', jobManagementLevel);
+            formData.set('job_band', jobBand);
+            formData.set('job_title', jobTitle);
             formData.set('is_active', String(isActive));
             await updateWorkerAction(worker.oid, formData);
             setIsEditing(false);
@@ -115,8 +123,12 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
         setWorkerId(worker.worker_id || '');
         setLocationOid(worker.location_oid || '');
         setGender(worker.gender || '');
-        setManagementLevel(worker.management_level || '');
-        setProfessionalLevel(worker.professional_level || '');
+        setJobCategory(worker.job_category || '');
+        setJobSubcategory(worker.job_subcategory || '');
+        setJobProfessionalLevel(worker.job_professional_level || '');
+        setJobManagementLevel(worker.job_management_level || '');
+        setJobBand(worker.job_band || '');
+        setJobTitle(worker.job_title || '');
         setIsActive(worker.is_active);
         setIsEditing(false);
     };
@@ -255,28 +267,82 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                             )}
                         </div>
 
-                        {/* Management Level */}
+                        {/* Job Category */}
                         <div>
-                            <label className={labelClass}>{t('workers.managementLevel')}</label>
+                            <label className={labelClass}>{t('workers.jobCategory')}</label>
                             {isEditing ? (
-                                <input type="text" value={managementLevel} onChange={(e) => setManagementLevel(e.target.value)} placeholder="Optional" className={inputClass} />
+                                <input type="text" value={jobCategory} onChange={(e) => setJobCategory(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
-                                    <Users className={iconClass} />
-                                    <span className={textClass}>{worker.management_level || t('workers.notSet')}</span>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.job_category || t('workers.notSet')}</span>
                                 </div>
                             )}
                         </div>
 
-                        {/* Professional Level */}
+                        {/* Job Subcategory */}
                         <div>
-                            <label className={labelClass}>{t('workers.professionalLevel')}</label>
+                            <label className={labelClass}>{t('workers.jobSubcategory')}</label>
                             {isEditing ? (
-                                <input type="text" value={professionalLevel} onChange={(e) => setProfessionalLevel(e.target.value)} placeholder="Optional" className={inputClass} />
+                                <input type="text" value={jobSubcategory} onChange={(e) => setJobSubcategory(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.professional_level || t('workers.notSet')}</span>
+                                    <span className={textClass}>{worker.job_subcategory || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
+                        {/* Job Professional Level */}
+                        <div>
+                            <label className={labelClass}>{t('workers.jobProfessionalLevel')}</label>
+                            {isEditing ? (
+                                <input type="text" value={jobProfessionalLevel} onChange={(e) => setJobProfessionalLevel(e.target.value)} placeholder="Optional" className={inputClass} />
+                            ) : (
+                                <div className={displayClass}>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.job_professional_level || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Job Management Level */}
+                        <div>
+                            <label className={labelClass}>{t('workers.jobManagementLevel')}</label>
+                            {isEditing ? (
+                                <input type="text" value={jobManagementLevel} onChange={(e) => setJobManagementLevel(e.target.value)} placeholder="Optional" className={inputClass} />
+                            ) : (
+                                <div className={displayClass}>
+                                    <Users className={iconClass} />
+                                    <span className={textClass}>{worker.job_management_level || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Job Band */}
+                        <div>
+                            <label className={labelClass}>{t('workers.jobBand')}</label>
+                            {isEditing ? (
+                                <input type="text" value={jobBand} onChange={(e) => setJobBand(e.target.value)} placeholder="Optional" className={inputClass} />
+                            ) : (
+                                <div className={displayClass}>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.job_band || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Job Title */}
+                        <div>
+                            <label className={labelClass}>{t('workers.jobTitle')}</label>
+                            {isEditing ? (
+                                <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Optional" className={inputClass} />
+                            ) : (
+                                <div className={displayClass}>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.job_title || t('workers.notSet')}</span>
                                 </div>
                             )}
                         </div>

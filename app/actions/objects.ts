@@ -348,8 +348,12 @@ export async function createWorkerAction(formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
-    const managementLevel = formData.get('management_level') as string | null;
-    const professionalLevel = formData.get('professional_level') as string | null;
+    const jobCategory = formData.get('job_category') as string | null;
+    const jobSubcategory = formData.get('job_subcategory') as string | null;
+    const jobProfessionalLevel = formData.get('job_professional_level') as string | null;
+    const jobManagementLevel = formData.get('job_management_level') as string | null;
+    const jobBand = formData.get('job_band') as string | null;
+    const jobTitle = formData.get('job_title') as string | null;
     const orgOid = formData.get('org_oid') as string;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
@@ -364,8 +368,12 @@ export async function createWorkerAction(formData: FormData) {
             worker_id: workerId || null,
             email: email || null,
             gender: gender || null,
-            management_level: managementLevel || null,
-            professional_level: professionalLevel || null,
+            job_category: jobCategory || null,
+            job_subcategory: jobSubcategory || null,
+            job_professional_level: jobProfessionalLevel || null,
+            job_management_level: jobManagementLevel || null,
+            job_band: jobBand || null,
+            job_title: jobTitle || null,
             org_oid: orgOid,
             location_oid: locationOid || null,
             manager_oid: managerOid || null,
@@ -391,8 +399,12 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
-    const managementLevel = formData.get('management_level') as string | null;
-    const professionalLevel = formData.get('professional_level') as string | null;
+    const jobCategory = formData.get('job_category') as string | null;
+    const jobSubcategory = formData.get('job_subcategory') as string | null;
+    const jobProfessionalLevel = formData.get('job_professional_level') as string | null;
+    const jobManagementLevel = formData.get('job_management_level') as string | null;
+    const jobBand = formData.get('job_band') as string | null;
+    const jobTitle = formData.get('job_title') as string | null;
     const orgOid = formData.get('org_oid') as string | null;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
@@ -407,8 +419,12 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
             worker_id: workerId,
             email: email,
             gender: gender,
-            management_level: managementLevel,
-            professional_level: professionalLevel,
+            job_category: jobCategory,
+            job_subcategory: jobSubcategory,
+            job_professional_level: jobProfessionalLevel,
+            job_management_level: jobManagementLevel,
+            job_band: jobBand,
+            job_title: jobTitle,
             org_oid: orgOid || undefined,
             location_oid: locationOid === '' ? '' : (locationOid || undefined),
             manager_oid: managerOid,

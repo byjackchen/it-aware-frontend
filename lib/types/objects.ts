@@ -153,8 +153,13 @@ export interface Worker {
     fullname: string;
     email: string | null;
     gender: string | null;
-    management_level: string | null;
-    professional_level: string | null;
+    // Job fields (parsed from position_title)
+    job_category: string | null;
+    job_subcategory: string | null;
+    job_professional_level: string | null;
+    job_management_level: string | null;
+    job_band: string | null;
+    job_title: string | null;
     org_oid: string;
     location_oid: string | null;
     manager_oid: string | null;
@@ -206,8 +211,13 @@ export interface WorkerCreate {
     fullname: string;
     email?: string | null;
     gender?: string | null;
-    management_level?: string | null;
-    professional_level?: string | null;
+    // Job fields (parsed from position_title)
+    job_category?: string | null;
+    job_subcategory?: string | null;
+    job_professional_level?: string | null;
+    job_management_level?: string | null;
+    job_band?: string | null;
+    job_title?: string | null;
     org_oid: string;
     location_oid?: string | null;
     manager_oid?: string | null;
@@ -220,8 +230,13 @@ export interface WorkerUpdate {
     fullname?: string;
     email?: string | null;
     gender?: string | null;
-    management_level?: string | null;
-    professional_level?: string | null;
+    // Job fields (parsed from position_title)
+    job_category?: string | null;
+    job_subcategory?: string | null;
+    job_professional_level?: string | null;
+    job_management_level?: string | null;
+    job_band?: string | null;
+    job_title?: string | null;
     org_oid?: string;
     location_oid?: string | null;
     manager_oid?: string | null;

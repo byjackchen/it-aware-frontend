@@ -37,8 +37,12 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
     const [locationOid, setLocationOid] = useState('');
     const [managerOid, setManagerOid] = useState('');
     const [gender, setGender] = useState('');
-    const [managementLevel, setManagementLevel] = useState('');
-    const [professionalLevel, setProfessionalLevel] = useState('');
+    const [jobCategory, setJobCategory] = useState('');
+    const [jobSubcategory, setJobSubcategory] = useState('');
+    const [jobProfessionalLevel, setJobProfessionalLevel] = useState('');
+    const [jobManagementLevel, setJobManagementLevel] = useState('');
+    const [jobBand, setJobBand] = useState('');
+    const [jobTitle, setJobTitle] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -61,8 +65,12 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
             if (locationOid) formData.set('location_oid', locationOid);
             if (managerOid) formData.set('manager_oid', managerOid);
             if (gender.trim()) formData.set('gender', gender.trim());
-            if (managementLevel.trim()) formData.set('management_level', managementLevel.trim());
-            if (professionalLevel.trim()) formData.set('professional_level', professionalLevel.trim());
+            if (jobCategory.trim()) formData.set('job_category', jobCategory.trim());
+            if (jobSubcategory.trim()) formData.set('job_subcategory', jobSubcategory.trim());
+            if (jobProfessionalLevel.trim()) formData.set('job_professional_level', jobProfessionalLevel.trim());
+            if (jobManagementLevel.trim()) formData.set('job_management_level', jobManagementLevel.trim());
+            if (jobBand.trim()) formData.set('job_band', jobBand.trim());
+            if (jobTitle.trim()) formData.set('job_title', jobTitle.trim());
             formData.set('is_active', 'true');
 
             const result = await createWorkerAction(formData);
@@ -213,20 +221,59 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>{t('workers.managementLevel')}</label>
+                                <label className={labelClass}>{t('workers.jobCategory')}</label>
                                 <input
                                     type="text"
-                                    value={managementLevel}
-                                    onChange={(e) => setManagementLevel(e.target.value)}
+                                    value={jobCategory}
+                                    onChange={(e) => setJobCategory(e.target.value)}
                                     className={inputClass}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>{t('workers.professionalLevel')}</label>
+                                <label className={labelClass}>{t('workers.jobSubcategory')}</label>
                                 <input
                                     type="text"
-                                    value={professionalLevel}
-                                    onChange={(e) => setProfessionalLevel(e.target.value)}
+                                    value={jobSubcategory}
+                                    onChange={(e) => setJobSubcategory(e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-4">
+                            <div>
+                                <label className={labelClass}>{t('workers.jobProfessionalLevel')}</label>
+                                <input
+                                    type="text"
+                                    value={jobProfessionalLevel}
+                                    onChange={(e) => setJobProfessionalLevel(e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                            <div>
+                                <label className={labelClass}>{t('workers.jobManagementLevel')}</label>
+                                <input
+                                    type="text"
+                                    value={jobManagementLevel}
+                                    onChange={(e) => setJobManagementLevel(e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                            <div>
+                                <label className={labelClass}>{t('workers.jobBand')}</label>
+                                <input
+                                    type="text"
+                                    value={jobBand}
+                                    onChange={(e) => setJobBand(e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+                            <div>
+                                <label className={labelClass}>{t('workers.jobTitle')}</label>
+                                <input
+                                    type="text"
+                                    value={jobTitle}
+                                    onChange={(e) => setJobTitle(e.target.value)}
                                     className={inputClass}
                                 />
                             </div>

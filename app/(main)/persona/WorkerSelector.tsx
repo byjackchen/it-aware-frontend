@@ -127,7 +127,7 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
                                         <div className="flex-1 min-w-0">
                                             <div className="font-medium truncate">{worker.fullname}</div>
                                             <div className={`text-xs truncate ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                {worker.email || worker.professional_level || 'No email'}
+                                                {worker.email || worker.job_title || 'No email'}
                                             </div>
                                         </div>
                                         {isSelected && (
