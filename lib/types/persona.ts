@@ -8,7 +8,6 @@
  */
 
 import type { Worker, Organization, Location, WorkerHardware } from './objects';
-import { getWorkerFullName } from './objects';
 
 // ============================================================================
 // Persona Types
@@ -85,7 +84,7 @@ export function buildPersonaFromWorker(
     location?: Location | null,
     hardwares?: WorkerHardware[]
 ): Persona {
-    const fullName = getWorkerFullName(worker);
+    const fullName = worker.fullname;
 
     // Build tags from available worker data
     const tags: string[] = [];

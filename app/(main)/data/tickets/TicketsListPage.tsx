@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 import { Ticket, Plus, RefreshCw, Search } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { Ticket as TicketType, Organization, Worker } from '@/lib/types/objects';
-import { getWorkerFullName } from '@/lib/types/objects';
 
 interface TicketsListPageProps {
     tickets: TicketType[];
@@ -34,7 +33,7 @@ export function TicketsListPage({ tickets, organizations, workers }: TicketsList
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
     const orgMap = new Map(organizations.map((o) => [o.oid, o.name]));
-    const workerMap = new Map(workers.map((w) => [w.oid, getWorkerFullName(w)]));
+    const workerMap = new Map(workers.map((w) => [w.oid, w.fullname]));
 
     const statuses = Array.from(new Set(tickets.map((t) => t.status))).sort();
 

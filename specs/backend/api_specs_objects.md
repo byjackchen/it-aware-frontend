@@ -45,13 +45,18 @@ class Worker(Base):
     oid = Column(BYTEA(16), primary_key=True)
     worker_id = Column(Text, unique=True, nullable=True)  # External employee ID
     stable_id = Column(Text, unique=True, nullable=False)  # Stable sync identifier (wecom_id)
-    legal_first_name = Column(Text, nullable=False)
-    legal_last_name = Column(Text, nullable=False)
-    preferred_first_name = Column(Text, nullable=True)
+    fullname = Column(Text, nullable=False)  # Worker's full name
     email = Column(Text, unique=True, nullable=True)
     gender = Column(Text, nullable=True)
-    management_level = Column(Text, nullable=True)
-    professional_level = Column(Text, nullable=True)
+
+    # Job fields (parsed from position_title)
+    job_category = Column(Text, nullable=True)            # 2-letter code (TE, TG, etc.)
+    job_subcategory = Column(Text, nullable=True)         # Second segment after /
+    job_professional_level = Column(Text, nullable=True)  # Numeric 5-15 (OLD system)
+    job_management_level = Column(Text, nullable=True)    # L-patterns (OLD system)
+    job_band = Column(Text, nullable=True)                # Senior, Principal, etc. (NEW system)
+    job_title = Column(Text, nullable=True)               # Role description
+
     org_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=False)
     location_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     manager_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
@@ -59,6 +64,24 @@ class Worker(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 ```
+
+#### Job Fields Reference
+
+| Field | Description | Source System | Example Values |
+|-------|-------------|---------------|----------------|
+| `job_category` | 2-letter function code | OLD + NEW | `TE`, `TG`, `PM` |
+| `job_subcategory` | Second segment after `/` | OLD + NEW | `TRD`, `Programming, Technology & IT` |
+| `job_professional_level` | Numeric level 5-15 | OLD only | `12`, `10`, `8` |
+| `job_management_level` | L-patterns | OLD only | `L3-1`, `L4`, `L5-2` |
+| `job_band` | Seniority band | NEW only | `Senior`, `Principal`, `Staff` |
+| `job_title` | Role description | OLD + Simple types | `Principal Backend Engineer`, `Intern` |
+
+> [!NOTE]
+> **Parsing Rules by Worker Type:**
+> - **Regular (OLD system)**: Has `job_category`, `job_subcategory`, `job_professional_level`, `job_management_level`, `job_title`
+> - **Regular (NEW system)**: Has `job_category`, `job_subcategory`, `job_band` (no `job_title`)
+> - **Intern**: Has `job_category`, `job_subcategory`, `job_title` = "Intern"
+> - **Partner/Contingent/Consultant**: Has `job_title` only (entire string)
 
 ### WorkerHardware
 
@@ -106,13 +129,18 @@ class Ticket(Base):
 class WorkerCreate(BaseModel):
     worker_id: Optional[str] = Field(None, max_length=255)
     stable_id: str = Field(..., max_length=255)
-    legal_first_name: str = Field(..., min_length=1, max_length=255)
-    legal_last_name: str = Field(..., min_length=1, max_length=255)
-    preferred_first_name: Optional[str] = None
+    fullname: str = Field(..., min_length=1, max_length=255)
     email: Optional[EmailStr] = None
     gender: Optional[str] = None
-    management_level: Optional[str] = None
-    professional_level: Optional[str] = None
+
+    # Job fields (parsed from position_title)
+    job_category: Optional[str] = None           # 2-letter code (TE, TG, etc.)
+    job_subcategory: Optional[str] = None        # Second segment after /
+    job_professional_level: Optional[str] = None # Numeric 5-15 (OLD system)
+    job_management_level: Optional[str] = None   # L-patterns (OLD system)
+    job_band: Optional[str] = None               # Senior, Principal, etc. (NEW system)
+    job_title: Optional[str] = None              # Role description
+
     org_oid: str  # Required
     location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
@@ -121,13 +149,18 @@ class WorkerCreate(BaseModel):
 class WorkerUpdate(BaseModel):
     worker_id: Optional[str] = None
     stable_id: Optional[str] = None
-    legal_first_name: Optional[str] = None
-    legal_last_name: Optional[str] = None
-    preferred_first_name: Optional[str] = None
+    fullname: Optional[str] = None
     email: Optional[EmailStr] = None
     gender: Optional[str] = None
-    management_level: Optional[str] = None
-    professional_level: Optional[str] = None
+
+    # Job fields (parsed from position_title)
+    job_category: Optional[str] = None
+    job_subcategory: Optional[str] = None
+    job_professional_level: Optional[str] = None
+    job_management_level: Optional[str] = None
+    job_band: Optional[str] = None
+    job_title: Optional[str] = None
+
     org_oid: Optional[str] = None
     location_oid: Optional[str] = None  # Empty string to clear
     manager_oid: Optional[str] = None  # Empty string to clear
@@ -137,13 +170,18 @@ class WorkerResponse(BaseModel):
     oid: str
     worker_id: Optional[str] = None
     stable_id: str
-    legal_first_name: str
-    legal_last_name: str
-    preferred_first_name: Optional[str] = None
+    fullname: str
     email: Optional[str] = None
     gender: Optional[str] = None
-    management_level: Optional[str] = None
-    professional_level: Optional[str] = None
+
+    # Job fields (parsed from position_title)
+    job_category: Optional[str] = None
+    job_subcategory: Optional[str] = None
+    job_professional_level: Optional[str] = None
+    job_management_level: Optional[str] = None
+    job_band: Optional[str] = None
+    job_title: Optional[str] = None
+
     org_oid: str
     location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
@@ -189,8 +227,7 @@ class WorkerResponse(BaseModel):
 {
   "worker_id": "EMP001",
   "stable_id": "asmith",
-  "legal_first_name": "Alice",
-  "legal_last_name": "Smith",
+  "fullname": "Alice Smith",
   "email": "alice@example.com",
   "org_oid": "01JFXYZORG123456789AB",
   "location_oid": "01JFXYZLOC123456789AB"
@@ -532,8 +569,7 @@ curl -X POST http://localhost:8000/objects/workers \
   -d '{
     "worker_id": "EMP001",
     "stable_id": "asmith",
-    "legal_first_name": "Alice",
-    "legal_last_name": "Smith",
+    "fullname": "Alice Smith",
     "email": "alice@example.com",
     "org_oid": "<org_oid>"
   }'

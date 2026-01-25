@@ -23,7 +23,6 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
 import type { Ticket as TicketType, GlobalEdge, Organization, Worker } from '@/lib/types/objects';
-import { getWorkerFullName } from '@/lib/types/objects';
 import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
 interface TicketDetailPageProps {
@@ -49,7 +48,7 @@ export function TicketDetailPage({ ticket, edges, organizations, workers }: Tick
 
     // const orgName = organizations.find((o) => o.oid === ticket.org_oid)?.name || 'Unknown';
     const worker = workers.find((w) => w.oid === ticket.requester_oid);
-    const workerName = worker ? getWorkerFullName(worker) : 'Unknown';
+    const workerName = worker ? worker.fullname : 'Unknown';
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === ticket.oid ? e.to_object : e.from_object;
         return connectedObject?.object_type === edgeFilter;

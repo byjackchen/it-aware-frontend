@@ -216,6 +216,7 @@
             "new": "新建员工",
             "empty": "未找到员工",
             "deleteConfirm": "确定要删除此员工吗？",
+            "fullname": "姓名",
             "fullName": "全名",
             "legalFirstName": "法定名",
             "legalLastName": "法定姓",

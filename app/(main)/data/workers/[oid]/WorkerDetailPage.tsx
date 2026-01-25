@@ -23,7 +23,6 @@ import {
     X,
     Briefcase,
     Users,
-    Heart,
     Laptop,
     Monitor,
     Smartphone,
@@ -35,7 +34,6 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ObjectGraph } from '@/components/data';
 import type { Worker, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
-import { getWorkerFullName } from '@/lib/types/objects';
 import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
 
 interface WorkerDetailPageProps {
@@ -54,10 +52,8 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
 
-    // Name fields
-    const [legalFirstName, setLegalFirstName] = useState(worker.legal_first_name);
-    const [legalLastName, setLegalLastName] = useState(worker.legal_last_name);
-    const [preferredFirstName, setPreferredFirstName] = useState(worker.preferred_first_name || '');
+    // Name field
+    const [fullname, setFullname] = useState(worker.fullname);
 
     // Basic info
     const [email, setEmail] = useState(worker.email || '');
@@ -80,15 +76,13 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
         const connectedObject = e.from_oid === worker.oid ? e.to_object : e.from_object;
         return connectedObject?.object_type === edgeFilter;
     }) : edges;
-    const fullName = getWorkerFullName(worker);
+    const fullName = worker.fullname;
 
     const handleSave = async () => {
         setIsPending(true);
         try {
             const formData = new FormData();
-            formData.set('legal_first_name', legalFirstName);
-            formData.set('legal_last_name', legalLastName);
-            formData.set('preferred_first_name', preferredFirstName);
+            formData.set('fullname', fullname);
             formData.set('email', email);
             formData.set('worker_id', workerId);
             formData.set('location_oid', locationOid);
@@ -116,9 +110,7 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     };
 
     const handleCancel = () => {
-        setLegalFirstName(worker.legal_first_name);
-        setLegalLastName(worker.legal_last_name);
-        setPreferredFirstName(worker.preferred_first_name || '');
+        setFullname(worker.fullname);
         setEmail(worker.email || '');
         setWorkerId(worker.worker_id || '');
         setLocationOid(worker.location_oid || '');
@@ -167,56 +159,16 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
 
                 {/* Details Card */}
                 <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {/* Name Fields */}
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Legal First Name */}
-                        <div>
-                            <label className={labelClass}>{t('workers.legalFirstName')}</label>
-                            {isEditing ? (
-                                <input type="text" value={legalFirstName} onChange={(e) => setLegalFirstName(e.target.value)} className={inputClass} />
-                            ) : (
-                                <div className={displayClass}>
-                                    <User className={iconClass} />
-                                    <span className={textClass}>{worker.legal_first_name}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Legal Last Name */}
-                        <div>
-                            <label className={labelClass}>{t('workers.legalLastName')}</label>
-                            {isEditing ? (
-                                <input type="text" value={legalLastName} onChange={(e) => setLegalLastName(e.target.value)} className={inputClass} />
-                            ) : (
-                                <div className={displayClass}>
-                                    <User className={iconClass} />
-                                    <span className={textClass}>{worker.legal_last_name}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Preferred Name */}
-                        <div>
-                            <label className={labelClass}>{t('workers.preferredFirstName')}</label>
-                            {isEditing ? (
-                                <input type="text" value={preferredFirstName} onChange={(e) => setPreferredFirstName(e.target.value)} placeholder="Optional" className={inputClass} />
-                            ) : (
-                                <div className={displayClass}>
-                                    <Heart className={iconClass} />
-                                    <span className={textClass}>{worker.preferred_first_name || t('workers.notSet')}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Full Name (Display only) */}
-                        <div>
-                            <label className={labelClass}>{t('workers.fullName')}</label>
+                    {/* Full Name */}
+                    <div>
+                        <label className={labelClass}>{t('workers.fullname')}</label>
+                        {isEditing ? (
+                            <input type="text" value={fullname} onChange={(e) => setFullname(e.target.value)} className={inputClass} />
+                        ) : (
                             <div className={`px-3 py-2 rounded-lg text-lg ${isLight ? 'text-slate-800 bg-slate-50' : 'text-white bg-white/5'}`}>
-                                {fullName}
+                                {worker.fullname}
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

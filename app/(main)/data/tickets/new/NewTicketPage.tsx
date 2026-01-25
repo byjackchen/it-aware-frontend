@@ -128,7 +128,7 @@ export function NewTicketPage({ workers }: NewTicketPageProps) {
                                 <option value="">Select requester...</option>
                                 {workers.map((w) => (
                                     <option key={w.oid} value={w.oid}>
-                                        {w.legal_first_name} {w.legal_last_name}
+                                        {w.fullname}
                                     </option>
                                 ))}
                             </select>

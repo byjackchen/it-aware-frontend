@@ -216,6 +216,7 @@
             "new": "New Worker",
             "empty": "No workers found",
             "deleteConfirm": "Are you sure you want to delete this worker?",
+            "fullname": "Full Name",
             "fullName": "Full Name",
             "legalFirstName": "Legal First Name",
             "legalLastName": "Legal Last Name",

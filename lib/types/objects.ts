@@ -150,9 +150,7 @@ export interface Worker {
     oid: string;
     worker_id: string | null;
     stable_id: string;
-    legal_first_name: string;
-    legal_last_name: string;
-    preferred_first_name: string | null;
+    fullname: string;
     email: string | null;
     gender: string | null;
     management_level: string | null;
@@ -205,9 +203,7 @@ export interface WorkerHardwareUpdate {
 export interface WorkerCreate {
     worker_id?: string | null;
     stable_id: string;
-    legal_first_name: string;
-    legal_last_name: string;
-    preferred_first_name?: string | null;
+    fullname: string;
     email?: string | null;
     gender?: string | null;
     management_level?: string | null;
@@ -221,9 +217,7 @@ export interface WorkerCreate {
 export interface WorkerUpdate {
     worker_id?: string | null;
     stable_id?: string;
-    legal_first_name?: string;
-    legal_last_name?: string;
-    preferred_first_name?: string | null;
+    fullname?: string;
     email?: string | null;
     gender?: string | null;
     management_level?: string | null;
@@ -239,17 +233,10 @@ export interface WorkerUpdate {
 // ============================================================================
 
 /**
- * Get the full legal name of a worker.
+ * Get the full name of a worker.
  */
 export function getWorkerFullName(worker: Worker): string {
-    return `${worker.legal_first_name} ${worker.legal_last_name}`;
-}
-
-/**
- * Get the display name (preferred name if set, otherwise legal first name).
- */
-export function getWorkerDisplayName(worker: Worker): string {
-    return worker.preferred_first_name || worker.legal_first_name;
+    return worker.fullname;
 }
 
 // ============================================================================

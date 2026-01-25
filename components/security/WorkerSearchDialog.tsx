@@ -9,11 +9,6 @@ import { useState, useMemo } from 'react';
 import { Search, X, User } from 'lucide-react';
 import type { Worker, AccountWorker } from '@/lib/types/security';
 
-// Helper function to get full name (matches the one in objects.ts)
-function getWorkerFullName(worker: Worker): string {
-    return `${worker.legal_first_name} ${worker.legal_last_name}`;
-}
-
 interface WorkerSearchDialogProps {
     isOpen: boolean;
     onClose: () => void;
@@ -40,9 +35,8 @@ export function WorkerSearchDialog({
             if (!searchTerm) return true;
 
             const search = searchTerm.toLowerCase();
-            const fullName = getWorkerFullName(worker);
             return (
-                fullName.toLowerCase().includes(search) ||
+                worker.fullname.toLowerCase().includes(search) ||
                 worker.email?.toLowerCase().includes(search) ||
                 worker.worker_id?.toLowerCase().includes(search)
             );
@@ -114,7 +108,7 @@ export function WorkerSearchDialog({
                                             <div className="flex items-center gap-2">
                                                 <span className={`font-medium truncate ${worker.is_active ? 'text-white' : 'text-gray-400'
                                                     }`}>
-                                                    {getWorkerFullName(worker)}
+                                                    {worker.fullname}
                                                 </span>
                                                 {!worker.is_active && (
                                                     <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600/50 text-gray-400">

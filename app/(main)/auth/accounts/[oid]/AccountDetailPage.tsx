@@ -32,11 +32,6 @@ import {
     removeAccountGroup,
 } from '@/app/actions/security';
 
-// Helper function to get full name (matches objects.ts)
-function getWorkerFullName(worker: Worker): string {
-    return `${worker.legal_first_name} ${worker.legal_last_name}`;
-}
-
 interface AccountDetailPageProps {
     account: Account;
     linkedWorker: Worker | null;
@@ -266,7 +261,7 @@ export function AccountDetailPage({
                                             <User className="w-5 h-5 text-blue-400" />
                                         </div>
                                         <div>
-                                            <div className="font-medium text-white">{getWorkerFullName(linkedWorker)}</div>
+                                            <div className="font-medium text-white">{linkedWorker.fullname}</div>
                                             <div className="text-sm text-gray-400">
                                                 {linkedWorker.email || linkedWorker.worker_id || t('accounts.noEmail')}
                                             </div>

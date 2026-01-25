@@ -344,9 +344,7 @@ export async function createWorkerAction(formData: FormData) {
     const startTime = Date.now();
 
     const stableId = formData.get('stable_id') as string;
-    const legalFirstName = formData.get('legal_first_name') as string;
-    const legalLastName = formData.get('legal_last_name') as string;
-    const preferredFirstName = formData.get('preferred_first_name') as string | null;
+    const fullname = formData.get('fullname') as string;
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
@@ -362,9 +360,7 @@ export async function createWorkerAction(formData: FormData) {
     try {
         const result = await createWorker({
             stable_id: stableId,
-            legal_first_name: legalFirstName,
-            legal_last_name: legalLastName,
-            preferred_first_name: preferredFirstName || null,
+            fullname: fullname,
             worker_id: workerId || null,
             email: email || null,
             gender: gender || null,
@@ -391,9 +387,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const startTime = Date.now();
 
     const stableId = formData.get('stable_id') as string | null;
-    const legalFirstName = formData.get('legal_first_name') as string | null;
-    const legalLastName = formData.get('legal_last_name') as string | null;
-    const preferredFirstName = formData.get('preferred_first_name') as string | null;
+    const fullname = formData.get('fullname') as string | null;
     const workerId = formData.get('worker_id') as string | null;
     const email = formData.get('email') as string | null;
     const gender = formData.get('gender') as string | null;
@@ -409,9 +403,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     try {
         const result = await updateWorker(oid, {
             stable_id: stableId || undefined,
-            legal_first_name: legalFirstName || undefined,
-            legal_last_name: legalLastName || undefined,
-            preferred_first_name: preferredFirstName,
+            fullname: fullname || undefined,
             worker_id: workerId,
             email: email,
             gender: gender,

@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { ChevronDown, Search, User } from 'lucide-react';
 import type { Worker } from '@/lib/types/objects';
-import { getWorkerFullName } from '@/lib/types/objects';
 
 interface WorkerSelectorProps {
     workers: Worker[];
@@ -29,7 +28,7 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
     const currentWorker = workers.find(w => w.oid === currentWorkerOid);
 
     const filteredWorkers = workers.filter(w => {
-        const fullName = getWorkerFullName(w).toLowerCase();
+        const fullName = w.fullname.toLowerCase();
         const email = (w.email || '').toLowerCase();
         const query = searchQuery.toLowerCase();
         return fullName.includes(query) || email.includes(query);
@@ -122,11 +121,11 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
                                             w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0
                                             ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-300'}
                                         `}>
-                                            {getWorkerFullName(worker).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                            {worker.fullname.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                         </div>
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <div className="font-medium truncate">{getWorkerFullName(worker)}</div>
+                                            <div className="font-medium truncate">{worker.fullname}</div>
                                             <div className={`text-xs truncate ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                                 {worker.email || worker.professional_level || 'No email'}
                                             </div>

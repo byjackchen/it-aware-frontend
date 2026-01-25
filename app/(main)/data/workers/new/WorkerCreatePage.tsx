@@ -28,12 +28,10 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
     // Required fields
     const [stableId, setStableId] = useState('');
-    const [legalFirstName, setLegalFirstName] = useState('');
-    const [legalLastName, setLegalLastName] = useState('');
+    const [fullname, setFullname] = useState('');
     const [orgOid, setOrgOid] = useState('');
 
     // Optional fields
-    const [preferredFirstName, setPreferredFirstName] = useState('');
     const [email, setEmail] = useState('');
     const [workerId, setWorkerId] = useState('');
     const [locationOid, setLocationOid] = useState('');
@@ -47,7 +45,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
         setError(null);
 
         // Validate required fields
-        if (!stableId.trim() || !legalFirstName.trim() || !legalLastName.trim() || !orgOid) {
+        if (!stableId.trim() || !fullname.trim() || !orgOid) {
             setError('Please fill in all required fields');
             return;
         }
@@ -56,10 +54,8 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
         try {
             const formData = new FormData();
             formData.set('stable_id', stableId.trim());
-            formData.set('legal_first_name', legalFirstName.trim());
-            formData.set('legal_last_name', legalLastName.trim());
+            formData.set('fullname', fullname.trim());
             formData.set('org_oid', orgOid);
-            if (preferredFirstName.trim()) formData.set('preferred_first_name', preferredFirstName.trim());
             if (email.trim()) formData.set('email', email.trim());
             if (workerId.trim()) formData.set('worker_id', workerId.trim());
             if (locationOid) formData.set('location_oid', locationOid);
@@ -124,27 +120,15 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass}>{t('workers.legalFirstName')} *</label>
-                                <input
-                                    type="text"
-                                    value={legalFirstName}
-                                    onChange={(e) => setLegalFirstName(e.target.value)}
-                                    className={inputClass}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className={labelClass}>{t('workers.legalLastName')} *</label>
-                                <input
-                                    type="text"
-                                    value={legalLastName}
-                                    onChange={(e) => setLegalLastName(e.target.value)}
-                                    className={inputClass}
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className={labelClass}>{t('workers.fullname')} *</label>
+                            <input
+                                type="text"
+                                value={fullname}
+                                onChange={(e) => setFullname(e.target.value)}
+                                className={inputClass}
+                                required
+                            />
                         </div>
 
                         <div>
@@ -169,16 +153,6 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className={labelClass}>{t('workers.preferredFirstName')}</label>
-                                <input
-                                    type="text"
-                                    value={preferredFirstName}
-                                    onChange={(e) => setPreferredFirstName(e.target.value)}
-                                    placeholder="Nickname"
-                                    className={inputClass}
-                                />
-                            </div>
-                            <div>
                                 <label className={labelClass}>{t('workers.email')}</label>
                                 <input
                                     type="email"
@@ -187,9 +161,6 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                     className={inputClass}
                                 />
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className={labelClass}>{t('workers.workerId')}</label>
                                 <input
@@ -199,19 +170,20 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                     className={inputClass}
                                 />
                             </div>
-                            <div>
-                                <label className={labelClass}>{t('workers.location')}</label>
-                                <select
-                                    value={locationOid}
-                                    onChange={(e) => setLocationOid(e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">None</option>
-                                    {locations.map((loc) => (
-                                        <option key={loc.oid} value={loc.oid}>{loc.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>{t('workers.location')}</label>
+                            <select
+                                value={locationOid}
+                                onChange={(e) => setLocationOid(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">None</option>
+                                {locations.map((loc) => (
+                                    <option key={loc.oid} value={loc.oid}>{loc.name}</option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
@@ -224,7 +196,7 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 <option value="">None</option>
                                 {workers.map((w) => (
                                     <option key={w.oid} value={w.oid}>
-                                        {w.legal_first_name} {w.legal_last_name}
+                                        {w.fullname}
                                     </option>
                                 ))}
                             </select>
