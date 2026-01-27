@@ -15,7 +15,7 @@ The Objects module manages business entities that are not hierarchical but inter
 ```
 
 > [!NOTE]
-> **Organizations and Locations** have been moved to [api_specs_hierarchies.md](./api_specs_hierarchies.md) as they are hierarchical entities.
+> **Organizations and Locations** have been moved to [api_specs_objects_hierarchies.md](./api_specs_objects_hierarchies.md) as they are hierarchical entities.
 
 ---
 

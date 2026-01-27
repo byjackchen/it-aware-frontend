@@ -91,7 +91,7 @@ class ServiceCatalog(Base):
 
 ---
 
-## API 1: Organizations (`/hierarchies/organizations`)
+## API 1: Organizations (`/objects/organizations`)
 
 ### Schemas
 
@@ -126,15 +126,15 @@ class OrganizationResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/hierarchies/organizations` | Create organization | `hierarchies:organizations:edit` |
-| GET | `/hierarchies/organizations` | List organizations | `hierarchies:organizations:read` |
-| GET | `/hierarchies/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
-| PUT | `/hierarchies/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
-| DELETE | `/hierarchies/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
+| POST | `/objects/organizations` | Create organization | `hierarchies:organizations:edit` |
+| GET | `/objects/organizations` | List organizations | `hierarchies:organizations:read` |
+| GET | `/objects/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
+| PUT | `/objects/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
+| DELETE | `/objects/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
 
 ### Create Organization
 
-**`POST /hierarchies/organizations`**
+**`POST /objects/organizations`**
 
 ```json
 {
@@ -162,7 +162,7 @@ class OrganizationResponse(BaseModel):
 
 ---
 
-## API 2: Locations (`/hierarchies/locations`)
+## API 2: Locations (`/objects/locations`)
 
 ### Schemas
 
@@ -200,11 +200,11 @@ class LocationResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/hierarchies/locations` | Create location | `hierarchies:locations:edit` |
-| GET | `/hierarchies/locations` | List locations | `hierarchies:locations:read` |
-| GET | `/hierarchies/locations/{oid}` | Get location | `hierarchies:locations:read` |
-| PUT | `/hierarchies/locations/{oid}` | Update location | `hierarchies:locations:edit` |
-| DELETE | `/hierarchies/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
+| POST | `/objects/locations` | Create location | `hierarchies:locations:edit` |
+| GET | `/objects/locations` | List locations | `hierarchies:locations:read` |
+| GET | `/objects/locations/{oid}` | Get location | `hierarchies:locations:read` |
+| PUT | `/objects/locations/{oid}` | Update location | `hierarchies:locations:edit` |
+| DELETE | `/objects/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
 
 ### Location Type Values
 
@@ -229,7 +229,7 @@ class LocationResponse(BaseModel):
 
 ---
 
-## API 3: Service Catalogs (`/hierarchies/service-catalogs`)
+## API 3: Service Catalogs (`/objects/service-catalogs`)
 
 ### Schemas
 
@@ -261,11 +261,11 @@ class ServiceCatalogResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/hierarchies/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
-| GET | `/hierarchies/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
-| GET | `/hierarchies/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
-| PUT | `/hierarchies/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
-| DELETE | `/hierarchies/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
+| POST | `/objects/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
+| GET | `/objects/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
+| GET | `/objects/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
+| PUT | `/objects/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
+| DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
 
 ### Create Service Catalog Example
 
@@ -298,23 +298,23 @@ class ServiceCatalogResponse(BaseModel):
 | # | Method | Path | Description | Permission |
 |---|--------|------|-------------|------------|
 | **Organizations** |||||
-| 1 | POST | `/hierarchies/organizations` | Create organization | `hierarchies:organizations:edit` |
-| 2 | GET | `/hierarchies/organizations` | List organizations | `hierarchies:organizations:read` |
-| 3 | GET | `/hierarchies/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
-| 4 | PUT | `/hierarchies/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
-| 5 | DELETE | `/hierarchies/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
+| 1 | POST | `/objects/organizations` | Create organization | `hierarchies:organizations:edit` |
+| 2 | GET | `/objects/organizations` | List organizations | `hierarchies:organizations:read` |
+| 3 | GET | `/objects/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
+| 4 | PUT | `/objects/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
+| 5 | DELETE | `/objects/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
 | **Locations** |||||
-| 6 | POST | `/hierarchies/locations` | Create location | `hierarchies:locations:edit` |
-| 7 | GET | `/hierarchies/locations` | List locations | `hierarchies:locations:read` |
-| 8 | GET | `/hierarchies/locations/{oid}` | Get location | `hierarchies:locations:read` |
-| 9 | PUT | `/hierarchies/locations/{oid}` | Update location | `hierarchies:locations:edit` |
-| 10 | DELETE | `/hierarchies/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
+| 6 | POST | `/objects/locations` | Create location | `hierarchies:locations:edit` |
+| 7 | GET | `/objects/locations` | List locations | `hierarchies:locations:read` |
+| 8 | GET | `/objects/locations/{oid}` | Get location | `hierarchies:locations:read` |
+| 9 | PUT | `/objects/locations/{oid}` | Update location | `hierarchies:locations:edit` |
+| 10 | DELETE | `/objects/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
 | **Service Catalogs** |||||
-| 11 | POST | `/hierarchies/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
-| 12 | GET | `/hierarchies/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
-| 13 | GET | `/hierarchies/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
-| 14 | PUT | `/hierarchies/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
-| 15 | DELETE | `/hierarchies/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
+| 11 | POST | `/objects/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
+| 12 | GET | `/objects/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
+| 13 | GET | `/objects/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
+| 14 | PUT | `/objects/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
+| 15 | DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
 
 ---
 
@@ -326,7 +326,7 @@ All list endpoints support pagination:
 |-----------|------|---------|-------------|
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
-| `stable_id` | string | null | Filter by stable_id (exact match) - Organizations only |
+| `stable_id` | string | null | Filter by stable_id (exact match) |
 | `is_active` | boolean | null | Filter by active status (true/false) |
 
 ---

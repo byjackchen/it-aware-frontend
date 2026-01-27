@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         });
 
         const response = await fetch(
-            `${RUNTIME_CONFIG.backend.domain}/registry/search?${params.toString()}`,
+            `${RUNTIME_CONFIG.backend.domain}/objects/registry/search?${params.toString()}`,
             {
                 headers: {
                     'Content-Type': 'application/json',

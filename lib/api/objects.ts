@@ -36,7 +36,6 @@ import type {
 import type { Role } from '@/lib/types/security';
 
 const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
-const HIERARCHIES_BASE = `${RUNTIME_CONFIG.backend.domain}/hierarchies`;
 const EDGES_BASE = `${RUNTIME_CONFIG.backend.domain}/edges`;
 const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
 
@@ -106,29 +105,29 @@ async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promis
 // ============================================================================
 
 export async function getOrganizations(): Promise<Organization[]> {
-    return fetchAllPages<Organization>(`${HIERARCHIES_BASE}/organizations`);
+    return fetchAllPages<Organization>(`${OBJECTS_BASE}/organizations`);
 }
 
 export async function getOrganization(oid: string): Promise<Organization> {
-    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`);
+    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`);
 }
 
 export async function createOrganization(data: OrganizationCreate): Promise<Organization> {
-    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations`, {
+    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
 export async function updateOrganization(oid: string, data: OrganizationUpdate): Promise<Organization> {
-    return fetchApi<Organization>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`, {
+    return fetchApi<Organization>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteOrganization(oid: string): Promise<void> {
-    return fetchApi<void>(`${HIERARCHIES_BASE}/organizations/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
@@ -138,29 +137,29 @@ export async function deleteOrganization(oid: string): Promise<void> {
 // ============================================================================
 
 export async function getLocations(): Promise<Location[]> {
-    return fetchAllPages<Location>(`${HIERARCHIES_BASE}/locations`);
+    return fetchAllPages<Location>(`${OBJECTS_BASE}/locations`);
 }
 
 export async function getLocation(oid: string): Promise<Location> {
-    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`);
+    return fetchApi<Location>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`);
 }
 
 export async function createLocation(data: LocationCreate): Promise<Location> {
-    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations`, {
+    return fetchApi<Location>(`${OBJECTS_BASE}/locations`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
 export async function updateLocation(oid: string, data: LocationUpdate): Promise<Location> {
-    return fetchApi<Location>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`, {
+    return fetchApi<Location>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteLocation(oid: string): Promise<void> {
-    return fetchApi<void>(`${HIERARCHIES_BASE}/locations/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
@@ -170,29 +169,29 @@ export async function deleteLocation(oid: string): Promise<void> {
 // ============================================================================
 
 export async function getServiceCatalogs(): Promise<ServiceCatalog[]> {
-    return fetchAllPages<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`);
+    return fetchAllPages<ServiceCatalog>(`${OBJECTS_BASE}/service-catalogs`);
 }
 
 export async function getServiceCatalog(oid: string): Promise<ServiceCatalog> {
-    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`);
+    return fetchApi<ServiceCatalog>(`${OBJECTS_BASE}/service-catalogs/${encodeURIComponent(oid)}`);
 }
 
 export async function createServiceCatalog(data: ServiceCatalogCreate): Promise<ServiceCatalog> {
-    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs`, {
+    return fetchApi<ServiceCatalog>(`${OBJECTS_BASE}/service-catalogs`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
 export async function updateServiceCatalog(oid: string, data: ServiceCatalogUpdate): Promise<ServiceCatalog> {
-    return fetchApi<ServiceCatalog>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
+    return fetchApi<ServiceCatalog>(`${OBJECTS_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteServiceCatalog(oid: string): Promise<void> {
-    return fetchApi<void>(`${HIERARCHIES_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${OBJECTS_BASE}/service-catalogs/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }

@@ -50,10 +50,10 @@ class GlobalRegistry(Base):
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/registry/search` | Search by descriptor | No |
-| GET | `/registry/batch` | Batch lookup by OIDs | No |
-| GET | `/registry/types/{type}` | List by object type | No |
-| GET | `/registry/{oid}` | Single object lookup | No |
+| GET | `/objects/registry/search` | Search by descriptor | No |
+| GET | `/objects/registry/batch` | Batch lookup by OIDs | No |
+| GET | `/objects/registry/types/{type}` | List by object type | No |
+| GET | `/objects/registry/{oid}` | Single object lookup | No |
 
 **Note:** Registry APIs are currently public (no authentication required). This may change based on security requirements.
 
@@ -79,7 +79,7 @@ class RegistryBatchResponse(BaseModel):
 
 ## API 1: Search Objects
 
-**`GET /registry/search`**
+**`GET /objects/registry/search`**
 
 Search objects by descriptor using case-insensitive partial matching. Uses pg_trgm index for efficient fuzzy search.
 
@@ -122,20 +122,20 @@ Search objects by descriptor using case-insensitive partial matching. Uses pg_tr
 
 ```bash
 # Search all objects containing "alice"
-curl "http://localhost:8000/registry/search?q=alice"
+curl "http://localhost:8000/objects/registry/search?q=alice"
 
 # Search only workers
-curl "http://localhost:8000/registry/search?q=alice&object_type=worker"
+curl "http://localhost:8000/objects/registry/search?q=alice&object_type=worker"
 
 # Search with custom limit
-curl "http://localhost:8000/registry/search?q=eng&limit=50"
+curl "http://localhost:8000/objects/registry/search?q=eng&limit=50"
 ```
 
 ---
 
 ## API 2: Batch Lookup
 
-**`GET /registry/batch`**
+**`GET /objects/registry/batch`**
 
 Look up multiple objects by their OIDs in a single request. Missing OIDs are silently ignored.
 
@@ -181,14 +181,14 @@ Look up multiple objects by their OIDs in a single request. Missing OIDs are sil
 
 ```bash
 # Look up multiple objects
-curl "http://localhost:8000/registry/batch?oids=01JFXYZWRK123456789AB,01JFXYZORG123456789AB,01JFXYZNOTFOUND12345"
+curl "http://localhost:8000/objects/registry/batch?oids=01JFXYZWRK123456789AB,01JFXYZORG123456789AB,01JFXYZNOTFOUND12345"
 ```
 
 ---
 
 ## API 3: List by Type
 
-**`GET /registry/types/{object_type}`**
+**`GET /objects/registry/types/{object_type}`**
 
 List all objects of a specific type with pagination.
 
@@ -236,17 +236,17 @@ List all objects of a specific type with pagination.
 
 ```bash
 # List all workers
-curl "http://localhost:8000/registry/types/worker"
+curl "http://localhost:8000/objects/registry/types/worker"
 
 # List organizations with pagination
-curl "http://localhost:8000/registry/types/organization?limit=50&offset=100"
+curl "http://localhost:8000/objects/registry/types/organization?limit=50&offset=100"
 ```
 
 ---
 
 ## API 4: Single Object Lookup
 
-**`GET /registry/{oid}`**
+**`GET /objects/registry/{oid}`**
 
 Look up a single object by its OID.
 
@@ -278,7 +278,7 @@ Look up a single object by its OID.
 ### Example
 
 ```bash
-curl "http://localhost:8000/registry/01JFXYZWRK123456789AB"
+curl "http://localhost:8000/objects/registry/01JFXYZWRK123456789AB"
 ```
 
 ---
@@ -287,10 +287,10 @@ curl "http://localhost:8000/registry/01JFXYZWRK123456789AB"
 
 | # | Method | Path | Description |
 |---|--------|------|-------------|
-| 1 | GET | `/registry/search` | Search by descriptor (fuzzy) |
-| 2 | GET | `/registry/batch` | Batch lookup by OIDs |
-| 3 | GET | `/registry/types/{type}` | List all of a type |
-| 4 | GET | `/registry/{oid}` | Single object lookup |
+| 1 | GET | `/objects/registry/search` | Search by descriptor (fuzzy) |
+| 2 | GET | `/objects/registry/batch` | Batch lookup by OIDs |
+| 3 | GET | `/objects/registry/types/{type}` | List all of a type |
+| 4 | GET | `/objects/registry/{oid}` | Single object lookup |
 
 ---
 
@@ -304,23 +304,23 @@ BASE_URL="http://localhost:8000"
 
 # 1. Search for objects
 echo "=== Search for 'eng' ==="
-curl -s "$BASE_URL/registry/search?q=eng" | jq
+curl -s "$BASE_URL/objects/registry/search?q=eng" | jq
 
 # 2. Search with type filter
 echo -e "\n=== Search workers only ==="
-curl -s "$BASE_URL/registry/search?q=alice&object_type=worker" | jq
+curl -s "$BASE_URL/objects/registry/search?q=alice&object_type=worker" | jq
 
 # 3. List all organizations
 echo -e "\n=== List organizations ==="
-curl -s "$BASE_URL/registry/types/organization?limit=10" | jq
+curl -s "$BASE_URL/objects/registry/types/organization?limit=10" | jq
 
 # 4. Single lookup
 echo -e "\n=== Single lookup ==="
-curl -s "$BASE_URL/registry/01JFXYZWRK123456789AB" | jq
+curl -s "$BASE_URL/objects/registry/01JFXYZWRK123456789AB" | jq
 
 # 5. Batch lookup
 echo -e "\n=== Batch lookup ==="
-curl -s "$BASE_URL/registry/batch?oids=01JFXYZWRK123456789AB,01JFXYZORG123456789AB" | jq
+curl -s "$BASE_URL/objects/registry/batch?oids=01JFXYZWRK123456789AB,01JFXYZORG123456789AB" | jq
 
 echo -e "\n=== Done ==="
 ```
