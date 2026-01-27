@@ -21,9 +21,9 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 
 | Resource | Read Permission | Edit Permission |
 |----------|-----------------|-----------------|
-| Organizations | `hierarchies:organizations:read` | `hierarchies:organizations:edit` |
-| Locations | `hierarchies:locations:read` | `hierarchies:locations:edit` |
-| Service Catalogs | `hierarchies:service_catalogs:read` | `hierarchies:service_catalogs:edit` |
+| Organizations | `objects:organizations:read` | `objects:organizations:edit` |
+| Locations | `objects:locations:read` | `objects:locations:edit` |
+| Service Catalogs | `objects:service_catalogs:read` | `objects:service_catalogs:edit` |
 
 ---
 
@@ -126,11 +126,11 @@ class OrganizationResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/objects/organizations` | Create organization | `hierarchies:organizations:edit` |
-| GET | `/objects/organizations` | List organizations | `hierarchies:organizations:read` |
-| GET | `/objects/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
-| PUT | `/objects/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
-| DELETE | `/objects/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
+| POST | `/objects/organizations` | Create organization | `objects:organizations:edit` |
+| GET | `/objects/organizations` | List organizations | `objects:organizations:read` |
+| GET | `/objects/organizations/{oid}` | Get organization | `objects:organizations:read` |
+| PUT | `/objects/organizations/{oid}` | Update organization | `objects:organizations:edit` |
+| DELETE | `/objects/organizations/{oid}` | Delete organization | `objects:organizations:edit` |
 
 ### Create Organization
 
@@ -200,11 +200,11 @@ class LocationResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/objects/locations` | Create location | `hierarchies:locations:edit` |
-| GET | `/objects/locations` | List locations | `hierarchies:locations:read` |
-| GET | `/objects/locations/{oid}` | Get location | `hierarchies:locations:read` |
-| PUT | `/objects/locations/{oid}` | Update location | `hierarchies:locations:edit` |
-| DELETE | `/objects/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
+| POST | `/objects/locations` | Create location | `objects:locations:edit` |
+| GET | `/objects/locations` | List locations | `objects:locations:read` |
+| GET | `/objects/locations/{oid}` | Get location | `objects:locations:read` |
+| PUT | `/objects/locations/{oid}` | Update location | `objects:locations:edit` |
+| DELETE | `/objects/locations/{oid}` | Delete location | `objects:locations:edit` |
 
 ### Location Type Values
 
@@ -261,11 +261,11 @@ class ServiceCatalogResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/objects/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
-| GET | `/objects/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
-| GET | `/objects/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
-| PUT | `/objects/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
-| DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
+| POST | `/objects/service-catalogs` | Create entry | `objects:service_catalogs:edit` |
+| GET | `/objects/service-catalogs` | List entries | `objects:service_catalogs:read` |
+| GET | `/objects/service-catalogs/{oid}` | Get entry | `objects:service_catalogs:read` |
+| PUT | `/objects/service-catalogs/{oid}` | Update entry | `objects:service_catalogs:edit` |
+| DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `objects:service_catalogs:edit` |
 
 ### Create Service Catalog Example
 
@@ -298,23 +298,23 @@ class ServiceCatalogResponse(BaseModel):
 | # | Method | Path | Description | Permission |
 |---|--------|------|-------------|------------|
 | **Organizations** |||||
-| 1 | POST | `/objects/organizations` | Create organization | `hierarchies:organizations:edit` |
-| 2 | GET | `/objects/organizations` | List organizations | `hierarchies:organizations:read` |
-| 3 | GET | `/objects/organizations/{oid}` | Get organization | `hierarchies:organizations:read` |
-| 4 | PUT | `/objects/organizations/{oid}` | Update organization | `hierarchies:organizations:edit` |
-| 5 | DELETE | `/objects/organizations/{oid}` | Delete organization | `hierarchies:organizations:edit` |
+| 1 | POST | `/objects/organizations` | Create organization | `objects:organizations:edit` |
+| 2 | GET | `/objects/organizations` | List organizations | `objects:organizations:read` |
+| 3 | GET | `/objects/organizations/{oid}` | Get organization | `objects:organizations:read` |
+| 4 | PUT | `/objects/organizations/{oid}` | Update organization | `objects:organizations:edit` |
+| 5 | DELETE | `/objects/organizations/{oid}` | Delete organization | `objects:organizations:edit` |
 | **Locations** |||||
-| 6 | POST | `/objects/locations` | Create location | `hierarchies:locations:edit` |
-| 7 | GET | `/objects/locations` | List locations | `hierarchies:locations:read` |
-| 8 | GET | `/objects/locations/{oid}` | Get location | `hierarchies:locations:read` |
-| 9 | PUT | `/objects/locations/{oid}` | Update location | `hierarchies:locations:edit` |
-| 10 | DELETE | `/objects/locations/{oid}` | Delete location | `hierarchies:locations:edit` |
+| 6 | POST | `/objects/locations` | Create location | `objects:locations:edit` |
+| 7 | GET | `/objects/locations` | List locations | `objects:locations:read` |
+| 8 | GET | `/objects/locations/{oid}` | Get location | `objects:locations:read` |
+| 9 | PUT | `/objects/locations/{oid}` | Update location | `objects:locations:edit` |
+| 10 | DELETE | `/objects/locations/{oid}` | Delete location | `objects:locations:edit` |
 | **Service Catalogs** |||||
-| 11 | POST | `/objects/service-catalogs` | Create entry | `hierarchies:service_catalogs:edit` |
-| 12 | GET | `/objects/service-catalogs` | List entries | `hierarchies:service_catalogs:read` |
-| 13 | GET | `/objects/service-catalogs/{oid}` | Get entry | `hierarchies:service_catalogs:read` |
-| 14 | PUT | `/objects/service-catalogs/{oid}` | Update entry | `hierarchies:service_catalogs:edit` |
-| 15 | DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `hierarchies:service_catalogs:edit` |
+| 11 | POST | `/objects/service-catalogs` | Create entry | `objects:service_catalogs:edit` |
+| 12 | GET | `/objects/service-catalogs` | List entries | `objects:service_catalogs:read` |
+| 13 | GET | `/objects/service-catalogs/{oid}` | Get entry | `objects:service_catalogs:read` |
+| 14 | PUT | `/objects/service-catalogs/{oid}` | Update entry | `objects:service_catalogs:edit` |
+| 15 | DELETE | `/objects/service-catalogs/{oid}` | Delete entry | `objects:service_catalogs:edit` |
 
 ---
 
