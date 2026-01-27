@@ -425,3 +425,69 @@ export interface ArticleUpdate {
     metadata?: Record<string, unknown> | null;
     is_active?: boolean;
 }
+
+// ============================================================================
+// Activity Types (Incidents & Inquiries)
+// ============================================================================
+
+export interface Incident {
+    oid: string;
+    incident_id: string;
+    object_type: 'incident';
+    title: string;
+    description: string | null;
+    state: string;
+    priority: string | null;
+    urgency: string | null;
+    channel: string | null;
+
+    // Relationships
+    actor_oid: string;
+    actor_role: string;
+    fact: string | null;
+    assigned_to_oid: string | null;
+    service_catalog_oid: string | null;
+    assigned_group: string | null;
+
+    created_at: string;
+    updated_at: string;
+    effective_at: string;
+}
+
+export interface IncidentCreate {
+    title: string;
+    description?: string | null;
+    priority?: string | null;
+    urgency?: string | null;
+    channel?: string | null;
+    assigned_to_oid?: string | null;
+    service_catalog_oid?: string | null;
+    assigned_group?: string | null;
+    fact?: string | null;
+}
+
+export interface Inquiry {
+    oid: string;
+    object_type: 'inquiry';
+    topic: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages: any[] | null;
+    state: string;
+
+    // Relationships
+    actor_oid: string;
+    actor_role: string;
+    fact: string | null;
+
+    created_at: string;
+    updated_at: string;
+    effective_at: string;
+}
+
+export interface InquiryCreate {
+    topic?: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages?: any[] | null;
+    fact?: string | null;
+}
+

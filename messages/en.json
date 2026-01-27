@@ -41,6 +41,9 @@
         "team": "Team",
         "settings": "Settings",
         "articles": "Articles",
+        "activities": "Activities",
+        "incidents": "Incidents",
+        "inquiries": "Inquiries",
         "faqs": "FAQs"
     },
     "Chatbot": {

@@ -13,6 +13,8 @@ import {
     MapPin,
     Ticket,
     Layers,
+    AlertCircle,
+    MessageCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
@@ -127,6 +129,27 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/articles',
                         labelKey: 'articles',
                         icon: FileText,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'activities',
+                items: [
+                    {
+                        href: '/data/incidents',
+                        labelKey: 'incidents',
+                        icon: AlertCircle,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_DATA
+                        ]),
+                    },
+                    {
+                        href: '/data/inquiries',
+                        labelKey: 'inquiries',
+                        icon: MessageCircle,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),

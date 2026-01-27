@@ -32,6 +32,8 @@ import type {
     ArticleCreate,
     ArticleUpdate,
     ArticleVersion,
+    Incident,
+    Inquiry,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -439,4 +441,24 @@ export async function getArticleVersions(oid: string): Promise<ArticleVersion[]>
 
 export async function getArticleVersion(oid: string, versionNumber: number): Promise<ArticleVersion> {
     return fetchApi(`${OBJECTS_BASE}/articles/${oid}/versions/${versionNumber}`);
+}
+
+// ============================================================================
+// Activity APIs
+// ============================================================================
+
+export async function getIncidents(): Promise<Incident[]> {
+    return fetchAllPages<Incident>(`${OBJECTS_BASE}/activities/incidents`);
+}
+
+export async function getIncident(oid: string): Promise<Incident> {
+    return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`);
+}
+
+export async function getInquiries(): Promise<Inquiry[]> {
+    return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
+}
+
+export async function getInquiry(oid: string): Promise<Inquiry> {
+    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`);
 }
