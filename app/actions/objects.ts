@@ -25,6 +25,12 @@ import {
     deleteArticle,
     assignWorkerHierarchyRole,
     removeWorkerHierarchyRole,
+    createIncident,
+    updateIncident,
+    deleteIncident,
+    createInquiry,
+    updateInquiry,
+    deleteInquiry,
 } from '@/lib/api/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
@@ -675,6 +681,200 @@ export async function deleteArticleAction(oid: string) {
     try {
         await deleteArticle(oid);
         revalidatePath('/data/articles');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Activity Actions (Incidents & Inquiries)
+// ============================================================================
+
+export async function createIncidentAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createIncident';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string | null;
+    const priority = formData.get('priority') as string | null;
+    const urgency = formData.get('urgency') as string | null;
+    const channel = formData.get('channel') as string | null;
+    const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const assigned_group = formData.get('assigned_group') as string | null;
+    const fact = formData.get('fact') as string | null;
+
+    try {
+        await createIncident({
+            title,
+            description: description || undefined,
+            priority: priority || undefined,
+            urgency: urgency || undefined,
+            channel: channel || undefined,
+            assigned_to_oid: assigned_to_oid || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            assigned_group: assigned_group || undefined,
+            fact: fact || undefined,
+        });
+        revalidatePath('/data/incidents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateIncidentAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateIncident';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string | null;
+    const priority = formData.get('priority') as string | null;
+    const urgency = formData.get('urgency') as string | null;
+    const channel = formData.get('channel') as string | null;
+    const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const assigned_group = formData.get('assigned_group') as string | null;
+    const fact = formData.get('fact') as string | null;
+    const state = formData.get('state') as string | null;
+
+    try {
+        await updateIncident(oid, {
+            title,
+            description: description || undefined,
+            priority: priority || undefined,
+            urgency: urgency || undefined,
+            channel: channel || undefined,
+            assigned_to_oid: assigned_to_oid || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            assigned_group: assigned_group || undefined,
+            fact: fact || undefined,
+            state: state || undefined,
+        });
+        revalidatePath('/data/incidents');
+        revalidatePath(`/data/incidents/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteIncidentAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteIncident';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteIncident(oid);
+        revalidatePath('/data/incidents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function createInquiryAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createInquiry';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const topic = formData.get('topic') as string | null;
+    const fact = formData.get('fact') as string | null;
+    const messagesStr = formData.get('messages') as string | null;
+
+    let messages: any[] | undefined = undefined;
+    if (messagesStr) {
+        try {
+            messages = JSON.parse(messagesStr);
+        } catch (e) {
+             logger.error(`Invalid messages JSON`, e, { requestId, action });
+             throw new Error('Invalid messages JSON format');
+        }
+    }
+
+    try {
+        await createInquiry({
+            topic: topic || undefined,
+            fact: fact || undefined,
+            messages,
+        });
+        revalidatePath('/data/inquiries');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateInquiryAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateInquiry';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const topic = formData.get('topic') as string | null;
+    const fact = formData.get('fact') as string | null;
+    const state = formData.get('state') as string | null;
+    const messagesStr = formData.get('messages') as string | null;
+
+    let messages: any[] | undefined = undefined;
+    if (messagesStr) {
+        try {
+            messages = JSON.parse(messagesStr);
+        } catch (e) {
+             logger.error(`Invalid messages JSON`, e, { requestId, action });
+             throw new Error('Invalid messages JSON format');
+        }
+    }
+
+    try {
+        await updateInquiry(oid, {
+            topic: topic || undefined,
+            fact: fact || undefined,
+            state: state || undefined,
+            messages,
+        });
+        revalidatePath('/data/inquiries');
+        revalidatePath(`/data/inquiries/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteInquiryAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteInquiry';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteInquiry(oid);
+        revalidatePath('/data/inquiries');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {

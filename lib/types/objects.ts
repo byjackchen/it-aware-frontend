@@ -491,3 +491,24 @@ export interface InquiryCreate {
     fact?: string | null;
 }
 
+
+export interface IncidentUpdate {
+    title: string;
+    description?: string | null;
+    priority?: string | null;
+    urgency?: string | null;
+    channel?: string | null;
+    assigned_to_oid?: string | null;
+    service_catalog_oid?: string | null;
+    assigned_group?: string | null;
+    fact?: string | null;
+    state?: string;
+}
+
+export interface InquiryUpdate {
+    topic?: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    messages?: any[] | null;
+    fact?: string | null;
+    state?: string;
+}

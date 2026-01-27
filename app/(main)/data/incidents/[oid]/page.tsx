@@ -3,7 +3,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { getIncident, getConnectedEdges, getOrganizations, getWorkers } from '@/lib/api/objects';
+import { getIncident, getConnectedEdges, getOrganizations, getWorkers, getServiceCatalogs } from '@/lib/api/objects';
 import { IncidentDetailPage } from './IncidentDetailPage';
 
 interface PageProps {
@@ -14,11 +14,12 @@ export default async function IncidentPage({ params }: PageProps) {
     const { oid } = await params;
 
     try {
-        const [incident, edgesResponse, organizations, workers] = await Promise.all([
+        const [incident, edgesResponse, organizations, workers, serviceCatalogs] = await Promise.all([
             getIncident(oid),
             getConnectedEdges(oid),
             getOrganizations(),
             getWorkers(),
+            getServiceCatalogs(),
         ]);
 
         return (
@@ -27,6 +28,7 @@ export default async function IncidentPage({ params }: PageProps) {
                 edges={edgesResponse.items}
                 organizations={organizations}
                 workers={workers}
+                serviceCatalogs={serviceCatalogs}
             />
         );
     } catch {

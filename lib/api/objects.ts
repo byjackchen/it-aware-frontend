@@ -33,7 +33,11 @@ import type {
     ArticleUpdate,
     ArticleVersion,
     Incident,
+    IncidentCreate,
+    IncidentUpdate,
     Inquiry,
+    InquiryCreate,
+    InquiryUpdate,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -459,6 +463,59 @@ export async function getInquiries(): Promise<Inquiry[]> {
     return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
 }
 
+
 export async function getInquiry(oid: string): Promise<Inquiry> {
     return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`);
+}
+
+export async function createIncident(data: IncidentCreate): Promise<Incident> {
+    return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateIncident(oid: string, data: IncidentUpdate): Promise<Incident> {
+    return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteIncident(oid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function createInquiry(data: InquiryCreate): Promise<Inquiry> {
+    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateInquiry(oid: string, data: InquiryUpdate): Promise<Inquiry> {
+    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteInquiry(oid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
 }

@@ -135,6 +135,10 @@ class IncidentResponse(BaseModel):
 | POST | `/objects/activities/incidents` | Create incident | `objects:incidents:write` |
 | GET | `/objects/activities/incidents` | List incidents (ABAC) | `objects:incidents:read` |
 | GET | `/objects/activities/incidents/{oid}` | Get incident (ABAC) | `objects:incidents:read` |
+| PUT | `/objects/activities/incidents/{oid}` | Update incident (Explicit `fact` update) | `objects:incidents:write` |
+| DELETE | `/objects/activities/incidents/{oid}` | Delete incident | `objects:incidents:write` |
+
+> **Note on Registry Sync**: To update the global registry descriptor, you must explicitly provide the `fact` field in the `PUT` request body. It does not auto-sync from the `title`.
 
 ### ABAC Filtering
 
@@ -179,6 +183,10 @@ class InquiryResponse(BaseModel):
 | POST | `/objects/activities/inquiries` | Create inquiry | `objects:inquiries:write` |
 | GET | `/objects/activities/inquiries` | List inquiries (ABAC) | `objects:inquiries:read` |
 | GET | `/objects/activities/inquiries/{oid}` | Get inquiry (ABAC) | `objects:inquiries:read` |
+| PUT | `/objects/activities/inquiries/{oid}` | Update inquiry (Explicit `fact` update) | `objects:inquiries:write` |
+| DELETE | `/objects/activities/inquiries/{oid}` | Delete inquiry | `objects:inquiries:write` |
+
+> **Note on Registry Sync**: To update the global registry descriptor, you must explicitly provide the `fact` field in the `PUT` request body. It does not auto-sync from the `topic`.
 
 ### ABAC Filtering
 
