@@ -342,12 +342,16 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             )}
                         </div>
 
+
                         {/* Created By (Actor) - Read Only */}
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Created By</label>
                             <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                 <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{creatorName}</span>
+                                <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {creatorName}
+                                    {incident.actor_role && <span className="opacity-60 ml-1">({incident.actor_role})</span>}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -370,6 +374,33 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 {incident.fact || <span className="italic opacity-50">No fact descriptor set</span>}
                             </div>
                         )}
+                    </div>
+
+                    {/* System Information */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>System Information</label>
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg text-sm ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Object ID (OID)</span>
+                                <span className="font-mono text-xs select-all">{incident.oid}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Object Type</span>
+                                <span className="capitalize">{incident.object_type}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Created At</span>
+                                <span>{new Date(incident.created_at).toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Updated At</span>
+                                <span>{new Date(incident.updated_at).toLocaleString()}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Effective At</span>
+                                <span>{new Date(incident.effective_at).toLocaleString()}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Actions */}
