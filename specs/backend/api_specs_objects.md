@@ -487,6 +487,7 @@ class ArticleCreate(BaseModel):
     is_active: bool = True
 
 class ArticleUpdate(BaseModel):
+    service_catalog_id: Optional[str] = None
     title: str
     summary: Optional[str] = None
     markdown: str
