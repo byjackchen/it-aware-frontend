@@ -7,10 +7,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import {
     ArrowLeft,
     MessageCircle,
-    Calendar,
     User,
     Pencil,
     Save,
@@ -43,10 +43,12 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
     const [topic, setTopic] = useState(inquiry.topic || '');
     const [state, setState] = useState(inquiry.state);
     const [fact, setFact] = useState(inquiry.fact || '');
+    const [sourceSystem, setSourceSystem] = useState(inquiry.source_system || '');
     const [messagesJson, setMessagesJson] = useState(JSON.stringify(inquiry.messages || [], null, 2));
 
     const creator = workers.find(w => w.oid === inquiry.actor_oid);
     const creatorName = creator ? creator.fullname : 'Unknown Creator';
+    const creatorStableId = creator?.stable_id || 'Unknown';
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === inquiry.oid ? e.to_object : e.from_object;
@@ -70,6 +72,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
             formData.set('topic', topic);
             formData.set('state', state);
             formData.set('fact', fact);
+            if (sourceSystem.trim()) formData.set('source_system', sourceSystem.trim());
             formData.set('messages', JSON.stringify(parsedMessages));
 
             await updateInquiryAction(inquiry.oid, formData);
@@ -101,6 +104,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
         setTopic(inquiry.topic || '');
         setState(inquiry.state);
         setFact(inquiry.fact || '');
+        setSourceSystem(inquiry.source_system || '');
         setMessagesJson(JSON.stringify(inquiry.messages || [], null, 2));
         setIsEditing(false);
     };
@@ -175,24 +179,6 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{inquiry.state}</div>
                             )}
                         </div>
-
-                        {/* Created */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Created</label>
-                            <div className={`flex items-center gap-1.5 text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                <Calendar className="w-3.5 h-3.5" />
-                                <span>{new Date(inquiry.created_at).toLocaleString()}</span>
-                            </div>
-                        </div>
-
-                        {/* Created By (Actor) */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Created By</label>
-                            <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{creatorName}</span>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Messages (JSON view) */}
@@ -214,24 +200,76 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                         )}
                     </div>
 
-                    {/* Fact (Registry Descriptor) - Explicit Update */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                            Fact (Registry Descriptor)
-                            <span className="ml-2 text-xs opacity-60 font-normal">Updated explicitly, not synced from topic.</span>
-                        </label>
-                        {isEditing ? (
-                            <textarea
-                                value={fact}
-                                onChange={(e) => setFact(e.target.value)}
-                                rows={2}
-                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                            />
-                        ) : (
-                            <div className={`p-4 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
-                                {inquiry.fact || <span className="italic opacity-50">No fact descriptor set</span>}
+                    {/* Shared Activity Metadata */}
+                    <div className={`border border-dashed rounded-xl p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created By</span>
+                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                    <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    {creator ? (
+                                        <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
+                                            {creatorStableId}
+                                        </Link>
+                                    ) : (
+                                        <span>Unknown</span>
+                                    )}
+                                    {inquiry.actor_role && <span className="text-xs opacity-70">({inquiry.actor_role})</span>}
+                                </div>
                             </div>
-                        )}
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Source System</span>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={sourceSystem}
+                                        onChange={(e) => setSourceSystem(e.target.value)}
+                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                        placeholder="e.g. Slack, Web"
+                                    />
+                                ) : (
+                                    <span className="text-sm">{inquiry.source_system || 'Unknown'}</span>
+                                )}
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
+                                <span className="text-sm">{new Date(inquiry.created_at).toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
+                                <span className="text-sm">{new Date(inquiry.updated_at).toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
+                                <span className="text-sm">{new Date(inquiry.effective_at).toLocaleString()}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    Fact (Registry Descriptor)
+                                    <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
+                                </label>
+                                {isEditing ? (
+                                    <textarea
+                                        value={fact}
+                                        onChange={(e) => setFact(e.target.value)}
+                                        rows={2}
+                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    />
+                                ) : (
+                                    <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                        {inquiry.fact || <span className="italic opacity-50">No fact descriptor set</span>}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
+                                <span className="font-mono text-xs select-all">{inquiry.embedding_id || '—'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
+                                <span className="text-sm">{inquiry.embedded_at ? new Date(inquiry.embedded_at).toLocaleString() : '—'}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Actions */}

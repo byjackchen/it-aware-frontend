@@ -7,13 +7,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import {
     ArrowLeft,
     AlertCircle,
-    Calendar,
     User,
-    CheckCircle,
-    XCircle,
     Building2,
     Pencil,
     Save,
@@ -56,10 +54,17 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
     const [assignedToOid, setAssignedToOid] = useState(incident.assigned_to_oid || '');
     const [serviceCatalogOid, setServiceCatalogOid] = useState(incident.service_catalog_oid || '');
     const [assignedGroup, setAssignedGroup] = useState(incident.assigned_group || '');
+    const [configurationItemOid, setConfigurationItemOid] = useState(incident.configuration_item_oid || '');
+    const [chatTranscripts, setChatTranscripts] = useState(
+        incident.chat_transcripts ? JSON.stringify(incident.chat_transcripts, null, 2) : ''
+    );
+    const [sourceSystem, setSourceSystem] = useState(incident.source_system || '');
     const [fact, setFact] = useState(incident.fact || '');
 
     const assignedWorkerName = workers.find((w) => w.oid === incident.assigned_to_oid)?.fullname || 'Unassigned';
-    const creatorName = workers.find(w => w.oid === incident.actor_oid)?.fullname || 'Unknown Creator';
+    const creator = workers.find(w => w.oid === incident.actor_oid);
+    const creatorName = creator?.fullname || 'Unknown Creator';
+    const creatorStableId = creator?.stable_id || 'Unknown';
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === incident.oid ? e.to_object : e.from_object;
@@ -79,6 +84,16 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
     const handleSave = async () => {
         setIsPending(true);
         try {
+            const chatTranscriptsTrimmed = chatTranscripts.trim();
+            if (chatTranscriptsTrimmed) {
+                try {
+                    JSON.parse(chatTranscriptsTrimmed);
+                } catch {
+                    alert('Chat transcripts must be valid JSON.');
+                    return;
+                }
+            }
+
             const formData = new FormData();
             formData.set('title', title);
             formData.set('description', description);
@@ -89,6 +104,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
             if (assignedToOid) formData.set('assigned_to_oid', assignedToOid);
             if (serviceCatalogOid) formData.set('service_catalog_oid', serviceCatalogOid);
             formData.set('assigned_group', assignedGroup);
+            if (configurationItemOid) formData.set('configuration_item_oid', configurationItemOid);
+            if (chatTranscriptsTrimmed) formData.set('chat_transcripts', chatTranscriptsTrimmed);
+            if (sourceSystem) formData.set('source_system', sourceSystem);
             formData.set('fact', fact);
 
             await updateIncidentAction(incident.oid, formData);
@@ -126,6 +144,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
         setAssignedToOid(incident.assigned_to_oid || '');
         setServiceCatalogOid(incident.service_catalog_oid || '');
         setAssignedGroup(incident.assigned_group || '');
+        setConfigurationItemOid(incident.configuration_item_oid || '');
+        setChatTranscripts(incident.chat_transcripts ? JSON.stringify(incident.chat_transcripts, null, 2) : '');
+        setSourceSystem(incident.source_system || '');
         setFact(incident.fact || '');
         setIsEditing(false);
     };
@@ -342,63 +363,114 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             )}
                         </div>
 
-
-                        {/* Created By (Actor) - Read Only */}
+                        {/* Configuration Item */}
                         <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Created By</label>
-                            <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                    {creatorName}
-                                    {incident.actor_role && <span className="opacity-60 ml-1">({incident.actor_role})</span>}
-                                </span>
-                            </div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Configuration Item OID</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={configurationItemOid}
+                                    onChange={(e) => setConfigurationItemOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    placeholder="Optional configuration item OID"
+                                />
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.configuration_item_oid || 'None'}</span>
+                                </div>
+                            )}
                         </div>
+
                     </div>
 
-                    {/* Fact (Registry Descriptor) - Explicit Update */}
+                    {/* Chat Transcripts */}
                     <div>
-                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                            Fact (Registry Descriptor)
-                            <span className="ml-2 text-xs opacity-60 font-normal">Updated explicitly, not synced from title.</span>
-                        </label>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Chat Transcripts (JSON)</label>
                         {isEditing ? (
                             <textarea
-                                value={fact}
-                                onChange={(e) => setFact(e.target.value)}
-                                rows={2}
-                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                value={chatTranscripts}
+                                onChange={(e) => setChatTranscripts(e.target.value)}
+                                rows={4}
+                                className={`w-full px-3 py-2 rounded-lg font-mono text-sm ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                placeholder='[{\"role\":\"user\",\"message\":\"...\"}]'
                             />
                         ) : (
-                            <div className={`p-4 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
-                                {incident.fact || <span className="italic opacity-50">No fact descriptor set</span>}
+                            <div className={`p-4 rounded-lg whitespace-pre-wrap font-mono text-xs ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                {incident.chat_transcripts
+                                    ? JSON.stringify(incident.chat_transcripts, null, 2)
+                                    : <span className="italic opacity-50">No chat transcripts</span>}
                             </div>
                         )}
                     </div>
 
-                    {/* System Information */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>System Information</label>
-                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg text-sm ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                    {/* Shared Activity Metadata */}
+                    <div className={`border border-dashed rounded-xl p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Object ID (OID)</span>
-                                <span className="font-mono text-xs select-all">{incident.oid}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created By</span>
+                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                    <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    {creator ? (
+                                        <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
+                                            {creatorStableId}
+                                        </Link>
+                                    ) : (
+                                        <span>Unknown</span>
+                                    )}
+                                    {incident.actor_role && <span className="text-xs opacity-70">({incident.actor_role})</span>}
+                                </div>
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Object Type</span>
-                                <span className="capitalize">{incident.object_type}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Source System</span>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={sourceSystem}
+                                        onChange={(e) => setSourceSystem(e.target.value)}
+                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                        placeholder="e.g. ServiceNow, Slack"
+                                    />
+                                ) : (
+                                    <span className="text-sm">{incident.source_system || 'Unknown'}</span>
+                                )}
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Created At</span>
-                                <span>{new Date(incident.created_at).toLocaleString()}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
+                                <span className="text-sm">{new Date(incident.created_at).toLocaleString()}</span>
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Updated At</span>
-                                <span>{new Date(incident.updated_at).toLocaleString()}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
+                                <span className="text-sm">{new Date(incident.updated_at).toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
+                                <span className="text-sm">{new Date(incident.effective_at).toLocaleString()}</span>
                             </div>
                             <div className="md:col-span-2">
-                                <span className="block text-xs font-semibold opacity-50 uppercase tracking-wider mb-1">Effective At</span>
-                                <span>{new Date(incident.effective_at).toLocaleString()}</span>
+                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    Fact (Registry Descriptor)
+                                    <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
+                                </label>
+                                {isEditing ? (
+                                    <textarea
+                                        value={fact}
+                                        onChange={(e) => setFact(e.target.value)}
+                                        rows={2}
+                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    />
+                                ) : (
+                                    <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                        {incident.fact || <span className="italic opacity-50">No fact descriptor set</span>}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
+                                <span className="font-mono text-xs select-all">{incident.embedding_id || '—'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
+                                <span className="text-sm">{incident.embedded_at ? new Date(incident.embedded_at).toLocaleString() : '—'}</span>
                             </div>
                         </div>
                     </div>

@@ -445,9 +445,14 @@ export interface Incident {
     actor_oid: string;
     actor_role: string;
     fact: string | null;
+    source_system: string | null;
+    embedding_id: string | null;
+    embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
+    configuration_item_oid: string | null;
     assigned_group: string | null;
+    chat_transcripts: Record<string, unknown> | null;
 
     created_at: string;
     updated_at: string;
@@ -455,6 +460,7 @@ export interface Incident {
 }
 
 export interface IncidentCreate {
+    incident_id?: string | null;
     title: string;
     description?: string | null;
     priority?: string | null;
@@ -462,7 +468,10 @@ export interface IncidentCreate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
     assigned_group?: string | null;
+    chat_transcripts?: Record<string, unknown> | null;
+    source_system?: string | null;
     fact?: string | null;
 }
 
@@ -478,6 +487,9 @@ export interface Inquiry {
     actor_oid: string;
     actor_role: string;
     fact: string | null;
+    source_system?: string | null;
+    embedding_id?: string | null;
+    embedded_at?: string | null;
 
     created_at: string;
     updated_at: string;
@@ -489,6 +501,7 @@ export interface InquiryCreate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages?: any[] | null;
     fact?: string | null;
+    source_system?: string | null;
 }
 
 
@@ -500,7 +513,10 @@ export interface IncidentUpdate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
     assigned_group?: string | null;
+    chat_transcripts?: Record<string, unknown> | null;
+    source_system?: string | null;
     fact?: string | null;
     state?: string;
 }
@@ -510,5 +526,6 @@ export interface InquiryUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages?: any[] | null;
     fact?: string | null;
+    source_system?: string | null;
     state?: string;
 }

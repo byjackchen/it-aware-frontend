@@ -44,6 +44,9 @@ class Activity(Base):
     
     # AI/Search context
     fact = Column(Text, nullable=True) # Text embedding source
+    source_system = Column(Text, nullable=True)
+    embedding_id = Column(Text, nullable=True)
+    embedded_at = Column(DateTime(timezone=True), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -59,16 +62,18 @@ class Incident(Base):
 
     oid = Column(BYTEA(16), ForeignKey("activities.bases.oid", ondelete="CASCADE"), primary_key=True)
     incident_id = Column(Text, unique=True, nullable=False)
+    channel = Column(Text, nullable=True)
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
     state = Column(Text, nullable=False)
     priority = Column(Text, nullable=True)
     urgency = Column(Text, nullable=True)
-    channel = Column(Text, nullable=True)
     
     assigned_to_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
     service_catalog_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     assigned_group = Column(Text, nullable=True)
+    configuration_item_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
+    chat_transcripts = Column(JSONB, nullable=True)
 ```
 
 ### Inquiry
@@ -94,6 +99,7 @@ Incidents represent service disruptions or outages.
 
 ```python
 class IncidentCreate(BaseModel):
+    incident_id: Optional[str] = None
     title: str
     description: Optional[str] = None
     priority: Optional[str] = None
@@ -101,7 +107,10 @@ class IncidentCreate(BaseModel):
     channel: Optional[str] = None
     assigned_to_oid: Optional[str] = None
     service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
     assigned_group: Optional[str] = None
+    chat_transcripts: Optional[Dict[str, Any]] = None
+    source_system: Optional[str] = None
     fact: Optional[str] = None
 
 class IncidentResponse(BaseModel):
@@ -119,9 +128,14 @@ class IncidentResponse(BaseModel):
     actor_oid: str
     actor_role: str
     fact: Optional[str]
+    source_system: Optional[str]
+    embedding_id: Optional[str]
+    embedded_at: Optional[datetime]
     assigned_to_oid: Optional[str]
     service_catalog_oid: Optional[str]
+    configuration_item_oid: Optional[str]
     assigned_group: Optional[str]
+    chat_transcripts: Optional[Dict[str, Any]]
     
     created_at: datetime
     updated_at: datetime
@@ -158,6 +172,7 @@ class InquiryCreate(BaseModel):
     topic: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
     fact: Optional[str] = None
+    source_system: Optional[str] = None
 
 class InquiryResponse(BaseModel):
     oid: str
@@ -170,6 +185,9 @@ class InquiryResponse(BaseModel):
     actor_oid: str
     actor_role: str
     fact: Optional[str]
+    source_system: Optional[str]
+    embedding_id: Optional[str]
+    embedded_at: Optional[datetime]
     
     created_at: datetime
     updated_at: datetime

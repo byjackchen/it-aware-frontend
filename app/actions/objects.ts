@@ -700,6 +700,7 @@ export async function createIncidentAction(formData: FormData) {
     const startTime = Date.now();
     logger.info(`Started`, { requestId, action });
 
+    const incident_id = formData.get('incident_id') as string | null;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
@@ -708,10 +709,24 @@ export async function createIncidentAction(formData: FormData) {
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
     const assigned_group = formData.get('assigned_group') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+    const chat_transcripts_str = formData.get('chat_transcripts') as string | null;
+    const source_system = formData.get('source_system') as string | null;
     const fact = formData.get('fact') as string | null;
+
+    let chat_transcripts: Record<string, unknown> | undefined = undefined;
+    if (chat_transcripts_str) {
+        try {
+            chat_transcripts = JSON.parse(chat_transcripts_str);
+        } catch (e) {
+            logger.error(`Invalid chat_transcripts JSON`, e, { requestId, action });
+            throw new Error('Invalid chat_transcripts JSON format');
+        }
+    }
 
     try {
         await createIncident({
+            incident_id: incident_id || undefined,
             title,
             description: description || undefined,
             priority: priority || undefined,
@@ -720,6 +735,9 @@ export async function createIncidentAction(formData: FormData) {
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
             assigned_group: assigned_group || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
+            chat_transcripts,
+            source_system: source_system || undefined,
             fact: fact || undefined,
         });
         revalidatePath('/data/incidents');
@@ -746,8 +764,21 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
     const assigned_group = formData.get('assigned_group') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+    const chat_transcripts_str = formData.get('chat_transcripts') as string | null;
+    const source_system = formData.get('source_system') as string | null;
     const fact = formData.get('fact') as string | null;
     const state = formData.get('state') as string | null;
+
+    let chat_transcripts: Record<string, unknown> | undefined = undefined;
+    if (chat_transcripts_str) {
+        try {
+            chat_transcripts = JSON.parse(chat_transcripts_str);
+        } catch (e) {
+            logger.error(`Invalid chat_transcripts JSON`, e, { requestId, action });
+            throw new Error('Invalid chat_transcripts JSON format');
+        }
+    }
 
     try {
         await updateIncident(oid, {
@@ -759,6 +790,9 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
             assigned_group: assigned_group || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
+            chat_transcripts,
+            source_system: source_system || undefined,
             fact: fact || undefined,
             state: state || undefined,
         });
@@ -799,6 +833,7 @@ export async function createInquiryAction(formData: FormData) {
 
     const topic = formData.get('topic') as string | null;
     const fact = formData.get('fact') as string | null;
+    const source_system = formData.get('source_system') as string | null;
     const messagesStr = formData.get('messages') as string | null;
 
     let messages: any[] | undefined = undefined;
@@ -815,6 +850,7 @@ export async function createInquiryAction(formData: FormData) {
         await createInquiry({
             topic: topic || undefined,
             fact: fact || undefined,
+            source_system: source_system || undefined,
             messages,
         });
         revalidatePath('/data/inquiries');
@@ -836,6 +872,7 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
     const topic = formData.get('topic') as string | null;
     const fact = formData.get('fact') as string | null;
     const state = formData.get('state') as string | null;
+    const source_system = formData.get('source_system') as string | null;
     const messagesStr = formData.get('messages') as string | null;
 
     let messages: any[] | undefined = undefined;
@@ -852,6 +889,7 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
         await updateInquiry(oid, {
             topic: topic || undefined,
             fact: fact || undefined,
+            source_system: source_system || undefined,
             state: state || undefined,
             messages,
         });
