@@ -40,7 +40,7 @@ class Activity(Base):
     
     # Actor (Who performed the activity)
     actor_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=False)
-    actor_role = Column(Text, nullable=False) # e.g., "Caller", "User"
+    actor_role = Column(Text, nullable=False) # e.g., "caller", "user"
     
     # AI/Search context
     fact = Column(Text, nullable=True) # Text embedding source
@@ -100,6 +100,8 @@ Incidents represent service disruptions or outages.
 ```python
 class IncidentCreate(BaseModel):
     incident_id: Optional[str] = None
+    actor_oid: str
+    actor_role: Optional[str] = None  # Defaults to "caller"
     title: str
     description: Optional[str] = None
     priority: Optional[str] = None
@@ -169,6 +171,8 @@ Inquiries represent questions or conversation threads (e.g., chat with AI or sup
 
 ```python
 class InquiryCreate(BaseModel):
+    actor_oid: str
+    actor_role: Optional[str] = None  # Defaults to "user"
     topic: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
     fact: Optional[str] = None

@@ -461,6 +461,8 @@ export interface Incident {
 
 export interface IncidentCreate {
     incident_id?: string | null;
+    actor_oid: string;
+    actor_role?: string | null;
     title: string;
     description?: string | null;
     priority?: string | null;
@@ -497,6 +499,8 @@ export interface Inquiry {
 }
 
 export interface InquiryCreate {
+    actor_oid: string;
+    actor_role?: string | null;
     topic?: string | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages?: any[] | null;

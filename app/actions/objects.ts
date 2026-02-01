@@ -701,6 +701,8 @@ export async function createIncidentAction(formData: FormData) {
     logger.info(`Started`, { requestId, action });
 
     const incident_id = formData.get('incident_id') as string | null;
+    const actor_oid = formData.get('actor_oid') as string;
+    const actor_role = formData.get('actor_role') as string | null;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
@@ -727,6 +729,8 @@ export async function createIncidentAction(formData: FormData) {
     try {
         await createIncident({
             incident_id: incident_id || undefined,
+            actor_oid,
+            actor_role: actor_role || undefined,
             title,
             description: description || undefined,
             priority: priority || undefined,
@@ -831,6 +835,8 @@ export async function createInquiryAction(formData: FormData) {
     const startTime = Date.now();
     logger.info(`Started`, { requestId, action });
 
+    const actor_oid = formData.get('actor_oid') as string;
+    const actor_role = formData.get('actor_role') as string | null;
     const topic = formData.get('topic') as string | null;
     const fact = formData.get('fact') as string | null;
     const source_system = formData.get('source_system') as string | null;
@@ -848,6 +854,8 @@ export async function createInquiryAction(formData: FormData) {
 
     try {
         await createInquiry({
+            actor_oid,
+            actor_role: actor_role || undefined,
             topic: topic || undefined,
             fact: fact || undefined,
             source_system: source_system || undefined,

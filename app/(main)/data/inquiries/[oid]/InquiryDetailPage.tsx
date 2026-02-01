@@ -46,9 +46,10 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
     const [sourceSystem, setSourceSystem] = useState(inquiry.source_system || '');
     const [messagesJson, setMessagesJson] = useState(JSON.stringify(inquiry.messages || [], null, 2));
 
-    const creator = workers.find(w => w.oid === inquiry.actor_oid);
-    const creatorName = creator ? creator.fullname : 'Unknown Creator';
+    const creator = workers.find((w) => w.oid === inquiry.actor_oid);
     const creatorStableId = creator?.stable_id || 'Unknown';
+    const actorRoleLabel = inquiry.actor_role || 'user';
+    const actorOidLabel = inquiry.actor_oid || 'Unknown';
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === inquiry.oid ? e.to_object : e.from_object;
@@ -204,7 +205,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                     <div className={`border border-dashed rounded-xl p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created By</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Actor</span>
                                 <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                                     <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     {creator ? (
@@ -212,10 +213,13 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                             {creatorStableId}
                                         </Link>
                                     ) : (
-                                        <span>Unknown</span>
+                                        <span className="font-mono text-xs">{actorOidLabel}</span>
                                     )}
-                                    {inquiry.actor_role && <span className="text-xs opacity-70">({inquiry.actor_role})</span>}
                                 </div>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Actor Role</span>
+                                <span className="text-sm">{actorRoleLabel}</span>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Source System</span>
