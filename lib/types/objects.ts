@@ -418,8 +418,8 @@ export interface Incident {
     actor_role: string;
     fact: string | null;
     source_system: string | null;
-    embedding_id: string | null;
-    embedded_at: string | null;
+    fact_embedding_id: string | null;
+    fact_embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
     configuration_item_oid: string | null;
@@ -465,8 +465,8 @@ export interface Inquiry {
     actor_role: string;
     fact: string | null;
     source_system?: string | null;
-    embedding_id?: string | null;
-    embedded_at?: string | null;
+    fact_embedding_id: string | null;
+    fact_embedded_at: string | null;
 
     created_at: string;
     updated_at: string;

@@ -45,8 +45,8 @@ class Activity(Base):
     # AI/Search context
     fact = Column(Text, nullable=True) # Text embedding source
     source_system = Column(Text, nullable=True)
-    embedding_id = Column(Text, nullable=True)
-    embedded_at = Column(DateTime(timezone=True), nullable=True)
+    fact_embedding_id = Column(Text, nullable=True)
+    fact_embedded_at = Column(DateTime(timezone=True), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -104,6 +104,7 @@ class IncidentCreate(BaseModel):
     actor_role: Optional[str] = None  # Defaults to "caller"
     title: str
     description: Optional[str] = None
+    fact: Optional[str] = None
     priority: Optional[str] = None
     urgency: Optional[str] = None
     channel: Optional[str] = None
@@ -113,7 +114,6 @@ class IncidentCreate(BaseModel):
     assigned_group: Optional[str] = None
     chat_transcripts: Optional[Dict[str, Any]] = None
     source_system: Optional[str] = None
-    fact: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     effective_at: Optional[datetime] = None
@@ -123,6 +123,7 @@ class IncidentUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     state: Optional[str] = None
+    fact: Optional[str] = None
     priority: Optional[str] = None
     urgency: Optional[str] = None
     channel: Optional[str] = None
@@ -132,9 +133,6 @@ class IncidentUpdate(BaseModel):
     assigned_group: Optional[str] = None
     chat_transcripts: Optional[Dict[str, Any]] = None
     source_system: Optional[str] = None
-    fact: Optional[str] = None
-    embedding_id: Optional[str] = None
-    embedded_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     effective_at: Optional[datetime] = None
@@ -155,8 +153,8 @@ class IncidentResponse(BaseModel):
     actor_role: str
     fact: Optional[str]
     source_system: Optional[str]
-    embedding_id: Optional[str]
-    embedded_at: Optional[datetime]
+    fact_embedding_id: Optional[str]
+    fact_embedded_at: Optional[datetime]
     assigned_to_oid: Optional[str]
     service_catalog_oid: Optional[str]
     configuration_item_oid: Optional[str]
@@ -177,10 +175,10 @@ class IncidentResponse(BaseModel):
 | POST | `/objects/activities/incidents` | Create incident | `objects:incidents:write` |
 | GET | `/objects/activities/incidents` | List incidents (ABAC) | `objects:incidents:read` |
 | GET | `/objects/activities/incidents/{oid}` | Get incident (ABAC) | `objects:incidents:read` |
-| PUT | `/objects/activities/incidents/{oid}` | Update incident (Explicit `fact` update) | `objects:incidents:write` |
+| PUT | `/objects/activities/incidents/{oid}` | Update incident | `objects:incidents:write` |
 | DELETE | `/objects/activities/incidents/{oid}` | Delete incident | `objects:incidents:write` |
 
-> **Note on Registry Sync**: To update the global registry descriptor, you must explicitly provide the `fact` field in the `PUT` request body. It does not auto-sync from the `title`.
+> **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
 
 ### ABAC Filtering
 
@@ -213,8 +211,6 @@ class InquiryUpdate(BaseModel):
     state: Optional[str] = None
     fact: Optional[str] = None
     source_system: Optional[str] = None
-    embedding_id: Optional[str] = None
-    embedded_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     effective_at: Optional[datetime] = None
@@ -231,8 +227,8 @@ class InquiryResponse(BaseModel):
     actor_role: str
     fact: Optional[str]
     source_system: Optional[str]
-    embedding_id: Optional[str]
-    embedded_at: Optional[datetime]
+    fact_embedding_id: Optional[str]
+    fact_embedded_at: Optional[datetime]
     
     created_at: datetime
     updated_at: datetime
@@ -248,10 +244,10 @@ class InquiryResponse(BaseModel):
 | POST | `/objects/activities/inquiries` | Create inquiry | `objects:inquiries:write` |
 | GET | `/objects/activities/inquiries` | List inquiries (ABAC) | `objects:inquiries:read` |
 | GET | `/objects/activities/inquiries/{oid}` | Get inquiry (ABAC) | `objects:inquiries:read` |
-| PUT | `/objects/activities/inquiries/{oid}` | Update inquiry (Explicit `fact` update) | `objects:inquiries:write` |
+| PUT | `/objects/activities/inquiries/{oid}` | Update inquiry | `objects:inquiries:write` |
 | DELETE | `/objects/activities/inquiries/{oid}` | Delete inquiry | `objects:inquiries:write` |
 
-> **Note on Registry Sync**: To update the global registry descriptor, you must explicitly provide the `fact` field in the `PUT` request body. It does not auto-sync from the `topic`.
+> **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
 
 ### ABAC Filtering
 

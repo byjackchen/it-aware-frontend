@@ -304,7 +304,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                             <div className="md:col-span-2">
                                 <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                     Fact (Registry Descriptor)
-                                    <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
+                                    <span className="ml-2 text-xs opacity-60 font-normal">Updates trigger embedding refresh.</span>
                                 </label>
                                 {isEditing ? (
                                     <textarea
@@ -320,12 +320,12 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 )}
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
-                                <span className="font-mono text-xs select-all">{inquiry.embedding_id || '—'}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedding ID</span>
+                                <span className="font-mono text-xs select-all">{inquiry.fact_embedding_id || '—'}</span>
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
-                                <span className="text-sm">{inquiry.embedded_at ? new Date(inquiry.embedded_at).toLocaleString() : '—'}</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedded At</span>
+                                <span className="text-sm">{inquiry.fact_embedded_at ? new Date(inquiry.fact_embedded_at).toLocaleString() : '—'}</span>
                             </div>
                         </div>
                     </div>

@@ -503,7 +503,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                     <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                             Fact (Registry Descriptor)
-                            <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
+                            <span className="ml-2 text-xs opacity-60 font-normal">Updates trigger embedding refresh.</span>
                         </label>
                         {isEditing ? (
                             <textarea
@@ -521,13 +521,13 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
-                            <span className="font-mono text-xs select-all">{incident.embedding_id || '—'}</span>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedding ID</span>
+                            <span className="font-mono text-xs select-all">{incident.fact_embedding_id || '—'}</span>
                         </div>
                         <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedded At</span>
                             <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                {incident.embedded_at ? new Date(incident.embedded_at).toLocaleString() : '—'}
+                                {incident.fact_embedded_at ? new Date(incident.fact_embedded_at).toLocaleString() : '—'}
                             </span>
                         </div>
                     </div>
