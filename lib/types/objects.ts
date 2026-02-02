@@ -447,6 +447,9 @@ export interface IncidentCreate {
     chat_transcripts?: Record<string, unknown> | null;
     source_system?: string | null;
     fact?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
 }
 
 export interface Inquiry {
@@ -478,6 +481,9 @@ export interface InquiryCreate {
     messages?: any[] | null;
     fact?: string | null;
     source_system?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
 }
 
 
@@ -496,6 +502,9 @@ export interface IncidentUpdate {
     source_system?: string | null;
     fact?: string | null;
     state?: string;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
 }
 
 export interface InquiryUpdate {
@@ -505,4 +514,7 @@ export interface InquiryUpdate {
     fact?: string | null;
     source_system?: string | null;
     state?: string;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
 }

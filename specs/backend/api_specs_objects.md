@@ -16,6 +16,9 @@ The Objects module manages business entities that are not hierarchical but inter
 > [!NOTE]
 > **Organizations and Locations** have been moved to [api_specs_objects_hierarchies.md](./api_specs_objects_hierarchies.md) as they are hierarchical entities.
 
+> [!NOTE]
+> **Activities (Incidents/Inquiries)** are defined in [api_specs_objects_activities.md](./api_specs_objects_activities.md). They now accept explicit `created_at`, `updated_at`, and `effective_at` (timezone-aware ISO8601) to reflect external source timestamps.
+
 ---
 
 ## Security Model

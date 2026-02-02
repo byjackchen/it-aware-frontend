@@ -45,6 +45,9 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
     const [fact, setFact] = useState(inquiry.fact || '');
     const [sourceSystem, setSourceSystem] = useState(inquiry.source_system || '');
     const [messagesJson, setMessagesJson] = useState(JSON.stringify(inquiry.messages || [], null, 2));
+    const [createdAt, setCreatedAt] = useState(inquiry.created_at);
+    const [updatedAt, setUpdatedAt] = useState(inquiry.updated_at);
+    const [effectiveAt, setEffectiveAt] = useState(inquiry.effective_at);
 
     const creator = workers.find((w) => w.oid === inquiry.actor_oid);
     const creatorStableId = creator?.stable_id || 'Unknown';
@@ -75,6 +78,9 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
             formData.set('fact', fact);
             if (sourceSystem.trim()) formData.set('source_system', sourceSystem.trim());
             formData.set('messages', JSON.stringify(parsedMessages));
+            if (createdAt.trim()) formData.set('created_at', createdAt.trim());
+            if (updatedAt.trim()) formData.set('updated_at', updatedAt.trim());
+            if (effectiveAt.trim()) formData.set('effective_at', effectiveAt.trim());
 
             await updateInquiryAction(inquiry.oid, formData);
             setIsEditing(false);
@@ -107,6 +113,9 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
         setFact(inquiry.fact || '');
         setSourceSystem(inquiry.source_system || '');
         setMessagesJson(JSON.stringify(inquiry.messages || [], null, 2));
+        setCreatedAt(inquiry.created_at);
+        setUpdatedAt(inquiry.updated_at);
+        setEffectiveAt(inquiry.effective_at);
         setIsEditing(false);
     };
 
@@ -236,16 +245,61 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 )}
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
-                                <span className="text-sm">{new Date(inquiry.created_at).toLocaleString()}</span>
+                                {isEditing ? (
+                                    <>
+                                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Created At (ISO 8601)</label>
+                                        <input
+                                            type="text"
+                                            value={createdAt}
+                                            onChange={(e) => setCreatedAt(e.target.value)}
+                                            className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                            placeholder="2026-02-02T12:34:56Z"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
+                                        <span className="text-sm">{new Date(inquiry.created_at).toLocaleString()}</span>
+                                    </>
+                                )}
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
-                                <span className="text-sm">{new Date(inquiry.updated_at).toLocaleString()}</span>
+                                {isEditing ? (
+                                    <>
+                                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Updated At (ISO 8601)</label>
+                                        <input
+                                            type="text"
+                                            value={updatedAt}
+                                            onChange={(e) => setUpdatedAt(e.target.value)}
+                                            className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                            placeholder="2026-02-02T12:34:56Z"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
+                                        <span className="text-sm">{new Date(inquiry.updated_at).toLocaleString()}</span>
+                                    </>
+                                )}
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
-                                <span className="text-sm">{new Date(inquiry.effective_at).toLocaleString()}</span>
+                                {isEditing ? (
+                                    <>
+                                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Effective At (ISO 8601)</label>
+                                        <input
+                                            type="text"
+                                            value={effectiveAt}
+                                            onChange={(e) => setEffectiveAt(e.target.value)}
+                                            className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                            placeholder="2026-02-02T12:34:56Z"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
+                                        <span className="text-sm">{new Date(inquiry.effective_at).toLocaleString()}</span>
+                                    </>
+                                )}
                             </div>
                             <div className="md:col-span-2">
                                 <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>

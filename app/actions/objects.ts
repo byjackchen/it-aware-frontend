@@ -637,6 +637,9 @@ export async function createIncidentAction(formData: FormData) {
     const chat_transcripts_str = formData.get('chat_transcripts') as string | null;
     const source_system = formData.get('source_system') as string | null;
     const fact = formData.get('fact') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
 
     let chat_transcripts: Record<string, unknown> | undefined = undefined;
     if (chat_transcripts_str) {
@@ -665,6 +668,9 @@ export async function createIncidentAction(formData: FormData) {
             chat_transcripts,
             source_system: source_system || undefined,
             fact: fact || undefined,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
         });
         revalidatePath('/data/incidents');
         const duration = Date.now() - startTime;
@@ -696,6 +702,9 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     const source_system = formData.get('source_system') as string | null;
     const fact = formData.get('fact') as string | null;
     const state = formData.get('state') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
 
     let chat_transcripts: Record<string, unknown> | undefined = undefined;
     if (chat_transcripts_str) {
@@ -723,6 +732,9 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
             source_system: source_system || undefined,
             fact: fact || undefined,
             state: state || undefined,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
         });
         revalidatePath('/data/incidents');
         revalidatePath(`/data/incidents/${oid}`);
@@ -765,6 +777,9 @@ export async function createInquiryAction(formData: FormData) {
     const fact = formData.get('fact') as string | null;
     const source_system = formData.get('source_system') as string | null;
     const messagesStr = formData.get('messages') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
 
     let messages: any[] | undefined = undefined;
     if (messagesStr) {
@@ -784,6 +799,9 @@ export async function createInquiryAction(formData: FormData) {
             fact: fact || undefined,
             source_system: source_system || undefined,
             messages,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
         });
         revalidatePath('/data/inquiries');
         const duration = Date.now() - startTime;
@@ -806,6 +824,9 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
     const state = formData.get('state') as string | null;
     const source_system = formData.get('source_system') as string | null;
     const messagesStr = formData.get('messages') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
 
     let messages: any[] | undefined = undefined;
     if (messagesStr) {
@@ -824,6 +845,9 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
             source_system: source_system || undefined,
             state: state || undefined,
             messages,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
         });
         revalidatePath('/data/inquiries');
         revalidatePath(`/data/inquiries/${oid}`);

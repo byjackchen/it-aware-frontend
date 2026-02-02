@@ -114,6 +114,30 @@ class IncidentCreate(BaseModel):
     chat_transcripts: Optional[Dict[str, Any]] = None
     source_system: Optional[str] = None
     fact: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
+
+class IncidentUpdate(BaseModel):
+    stable_id: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    state: Optional[str] = None
+    priority: Optional[str] = None
+    urgency: Optional[str] = None
+    channel: Optional[str] = None
+    assigned_to_oid: Optional[str] = None
+    service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
+    assigned_group: Optional[str] = None
+    chat_transcripts: Optional[Dict[str, Any]] = None
+    source_system: Optional[str] = None
+    fact: Optional[str] = None
+    embedding_id: Optional[str] = None
+    embedded_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
 
 class IncidentResponse(BaseModel):
     oid: str
@@ -143,6 +167,8 @@ class IncidentResponse(BaseModel):
     updated_at: datetime
     effective_at: datetime
 ```
+
+> **Timestamp behavior**: `created_at`, `updated_at`, and `effective_at` reflect the external system when provided (timezone-aware ISO8601 like `2026-02-02T12:34:56Z`). If omitted, defaults are used on create and existing values are preserved on update.
 
 ### Endpoints
 
@@ -177,6 +203,21 @@ class InquiryCreate(BaseModel):
     messages: Optional[List[Dict[str, Any]]] = None
     fact: Optional[str] = None
     source_system: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
+
+class InquiryUpdate(BaseModel):
+    topic: Optional[str] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    state: Optional[str] = None
+    fact: Optional[str] = None
+    source_system: Optional[str] = None
+    embedding_id: Optional[str] = None
+    embedded_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
 
 class InquiryResponse(BaseModel):
     oid: str
@@ -197,6 +238,8 @@ class InquiryResponse(BaseModel):
     updated_at: datetime
     effective_at: datetime
 ```
+
+> **Timestamp behavior**: `created_at`, `updated_at`, and `effective_at` reflect the external system when provided (timezone-aware ISO8601 like `2026-02-02T12:34:56Z`). If omitted, defaults are used on create and existing values are preserved on update.
 
 ### Endpoints
 
