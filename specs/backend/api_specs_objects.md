@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Objects module manages business entities that are not hierarchical but interact with hierarchies. Workers belong to organizations and locations, and tickets are owned by workers within organizations. These entities are automatically registered in the Global Registry for unified lookup.
+The Objects module manages business entities that are not hierarchical but interact with hierarchies. Workers belong to organizations and locations. These entities are automatically registered in the Global Registry for unified lookup.
 
 ### Module Structure
 
@@ -10,7 +10,6 @@ The Objects module manages business entities that are not hierarchical but inter
 /objects/
 ├── /workers                - Worker (employee) management
 │   └── /{worker_oid}/hardwares - Hardware assigned to workers
-├── /tickets                - Ticket management with ABAC filtering
 └── /worker-hierarchy-roles - Role assignments at hierarchy nodes
 ```
 
@@ -26,10 +25,7 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 | Resource | Read Permission | Edit Permission |
 |----------|-----------------|-----------------|
 | Workers | `objects:workers:read` | `objects:workers:edit` |
-| Tickets | `objects:tickets:read` | `objects:tickets:write` |
 | Worker-Hierarchy-Roles | `objects:worker_hierarchy_roles:read` | `objects:worker_hierarchy_roles:edit` |
-
-**Note:** Tickets use `write` action (not `edit`) for create/update/delete operations.
 
 ---
 
@@ -103,23 +99,6 @@ class WorkerHardware(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 ```
-
-### Ticket
-
-```python
-class Ticket(Base):
-    __tablename__ = "tickets"
-    __table_args__ = {"schema": "objects"}
-
-    oid = Column(BYTEA(16), primary_key=True)
-    requester_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=False)
-    status = Column(Text, default="open")
-    title = Column(Text, nullable=False)
-    is_active = Column(Boolean, default=True)  # Soft deletion flag
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-```
-
----
 
 ## API 1: Workers (`/objects/workers`)
 
@@ -320,73 +299,7 @@ class WorkerHardwareResponse(BaseModel):
 
 ---
 
-## API 2: Tickets (`/objects/tickets`)
-
-Tickets implement ABAC (Attribute-Based Access Control) filtering.
-
-### Schemas
-
-```python
-class TicketCreate(BaseModel):
-    requester_oid: Optional[str] = None  # Optional owner (system accounts must provide this)
-    status: str = "open"
-    title: str
-    is_active: bool = True
-
-class TicketUpdate(BaseModel):
-    status: Optional[str] = None
-    title: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class TicketResponse(BaseModel):
-    oid: str
-    requester_oid: str  # Automatically set to current user's linked worker
-    status: str
-    title: str
-    is_active: bool
-    created_at: datetime
-```
-
-### Endpoints
-
-| Method | Path | Description | Permission |
-|--------|------|-------------|------------|
-| POST | `/objects/tickets` | Create ticket | `objects:tickets:write` |
-| GET | `/objects/tickets` | List tickets (ABAC) | `objects:tickets:read` |
-| GET | `/objects/tickets/{oid}` | Get ticket (ABAC) | `objects:tickets:read` |
-| PUT | `/objects/tickets/{oid}` | Update ticket (ABAC) | `objects:tickets:write` |
-| DELETE | `/objects/tickets/{oid}` | Delete ticket (ABAC) | `objects:tickets:write` |
-
-### Query Parameters (List)
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `status` | string | null | Filter by ticket status |
-| `is_active` | boolean | null | Filter by active status |
-| `skip` | integer | 0 | Records to skip |
-| `limit` | integer | 100 | Max records (1-1000) |
-
-> [!IMPORTANT]
-> Ticket ownership defaults to the current user's linked worker. To create a ticket for a specific worker (required for **System Accounts** or **On-Behalf-Of** creation), provide a valid `requester_oid`.
-
-### Error Responses
-
-| Status | Condition | Response |
-|--------|-----------|----------|
-| 400 | Missing owner | `{"detail": "Cannot create ticket: must provide requester_oid or have a linked worker profile"}` |
-| 403 | ABAC denied | `{"detail": "Access denied to this ticket"}` |
-| 404 | Not found | `{"detail": "Ticket not found"}` |
-
-### ABAC Filtering
-
-Results are filtered based on user's access scope:
-- **Unconstrained**: Sees all tickets
-- **Self-scoped**: Sees only own tickets (`requester_oid` = current worker)
-- **Role-based**: Sees tickets where the requester is within assigned hierarchy nodes (derived from requester's organization)
-
----
-
-## API 3: Worker-Hierarchy-Roles (`/objects/worker-hierarchy-roles`)
+## API 2: Worker-Hierarchy-Roles (`/objects/worker-hierarchy-roles`)
 
 Assigns workers to roles at specific hierarchy nodes for role-based ABAC.
 
@@ -434,22 +347,16 @@ class WorkerHierarchyRoleResponse(BaseModel):
 | 3 | GET | `/objects/workers/{oid}` | Get worker | `objects:workers:read` |
 | 4 | PUT | `/objects/workers/{oid}` | Update worker | `objects:workers:edit` |
 | 5 | DELETE | `/objects/workers/{oid}` | Delete worker | `objects:workers:edit` |
-| **Tickets** |||||
-| 6 | POST | `/objects/tickets` | Create ticket | `objects:tickets:write` |
-| 7 | GET | `/objects/tickets` | List tickets (ABAC) | `objects:tickets:read` |
-| 8 | GET | `/objects/tickets/{oid}` | Get ticket (ABAC) | `objects:tickets:read` |
-| 9 | PUT | `/objects/tickets/{oid}` | Update ticket (ABAC) | `objects:tickets:write` |
-| 10 | DELETE | `/objects/tickets/{oid}` | Delete ticket (ABAC) | `objects:tickets:write` |
 | **Worker-Hierarchy-Roles** |||||
-| 11 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
-| 12 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
-| 13 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
+| 6 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
+| 7 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
+| 8 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
 | **Worker Hardwares** |||||
-| 14 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
-| 15 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
-| 16 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
-| 17 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
-| 18 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
+| 9 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
+| 10 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
+| 11 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
+| 12 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
+| 13 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
 
 ---
 
@@ -468,7 +375,7 @@ class WorkerHierarchyRoleResponse(BaseModel):
 
 ---
 
-## API 4: Articles (`/objects/articles`)
+## API 3: Articles (`/objects/articles`)
 
 Version-controlled content secured by service_catalog hierarchy.
 
@@ -577,21 +484,3 @@ curl -X POST http://localhost:8000/objects/workers \
     "org_oid": "<org_oid>"
   }'
 ```
-
-### Ticket Example (with ABAC)
-
-```bash
-# Login as regular user (not system account)
-curl -X POST http://localhost:8000/auth/session/token \
-  -d "username=alice" -c cookies.txt
-
-# Create ticket
-curl -X POST http://localhost:8000/objects/tickets \
-  -b cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Server issue"}'
-
-# List tickets (ABAC filtered)
-curl http://localhost:8000/objects/tickets -b cookies.txt
-```
-
