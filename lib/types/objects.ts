@@ -1,6 +1,6 @@
 /**
- * Type definitions for Objects module (organizations, locations, workers, tickets).
- * Also includes edges and registry types for Edge Relationships.
+ * Type definitions for Objects module (organizations, locations, workers, service catalogs, articles).
+ * Also includes edges, activities, and registry types for Edge Relationships.
  */
 
 // ============================================================================
@@ -255,34 +255,6 @@ export interface WorkerUpdate {
  */
 export function getWorkerFullName(worker: Worker): string {
     return worker.fullname;
-}
-
-// ============================================================================
-// Ticket Types
-// ============================================================================
-
-export interface Ticket {
-    oid: string;
-    requester_oid: string; // Renamed from worker_oid
-    // org_oid: string; // Removed
-    status: string;
-    title: string;
-    is_active: boolean;
-    created_at: string;
-}
-
-export interface TicketCreate {
-    // org_oid: string; // Removed
-    requester_oid?: string; // Optional, defaults to self
-    status?: string;
-    title: string;
-    is_active?: boolean;
-}
-
-export interface TicketUpdate {
-    status?: string;
-    title?: string;
-    is_active?: boolean;
 }
 
 // ============================================================================

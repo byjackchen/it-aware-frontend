@@ -18,7 +18,6 @@
         "organizations": "组织",
         "locations": "地点",
         "workers": "员工",
-        "tickets": "工单",
         "serviceCatalogs": "服务目录",
         "articles": "文章"
     },
@@ -36,7 +35,6 @@
         "locations": "地点",
         "serviceCatalogs": "服务目录",
         "workers": "员工",
-        "tickets": "工单",
         "profile": "个人资料",
         "team": "团队",
         "settings": "设置",
@@ -258,18 +256,6 @@
                 "active": "活跃",
                 "empty": "未分配硬件"
             }
-        },
-        "tickets": {
-            "title": "工单",
-            "detail": "工单详情",
-            "new": "新建工单",
-            "empty": "未找到工单",
-            "deleteConfirm": "确定要删除此工单吗？",
-            "ticketTitle": "标题",
-            "status": "状态",
-            "owner": "负责人",
-            "count": "{filtered} / {total} 工单",
-            "countPlural": "{filtered} / {total} 工单"
         },
         "roles": {
             "noRoles": "没有可用角色。请先在安全模块创建角色。",

@@ -11,12 +11,10 @@ import {
     FileText,
     Building2,
     MapPin,
-    Ticket,
     Layers,
     AlertCircle,
     MessageCircle,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, type MenuItem } from '@/lib/types/menu';
 
@@ -113,14 +111,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/workers',
                         labelKey: 'workers',
                         icon: Users,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
-                        ]),
-                    },
-                    {
-                        href: '/data/tickets',
-                        labelKey: 'tickets',
-                        icon: Ticket,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_DATA
                         ]),

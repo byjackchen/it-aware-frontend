@@ -18,7 +18,6 @@
         "organizations": "Organizations",
         "locations": "Locations",
         "workers": "Workers",
-        "tickets": "Tickets",
         "serviceCatalogs": "Service Catalogs",
         "articles": "Articles"
     },
@@ -36,7 +35,6 @@
         "locations": "Locations",
         "serviceCatalogs": "Service Catalogs",
         "workers": "Workers",
-        "tickets": "Tickets",
         "profile": "Profile",
         "team": "Team",
         "settings": "Settings",
@@ -258,18 +256,6 @@
                 "active": "Active",
                 "empty": "No hardware assigned"
             }
-        },
-        "tickets": {
-            "title": "Tickets",
-            "detail": "Ticket Details",
-            "new": "New Ticket",
-            "empty": "No tickets found",
-            "deleteConfirm": "Are you sure you want to delete this ticket?",
-            "ticketTitle": "Title",
-            "status": "Status",
-            "owner": "Owner",
-            "count": "{filtered} of {total} ticket",
-            "countPlural": "{filtered} of {total} tickets"
         },
         "roles": {
             "noRoles": "No roles available. Create roles in the Security section first.",

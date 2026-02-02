@@ -17,9 +17,6 @@ import {
     createWorker,
     updateWorker,
     deleteWorker,
-    createTicket,
-    updateTicket,
-    deleteTicket,
     createArticle,
     updateArticle,
     deleteArticle,
@@ -459,87 +456,6 @@ export async function deleteWorkerAction(oid: string) {
 
     try {
         const result = await deleteWorker(oid);
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-        return result;
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-// ============================================================================
-// Ticket Actions
-// ============================================================================
-
-export async function createTicketAction(formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:createTicket';
-    const startTime = Date.now();
-
-    const title = formData.get('title') as string;
-    // const orgOid = formData.get('org_oid') as string; // Removed
-    const requesterOid = formData.get('requester_oid') as string | null;
-    const status = formData.get('status') as string | null;
-    const isActiveStr = formData.get('is_active');
-
-    logger.info(`Started`, { requestId, action });
-
-    try {
-        const result = await createTicket({
-            title,
-            // org_oid: orgOid,
-            requester_oid: requesterOid || undefined,
-            status: status || undefined,
-            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
-        });
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-        return result;
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function updateTicketAction(oid: string, formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:updateTicket';
-    const startTime = Date.now();
-
-    const title = formData.get('title') as string | null;
-    const status = formData.get('status') as string | null;
-    const isActiveStr = formData.get('is_active');
-
-    logger.info(`Started - oid: ${oid}`, { requestId, action });
-
-    try {
-        const result = await updateTicket(oid, {
-            title: title || undefined,
-            status: status || undefined,
-            is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
-        });
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-        return result;
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function deleteTicketAction(oid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:deleteTicket';
-    const startTime = Date.now();
-
-    logger.info(`Started - oid: ${oid}`, { requestId, action });
-
-    try {
-        const result = await deleteTicket(oid);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return result;

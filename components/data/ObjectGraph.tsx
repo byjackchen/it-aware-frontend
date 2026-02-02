@@ -38,8 +38,8 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> 
     organization: { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
     location: { bg: '#10b981', border: '#059669', text: '#ffffff' },
     worker: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
-    ticket: { bg: '#f59e0b', border: '#d97706', text: '#ffffff' },
     article: { bg: '#14b8a6', border: '#0d9488', text: '#ffffff' },
+    incident: { bg: '#ef4444', border: '#dc2626', text: '#ffffff' },
     default: { bg: '#6b7280', border: '#4b5563', text: '#ffffff' },
 };
 
@@ -52,10 +52,10 @@ function getObjectPath(objectType: string, oid: string): string {
             return `/data/locations/${oid}`;
         case 'worker':
             return `/data/workers/${oid}`;
-        case 'ticket':
-            return `/data/tickets/${oid}`;
         case 'article':
             return `/data/articles/${oid}`;
+        case 'incident':
+            return `/data/incidents/${oid}`;
         default:
             return '#';
     }

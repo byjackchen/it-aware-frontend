@@ -1,6 +1,6 @@
 /**
- * Server-side API client for Objects module (organizations, locations, workers, tickets).
- * Also includes edges and worker-hierarchy-role APIs.
+ * Server-side API client for Objects module (organizations, locations, workers, service catalogs, articles).
+ * Also includes edges, activities (incidents/inquiries), and worker-hierarchy-role APIs.
  */
 
 // cookies and redirect removed as they are now used in core.ts
@@ -18,9 +18,6 @@ import type {
     Worker,
     WorkerCreate,
     WorkerUpdate,
-    Ticket,
-    TicketCreate,
-    TicketUpdate,
     WorkerHardware,
     WorkerHardwareCreate,
     WorkerHardwareUpdate,
@@ -272,42 +269,6 @@ export async function deleteWorkerHardware(workerOid: string, hardwareOid: strin
     });
 }
 
-
-// ============================================================================
-// Ticket APIs
-// ============================================================================
-
-export async function getTickets(status?: string): Promise<Ticket[]> {
-    const params = new URLSearchParams({ limit: '1000' });
-    if (status) {
-        params.set('status', status);
-    }
-    return fetchApi<Ticket[]>(`${OBJECTS_BASE}/tickets?${params.toString()}`);
-}
-
-export async function getTicket(oid: string): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/tickets/${encodeURIComponent(oid)}`);
-}
-
-export async function createTicket(data: TicketCreate): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/tickets`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateTicket(oid: string, data: TicketUpdate): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/tickets/${encodeURIComponent(oid)}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-    });
-}
-
-export async function deleteTicket(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/tickets/${encodeURIComponent(oid)}`, {
-        method: 'DELETE',
-    });
-}
 
 // ============================================================================
 // Worker-Hierarchy-Role APIs

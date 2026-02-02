@@ -27,8 +27,6 @@ export const PERMISSIONS = {
     WORKERS_EDIT: 'objects:workers:edit',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
     WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
-    TICKETS_READ: 'objects:tickets:read',
-    TICKETS_WRITE: 'objects:tickets:write',
   },
 } as const;
 
