@@ -46,6 +46,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
     // Form State
     const [title, setTitle] = useState(incident.title);
+    const [stableId, setStableId] = useState(incident.stable_id || '');
     const [description, setDescription] = useState(incident.description || '');
     const [priority, setPriority] = useState(incident.priority || 'none');
     const [urgency, setUrgency] = useState(incident.urgency || 'none');
@@ -97,6 +98,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
             const formData = new FormData();
             formData.set('title', title);
+            formData.set('stable_id', stableId);
             formData.set('description', description);
             formData.set('priority', priority);
             formData.set('urgency', urgency);
@@ -137,6 +139,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
     const handleCancel = () => {
         setTitle(incident.title);
+        setStableId(incident.stable_id || '');
         setDescription(incident.description || '');
         setPriority(incident.priority || 'none');
         setUrgency(incident.urgency || 'none');
@@ -168,7 +171,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             <div>
                                 <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Incident Details</h1>
                                 <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                    {incident.incident_id}
+                                    {incident.stable_id || '—'}
                                 </p>
                             </div>
                         </div>
@@ -191,7 +194,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                 {/* Details Card */}
                 <div className={`rounded-xl border p-6 space-y-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {/* Title + Source System */}
+                    {/* Title + Source System + Stable ID */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div className="lg:col-span-2">
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Title</label>
@@ -218,6 +221,20 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 />
                             ) : (
                                 <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.source_system || 'Unknown'}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Stable ID</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={stableId}
+                                    onChange={(e) => setStableId(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    placeholder="e.g. INC-12345"
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.stable_id || '—'}</div>
                             )}
                         </div>
                     </div>

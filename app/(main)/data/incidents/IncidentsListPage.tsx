@@ -96,7 +96,7 @@ export function IncidentsListPage({ incidents }: IncidentsListPageProps) {
                                         <div className="flex-1 min-w-0">
                                             <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{incident.title}</div>
                                             <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {incident.incident_id} • {incident.state}
+                                                {(incident.stable_id || '—')} • {incident.state}
                                             </div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${style.bg} ${style.text}`}>

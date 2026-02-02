@@ -404,7 +404,7 @@ export interface ArticleUpdate {
 
 export interface Incident {
     oid: string;
-    incident_id: string;
+    stable_id: string | null;
     object_type: 'incident';
     title: string;
     description: string | null;
@@ -432,7 +432,7 @@ export interface Incident {
 }
 
 export interface IncidentCreate {
-    incident_id?: string | null;
+    stable_id?: string | null;
     actor_oid: string;
     actor_role?: string | null;
     title: string;
@@ -483,6 +483,7 @@ export interface InquiryCreate {
 
 export interface IncidentUpdate {
     title: string;
+    stable_id?: string | null;
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;

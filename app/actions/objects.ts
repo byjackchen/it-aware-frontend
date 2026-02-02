@@ -525,7 +525,8 @@ export async function createArticleAction(formData: FormData) {
     const service_catalog_id = formData.get('service_catalog_id') as string;
     const title = formData.get('title') as string;
     const markdown = formData.get('markdown') as string;
-    const stable_id = formData.get('stable_id') as string | null;
+    const stableIdRaw = formData.get('stable_id');
+    const stable_id = stableIdRaw !== null ? String(stableIdRaw).trim() : null;
     const summary = formData.get('summary') as string | null;
     const source_system = formData.get('source_system') as string | null;
     const source_url = formData.get('source_url') as string | null;
@@ -536,7 +537,7 @@ export async function createArticleAction(formData: FormData) {
             service_catalog_id,
             title,
             markdown,
-            stable_id: stable_id || undefined,
+            stable_id: stable_id ? stable_id : undefined,
             summary: summary || undefined,
             source_system: source_system || undefined,
             source_url: source_url || undefined,
@@ -616,7 +617,12 @@ export async function createIncidentAction(formData: FormData) {
     const startTime = Date.now();
     logger.info(`Started`, { requestId, action });
 
-    const incident_id = formData.get('incident_id') as string | null;
+    const stableIdRaw = formData.get('stable_id');
+    let stable_id: string | null | undefined = undefined;
+    if (stableIdRaw !== null) {
+        const trimmed = String(stableIdRaw).trim();
+        stable_id = trimmed === '' ? null : trimmed;
+    }
     const actor_oid = formData.get('actor_oid') as string;
     const actor_role = formData.get('actor_role') as string | null;
     const title = formData.get('title') as string;
@@ -644,7 +650,7 @@ export async function createIncidentAction(formData: FormData) {
 
     try {
         await createIncident({
-            incident_id: incident_id || undefined,
+            stable_id,
             actor_oid,
             actor_role: actor_role || undefined,
             title,
@@ -677,6 +683,7 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     logger.info(`Started`, { requestId, action });
 
     const title = formData.get('title') as string;
+    const stable_id = formData.get('stable_id') as string | null;
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
@@ -703,6 +710,7 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     try {
         await updateIncident(oid, {
             title,
+            stable_id: stable_id || undefined,
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,

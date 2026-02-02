@@ -61,7 +61,7 @@ class Incident(Base):
     __table_args__ = {"schema": "activities"}
 
     oid = Column(BYTEA(16), ForeignKey("activities.bases.oid", ondelete="CASCADE"), primary_key=True)
-    incident_id = Column(Text, unique=True, nullable=False)
+    stable_id = Column(Text, unique=True, nullable=False)
     channel = Column(Text, nullable=True)
     title = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
@@ -99,7 +99,7 @@ Incidents represent service disruptions or outages.
 
 ```python
 class IncidentCreate(BaseModel):
-    incident_id: Optional[str] = None
+    stable_id: Optional[str] = None
     actor_oid: str
     actor_role: Optional[str] = None  # Defaults to "caller"
     title: str
@@ -117,7 +117,7 @@ class IncidentCreate(BaseModel):
 
 class IncidentResponse(BaseModel):
     oid: str
-    incident_id: str
+    stable_id: str
     object_type: str = "incident"
     title: str
     description: Optional[str]
