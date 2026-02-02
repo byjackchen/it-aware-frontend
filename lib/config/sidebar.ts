@@ -16,7 +16,7 @@ import {
     MessageCircle,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
-import { requireAnyPermission, type MenuItem } from '@/lib/types/menu';
+import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
 
 /**
  * Section divider configuration for grouping menu items.
@@ -82,24 +82,27 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/organizations',
                         labelKey: 'organizations',
                         icon: Building2,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.ORGANIZATIONS_READ,
                         ]),
                     },
                     {
                         href: '/data/locations',
                         labelKey: 'locations',
                         icon: MapPin,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.LOCATIONS_READ,
                         ]),
                     },
                     {
                         href: '/data/service-catalogs',
                         labelKey: 'serviceCatalogs',
                         icon: Layers,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SERVICE_CATALOGS_READ,
                         ]),
                     },
                 ],
@@ -111,16 +114,18 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/workers',
                         labelKey: 'workers',
                         icon: Users,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.WORKERS_READ,
                         ]),
                     },
                     {
                         href: '/data/articles',
                         labelKey: 'articles',
                         icon: FileText,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.ARTICLES_READ,
                         ]),
                     },
                 ],
@@ -132,16 +137,18 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/incidents',
                         labelKey: 'incidents',
                         icon: AlertCircle,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.INCIDENTS_READ,
                         ]),
                     },
                     {
                         href: '/data/inquiries',
                         labelKey: 'inquiries',
                         icon: MessageCircle,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_DATA
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.INQUIRIES_READ,
                         ]),
                     },
                 ],

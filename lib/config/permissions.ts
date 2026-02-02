@@ -27,6 +27,12 @@ export const PERMISSIONS = {
     WORKERS_EDIT: 'objects:workers:edit',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
     WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
+    ARTICLES_READ: 'objects:articles:read',
+    ARTICLES_WRITE: 'objects:articles:write',
+    INCIDENTS_READ: 'objects:incidents:read',
+    INCIDENTS_WRITE: 'objects:incidents:write',
+    INQUIRIES_READ: 'objects:inquiries:read',
+    INQUIRIES_WRITE: 'objects:inquiries:write',
   },
 } as const;
 
