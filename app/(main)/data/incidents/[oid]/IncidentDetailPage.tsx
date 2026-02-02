@@ -423,7 +423,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                         {/* Configuration Item */}
                         <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Configuration Item OID</label>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                {isEditing ? 'Configuration Item OID' : 'Configuration Item'}
+                            </label>
                             {isEditing ? (
                                 <input
                                     type="text"
@@ -434,7 +436,10 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 />
                             ) : (
                                 <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.configuration_item_oid || 'None'}</span>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find(sc => sc.oid === incident.configuration_item_oid)?.name || incident.configuration_item_oid || 'None'}
+                                    </span>
                                 </div>
                             )}
                         </div>
