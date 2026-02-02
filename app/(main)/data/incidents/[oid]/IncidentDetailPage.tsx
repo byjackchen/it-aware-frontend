@@ -191,19 +191,35 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                 {/* Details Card */}
                 <div className={`rounded-xl border p-6 space-y-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {/* Title */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Title</label>
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                            />
-                        ) : (
-                            <div className={`text-xl font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>{incident.title}</div>
-                        )}
+                    {/* Title + Source System */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div className="lg:col-span-2">
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Title</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-xl font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>{incident.title}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Source System</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={sourceSystem}
+                                    onChange={(e) => setSourceSystem(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    placeholder="e.g. ServiceNow, Slack"
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.source_system || 'Unknown'}</div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Description */}
@@ -217,11 +233,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
                             />
                         ) : (
-                            incident.description && (
-                                <div className={`p-4 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
-                                    {incident.description}
-                                </div>
-                            )
+                            <div className={`p-4 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                {incident.description || <span className="italic opacity-50">No description provided</span>}
+                            </div>
                         )}
                     </div>
 
@@ -300,7 +314,39 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                         </div>
                     </div>
 
+                    <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Actor</label>
+                        <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                            <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                            <span className="text-sm capitalize">{actorRoleLabel}:</span>
+                            {creator ? (
+                                <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
+                                    {creatorStableId}
+                                </Link>
+                            ) : (
+                                <span className="font-mono text-xs">{actorOidLabel}</span>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        {/* Assigned Group */}
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Assigned Group</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={assignedGroup}
+                                    onChange={(e) => setAssignedGroup(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.assigned_group || 'None'}</span>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Assigned To */}
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Assigned To</label>
@@ -322,7 +368,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 </div>
                             )}
                         </div>
+                    </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Service Catalog */}
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Catalog</label>
@@ -347,23 +395,6 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             )}
                         </div>
 
-                        {/* Assigned Group */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Assigned Group</label>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    value={assignedGroup}
-                                    onChange={(e) => setAssignedGroup(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                                />
-                            ) : (
-                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.assigned_group || 'None'}</span>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Configuration Item */}
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Configuration Item OID</label>
@@ -381,11 +412,57 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 </div>
                             )}
                         </div>
+                    </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.created_at).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.updated_at).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.effective_at).toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Fact (Registry Descriptor)
+                            <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
+                        </label>
+                        {isEditing ? (
+                            <textarea
+                                value={fact}
+                                onChange={(e) => setFact(e.target.value)}
+                                rows={2}
+                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                            />
+                        ) : (
+                            <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                {incident.fact || <span className="italic opacity-50">No fact descriptor set</span>}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
+                            <span className="font-mono text-xs select-all">{incident.embedding_id || '—'}</span>
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                {incident.embedded_at ? new Date(incident.embedded_at).toLocaleString() : '—'}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Chat Transcripts */}
-                    <div>
+                    <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Chat Transcripts (JSON)</label>
                         {isEditing ? (
                             <textarea
@@ -402,81 +479,6 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                     : <span className="italic opacity-50">No chat transcripts</span>}
                             </div>
                         )}
-                    </div>
-
-                    {/* Shared Activity Metadata */}
-                    <div className={`border border-dashed rounded-xl p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Actor</span>
-                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                                    <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                    {creator ? (
-                                        <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
-                                            {creatorStableId}
-                                        </Link>
-                                    ) : (
-                                        <span className="font-mono text-xs">{actorOidLabel}</span>
-                                    )}
-                                </div>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Actor Role</span>
-                                <span className="text-sm">{actorRoleLabel}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Source System</span>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={sourceSystem}
-                                        onChange={(e) => setSourceSystem(e.target.value)}
-                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                                        placeholder="e.g. ServiceNow, Slack"
-                                    />
-                                ) : (
-                                    <span className="text-sm">{incident.source_system || 'Unknown'}</span>
-                                )}
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
-                                <span className="text-sm">{new Date(incident.created_at).toLocaleString()}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
-                                <span className="text-sm">{new Date(incident.updated_at).toLocaleString()}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
-                                <span className="text-sm">{new Date(incident.effective_at).toLocaleString()}</span>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                    Fact (Registry Descriptor)
-                                    <span className="ml-2 text-xs opacity-60 font-normal">Explicitly updated.</span>
-                                </label>
-                                {isEditing ? (
-                                    <textarea
-                                        value={fact}
-                                        onChange={(e) => setFact(e.target.value)}
-                                        rows={2}
-                                        className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                                    />
-                                ) : (
-                                    <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
-                                        {incident.fact || <span className="italic opacity-50">No fact descriptor set</span>}
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedding ID</span>
-                                <span className="font-mono text-xs select-all">{incident.embedding_id || '—'}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Embedded At</span>
-                                <span className="text-sm">{incident.embedded_at ? new Date(incident.embedded_at).toLocaleString() : '—'}</span>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Actions */}
