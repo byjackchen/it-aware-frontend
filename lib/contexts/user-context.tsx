@@ -75,20 +75,6 @@ function deleteCookie(name: string): void {
   document.cookie = `${name}=; Path=/; Max-Age=0`
 }
 
-function hasCookie(name: string): boolean {
-  return document.cookie.includes(`${name}=`)
-}
-
-// Debug helper to log all cookies
-function logAllCookies(context: string): void {
-  if (typeof window === 'undefined') return
-  console.log(`[UserContext:${context}] All cookies:`, document.cookie)
-  console.log(`[UserContext:${context}] Cookie breakdown:`)
-  console.log(`  - it_aware_access: ${hasCookie(COOKIES.ACCESS) ? 'EXISTS' : 'MISSING'}`)
-  console.log(`  - it_aware_user_data: ${hasCookie(COOKIES.USER_DATA) ? 'EXISTS' : 'MISSING'}`)
-  console.log(`  - it_aware_auth_mode: ${getCookie(COOKIES.AUTH_MODE) || 'NOT SET'}`)
-}
-
 // --- Context ---
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -100,39 +86,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    console.log('[UserContext] Component mounted, setting isMounted=true')
-    logAllCookies('mount')
     setIsMounted(true)
   }, [])
 
   // Try to get user data from middleware cookie (set during login redirect)
   const getInitialUserData = useCallback((): User | null => {
-    console.log('[UserContext:getInitialUserData] Checking for pre-fetched user data cookie')
     const cookieValue = getCookie(COOKIES.USER_DATA)
 
     if (!cookieValue) {
-      console.log('[UserContext:getInitialUserData] No user data cookie found')
       return null
     }
-
-    console.log(`[UserContext:getInitialUserData] Found user data cookie, length=${cookieValue.length}`)
 
     try {
       // Try Base64 decoding first (new format), fallback to URL decoding (old format)
       let jsonString: string
       try {
         jsonString = Buffer.from(cookieValue, 'base64').toString('utf-8')
-        console.log('[UserContext:getInitialUserData] Successfully decoded Base64')
-      } catch (base64Error) {
-        console.log('[UserContext:getInitialUserData] Base64 decode failed, trying URL decode:', base64Error)
+      } catch {
         // Fallback to old URL decoding format
         jsonString = decodeURIComponent(cookieValue)
       }
 
       const userData = JSON.parse(jsonString) as User
-      console.log(`[UserContext:getInitialUserData] Parsed user data: username=${userData.account?.username}`)
       deleteCookie(COOKIES.USER_DATA) // One-time use
-      console.log('[UserContext:getInitialUserData] Deleted user data cookie (one-time use)')
       return userData
     } catch (parseError) {
       console.error('[UserContext:getInitialUserData] Failed to parse user data:', parseError)
@@ -142,61 +118,43 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const fetchUser = useCallback(async (): Promise<void> => {
-    console.log('[UserContext:fetchUser] Starting fetchUser')
-    logAllCookies('fetchUser-start')
-
     if (typeof window === 'undefined') {
-      console.log('[UserContext:fetchUser] SSR detected, skipping')
       return
     }
 
     // Respect explicit logout
     const authMode = getCookie(COOKIES.AUTH_MODE)
     if (authMode === 'logged_out') {
-      console.log('[UserContext:fetchUser] auth_mode=logged_out, clearing user')
       setIsLoading(false)
       setUser(null)
       return
     }
 
     // Check for pre-fetched user data from middleware
-    console.log('[UserContext:fetchUser] Checking for initial user data from middleware')
     const initialData = getInitialUserData()
     if (initialData) {
-      console.log(`[UserContext:fetchUser] Using initial data from cookie: username=${initialData.account?.username}`)
       setUser(initialData)
       setIsLoading(false)
       return
     }
 
-    console.log('[UserContext:fetchUser] No initial data, fetching from /api/auth/me')
     // Fetch from API
     setIsLoading(true)
     setError(null)
 
     try {
-      const startTime = Date.now()
-      console.log('[UserContext:fetchUser] Making API request to /api/auth/me')
-
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
       })
 
-      const duration = Date.now() - startTime
-      console.log(`[UserContext:fetchUser] API response: status=${response.status}, duration=${duration}ms`)
-      console.log(`[UserContext:fetchUser] Response headers:`, Object.fromEntries(response.headers.entries()))
-
       if (!response.ok) {
-        console.log(`[UserContext:fetchUser] API returned non-OK status: ${response.status}`)
         if (response.status === 401) {
-          console.log('[UserContext:fetchUser] 401 Unauthorized - setting user to null')
           setUser(null)
 
           // If this is an SSO user (auth_mode=sso), redirect to login with error
           // This handles the case where Taihu authentication succeeded but user doesn't exist in backend
           if (authMode === 'sso') {
-            console.log('[UserContext:fetchUser] SSO user detected with 401 - redirecting to login with error')
             // Clear auth mode cookie to prevent redirect loop
             deleteCookie(COOKIES.AUTH_MODE)
             const errorMessage = encodeURIComponent('User not found. Please contact your administrator to request access.')
@@ -205,14 +163,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           return
         }
         // For other errors (500, etc.), redirect to login
-        console.error(`[UserContext:fetchUser] Server error ${response.status} - redirecting to login`)
         const errorMessage = encodeURIComponent(`Authentication failed (Error ${response.status}). Please try again.`)
         window.location.href = `/login?error=${errorMessage}`
         return
       }
 
       const userData = await response.json()
-      console.log(`[UserContext:fetchUser] API returned user data: username=${userData.account?.username}, keys=${Object.keys(userData).join(',')}`)
       setUser(userData)
     } catch (err) {
       console.error('[UserContext:fetchUser] Exception during fetch:', err)
@@ -223,13 +179,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       window.location.href = `/login?error=${errorMessage}`
     } finally {
       setIsLoading(false)
-      console.log('[UserContext:fetchUser] Completed, isLoading=false')
-      logAllCookies('fetchUser-end')
     }
   }, [getInitialUserData])
 
   const clearUser = useCallback(() => {
-    console.log('[UserContext:clearUser] Clearing user state')
     setUser(null)
     setError(null)
   }, [])
@@ -325,15 +278,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Fetch user on mount
   useEffect(() => {
     if (isMounted) {
-      console.log('[UserContext] isMounted is true, calling fetchUser')
       fetchUser()
     }
   }, [isMounted, fetchUser])
-
-  // Log user state changes
-  useEffect(() => {
-    console.log(`[UserContext] User state changed: user=${user ? user.account?.username : 'null'}, isLoading=${isLoading}, error=${error}`)
-  }, [user, isLoading, error])
 
   const value = useMemo<UserContextType>(
     () => ({

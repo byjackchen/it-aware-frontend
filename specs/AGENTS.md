@@ -11,6 +11,13 @@ Guidance for AI agents working on the IT Aware frontend.
 
 - Backend API specs: `specs/backend/`
 
+## Next.js Proxy (v16+)
+
+- `middleware.ts` is deprecated and replaced by `proxy.ts` (and the exported function should be `proxy`).
+- `proxy.ts` runs on the Node.js runtime only; Edge runtime is not supported for `proxy`. If Edge is required, keep `middleware.ts` (deprecated).
+- Config flags are renamed from `middleware` to `proxy` (for example, `skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`).
+- Codemod for migration: `npx @next/codemod@latest middleware-to-proxy .`
+
 ## Troubleshooting
 
 When debugging issues that may involve the backend API:
