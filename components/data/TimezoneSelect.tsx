@@ -89,6 +89,7 @@ export function TimezoneSelect({
 
     // Find selected timezone info
     const selectedTimezone = ALL_TIMEZONES.find((tz) => tz.id === value);
+    const isCustomTimezone = Boolean(value && !selectedTimezone);
 
     // Filter timezones by search
     const filteredGroups = useMemo(() => {
@@ -153,6 +154,13 @@ export function TimezoneSelect({
                             <span className="truncate">{selectedTimezone.label}</span>
                             <span className={`text-xs flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                 {selectedTimezone.offset}
+                            </span>
+                        </div>
+                    ) : isCustomTimezone ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{value}</span>
+                            <span className={`text-xs flex-shrink-0 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                Custom
                             </span>
                         </div>
                     ) : (

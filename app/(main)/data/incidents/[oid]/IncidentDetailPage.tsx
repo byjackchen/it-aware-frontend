@@ -19,7 +19,9 @@ import {
     Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
+import { formatDateTime } from '@/lib/utils/datetime';
 import type { Incident, GlobalEdge, Organization, Worker, ServiceCatalog } from '@/lib/types/objects';
 import { updateIncidentAction, deleteIncidentAction } from '@/app/actions/objects';
 
@@ -37,6 +39,7 @@ const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'clo
 
 export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs }: IncidentDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
@@ -461,7 +464,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             ) : (
                                 <>
                                     <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
-                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.created_at).toLocaleString()}</span>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatDateTime(incident.created_at, timezone)}</span>
                                 </>
                             )}
                         </div>
@@ -480,7 +483,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             ) : (
                                 <>
                                     <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
-                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.updated_at).toLocaleString()}</span>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatDateTime(incident.updated_at, timezone)}</span>
                                 </>
                             )}
                         </div>
@@ -499,7 +502,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             ) : (
                                 <>
                                     <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
-                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{new Date(incident.effective_at).toLocaleString()}</span>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatDateTime(incident.effective_at, timezone)}</span>
                                 </>
                             )}
                         </div>
@@ -532,7 +535,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedded At</span>
                             <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                {incident.fact_embedded_at ? new Date(incident.fact_embedded_at).toLocaleString() : '—'}
+                                {formatDateTime(incident.fact_embedded_at, timezone)}
                             </span>
                         </div>
                     </div>
