@@ -25,7 +25,9 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph, RoleWorkerAssignment, HierarchySelect, LocationTypeSelect, TimezoneSelect } from '@/components/data';
+import { formatDateTime } from '@/lib/utils/datetime';
 import { type Location, type LocationType, type GlobalEdge, type WorkerHierarchyRole, type Worker, getLocationTypeLabel } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 import { updateLocationAction, deleteLocationAction, assignWorkerRoleAction, removeWorkerRoleAction } from '@/app/actions/objects';
@@ -57,6 +59,7 @@ export function LocationDetailPage({
     roles,
 }: LocationDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone: displayTimezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
@@ -331,7 +334,7 @@ export function LocationDetailPage({
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                 <Calendar className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                 <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                                    {new Date(location.created_at).toLocaleString()}
+                                    {formatDateTime(location.created_at, displayTimezone)}
                                 </span>
                             </div>
                         </div>
@@ -342,7 +345,7 @@ export function LocationDetailPage({
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                 <Calendar className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                 <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                                    {new Date(location.updated_at).toLocaleString()}
+                                    {formatDateTime(location.updated_at, displayTimezone)}
                                 </span>
                             </div>
                         </div>

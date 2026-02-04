@@ -18,7 +18,9 @@ import {
     Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
+import { formatDateTime } from '@/lib/utils/datetime';
 import type { Inquiry, GlobalEdge, Worker } from '@/lib/types/objects';
 import { updateInquiryAction, deleteInquiryAction } from '@/app/actions/objects';
 
@@ -32,6 +34,7 @@ const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'clo
 
 export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
@@ -259,7 +262,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 ) : (
                                     <>
                                         <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
-                                        <span className="text-sm">{new Date(inquiry.created_at).toLocaleString()}</span>
+                                        <span className="text-sm">{formatDateTime(inquiry.created_at, timezone)}</span>
                                     </>
                                 )}
                             </div>
@@ -278,7 +281,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 ) : (
                                     <>
                                         <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
-                                        <span className="text-sm">{new Date(inquiry.updated_at).toLocaleString()}</span>
+                                        <span className="text-sm">{formatDateTime(inquiry.updated_at, timezone)}</span>
                                     </>
                                 )}
                             </div>
@@ -297,7 +300,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 ) : (
                                     <>
                                         <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
-                                        <span className="text-sm">{new Date(inquiry.effective_at).toLocaleString()}</span>
+                                        <span className="text-sm">{formatDateTime(inquiry.effective_at, timezone)}</span>
                                     </>
                                 )}
                             </div>
@@ -325,7 +328,7 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Fact Embedded At</span>
-                                <span className="text-sm">{inquiry.fact_embedded_at ? new Date(inquiry.fact_embedded_at).toLocaleString() : '—'}</span>
+                                <span className="text-sm">{formatDateTime(inquiry.fact_embedded_at, timezone)}</span>
                             </div>
                         </div>
                     </div>

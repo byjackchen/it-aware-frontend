@@ -22,7 +22,9 @@ import {
     ExternalLink,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
+import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import type { Article, ArticleVersion, GlobalEdge, ServiceCatalog } from '@/lib/types/objects';
 import { updateArticleAction, deleteArticleAction } from '@/app/actions/objects';
 
@@ -35,6 +37,7 @@ interface ArticleDetailPageProps {
 
 export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }: ArticleDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data.articles');
     const commonT = useTranslations('Data.common');
@@ -132,7 +135,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                                 >
                                     {versions.map(v => (
                                         <option key={v.version_number} value={v.version_number}>
-                                            v{v.version_number} ({new Date(v.created_at).toLocaleDateString()})
+                                            v{v.version_number} ({formatDate(v.created_at, timezone)})
                                         </option>
                                     ))}
                                 </select>
@@ -193,7 +196,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{commonT('updated')}</label>
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                 <Calendar className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{new Date(displayedVersion.created_at).toLocaleString()}</span>
+                                <span className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{formatDateTime(displayedVersion.created_at, timezone)}</span>
                             </div>
                         </div>
                     </div>

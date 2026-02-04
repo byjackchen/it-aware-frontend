@@ -5,12 +5,14 @@ import { useState, useRef } from 'react';
 import { Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { TimezoneSelect } from '@/components/data/TimezoneSelect';
 import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/session';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useMenuAuthorization } from './AuthorizedMenuItem';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import { type MenuItem, requireAnyPermission } from '@/lib/types/menu';
@@ -26,6 +28,7 @@ export function TopBar() {
   const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
   const { theme } = useTheme();
+  const { timezone, setTimezone } = useTimezone();
   const { checkMenuAccess } = useMenuAuthorization();
   const isLight = theme === 'light';
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
@@ -266,6 +269,20 @@ export function TopBar() {
                   {user?.worker?.email || '\u00A0'}
                 </p>
               </div>
+              <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                  Timezone
+                </p>
+                <TimezoneSelect
+                  value={timezone}
+                  onChange={setTimezone}
+                  allowEmpty={false}
+                  placeholder="Select timezone..."
+                />
+                <p className={`text-xs mt-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                  Times shown in {timezone}
+                </p>
+              </div>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
@@ -280,4 +297,3 @@ export function TopBar() {
     </header>
   );
 }
-

@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { FileText, Plus, RefreshCw, Search, Layers } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDate } from '@/lib/utils/datetime';
 import type { Article, ServiceCatalog } from '@/lib/types/objects';
 
 interface ArticlesListPageProps {
@@ -18,6 +20,7 @@ interface ArticlesListPageProps {
 
 export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data.articles');
     const commonT = useTranslations('Data.common');
@@ -125,7 +128,7 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
                                                 <Layers className="w-3 h-3" />
                                                 <span>{catalogMap.get(article.service_catalog_id) || 'Unknown Catalog'}</span>
                                             </div>
-                                            <div>{commonT('updated')} {new Date(article.updated_at).toLocaleDateString()}</div>
+                                            <div>{commonT('updated')} {formatDate(article.updated_at, timezone)}</div>
                                         </div>
                                     </div>
                                 </button>

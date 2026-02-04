@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { clearUserDataCookie, readUserDataCookie, writeUserDataCookie } from '@/lib/utils/user-data-cookie'
 
 // --- Types ---
 
@@ -91,30 +92,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Try to get user data from middleware cookie (set during login redirect)
   const getInitialUserData = useCallback((): User | null => {
-    const cookieValue = getCookie(COOKIES.USER_DATA)
+    const cookiePayload = readUserDataCookie()
 
-    if (!cookieValue) {
+    if (!cookiePayload?.user) {
       return null
     }
 
-    try {
-      // Try Base64 decoding first (new format), fallback to URL decoding (old format)
-      let jsonString: string
-      try {
-        jsonString = Buffer.from(cookieValue, 'base64').toString('utf-8')
-      } catch {
-        // Fallback to old URL decoding format
-        jsonString = decodeURIComponent(cookieValue)
-      }
-
-      const userData = JSON.parse(jsonString) as User
-      deleteCookie(COOKIES.USER_DATA) // One-time use
-      return userData
-    } catch (parseError) {
-      console.error('[UserContext:getInitialUserData] Failed to parse user data:', parseError)
-      deleteCookie(COOKIES.USER_DATA)
-      return null
+    if (cookiePayload.preferences) {
+      writeUserDataCookie({ preferences: cookiePayload.preferences })
+    } else {
+      clearUserDataCookie()
     }
+
+    return cookiePayload.user
   }, [])
 
   const fetchUser = useCallback(async (): Promise<void> => {

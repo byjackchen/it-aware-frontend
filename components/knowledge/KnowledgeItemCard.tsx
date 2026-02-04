@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { FileText, ExternalLink, Calendar } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDate } from '@/lib/utils/datetime';
 import type { Article } from '@/lib/types/objects';
 
 interface KnowledgeItemCardProps {
@@ -16,15 +18,21 @@ interface KnowledgeItemCardProps {
 
 export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const isLight = theme === 'light';
     const t = useTranslations('Knowledge');
 
     const { latest_version } = article;
-    const formattedDate = new Date(article.updated_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    const formattedDate = formatDate(
+        article.updated_at,
+        timezone,
+        {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        },
+        'en-US'
+    );
 
     // Truncate summary for preview
     const previewText = latest_version.summary

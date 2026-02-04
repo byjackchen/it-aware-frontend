@@ -32,7 +32,9 @@ import {
     Box,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
+import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import type { Worker, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
 import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
 
@@ -46,6 +48,7 @@ interface WorkerDetailPageProps {
 
 export function WorkerDetailPage({ worker, edges, organizations, locations, hardwares }: WorkerDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
@@ -400,14 +403,14 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                             <label className={labelClass}>{t('common.created')}</label>
                             <div className={displayClass}>
                                 <Calendar className={iconClass} />
-                                <span className={textClass}>{new Date(worker.created_at).toLocaleString()}</span>
+                                <span className={textClass}>{formatDateTime(worker.created_at, timezone)}</span>
                             </div>
                         </div>
                         <div>
                             <label className={labelClass}>{t('common.updated')}</label>
                             <div className={displayClass}>
                                 <Calendar className={iconClass} />
-                                <span className={textClass}>{new Date(worker.updated_at).toLocaleString()}</span>
+                                <span className={textClass}>{formatDateTime(worker.updated_at, timezone)}</span>
                             </div>
                         </div>
                     </div>
@@ -480,13 +483,13 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                                                     <div className="flex flex-wrap gap-x-6 gap-y-1 mt-1 text-sm">
                                                         <span className={isLight ? 'text-slate-500' : 'text-gray-400'}>
                                                             <span className="font-medium mr-1">{t('workers.hardware.assigned')}:</span>
-                                                            {new Date(hw.assignment_date).toLocaleDateString()}
+                                                            {formatDate(hw.assignment_date, timezone)}
                                                         </span>
                                                         {hw.renew_eligible_date && (
                                                             <span className={`${isRenewable ? 'text-green-600 font-medium' : isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                                 {isRenewable && <Check className="w-3 h-3 inline mr-1" />}
                                                                 <span className="font-medium mr-1">{t('workers.hardware.renew')}:</span>
-                                                                {new Date(hw.renew_eligible_date).toLocaleDateString()}
+                                                                {formatDate(hw.renew_eligible_date, timezone)}
                                                             </span>
                                                         )}
                                                     </div>
