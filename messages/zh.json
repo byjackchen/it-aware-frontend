@@ -42,6 +42,7 @@
         "activities": "活动",
         "incidents": "事件",
         "inquiries": "咨询",
+        "interactions": "交互事件",
         "faqs": "常见问题"
     },
     "Chatbot": {

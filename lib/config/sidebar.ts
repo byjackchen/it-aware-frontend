@@ -14,6 +14,7 @@ import {
     Layers,
     AlertCircle,
     MessageCircle,
+    MousePointerClick,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -149,6 +150,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.INQUIRIES_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/interactions',
+                        labelKey: 'interactions',
+                        icon: MousePointerClick,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                         ]),
                     },
                 ],

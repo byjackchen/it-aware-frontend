@@ -1,6 +1,6 @@
 /**
  * Server-side API client for Objects module (organizations, locations, workers, service catalogs, articles).
- * Also includes edges, activities (incidents/inquiries), and worker-hierarchy-role APIs.
+ * Also includes edges, activities (incidents/inquiries/interactions), and worker-hierarchy-role APIs.
  */
 
 // cookies and redirect removed as they are now used in core.ts
@@ -35,6 +35,9 @@ import type {
     Inquiry,
     InquiryCreate,
     InquiryUpdate,
+    Interaction,
+    InteractionListParams,
+    InteractionListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -429,6 +432,74 @@ export async function getInquiry(oid: string): Promise<Inquiry> {
     return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`);
 }
 
+export async function getInteractions(params: InteractionListParams = {}): Promise<InteractionListResponse> {
+    const queryParams = new URLSearchParams();
+
+    if (params.stable_id) queryParams.set('stable_id', params.stable_id);
+    if (params.stable_id_prefix) queryParams.set('stable_id_prefix', params.stable_id_prefix);
+    if (params.actor_stable_id) queryParams.set('actor_stable_id', params.actor_stable_id);
+    if (params.source_system) queryParams.set('source_system', params.source_system);
+    if (params.assignment_status !== undefined) queryParams.set('assignment_status', params.assignment_status);
+    if (params.assigned_inquiry_oid) queryParams.set('assigned_inquiry_oid', params.assigned_inquiry_oid);
+    if (params.created_at_from) queryParams.set('created_at_from', params.created_at_from);
+    if (params.created_at_to) queryParams.set('created_at_to', params.created_at_to);
+    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
+    if (params.sort_by) queryParams.set('sort_by', params.sort_by);
+    if (params.order) queryParams.set('order', params.order);
+
+    const queryString = queryParams.toString();
+    const url = `${OBJECTS_BASE}/activities/interactions${queryString ? `?${queryString}` : ''}`;
+    return fetchApi<InteractionListResponse>(url);
+}
+
+export async function getAllInteractions(
+    params: Omit<InteractionListParams, 'skip' | 'limit'> = {}
+): Promise<Interaction[]> {
+    const allResults: Interaction[] = [];
+    const seenOids = new Set<string>();
+    let skip = 0;
+    let pageCount = 0;
+    let consecutiveDuplicatePages = 0;
+
+    while (pageCount < MAX_PAGES) {
+        const response = await getInteractions({
+            ...params,
+            skip,
+            limit: PAGE_SIZE,
+        });
+
+        const newItems = response.items.filter(item => !seenOids.has(item.oid));
+        newItems.forEach(item => {
+            seenOids.add(item.oid);
+            allResults.push(item);
+        });
+
+        if (newItems.length === 0 && response.items.length > 0) {
+            consecutiveDuplicatePages++;
+            if (consecutiveDuplicatePages >= 3) {
+                console.warn(`[getAllInteractions] 3+ consecutive duplicate pages at skip=${skip}. Stopping.`);
+                break;
+            }
+        } else {
+            consecutiveDuplicatePages = 0;
+        }
+
+        if (response.items.length < PAGE_SIZE) {
+            break;
+        }
+        skip += PAGE_SIZE;
+        pageCount++;
+    }
+
+    console.log(`[getAllInteractions] Fetched ${allResults.length} unique items in ${pageCount + 1} pages.`);
+    return allResults;
+}
+
+export async function getInteraction(oid: string): Promise<Interaction> {
+    return fetchApi<Interaction>(`${OBJECTS_BASE}/activities/interactions/${encodeURIComponent(oid)}`);
+}
+
 export async function createIncident(data: IncidentCreate): Promise<Incident> {
     return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents`, {
         method: 'POST',
@@ -477,6 +548,12 @@ export async function updateInquiry(oid: string, data: InquiryUpdate): Promise<I
 
 export async function deleteInquiry(oid: string): Promise<void> {
     return fetchApi<void>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function deleteInteraction(oid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/activities/interactions/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }

@@ -28,6 +28,7 @@ import {
     createInquiry,
     updateInquiry,
     deleteInquiry,
+    deleteInteraction,
 } from '@/lib/api/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
@@ -869,6 +870,25 @@ export async function deleteInquiryAction(oid: string) {
     try {
         await deleteInquiry(oid);
         revalidatePath('/data/inquiries');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteInteractionAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteInteraction';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteInteraction(oid);
+        revalidatePath('/data/interactions');
+        revalidatePath(`/data/interactions/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
