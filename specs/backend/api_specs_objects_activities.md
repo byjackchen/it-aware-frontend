@@ -292,6 +292,7 @@ class InquiryMaterializeResponse(BaseModel):
 >
 > **Materialize behavior**:
 > - Missing inquiry returns `404`.
+> - Inquiry access is checked by ABAC write scope (same access rule as inquiry update/delete).
 > - No assigned interactions returns `{status: "noop", changed: false, ...}`.
 > - Repeated calls with unchanged assigned-interaction projection are idempotent (`changed=false`).
 > - When interactions exist, materialize attempts LLM generation for `topic/fact`; if LLM output is invalid or unavailable, deterministic projection is used and `status` becomes `materialized_with_fallback`.
@@ -408,6 +409,14 @@ class InteractionResponse(BaseModel):
     created_at: datetime
     ingested_at: datetime
     updated_at: datetime
+
+class InteractionListResponse(BaseModel):
+    items: List[InteractionResponse]
+    total: int
+    skip: int
+    limit: int
+    sort_by: Literal["created_at", "ingested_at", "updated_at"]
+    order: Literal["asc", "desc"]
 ```
 
 > **Timestamp behavior**: request datetimes are normalized to UTC. Naive timestamps are treated as UTC.
@@ -446,17 +455,26 @@ class InteractionResponse(BaseModel):
 | `created_at_to` | ISO8601 datetime | null | Created-at upper bound |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+| `sort_by` | `created_at`/`ingested_at`/`updated_at` | `created_at` | Sort field |
+| `order` | `asc`/`desc` | `desc` | Sort direction |
+
+List response now returns `InteractionListResponse` with:
+- `items`: current page records
+- `total`: total matched records for current filters
+- `skip`, `limit`, `sort_by`, `order`: echo of applied pagination/sort options
+
+Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for stable pagination.
 
 ### Error Responses (Common Interaction APIs)
 
 | Status | Condition | Example |
 |--------|-----------|---------|
-| 404 | Interaction not found / missing stable ids | `{"detail":{"message":"Interactions not found","missing_stable_ids":[...]}}` |
-| 404 | Missing inquiry target/candidate | `{"detail":{"message":"Target inquiry not found","missing_inquiry_oids":[...]}}` |
-| 422 | Invalid OID format or payload validation | `{"detail":"Invalid inquiry OID: ..."}` |
-| 502 | LLM upstream HTTP/API error | `{"detail":"LLM upstream API error: ..."}` |
-| 503 | LLM timeout/config/service unavailable | `{"detail":"LLM request timed out"}` |
-| 500 | Unexpected internal failure | `{"detail":"batch-decide-assignment failed: ..."}` |
+| 404 | Interaction not found / missing stable ids | `{"detail":{"message":"Interactions not found","code":"not_found","missing_stable_ids":[...]}}` |
+| 404 | Missing inquiry target/candidate | `{"detail":{"message":"Target inquiry not found","code":"not_found","missing_inquiry_oids":[...]}}` |
+| 422 | Invalid OID format or payload validation | `{"detail":{"message":"Validation error","code":"validation_error","errors":[...]}}` |
+| 502 | LLM upstream HTTP/API error | `{"detail":{"message":"LLM upstream API error: ...","code":"upstream_error"}}` |
+| 503 | LLM timeout/config/service unavailable | `{"detail":{"message":"LLM request timed out","code":"service_unavailable"}}` |
+| 500 | Unexpected internal failure | `{"detail":{"message":"batch-decide-assignment failed: ...","code":"internal_error"}}` |
 
 ### Constraints and Indexes
 
