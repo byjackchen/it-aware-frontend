@@ -250,6 +250,8 @@ class InquiryInteractionItem(BaseModel):
     action_type: Optional[str] = None
     content_text: Optional[str] = None
     content_raw: Optional[Dict[str, Any]] = None
+    response_text: Optional[str] = None
+    response_raw: Optional[Dict[str, Any]] = None
     assignment_status: Optional[str] = None
     assignment_log: Optional[Dict[str, Any]] = None
     assignment_updated_at: Optional[datetime] = None
@@ -324,6 +326,8 @@ class InteractionUpsertItem(BaseModel):
     action_type: Literal["enter", "click", "send_msg"]
     content_text: Optional[str] = None
     content_raw: Optional[Dict[str, Any]] = None
+    response_text: Optional[str] = None
+    response_raw: Optional[Dict[str, Any]] = None
     created_at: datetime
     ingested_at: Optional[datetime] = None
 
@@ -402,6 +406,8 @@ class InteractionResponse(BaseModel):
     action_type: Literal["enter", "click", "send_msg"]
     content_text: Optional[str]
     content_raw: Optional[Dict[str, Any]]
+    response_text: Optional[str]
+    response_raw: Optional[Dict[str, Any]]
     assignment_status: Optional[Literal["assigned", "deferred"]]
     assigned_inquiry_oid: Optional[str]
     assignment_updated_at: Optional[datetime]

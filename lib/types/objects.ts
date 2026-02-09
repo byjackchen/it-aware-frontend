@@ -533,6 +533,8 @@ export interface Interaction {
     action_type: InteractionActionType;
     content_text: string | null;
     content_raw: Record<string, unknown> | null;
+    response_text: string | null;
+    response_raw: Record<string, unknown> | null;
     assignment_status: InteractionAssignmentStatus;
     assigned_inquiry_oid: string | null;
     assignment_updated_at: string | null;

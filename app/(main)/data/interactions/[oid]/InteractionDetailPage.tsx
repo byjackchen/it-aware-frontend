@@ -128,11 +128,24 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                         </div>
                     </div>
 
+                    <div>
+                        <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Response Text</span>
+                        <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                            {interaction.response_text || <span className="italic opacity-50">No response text</span>}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 gap-4">
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Content Raw (JSON)</span>
                             <div className={`p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
                                 <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.content_raw)}</pre>
+                            </div>
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Response Raw (JSON)</span>
+                            <div className={`p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
+                                <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.response_raw)}</pre>
                             </div>
                         </div>
                         <div>
