@@ -6,6 +6,10 @@ type QueryValue = string | number | boolean | null | undefined;
 
 type QueryParams = Record<string, QueryValue>;
 
+interface EnvelopeListResponse<T> {
+    items: T[];
+}
+
 interface UseLazyResourceListOptions {
     query?: QueryParams;
     auto?: boolean;
@@ -38,6 +42,11 @@ function toQueryString(query?: QueryParams): string {
     return params.toString();
 }
 
+function isEnvelopeListResponse<T>(value: unknown): value is EnvelopeListResponse<T> {
+    if (!value || typeof value !== 'object') return false;
+    return Array.isArray((value as { items?: unknown }).items);
+}
+
 async function fetchResourceList<T>(resource: string, queryString: string): Promise<T[]> {
     const url = queryString
         ? `/api/objects/${resource}?${queryString}`
@@ -49,11 +58,8 @@ async function fetchResourceList<T>(resource: string, queryString: string): Prom
     }
 
     const data = await response.json();
-    if (!Array.isArray(data)) {
-        throw new Error(`Unexpected ${resource} response shape`);
-    }
-
-    return data as T[];
+    if (isEnvelopeListResponse<T>(data)) return data.items;
+    throw new Error(`Unexpected ${resource} response shape`);
 }
 
 export function useLazyResourceList<T>(

@@ -120,6 +120,12 @@ class OrganizationResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class OrganizationListResponse(BaseModel):
+    items: List[OrganizationResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -194,6 +200,12 @@ class LocationResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class LocationListResponse(BaseModel):
+    items: List[LocationResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -255,6 +267,12 @@ class ServiceCatalogResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class ServiceCatalogListResponse(BaseModel):
+    items: List[ServiceCatalogResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -328,6 +346,31 @@ All list endpoints support pagination:
 | `limit` | integer | 100 | Max records (1-1000) |
 | `stable_id` | string | null | Filter by stable_id (exact match) |
 | `is_active` | boolean | null | Filter by active status (true/false) |
+
+## List Response Contract
+
+All hierarchy list APIs return the same paginated envelope:
+
+```json
+{
+  "items": [
+    {
+      "oid": "01JFXYZ123456789ABCDEF",
+      "stable_id": "1263"
+    }
+  ],
+  "total": 2458,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+- Applies to:
+  - `GET /objects/organizations`
+  - `GET /objects/locations`
+  - `GET /objects/service-catalogs`
+- `total` is the filtered full count.
+- `items` are stably ordered by `oid` ascending to keep `skip/limit` deterministic.
 
 ---
 

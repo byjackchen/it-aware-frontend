@@ -23,7 +23,6 @@ import type {
     WorkerHardwareUpdate,
     WorkerHierarchyRole,
     WorkerHierarchyRoleCreate,
-    GlobalEdge,
     GlobalEdgeListResponse,
     Article,
     ArticleCreate,
@@ -74,6 +73,15 @@ interface ActivePagedListParams extends PagedListParams {
     isActive?: boolean;
 }
 
+interface ListEnvelope<T> {
+    items: T[];
+    total?: number;
+    skip?: number;
+    limit?: number;
+}
+
+type ListResponseMode = 'envelope' | 'array';
+
 function buildPagedUrl(baseUrl: string, params: PagedListParams = {}, isActive?: boolean): string {
     const query = new URLSearchParams();
     query.set('limit', String(params.limit ?? DEFAULT_PAGE_LIMIT));
@@ -82,16 +90,56 @@ function buildPagedUrl(baseUrl: string, params: PagedListParams = {}, isActive?:
     return `${baseUrl}?${query.toString()}`;
 }
 
-async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promise<T[]> {
+function isListEnvelope<T>(value: unknown): value is ListEnvelope<T> {
+    if (!value || typeof value !== 'object') return false;
+    return Array.isArray((value as { items?: unknown }).items);
+}
+
+function ensureListEnvelope<T>(value: unknown, endpoint: string): ListEnvelope<T> {
+    if (!isListEnvelope<T>(value)) {
+        throw new Error(`Unexpected list response shape from ${endpoint}`);
+    }
+    return value;
+}
+
+function ensureArrayList<T>(value: unknown, endpoint: string): T[] {
+    if (!Array.isArray(value)) {
+        throw new Error(`Unexpected list response shape from ${endpoint}`);
+    }
+    return value;
+}
+
+function getListTotal<T>(value: ListEnvelope<T>): number | null {
+    if (typeof value.total !== 'number' || !Number.isFinite(value.total)) return null;
+    return value.total;
+}
+
+async function fetchAllPages<T extends { oid: string }>(
+    baseUrl: string,
+    mode: ListResponseMode = 'envelope'
+): Promise<T[]> {
     const allResults: T[] = [];
     const seenOids = new Set<string>();
     let skip = 0;
     let pageCount = 0;
     let consecutiveDuplicatePages = 0;
+    let knownTotal: number | null = null;
 
     while (pageCount < MAX_PAGES) {
         const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=${PAGE_SIZE}&skip=${skip}`;
-        const page = await fetchApi<T[]>(url);
+        let page: T[];
+
+        if (mode === 'envelope') {
+            const response = await fetchApi<ListEnvelope<T>>(url);
+            const envelope = ensureListEnvelope<T>(response, url);
+            page = envelope.items;
+            if (knownTotal === null) {
+                knownTotal = getListTotal(envelope);
+            }
+        } else {
+            const response = await fetchApi<T[]>(url);
+            page = ensureArrayList<T>(response, url);
+        }
 
         // Add only new items (deduplicate)
         const newItems = page.filter(item => !seenOids.has(item.oid));
@@ -116,6 +164,11 @@ async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promis
         if (page.length < PAGE_SIZE) {
             break;
         }
+
+        if (typeof knownTotal === 'number' && Number.isFinite(knownTotal) && allResults.length >= knownTotal) {
+            break;
+        }
+
         skip += PAGE_SIZE;
         pageCount++;
     }
@@ -134,7 +187,8 @@ export async function getOrganizations(): Promise<Organization[]> {
 
 export async function getOrganizationsPage(params: PagedListParams = {}): Promise<Organization[]> {
     const url = buildPagedUrl(`${OBJECTS_BASE}/organizations`, params);
-    return fetchApi<Organization[]>(url);
+    const response = await fetchApi<ListEnvelope<Organization>>(url);
+    return ensureListEnvelope<Organization>(response, url).items;
 }
 
 export async function getOrganization(oid: string): Promise<Organization> {
@@ -171,7 +225,8 @@ export async function getLocations(): Promise<Location[]> {
 
 export async function getLocationsPage(params: PagedListParams = {}): Promise<Location[]> {
     const url = buildPagedUrl(`${OBJECTS_BASE}/locations`, params);
-    return fetchApi<Location[]>(url);
+    const response = await fetchApi<ListEnvelope<Location>>(url);
+    return ensureListEnvelope<Location>(response, url).items;
 }
 
 export async function getLocation(oid: string): Promise<Location> {
@@ -208,7 +263,8 @@ export async function getServiceCatalogs(): Promise<ServiceCatalog[]> {
 
 export async function getServiceCatalogsPage(params: PagedListParams = {}): Promise<ServiceCatalog[]> {
     const url = buildPagedUrl(`${OBJECTS_BASE}/service-catalogs`, params);
-    return fetchApi<ServiceCatalog[]>(url);
+    const response = await fetchApi<ListEnvelope<ServiceCatalog>>(url);
+    return ensureListEnvelope<ServiceCatalog>(response, url).items;
 }
 
 export async function getServiceCatalog(oid: string): Promise<ServiceCatalog> {
@@ -249,7 +305,8 @@ export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
 
 export async function getWorkersPage(params: ActivePagedListParams = {}): Promise<Worker[]> {
     const url = buildPagedUrl(`${OBJECTS_BASE}/workers`, params, params.isActive);
-    return fetchApi<Worker[]>(url);
+    const response = await fetchApi<ListEnvelope<Worker>>(url);
+    return ensureListEnvelope<Worker>(response, url).items;
 }
 
 export async function getWorker(oid: string): Promise<Worker> {
@@ -408,7 +465,7 @@ export async function getArticles(serviceCatalogId?: string, isActive?: boolean)
     const queryString = params.toString();
     const url = `${OBJECTS_BASE}/articles${queryString ? `?${queryString}` : ''}`;
 
-    return fetchAllPages(url);
+    return fetchAllPages(url, 'array');
 }
 
 export async function getArticle(oid: string): Promise<Article> {

@@ -42,6 +42,13 @@ function parseContentRangeTotal(contentRange: string | null): string | null {
     return match[1] ?? null;
 }
 
+function parsePayloadTotal(payload: unknown): string | null {
+    if (!payload || typeof payload !== 'object') return null;
+    const total = (payload as { total?: unknown }).total;
+    if (typeof total !== 'number' || !Number.isFinite(total) || total < 0) return null;
+    return String(Math.trunc(total));
+}
+
 export async function GET(
     request: Request,
     context: { params: Promise<{ resource: string }> }
@@ -85,7 +92,8 @@ export async function GET(
 
         const data = await response.json();
         const totalHeader = response.headers.get('x-total-count')
-            ?? parseContentRangeTotal(response.headers.get('content-range'));
+            ?? parseContentRangeTotal(response.headers.get('content-range'))
+            ?? parsePayloadTotal(data);
 
         return NextResponse.json(data, {
             headers: totalHeader ? { 'x-total-count': totalHeader } : undefined,

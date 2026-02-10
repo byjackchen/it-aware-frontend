@@ -129,7 +129,7 @@ class WorkerCreate(BaseModel):
     location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
     is_vip: bool = False
-    vip_type: Optional[str] = None
+    vip_type: Optional[str] = None  # Set null to clear
     is_active: bool = True
 
 class WorkerUpdate(BaseModel):
@@ -178,6 +178,12 @@ class WorkerResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class WorkerListResponse(BaseModel):
+    items: List[WorkerResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -215,6 +221,28 @@ class WorkerResponse(BaseModel):
 | `is_active` | boolean | null | Filter by active status |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+
+### List Response Contract
+
+`GET /objects/workers` returns a paginated object instead of a bare array:
+
+```json
+{
+  "items": [
+    {
+      "oid": "01JFXYZWORKER1234567890",
+      "stable_id": "asmith",
+      "fullname": "Alice Smith"
+    }
+  ],
+  "total": 2371,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+- `total` is the filtered full count (not the loaded page size).
+- `items` are stably ordered by `oid` ascending for deterministic `skip/limit` pagination.
 
 ### Create Worker Example
 

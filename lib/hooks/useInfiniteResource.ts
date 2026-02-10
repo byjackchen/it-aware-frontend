@@ -11,6 +11,11 @@ interface InfiniteCacheEntry {
     total: number | null;
 }
 
+interface EnvelopeListResponse<T> {
+    items: T[];
+    total?: number;
+}
+
 const infiniteCache = new Map<string, InfiniteCacheEntry>();
 
 function toSortedQueryString(query?: InfiniteQueryParams): string {
@@ -25,6 +30,11 @@ function toSortedQueryString(query?: InfiniteQueryParams): string {
         });
 
     return params.toString();
+}
+
+function isEnvelopeListResponse<T>(value: unknown): value is EnvelopeListResponse<T> {
+    if (!value || typeof value !== 'object') return false;
+    return Array.isArray((value as { items?: unknown }).items);
 }
 
 interface UseInfiniteResourceOptions<TItem, TResponse = TItem[]> {
@@ -124,24 +134,34 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
 
     const getItems = useCallback((response: TResponse): TItem[] => {
         if (extractItems) return extractItems(response);
-        if (Array.isArray(response)) return response as TItem[];
-        return [];
-    }, [extractItems]);
+        if (isEnvelopeListResponse<TItem>(response)) return response.items;
+        throw new Error(`Unexpected ${resource} response shape`);
+    }, [extractItems, resource]);
 
     const getHasMore = useCallback((
         response: TResponse,
         pageItems: TItem[],
-        totalLoaded: number
+        totalLoaded: number,
+        knownTotal: number | null
     ) => {
         if (inferHasMore) {
             return inferHasMore(response, pageItems, totalLoaded, pageSize);
+        }
+        if (typeof knownTotal === 'number' && Number.isFinite(knownTotal)) {
+            return totalLoaded < knownTotal;
         }
         return pageItems.length >= pageSize;
     }, [inferHasMore, pageSize]);
 
     const getTotal = useCallback((response: TResponse): number | null => {
-        if (!extractTotal) return null;
-        const value = extractTotal(response);
+        let value: unknown = null;
+
+        if (extractTotal) {
+            value = extractTotal(response);
+        } else if (isEnvelopeListResponse<TItem>(response)) {
+            value = response.total;
+        }
+
         if (typeof value !== 'number' || !Number.isFinite(value)) return null;
         return value;
     }, [extractTotal]);
@@ -185,7 +205,7 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
 
             setItems((prev) => {
                 const next = dedupeItems(replace ? pageItems : [...prev, ...pageItems]);
-                const nextHasMore = getHasMore(payload, pageItems, next.length);
+                const nextHasMore = getHasMore(payload, pageItems, next.length, pageTotal);
 
                 setHasMore(nextHasMore);
                 setTotal(pageTotal);
