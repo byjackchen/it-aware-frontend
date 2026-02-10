@@ -63,6 +63,24 @@ import { fetchApi } from '@/lib/api/core';
 
 const PAGE_SIZE = 1000; // API maximum
 const MAX_PAGES = 100; // Safety limit: 100k max items
+const DEFAULT_PAGE_LIMIT = 100;
+
+interface PagedListParams {
+    limit?: number;
+    skip?: number;
+}
+
+interface ActivePagedListParams extends PagedListParams {
+    isActive?: boolean;
+}
+
+function buildPagedUrl(baseUrl: string, params: PagedListParams = {}, isActive?: boolean): string {
+    const query = new URLSearchParams();
+    query.set('limit', String(params.limit ?? DEFAULT_PAGE_LIMIT));
+    if (params.skip !== undefined) query.set('skip', String(params.skip));
+    if (isActive !== undefined) query.set('is_active', String(isActive));
+    return `${baseUrl}?${query.toString()}`;
+}
 
 async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promise<T[]> {
     const allResults: T[] = [];
@@ -114,6 +132,11 @@ export async function getOrganizations(): Promise<Organization[]> {
     return fetchAllPages<Organization>(`${OBJECTS_BASE}/organizations`);
 }
 
+export async function getOrganizationsPage(params: PagedListParams = {}): Promise<Organization[]> {
+    const url = buildPagedUrl(`${OBJECTS_BASE}/organizations`, params);
+    return fetchApi<Organization[]>(url);
+}
+
 export async function getOrganization(oid: string): Promise<Organization> {
     return fetchApi<Organization>(`${OBJECTS_BASE}/organizations/${encodeURIComponent(oid)}`);
 }
@@ -146,6 +169,11 @@ export async function getLocations(): Promise<Location[]> {
     return fetchAllPages<Location>(`${OBJECTS_BASE}/locations`);
 }
 
+export async function getLocationsPage(params: PagedListParams = {}): Promise<Location[]> {
+    const url = buildPagedUrl(`${OBJECTS_BASE}/locations`, params);
+    return fetchApi<Location[]>(url);
+}
+
 export async function getLocation(oid: string): Promise<Location> {
     return fetchApi<Location>(`${OBJECTS_BASE}/locations/${encodeURIComponent(oid)}`);
 }
@@ -176,6 +204,11 @@ export async function deleteLocation(oid: string): Promise<void> {
 
 export async function getServiceCatalogs(): Promise<ServiceCatalog[]> {
     return fetchAllPages<ServiceCatalog>(`${OBJECTS_BASE}/service-catalogs`);
+}
+
+export async function getServiceCatalogsPage(params: PagedListParams = {}): Promise<ServiceCatalog[]> {
+    const url = buildPagedUrl(`${OBJECTS_BASE}/service-catalogs`, params);
+    return fetchApi<ServiceCatalog[]>(url);
 }
 
 export async function getServiceCatalog(oid: string): Promise<ServiceCatalog> {
@@ -212,6 +245,11 @@ export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
         baseUrl += `?is_active=${String(isActive)}`;
     }
     return fetchAllPages<Worker>(baseUrl);
+}
+
+export async function getWorkersPage(params: ActivePagedListParams = {}): Promise<Worker[]> {
+    const url = buildPagedUrl(`${OBJECTS_BASE}/workers`, params, params.isActive);
+    return fetchApi<Worker[]>(url);
 }
 
 export async function getWorker(oid: string): Promise<Worker> {

@@ -2,15 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MousePointerClick, RefreshCw, Search } from 'lucide-react';
+import { MousePointerClick, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { Interaction } from '@/lib/types/objects';
-
-interface InteractionsListPageProps {
-    interactions: Interaction[];
-}
+import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
 
 const STATUS_STYLE: Record<'assigned' | 'deferred' | 'unassigned', { bg: string; text: string }> = {
     assigned: { bg: 'bg-green-500/20', text: 'text-green-500' },
@@ -23,13 +22,33 @@ function getCreatedAtTimestamp(value: string): number {
     return Number.isNaN(ts) ? 0 : ts;
 }
 
-export function InteractionsListPage({ interactions }: InteractionsListPageProps) {
+export function InteractionsListPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const {
+        items: interactions,
+        total: totalInteractions,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Interaction, InteractionListResponse>('interactions', {
+        pageSize: 300,
+        auto: true,
+        query: {
+            sort_by: 'created_at',
+            order: 'desc',
+        },
+        extractItems: (response) => response.items,
+        extractTotal: (response) => response.total,
+        inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
+    });
 
     const sortedInteractions = useMemo(() => {
         return [...interactions].sort((a, b) => {
@@ -55,13 +74,12 @@ export function InteractionsListPage({ interactions }: InteractionsListPageProps
     }, [searchQuery, sortedInteractions]);
 
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -71,13 +89,13 @@ export function InteractionsListPage({ interactions }: InteractionsListPageProps
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Interactions</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {interactions.length} Total · Sorted by Created Time (Newest First)
+                                {interactions.length.toLocaleString()} Active Loaded / {interactions.length.toLocaleString()} Loaded / {(totalInteractions ?? interactions.length).toLocaleString()} Total · Sorted by Created Time (Newest First)
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
@@ -96,7 +114,13 @@ export function InteractionsListPage({ interactions }: InteractionsListPageProps
                 </div>
 
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {filteredInteractions.length === 0 ? (
+                    {isInitialLoading && interactions.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading interactions...</span>
+                        </div>
+                    ) : error && interactions.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : filteredInteractions.length === 0 ? (
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No interactions found</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -132,6 +156,19 @@ export function InteractionsListPage({ interactions }: InteractionsListPageProps
                         </div>
                     )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading more interactions...</span>
+                    </div>
+                )}
             </div>
         </div>
     );

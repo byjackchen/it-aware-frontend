@@ -4,49 +4,87 @@
  * Workers list page client component.
  */
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Plus, RefreshCw, Search, Check, X } from 'lucide-react';
+import { Users, Plus, RefreshCw, Search, Check, X, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import type { Worker, Organization } from '@/lib/types/objects';
 
-interface WorkersListPageProps {
-    workers: Worker[];
-    organizations: Organization[];
-}
-
-export function WorkersListPage({ workers, organizations }: WorkersListPageProps) {
+export function WorkersListPage() {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [workerTypeFilter, setWorkerTypeFilter] = useState<string | null>(null);
 
-    const orgMap = new Map(organizations.map((o) => [o.oid, o.name]));
-    // Collect unique worker types for the filter
-    const workerTypes = Array.from(new Set(workers.map(w => w.worker_type).filter(Boolean) as string[])).sort();
-
-    const filteredWorkers = workers.filter((w) => {
-        const matchesSearch =
-            searchQuery === '' ||
-            w.fullname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (w.email && w.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (w.worker_id && w.worker_id.toLowerCase().includes(searchQuery.toLowerCase()));
-
-        const matchesType = workerTypeFilter === null || w.worker_type === workerTypeFilter;
-
-        return matchesSearch && matchesType;
+    const {
+        items: workers,
+        total: totalWorkers,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Worker>('workers', {
+        pageSize: 300,
+        auto: true,
     });
 
+    const { items: organizations } = useLazyResourceList<Organization>('organizations', {
+        query: { limit: 1000 },
+        auto: true,
+    });
+
+    const orgMap = useMemo(
+        () => new Map(organizations.map((o) => [o.oid, o.name])),
+        [organizations]
+    );
+
+    const workerTypes = useMemo(
+        () => Array.from(new Set(workers.map(w => w.worker_type).filter(Boolean) as string[])).sort(),
+        [workers]
+    );
+
+    const filteredWorkers = useMemo(() => {
+        return workers.filter((w) => {
+            const matchesSearch =
+                searchQuery === '' ||
+                w.fullname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (w.email && w.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (w.worker_id && w.worker_id.toLowerCase().includes(searchQuery.toLowerCase()));
+
+            const matchesType = workerTypeFilter === null || w.worker_type === workerTypeFilter;
+            return matchesSearch && matchesType;
+        });
+    }, [workers, searchQuery, workerTypeFilter]);
+
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
+
+    useEffect(() => {
+        if (isInitialLoading || isLoadingMore || !hasMore) return;
+        void loadMore();
+    }, [hasMore, isInitialLoading, isLoadingMore, loadMore]);
+
+    const totalLabel = useMemo(() => {
+        if (typeof totalWorkers === 'number' && Number.isFinite(totalWorkers)) {
+            return totalWorkers.toLocaleString();
+        }
+        if (hasMore) {
+            return `${workers.length.toLocaleString()}+`;
+        }
+        return workers.length.toLocaleString();
+    }, [hasMore, totalWorkers, workers.length]);
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -62,7 +100,7 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                                 Workers
                             </h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {workers.filter(w => w.is_active).length} Active / {workers.length} Total
+                                {workers.filter(w => w.is_active).length.toLocaleString()} Active Loaded / {workers.length.toLocaleString()} Loaded / {totalLabel} Total
                             </p>
                         </div>
                     </div>
@@ -71,7 +109,7 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                             onClick={handleRefresh}
                             className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}
                         >
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
                         <button
                             onClick={() => router.push('/data/workers/new')}
@@ -115,7 +153,15 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
 
                 {/* List */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {filteredWorkers.length === 0 ? (
+                    {isInitialLoading && workers.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" /> Loading workers...
+                            </span>
+                        </div>
+                    ) : error && workers.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : filteredWorkers.length === 0 ? (
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                             No workers found
                         </div>
@@ -141,7 +187,7 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                                             <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {worker.email || worker.worker_id || 'No email'}
                                                 {' • '}
-                                                {orgMap.get(worker.org_oid) || 'Unknown org'}
+                                                {orgMap.get(worker.org_oid) || worker.org_oid}
                                             </div>
                                         </div>
                                     </div>
@@ -161,6 +207,21 @@ export function WorkersListPage({ workers, organizations }: WorkersListPageProps
                         </div>
                     )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading more workers...
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     );

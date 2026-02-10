@@ -2,22 +2,22 @@
 
 /**
  * Worker Selector Component for Persona Page
- * 
- * Allows users to search and select a worker to view their persona profile.
+ *
+ * Loads large worker list lazily when users open the selector.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { ChevronDown, Search, User } from 'lucide-react';
+import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
+import { ChevronDown, Search } from 'lucide-react';
 import type { Worker } from '@/lib/types/objects';
 
 interface WorkerSelectorProps {
-    workers: Worker[];
-    currentWorkerOid: string;
+    currentWorker: Worker;
 }
 
-export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProps) {
+export function WorkerSelector({ currentWorker }: WorkerSelectorProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
@@ -25,14 +25,38 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
     const [searchQuery, setSearchQuery] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const currentWorker = workers.find(w => w.oid === currentWorkerOid);
-
-    const filteredWorkers = workers.filter(w => {
-        const fullName = w.fullname.toLowerCase();
-        const email = (w.email || '').toLowerCase();
-        const query = searchQuery.toLowerCase();
-        return fullName.includes(query) || email.includes(query);
+    const {
+        items: loadedWorkers,
+        isLoading,
+        error,
+        hasLoaded,
+        load,
+    } = useLazyResourceList<Worker>('workers', {
+        query: {
+            limit: 1000,
+            is_active: true,
+        },
     });
+
+    const workers = useMemo(() => {
+        const byOid = new Map<string, Worker>();
+        byOid.set(currentWorker.oid, currentWorker);
+        loadedWorkers.forEach((worker) => {
+            byOid.set(worker.oid, worker);
+        });
+        return Array.from(byOid.values());
+    }, [currentWorker, loadedWorkers]);
+
+    const filteredWorkers = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return workers;
+
+        return workers.filter((worker) => {
+            const fullName = worker.fullname.toLowerCase();
+            const email = (worker.email || '').toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }, [searchQuery, workers]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -44,6 +68,15 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Lazy load worker list only when the selector is opened.
+    useEffect(() => {
+        if (isOpen && !hasLoaded && !isLoading) {
+            void load().catch(() => {
+                // Error is displayed by state below.
+            });
+        }
+    }, [hasLoaded, isLoading, isOpen, load]);
 
     const handleSelect = (workerOid: string) => {
         setIsOpen(false);
@@ -98,13 +131,21 @@ export function WorkerSelector({ workers, currentWorkerOid }: WorkerSelectorProp
 
                     {/* Worker List */}
                     <div className="max-h-64 overflow-y-auto p-2">
-                        {filteredWorkers.length === 0 ? (
+                        {!hasLoaded && isLoading ? (
+                            <div className={`px-3 py-4 text-center text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                Loading workers...
+                            </div>
+                        ) : error ? (
+                            <div className={`px-3 py-4 text-center text-sm ${isLight ? 'text-red-500' : 'text-red-400'}`}>
+                                Failed to load workers
+                            </div>
+                        ) : filteredWorkers.length === 0 ? (
                             <div className={`px-3 py-4 text-center text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                 No workers found
                             </div>
                         ) : (
-                            filteredWorkers.map(worker => {
-                                const isSelected = worker.oid === currentWorkerOid;
+                            filteredWorkers.map((worker) => {
+                                const isSelected = worker.oid === currentWorker.oid;
                                 return (
                                     <button
                                         key={worker.oid}

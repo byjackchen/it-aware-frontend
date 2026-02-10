@@ -170,6 +170,12 @@ class IncidentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     effective_at: datetime
+
+class IncidentListResponse(BaseModel):
+    items: List[IncidentResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 > **Timestamp behavior**: `created_at`, `updated_at`, and `effective_at` should be timezone-aware ISO8601 (e.g., `2026-02-02T12:34:56Z`). Naive timestamps are assumed to be UTC and are normalized to UTC. If omitted, defaults are used on create and existing values are preserved on update.
@@ -185,6 +191,8 @@ class IncidentResponse(BaseModel):
 | DELETE | `/objects/activities/incidents/{oid}` | Delete incident | `objects:incidents:write` |
 
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
+>
+> **List response shape**: `GET /objects/activities/incidents` returns `IncidentListResponse` (not a bare array), so callers can read `total` before loading all pages.
 
 ### ABAC Filtering
 
@@ -242,6 +250,12 @@ class InquiryResponse(BaseModel):
     updated_at: datetime
     effective_at: datetime
 
+class InquiryListResponse(BaseModel):
+    items: List[InquiryResponse]
+    total: int
+    skip: int
+    limit: int
+
 class InquiryInteractionItem(BaseModel):
     oid: Optional[str] = None
     stable_id: Optional[str] = None
@@ -288,6 +302,8 @@ class InquiryMaterializeResponse(BaseModel):
 | POST | `/objects/activities/inquiries/{oid}/materialize` | Rebuild inquiry aggregate (`topic/messages/fact`) from assigned interactions | `objects:inquiries:write` |
 
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
+>
+> **List response shape**: `GET /objects/activities/inquiries` returns `InquiryListResponse` (not a bare array), so callers can read `total` before loading all pages.
 >
 > **Task 1 compatibility note**: before the interactions table is introduced (Task 2),
 > `/interactions` is expected to return `200` with an empty list.

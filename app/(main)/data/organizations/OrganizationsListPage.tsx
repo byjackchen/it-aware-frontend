@@ -4,33 +4,18 @@
  * Organizations list page client component with tree view and search.
  */
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, RefreshCw, Search, X, ChevronsUpDown, ChevronsDownUp, Eye, EyeOff } from 'lucide-react';
+import { Building2, Plus, RefreshCw, Search, X, ChevronsUpDown, ChevronsDownUp, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchyTree } from '@/components/data';
-import type { HierarchyTreeNode } from '@/lib/types/objects';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { buildHierarchyTree } from '@/lib/utils/hierarchy';
+import type { HierarchyTreeNode, Organization } from '@/lib/types/objects';
 
-interface OrganizationsListPageProps {
-    treeNodes: HierarchyTreeNode[];
-}
-
-// Count all nodes in the tree recursively
-function countNodes(nodes: HierarchyTreeNode[]): number {
-    return nodes.reduce((count, node) => count + 1 + countNodes(node.children), 0);
-}
-
-// Count active nodes in the tree recursively
-function countActiveNodes(nodes: HierarchyTreeNode[]): number {
-    return nodes.reduce((count, node) => {
-        const selfCount = node.is_active ? 1 : 0;
-        return count + selfCount + countActiveNodes(node.children);
-    }, 0);
-}
-
-// Filter tree nodes by search query AND active status
 function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: boolean): HierarchyTreeNode[] {
-    // If we're not filtering by query and showing everything, return as is
     if (!query.trim() && showDeactivated) return nodes;
 
     const lowerQuery = query.toLowerCase();
@@ -38,24 +23,15 @@ function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: 
     function filterNode(node: HierarchyTreeNode): HierarchyTreeNode | null {
         const matchesQuery = !query.trim() || node.name.toLowerCase().includes(lowerQuery);
 
-        // Recurse first to check children
         const filteredChildren = node.children
             .map(child => filterNode(child))
             .filter((child): child is HierarchyTreeNode => child !== null);
 
         const hasVisibleChildren = filteredChildren.length > 0;
-
-        // Visibility check:
-        // 1. If showDeactivated is true => Visible
-        // 2. If node is active => Visible
-        // 3. If node is inactive BUT has visible children => Visible (to show path)
         const isVisibleByStatus = showDeactivated || node.is_active || hasVisibleChildren;
 
-        if (!isVisibleByStatus) {
-            return null;
-        }
+        if (!isVisibleByStatus) return null;
 
-        // Include node if it matches query or has matching children
         if (matchesQuery || hasVisibleChildren) {
             return {
                 ...node,
@@ -70,28 +46,48 @@ function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: 
         .filter((node): node is HierarchyTreeNode => node !== null);
 }
 
-export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps) {
+export function OrganizationsListPage() {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showDeactivated, setShowDeactivated] = useState(false);
     const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+
+    const {
+        items: organizations,
+        total: totalOrganizations,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Organization>('organizations', {
+        pageSize: 300,
+        auto: true,
+    });
+
+    const treeNodes = useMemo(() => buildHierarchyTree(organizations), [organizations]);
 
     const filteredNodes = useMemo(
         () => filterTree(treeNodes, searchQuery, showDeactivated),
         [treeNodes, searchQuery, showDeactivated]
     );
 
-    const totalNodes = useMemo(() => countNodes(treeNodes), [treeNodes]);
-    const activeNodes = useMemo(() => countActiveNodes(treeNodes), [treeNodes]);
-    const deactivatedNodes = totalNodes - activeNodes;
+    const totalNodes = organizations.length;
+    const activeNodes = useMemo(
+        () => organizations.reduce((count, node) => count + (node.is_active ? 1 : 0), 0),
+        [organizations]
+    );
+
+    useEffect(() => {
+        if (isInitialLoading || isLoadingMore || !hasMore) return;
+        void loadMore();
+    }, [hasMore, isInitialLoading, isLoadingMore, loadMore]);
 
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
 
     const handleExpandAll = () => {
@@ -104,6 +100,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -119,7 +116,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
                                 Organizations
                             </h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {activeNodes.toLocaleString()} Active / {totalNodes.toLocaleString()} Total
+                                {activeNodes.toLocaleString()} Active Loaded / {totalNodes.toLocaleString()} Loaded / {(totalOrganizations ?? totalNodes).toLocaleString()} Total
                             </p>
                         </div>
                     </div>
@@ -135,7 +132,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
               `}
                             title="Refresh"
                         >
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
                         <button
                             onClick={() => router.push('/data/organizations/new')}
@@ -181,7 +178,7 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
                                 : (isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10')
                             }
                         `}
-                        title={showDeactivated ? "Hide Deactivated" : "Show Deactivated"}
+                        title={showDeactivated ? 'Hide Deactivated' : 'Show Deactivated'}
                     >
                         {showDeactivated ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                     </button>
@@ -225,14 +222,35 @@ export function OrganizationsListPage({ treeNodes }: OrganizationsListPageProps)
           rounded-xl border overflow-hidden
           ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}
         `}>
-                    <HierarchyTree
-                        nodes={filteredNodes}
-                        baseHref="/data/organizations"
-                        emptyMessage={searchQuery ? 'No matching organizations found.' : 'No organizations found. Create your first organization to get started.'}
-                        expandAll={expandAll}
-                    />
+                    {isInitialLoading && organizations.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading organizations...</span>
+                        </div>
+                    ) : error && organizations.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : (
+                        <HierarchyTree
+                            nodes={filteredNodes}
+                            baseHref="/data/organizations"
+                            emptyMessage={searchQuery ? 'No matching organizations found.' : 'No organizations found. Create your first organization to get started.'}
+                            expandAll={expandAll}
+                        />
+                    )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading more organizations...</span>
+                    </div>
+                )}
             </div>
-        </div >
+        </div>
     );
 }

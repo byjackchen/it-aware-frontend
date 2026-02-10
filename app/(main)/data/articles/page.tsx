@@ -1,15 +1,9 @@
 /**
- * Articles list page - Server Component.
+ * Articles list page.
  */
 
-import { getArticles, getServiceCatalogs } from '@/lib/api/objects';
 import { ArticlesListPage } from './ArticlesListPage';
 
-export default async function ArticlesPage() {
-    const [articles, serviceCatalogs] = await Promise.all([
-        getArticles(),
-        getServiceCatalogs(),
-    ]);
-
-    return <ArticlesListPage articles={articles} serviceCatalogs={serviceCatalogs} />;
+export default function ArticlesPage() {
+    return <ArticlesListPage />;
 }

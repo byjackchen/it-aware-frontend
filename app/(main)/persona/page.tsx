@@ -5,19 +5,13 @@
  * Shows the first worker by default; users can switch using the selector.
  */
 
-import { getWorkers, getOrganizations, getLocations, getWorkerHardwares } from '@/lib/api/objects';
+import { getWorkersPage, getOrganization, getLocation, getWorkerHardwares } from '@/lib/api/objects';
 import { buildPersonaFromWorker } from '@/lib/types/persona';
 import { PersonaProfilePage } from './PersonaProfilePage';
 
 export default async function PersonaPage() {
-    // Fetch data from existing APIs
-    const [workers, organizations, locations] = await Promise.all([
-        getWorkers(true), // Get active workers
-        getOrganizations(),
-        getLocations(),
-    ]);
-
-    // For default view: Use the first worker to build a persona
+    // Fetch only the first active worker for first paint.
+    const workers = await getWorkersPage({ isActive: true, limit: 1 });
     const worker = workers[0];
 
     if (!worker) {
@@ -31,14 +25,11 @@ export default async function PersonaPage() {
         );
     }
 
-    // Fetch hardware for this worker
-    const hardwares = await getWorkerHardwares(worker.oid).catch(() => []);
-
-    // Find related organization and location
-    const organization = organizations.find(o => o.oid === worker.org_oid) || null;
-    const location = worker.location_oid
-        ? locations.find(l => l.oid === worker.location_oid) || null
-        : null;
+    const [hardwares, organization, location] = await Promise.all([
+        getWorkerHardwares(worker.oid).catch(() => []),
+        getOrganization(worker.org_oid).catch(() => null),
+        worker.location_oid ? getLocation(worker.location_oid).catch(() => null) : Promise.resolve(null),
+    ]);
 
     // Build persona from worker data
     const persona = buildPersonaFromWorker(worker, organization, location, hardwares);
@@ -46,8 +37,7 @@ export default async function PersonaPage() {
     return (
         <PersonaProfilePage
             persona={persona}
-            workers={workers}
-            currentWorkerOid={worker.oid}
+            currentWorker={worker}
         />
     );
 }

@@ -9,16 +9,11 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, User, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
 import type { Organization, Location, Worker } from '@/lib/types/objects';
 import { createWorkerAction } from '@/app/actions/objects';
 
-interface WorkerCreatePageProps {
-    organizations: Organization[];
-    locations: Location[];
-    workers: Worker[];
-}
-
-export function WorkerCreatePage({ organizations, locations, workers }: WorkerCreatePageProps) {
+export function WorkerCreatePage() {
     const { theme } = useTheme();
     const router = useRouter();
     const t = useTranslations('Data');
@@ -44,6 +39,34 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
     const [jobManagementLevel, setJobManagementLevel] = useState('');
     const [jobBand, setJobBand] = useState('');
     const [jobTitle, setJobTitle] = useState('');
+
+    const {
+        items: organizations,
+        isLoading: isOrganizationsLoading,
+        error: organizationsError,
+    } = useLazyResourceList<Organization>('organizations', {
+        query: { limit: 1000 },
+        auto: true,
+    });
+
+    const {
+        items: locations,
+        isLoading: isLocationsLoading,
+        error: locationsError,
+    } = useLazyResourceList<Location>('locations', {
+        query: { limit: 1000 },
+        auto: true,
+    });
+
+    const {
+        items: workers,
+        isLoading: isWorkersLoading,
+        error: workersError,
+        hasLoaded: hasWorkersLoaded,
+        load: loadWorkers,
+    } = useLazyResourceList<Worker>('workers', {
+        query: { limit: 1000, is_active: true },
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -147,9 +170,16 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 value={orgOid}
                                 onChange={(e) => setOrgOid(e.target.value)}
                                 className={inputClass}
+                                disabled={isOrganizationsLoading || !!organizationsError}
                                 required
                             >
-                                <option value="">Select organization...</option>
+                                <option value="">
+                                    {isOrganizationsLoading
+                                        ? 'Loading organizations...'
+                                        : organizationsError
+                                            ? 'Failed to load organizations'
+                                            : 'Select organization...'}
+                                </option>
                                 {organizations.map((org) => (
                                     <option key={org.oid} value={org.oid}>{org.name}</option>
                                 ))}
@@ -188,8 +218,15 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 value={locationOid}
                                 onChange={(e) => setLocationOid(e.target.value)}
                                 className={inputClass}
+                                disabled={isLocationsLoading || !!locationsError}
                             >
-                                <option value="">None</option>
+                                <option value="">
+                                    {isLocationsLoading
+                                        ? 'Loading locations...'
+                                        : locationsError
+                                            ? 'Failed to load locations'
+                                            : 'None'}
+                                </option>
                                 {locations.map((loc) => (
                                     <option key={loc.oid} value={loc.oid}>{loc.name}</option>
                                 ))}
@@ -202,8 +239,24 @@ export function WorkerCreatePage({ organizations, locations, workers }: WorkerCr
                                 value={managerOid}
                                 onChange={(e) => setManagerOid(e.target.value)}
                                 className={inputClass}
+                                onFocus={() => {
+                                    if (!hasWorkersLoaded && !isWorkersLoading) {
+                                        void loadWorkers().catch(() => {
+                                            // Error state is shown in the placeholder option.
+                                        });
+                                    }
+                                }}
+                                disabled={isWorkersLoading}
                             >
-                                <option value="">None</option>
+                                <option value="">
+                                    {isWorkersLoading
+                                        ? 'Loading managers...'
+                                        : workersError
+                                            ? 'Failed to load managers'
+                                            : hasWorkersLoaded
+                                                ? 'None'
+                                                : 'Click to load managers...'}
+                                </option>
                                 {workers.map((w) => (
                                     <option key={w.oid} value={w.oid}>
                                         {w.fullname}

@@ -72,6 +72,8 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     const [jobManagementLevel, setJobManagementLevel] = useState(worker.job_management_level || '');
     const [jobBand, setJobBand] = useState(worker.job_band || '');
     const [jobTitle, setJobTitle] = useState(worker.job_title || '');
+    const [isVip, setIsVip] = useState(worker.is_vip);
+    const [vipType, setVipType] = useState(worker.vip_type || '');
 
     const [isActive, setIsActive] = useState(worker.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
@@ -102,6 +104,8 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
             formData.set('job_management_level', jobManagementLevel);
             formData.set('job_band', jobBand);
             formData.set('job_title', jobTitle);
+            formData.set('is_vip', String(isVip));
+            formData.set('vip_type', isVip ? vipType : '');
             formData.set('is_active', String(isActive));
             await updateWorkerAction(worker.oid, formData);
             setIsEditing(false);
@@ -135,6 +139,8 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
         setJobManagementLevel(worker.job_management_level || '');
         setJobBand(worker.job_band || '');
         setJobTitle(worker.job_title || '');
+        setIsVip(worker.is_vip);
+        setVipType(worker.vip_type || '');
         setIsActive(worker.is_active);
         setIsEditing(false);
     };
@@ -293,6 +299,52 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
                                     <span className={textClass}>{worker.worker_type || t('workers.notSet')}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* VIP Status */}
+                        <div>
+                            <label className={labelClass}>Is VIP</label>
+                            {isEditing ? (
+                                <label className="flex items-center gap-2 px-3 py-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={isVip}
+                                        onChange={(e) => setIsVip(e.target.checked)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className={isLight ? 'text-slate-700' : 'text-gray-300'}>
+                                        {isVip ? 'Yes' : 'No'}
+                                    </span>
+                                </label>
+                            ) : (
+                                <div className={displayClass}>
+                                    {worker.is_vip ? (
+                                        <span className="flex items-center gap-1 text-green-500"><Check className="w-4 h-4" /> Yes</span>
+                                    ) : (
+                                        <span className="flex items-center gap-1 text-slate-500"><X className="w-4 h-4" /> No</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* VIP Type */}
+                        <div>
+                            <label className={labelClass}>VIP Type</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={vipType}
+                                    onChange={(e) => setVipType(e.target.value)}
+                                    placeholder="Optional"
+                                    className={inputClass}
+                                    disabled={!isVip}
+                                />
+                            ) : (
+                                <div className={displayClass}>
+                                    <Briefcase className={iconClass} />
+                                    <span className={textClass}>{worker.vip_type || t('workers.notSet')}</span>
                                 </div>
                             )}
                         </div>
