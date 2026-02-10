@@ -1,35 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageCircle, RefreshCw, Search } from 'lucide-react';
+import { MessageCircle, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import type { Inquiry } from '@/lib/types/objects';
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
+import type { Inquiry, InquiryListResponse } from '@/lib/types/objects';
 
-interface InquiriesListPageProps {
-    inquiries: Inquiry[];
-}
-
-export function InquiriesListPage({ inquiries }: InquiriesListPageProps) {
+export function InquiriesListPage() {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredInquiries = inquiries.filter((inquiry) => {
-        const topic = inquiry.topic || 'Untitled Inquiry';
-        return searchQuery === '' || topic.toLowerCase().includes(searchQuery.toLowerCase());
+    const {
+        items: inquiries,
+        total: totalInquiries,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Inquiry, InquiryListResponse>('inquiries', {
+        pageSize: 300,
+        auto: true,
+        extractItems: (response) => response.items,
+        extractTotal: (response) => response.total,
+        inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
     });
 
+    const filteredInquiries = useMemo(() => {
+        return inquiries.filter((inquiry) => {
+            const topic = inquiry.topic || 'Untitled Inquiry';
+            return searchQuery === '' || topic.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+    }, [inquiries, searchQuery]);
+
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -40,13 +56,13 @@ export function InquiriesListPage({ inquiries }: InquiriesListPageProps) {
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Inquiries</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {inquiries.length} Total
+                                {inquiries.length.toLocaleString()} Active Loaded / {inquiries.length.toLocaleString()} Loaded / {(totalInquiries ?? inquiries.length).toLocaleString()} Total
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
@@ -67,7 +83,13 @@ export function InquiriesListPage({ inquiries }: InquiriesListPageProps) {
 
                 {/* List */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {filteredInquiries.length === 0 ? (
+                    {isInitialLoading && inquiries.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading inquiries...</span>
+                        </div>
+                    ) : error && inquiries.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : filteredInquiries.length === 0 ? (
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No inquiries found</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -91,6 +113,19 @@ export function InquiriesListPage({ inquiries }: InquiriesListPageProps) {
                         </div>
                     )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading more inquiries...</span>
+                    </div>
+                )}
             </div>
         </div>
     );

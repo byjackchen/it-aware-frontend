@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Plus, RefreshCw, Search } from 'lucide-react';
+import { AlertCircle, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import type { Incident } from '@/lib/types/objects';
-
-interface IncidentsListPageProps {
-    incidents: Incident[];
-}
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
+import type { Incident, IncidentListResponse } from '@/lib/types/objects';
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
     critical: { bg: 'bg-red-500/20', text: 'text-red-500' },
@@ -18,27 +17,44 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
     none: { bg: 'bg-gray-500/20', text: 'text-gray-500' },
 };
 
-export function IncidentsListPage({ incidents }: IncidentsListPageProps) {
+export function IncidentsListPage() {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredIncidents = incidents.filter((incident) => {
-        return searchQuery === '' || incident.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const {
+        items: incidents,
+        total: totalIncidents,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Incident, IncidentListResponse>('incidents', {
+        pageSize: 300,
+        auto: true,
+        extractItems: (response) => response.items,
+        extractTotal: (response) => response.total,
+        inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
     });
 
+    const filteredIncidents = useMemo(() => {
+        return incidents.filter((incident) => {
+            return searchQuery === '' || incident.title.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+    }, [incidents, searchQuery]);
+
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
 
     const getPriorityStyle = (priority: string | null) => PRIORITY_COLORS[priority?.toLowerCase() || 'none'] || PRIORITY_COLORS.none;
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -49,19 +65,14 @@ export function IncidentsListPage({ incidents }: IncidentsListPageProps) {
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Incidents</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {incidents.length} Total
+                                {incidents.length.toLocaleString()} Active Loaded / {incidents.length.toLocaleString()} Loaded / {(totalIncidents ?? incidents.length).toLocaleString()} Total
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
-                        {/* New Incident Button - Optional, add if needed */}
-                        {/* <button onClick={() => router.push('/data/incidents/new')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors">
-                            <Plus className="w-4 h-4" />
-                            <span>New Incident</span>
-                        </button> */}
                     </div>
                 </div>
 
@@ -81,7 +92,13 @@ export function IncidentsListPage({ incidents }: IncidentsListPageProps) {
 
                 {/* List */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {filteredIncidents.length === 0 ? (
+                    {isInitialLoading && incidents.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading incidents...</span>
+                        </div>
+                    ) : error && incidents.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : filteredIncidents.length === 0 ? (
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No incidents found</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -108,6 +125,19 @@ export function IncidentsListPage({ incidents }: IncidentsListPageProps) {
                         </div>
                     )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading more incidents...</span>
+                    </div>
+                )}
             </div>
         </div>
     );

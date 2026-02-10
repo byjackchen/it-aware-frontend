@@ -59,6 +59,8 @@ class Worker(Base):
     org_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=False)
     location_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     manager_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
+    is_vip = Column(Boolean, default=False, nullable=False)
+    vip_type = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -126,6 +128,8 @@ class WorkerCreate(BaseModel):
     org_oid: str  # Required
     location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
+    is_vip: bool = False
+    vip_type: Optional[str] = None  # Set null to clear
     is_active: bool = True
 
 class WorkerUpdate(BaseModel):
@@ -146,6 +150,8 @@ class WorkerUpdate(BaseModel):
     org_oid: Optional[str] = None
     location_oid: Optional[str] = None  # Empty string to clear
     manager_oid: Optional[str] = None  # Empty string to clear
+    is_vip: Optional[bool] = None
+    vip_type: Optional[str] = None
     is_active: Optional[bool] = None
 
 class WorkerResponse(BaseModel):
@@ -167,9 +173,17 @@ class WorkerResponse(BaseModel):
     org_oid: str
     location_oid: Optional[str] = None
     manager_oid: Optional[str] = None
+    is_vip: bool
+    vip_type: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class WorkerListResponse(BaseModel):
+    items: List[WorkerResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -201,9 +215,34 @@ class WorkerResponse(BaseModel):
 | `stable_id` | string | null | Filter by stable_id (exact match) |
 | `org_oid` | string | null | Filter by organization |
 | `location_oid` | string | null | Filter by location |
+| `manager_oid` | string | null | Filter by manager |
+| `is_vip` | boolean | null | Filter by VIP status |
+| `vip_type` | string | null | Filter by VIP type (exact match) |
 | `is_active` | boolean | null | Filter by active status |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+
+### List Response Contract
+
+`GET /objects/workers` returns a paginated object instead of a bare array:
+
+```json
+{
+  "items": [
+    {
+      "oid": "01JFXYZWORKER1234567890",
+      "stable_id": "asmith",
+      "fullname": "Alice Smith"
+    }
+  ],
+  "total": 2371,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+- `total` is the filtered full count (not the loaded page size).
+- `items` are stably ordered by `oid` ascending for deterministic `skip/limit` pagination.
 
 ### Create Worker Example
 
@@ -213,6 +252,8 @@ class WorkerResponse(BaseModel):
   "stable_id": "asmith",
   "fullname": "Alice Smith",
   "email": "alice@example.com",
+  "is_vip": true,
+  "vip_type": "executive",
   "org_oid": "01JFXYZORG123456789AB",
   "location_oid": "01JFXYZLOC123456789AB"
 }
@@ -259,6 +300,8 @@ class WorkerHardwareResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 ```
+
+> **Timestamp behavior**: `assignment_date` and `renew_eligible_date` should be timezone-aware ISO8601 (e.g., `2026-02-02T12:34:56Z`). Naive timestamps are assumed to be UTC and are normalized to UTC.
 
 #### Endpoints
 
@@ -425,6 +468,12 @@ class ArticleVersionResponse(BaseModel):
     source_url: Optional[str]
     metadata: Optional[Dict[str, Any]]
     created_at: datetime
+
+class ArticleListResponse(BaseModel):
+    items: List[ArticleResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -447,6 +496,8 @@ class ArticleVersionResponse(BaseModel):
 | `is_active` | boolean | null | Filter by active status |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+
+`GET /objects/articles` returns `ArticleListResponse` (`{ items, total, skip, limit }`), not a bare array.
 
 ### ABAC Filtering
 

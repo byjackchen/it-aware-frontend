@@ -164,6 +164,8 @@ export interface Worker {
     org_oid: string;
     location_oid: string | null;
     manager_oid: string | null;
+    is_vip: boolean;
+    vip_type: string | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -223,6 +225,8 @@ export interface WorkerCreate {
     org_oid: string;
     location_oid?: string | null;
     manager_oid?: string | null;
+    is_vip?: boolean;
+    vip_type?: string | null;
     is_active?: boolean;
 }
 
@@ -243,6 +247,8 @@ export interface WorkerUpdate {
     org_oid?: string;
     location_oid?: string | null;
     manager_oid?: string | null;
+    is_vip?: boolean;
+    vip_type?: string | null;
     is_active?: boolean;
 }
 
@@ -452,6 +458,13 @@ export interface IncidentCreate {
     effective_at?: string;
 }
 
+export interface IncidentListResponse {
+    items: Incident[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
 export interface Inquiry {
     oid: string;
     object_type: 'inquiry';
@@ -484,6 +497,13 @@ export interface InquiryCreate {
     created_at?: string;
     updated_at?: string;
     effective_at?: string;
+}
+
+export interface InquiryListResponse {
+    items: Inquiry[];
+    total: number;
+    skip: number;
+    limit: number;
 }
 
 

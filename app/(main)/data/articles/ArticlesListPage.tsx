@@ -4,49 +4,70 @@
  * Articles list page client component.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { FileText, Plus, RefreshCw, Search, Layers } from 'lucide-react';
+import { FileText, Plus, RefreshCw, Search, Layers, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
+import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import { formatDate } from '@/lib/utils/datetime';
 import type { Article, ServiceCatalog } from '@/lib/types/objects';
 
-interface ArticlesListPageProps {
-    articles: Article[];
-    serviceCatalogs: ServiceCatalog[];
-}
-
-export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPageProps) {
+export function ArticlesListPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data.articles');
     const commonT = useTranslations('Data.common');
     const isLight = theme === 'light';
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [catalogFilter, setCatalogFilter] = useState<string | null>(null);
 
-    const catalogMap = new Map(serviceCatalogs.map((c) => [c.oid, c.name]));
-
-    const filteredArticles = articles.filter((a) => {
-        const matchesSearch = searchQuery === '' ||
-            a.latest_version.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (a.latest_version.summary && a.latest_version.summary.toLowerCase().includes(searchQuery.toLowerCase()));
-        const matchesCatalog = catalogFilter === null || a.service_catalog_id === catalogFilter;
-        return matchesSearch && matchesCatalog;
+    const {
+        items: articles,
+        total: totalArticles,
+        isInitialLoading,
+        isLoadingMore,
+        error,
+        hasMore,
+        loadMore,
+        reload,
+    } = useInfiniteResource<Article>('articles', {
+        pageSize: 300,
+        auto: true,
     });
 
+    const { items: serviceCatalogs } = useLazyResourceList<ServiceCatalog>('service-catalogs', {
+        query: { limit: 1000 },
+        auto: true,
+    });
+
+    const catalogMap = useMemo(
+        () => new Map(serviceCatalogs.map((c) => [c.oid, c.name])),
+        [serviceCatalogs]
+    );
+
+    const filteredArticles = useMemo(() => {
+        return articles.filter((a) => {
+            const matchesSearch = searchQuery === '' ||
+                a.latest_version.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (a.latest_version.summary && a.latest_version.summary.toLowerCase().includes(searchQuery.toLowerCase()));
+            const matchesCatalog = catalogFilter === null || a.service_catalog_id === catalogFilter;
+            return matchesSearch && matchesCatalog;
+        });
+    }, [articles, catalogFilter, searchQuery]);
+
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 500);
+        void reload();
     };
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
+            <QuickScrollRail />
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -57,13 +78,13 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</h1>
                             <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                {articles.filter(a => a.is_active).length} Active / {articles.length} Total
+                                {articles.filter(a => a.is_active).length.toLocaleString()} Active Loaded / {articles.length.toLocaleString()} Loaded / {(totalArticles ?? articles.length).toLocaleString()} Total
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
-                            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-5 h-5 ${(isInitialLoading || isLoadingMore) ? 'animate-spin' : ''}`} />
                         </button>
                         <button onClick={() => router.push('/data/articles/new')} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors">
                             <Plus className="w-4 h-4" />
@@ -100,7 +121,13 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
 
                 {/* List */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    {filteredArticles.length === 0 ? (
+                    {isInitialLoading && articles.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading articles...</span>
+                        </div>
+                    ) : error && articles.length === 0 ? (
+                        <div className={`py-12 text-center ${isLight ? 'text-red-500' : 'text-red-400'}`}>{error}</div>
+                    ) : filteredArticles.length === 0 ? (
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('empty')}</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -126,7 +153,7 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
                                         <div className={`flex items-center gap-4 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                             <div className="flex items-center gap-1">
                                                 <Layers className="w-3 h-3" />
-                                                <span>{catalogMap.get(article.service_catalog_id) || 'Unknown Catalog'}</span>
+                                                <span>{catalogMap.get(article.service_catalog_id) || article.service_catalog_id}</span>
                                             </div>
                                             <div>{commonT('updated')} {formatDate(article.updated_at, timezone)}</div>
                                         </div>
@@ -136,6 +163,19 @@ export function ArticlesListPage({ articles, serviceCatalogs }: ArticlesListPage
                         </div>
                     )}
                 </div>
+
+                {hasMore && (
+                    <InfiniteLoadTrigger
+                        disabled={isInitialLoading || isLoadingMore}
+                        onVisible={() => void loadMore()}
+                    />
+                )}
+
+                {isLoadingMore && (
+                    <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading more articles...</span>
+                    </div>
+                )}
             </div>
         </div>
     );

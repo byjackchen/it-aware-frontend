@@ -27,6 +27,10 @@ import type {
 const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
 const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
 
+interface ListEnvelope<T> {
+  items: T[];
+}
+
 // ============================================================================
 // Core API Fetch Function
 // ============================================================================
@@ -38,6 +42,13 @@ import { fetchApi } from '@/lib/api/core';
 // ============================================================================
 
 // fetchApi moved to @/lib/api/core.ts
+
+function ensureListEnvelope<T>(value: unknown, endpoint: string): ListEnvelope<T> {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as { items?: unknown }).items)) {
+    throw new Error(`Unexpected list response shape from ${endpoint}`);
+  }
+  return value as ListEnvelope<T>;
+}
 
 // ============================================================================
 // Account APIs
@@ -276,7 +287,9 @@ export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
   if (isActive !== undefined) {
     params.set('is_active', String(isActive));
   }
-  return fetchApi<Worker[]>(`${OBJECTS_BASE}/workers?${params.toString()}`);
+  const url = `${OBJECTS_BASE}/workers?${params.toString()}`;
+  const response = await fetchApi<ListEnvelope<Worker>>(url);
+  return ensureListEnvelope<Worker>(response, url).items;
 }
 
 export async function getWorker(oid: string): Promise<Worker> {

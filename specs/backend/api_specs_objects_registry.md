@@ -4,7 +4,7 @@
 
 The Global Registry provides a unified lookup service for all tracked objects in the system. It enables cross-module object discovery and resolution without coupling to specific entity implementations.
 
-The registry is **read-only** from the API perspective. Entries are automatically maintained by database triggers when source objects (workers, organizations, locations, tickets) are created, updated, or deleted.
+The registry is **read-only** from the API perspective. Entries are automatically maintained by database triggers when source objects (workers, organizations, locations, service catalogs, articles) are created, updated, or deleted.
 
 ---
 
@@ -17,7 +17,8 @@ The registry is **read-only** from the API perspective. Entries are automaticall
 | `worker` | `objects.workers` | `full_name` |
 | `organization` | `objects.organizations` | `name` |
 | `location` | `objects.locations` | `name` |
-| `ticket` | `objects.tickets` | `title` |
+| `service_catalog` | `hierarchies.service_catalogs` | `name` |
+| `article` | `knowledges.articles` | `stable_id` |
 
 ### Descriptor
 
@@ -33,7 +34,7 @@ class GlobalRegistry(Base):
     __table_args__ = {"schema": "registry"}
 
     oid = Column(BYTEA(16), primary_key=True)  # 16-byte ULID
-    object_type = Column(Text, nullable=False)  # 'worker'|'organization'|'location'|'ticket'
+    object_type = Column(Text, nullable=False)  # 'worker'|'organization'|'location'|'service_catalog'|'article'
     descriptor = Column(Text, nullable=False)   # Human-readable name/title
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -64,7 +65,7 @@ class GlobalRegistry(Base):
 ```python
 class RegistryResponse(BaseModel):
     oid: str           # 22-char base64url encoded OID
-    object_type: str   # 'worker'|'organization'|'location'|'ticket'
+    object_type: str   # 'worker'|'organization'|'location'|'service_catalog'|'article'
     descriptor: str    # Human-readable name/title
     created_at: datetime
     updated_at: datetime
@@ -116,7 +117,7 @@ Search objects by descriptor using case-insensitive partial matching. Uses pg_tr
 
 | Status | Condition | Response |
 |--------|-----------|----------|
-| 400 | Invalid object_type | `{"detail": "Invalid object_type. Must be one of: ['location', 'organization', 'ticket', 'worker']"}` |
+| 400 | Invalid object_type | `{"detail": "Invalid object_type. Must be one of: ['article', 'location', 'organization', 'service_catalog', 'worker']"}` |
 
 ### Examples
 
@@ -196,7 +197,7 @@ List all objects of a specific type with pagination.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `object_type` | string | One of: `worker`, `organization`, `location`, `ticket` |
+| `object_type` | string | One of: `worker`, `organization`, `location`, `service_catalog`, `article` |
 
 ### Query Parameters
 
@@ -230,7 +231,7 @@ List all objects of a specific type with pagination.
 
 | Status | Condition | Response |
 |--------|-----------|----------|
-| 400 | Invalid type | `{"detail": "Invalid object_type. Must be one of: ['location', 'organization', 'ticket', 'worker']"}` |
+| 400 | Invalid type | `{"detail": "Invalid object_type. Must be one of: ['article', 'location', 'organization', 'service_catalog', 'worker']"}` |
 
 ### Examples
 

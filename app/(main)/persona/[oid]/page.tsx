@@ -5,7 +5,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { getWorker, getWorkers, getOrganizations, getLocations, getWorkerHardwares } from '@/lib/api/objects';
+import { getWorker, getOrganization, getLocation, getWorkerHardwares } from '@/lib/api/objects';
 import { buildPersonaFromWorker } from '@/lib/types/persona';
 import { PersonaProfilePage } from '../PersonaProfilePage';
 
@@ -16,26 +16,17 @@ interface PersonaWorkerPageProps {
 export default async function PersonaWorkerPage({ params }: PersonaWorkerPageProps) {
     const { oid } = await params;
 
-    // Fetch data from existing APIs
-    const [worker, workers, organizations, locations] = await Promise.all([
-        getWorker(oid).catch(() => null),
-        getWorkers(true), // Get active workers for the selector
-        getOrganizations(),
-        getLocations(),
-    ]);
+    const worker = await getWorker(oid).catch(() => null);
 
     if (!worker) {
         notFound();
     }
 
-    // Fetch hardware for this worker
-    const hardwares = await getWorkerHardwares(worker.oid).catch(() => []);
-
-    // Find related organization and location
-    const organization = organizations.find(o => o.oid === worker.org_oid) || null;
-    const location = worker.location_oid
-        ? locations.find(l => l.oid === worker.location_oid) || null
-        : null;
+    const [hardwares, organization, location] = await Promise.all([
+        getWorkerHardwares(worker.oid).catch(() => []),
+        getOrganization(worker.org_oid).catch(() => null),
+        worker.location_oid ? getLocation(worker.location_oid).catch(() => null) : Promise.resolve(null),
+    ]);
 
     // Build persona from worker data
     const persona = buildPersonaFromWorker(worker, organization, location, hardwares);
@@ -43,8 +34,7 @@ export default async function PersonaWorkerPage({ params }: PersonaWorkerPagePro
     return (
         <PersonaProfilePage
             persona={persona}
-            workers={workers}
-            currentWorkerOid={oid}
+            currentWorker={worker}
         />
     );
 }

@@ -35,11 +35,10 @@ import { WorkerSelector } from './WorkerSelector';
 
 interface PersonaProfilePageProps {
     persona: Persona;
-    workers: Worker[];
-    currentWorkerOid: string;
+    currentWorker: Worker;
 }
 
-export function PersonaProfilePage({ persona, workers, currentWorkerOid }: PersonaProfilePageProps) {
+export function PersonaProfilePage({ persona, currentWorker }: PersonaProfilePageProps) {
     const { theme } = useTheme();
     const t = useTranslations('Persona');
     const isLight = theme === 'light';
@@ -77,7 +76,7 @@ export function PersonaProfilePage({ persona, workers, currentWorkerOid }: Perso
                             </p>
                         </div>
                         {/* Worker Selector */}
-                        <WorkerSelector workers={workers} currentWorkerOid={currentWorkerOid} />
+                        <WorkerSelector currentWorker={currentWorker} />
                     </div>
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mt-4">

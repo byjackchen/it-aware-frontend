@@ -362,6 +362,8 @@ export async function createWorkerAction(formData: FormData) {
     const orgOid = formData.get('org_oid') as string;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
+    const isVipStr = formData.get('is_vip');
+    const vipType = formData.get('vip_type') as string | null;
     const isActiveStr = formData.get('is_active');
 
     logger.info(`Started`, { requestId, action });
@@ -383,6 +385,8 @@ export async function createWorkerAction(formData: FormData) {
             org_oid: orgOid,
             location_oid: locationOid || null,
             manager_oid: managerOid || null,
+            is_vip: isVipStr !== null ? isVipStr === 'true' : undefined,
+            vip_type: vipType !== null ? (vipType.trim() || null) : undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
@@ -415,6 +419,8 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const orgOid = formData.get('org_oid') as string | null;
     const locationOid = formData.get('location_oid') as string | null;
     const managerOid = formData.get('manager_oid') as string | null;
+    const isVipStr = formData.get('is_vip');
+    const vipType = formData.get('vip_type') as string | null;
     const isActiveStr = formData.get('is_active');
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
@@ -436,6 +442,8 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
             org_oid: orgOid || undefined,
             location_oid: locationOid === '' ? '' : (locationOid || undefined),
             manager_oid: managerOid,
+            is_vip: isVipStr !== null ? isVipStr === 'true' : undefined,
+            vip_type: vipType !== null ? (vipType.trim() || null) : undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
         });
         const duration = Date.now() - startTime;
