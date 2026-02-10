@@ -193,6 +193,8 @@ class IncidentListResponse(BaseModel):
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
 >
 > **List response shape**: `GET /objects/activities/incidents` returns `IncidentListResponse` (not a bare array), so callers can read `total` before loading all pages.
+>
+> **Pagination stability**: default ordering is `created_at DESC`, with secondary tie-breaker `oid DESC` to keep `skip/limit` deterministic.
 
 ### ABAC Filtering
 
@@ -304,6 +306,8 @@ class InquiryMaterializeResponse(BaseModel):
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
 >
 > **List response shape**: `GET /objects/activities/inquiries` returns `InquiryListResponse` (not a bare array), so callers can read `total` before loading all pages.
+>
+> **Pagination stability**: default ordering is `created_at DESC`, with secondary tie-breaker `oid DESC` to keep `skip/limit` deterministic.
 >
 > **Task 1 compatibility note**: before the interactions table is introduced (Task 2),
 > `/interactions` is expected to return `200` with an empty list.

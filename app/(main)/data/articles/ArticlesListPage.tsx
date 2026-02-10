@@ -39,7 +39,6 @@ export function ArticlesListPage() {
     } = useInfiniteResource<Article>('articles', {
         pageSize: 300,
         auto: true,
-        extractItems: (response) => response,
     });
 
     const { items: serviceCatalogs } = useLazyResourceList<ServiceCatalog>('service-catalogs', {

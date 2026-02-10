@@ -468,6 +468,12 @@ class ArticleVersionResponse(BaseModel):
     source_url: Optional[str]
     metadata: Optional[Dict[str, Any]]
     created_at: datetime
+
+class ArticleListResponse(BaseModel):
+    items: List[ArticleResponse]
+    total: int
+    skip: int
+    limit: int
 ```
 
 ### Endpoints
@@ -490,6 +496,8 @@ class ArticleVersionResponse(BaseModel):
 | `is_active` | boolean | null | Filter by active status |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
+
+`GET /objects/articles` returns `ArticleListResponse` (`{ items, total, skip, limit }`), not a bare array.
 
 ### ABAC Filtering
 

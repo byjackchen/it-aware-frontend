@@ -80,8 +80,6 @@ interface ListEnvelope<T> {
     limit?: number;
 }
 
-type ListResponseMode = 'envelope' | 'array';
-
 function buildPagedUrl(baseUrl: string, params: PagedListParams = {}, isActive?: boolean): string {
     const query = new URLSearchParams();
     query.set('limit', String(params.limit ?? DEFAULT_PAGE_LIMIT));
@@ -102,22 +100,12 @@ function ensureListEnvelope<T>(value: unknown, endpoint: string): ListEnvelope<T
     return value;
 }
 
-function ensureArrayList<T>(value: unknown, endpoint: string): T[] {
-    if (!Array.isArray(value)) {
-        throw new Error(`Unexpected list response shape from ${endpoint}`);
-    }
-    return value;
-}
-
 function getListTotal<T>(value: ListEnvelope<T>): number | null {
     if (typeof value.total !== 'number' || !Number.isFinite(value.total)) return null;
     return value.total;
 }
 
-async function fetchAllPages<T extends { oid: string }>(
-    baseUrl: string,
-    mode: ListResponseMode = 'envelope'
-): Promise<T[]> {
+async function fetchAllPages<T extends { oid: string }>(baseUrl: string): Promise<T[]> {
     const allResults: T[] = [];
     const seenOids = new Set<string>();
     let skip = 0;
@@ -127,18 +115,11 @@ async function fetchAllPages<T extends { oid: string }>(
 
     while (pageCount < MAX_PAGES) {
         const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=${PAGE_SIZE}&skip=${skip}`;
-        let page: T[];
-
-        if (mode === 'envelope') {
-            const response = await fetchApi<ListEnvelope<T>>(url);
-            const envelope = ensureListEnvelope<T>(response, url);
-            page = envelope.items;
-            if (knownTotal === null) {
-                knownTotal = getListTotal(envelope);
-            }
-        } else {
-            const response = await fetchApi<T[]>(url);
-            page = ensureArrayList<T>(response, url);
+        const response = await fetchApi<ListEnvelope<T>>(url);
+        const envelope = ensureListEnvelope<T>(response, url);
+        const page = envelope.items;
+        if (knownTotal === null) {
+            knownTotal = getListTotal(envelope);
         }
 
         // Add only new items (deduplicate)
@@ -465,7 +446,7 @@ export async function getArticles(serviceCatalogId?: string, isActive?: boolean)
     const queryString = params.toString();
     const url = `${OBJECTS_BASE}/articles${queryString ? `?${queryString}` : ''}`;
 
-    return fetchAllPages(url, 'array');
+    return fetchAllPages(url);
 }
 
 export async function getArticle(oid: string): Promise<Article> {
