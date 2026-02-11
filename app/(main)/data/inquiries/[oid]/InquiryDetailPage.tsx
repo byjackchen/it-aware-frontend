@@ -12,6 +12,7 @@ import {
     ArrowLeft,
     MessageCircle,
     User,
+    Building2,
     Pencil,
     Save,
     Trash2,
@@ -21,18 +22,19 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { Inquiry, GlobalEdge, Worker } from '@/lib/types/objects';
+import type { Inquiry, GlobalEdge, Worker, ServiceCatalog } from '@/lib/types/objects';
 import { updateInquiryAction, deleteInquiryAction } from '@/app/actions/objects';
 
 interface InquiryDetailPageProps {
     inquiry: Inquiry;
     edges: GlobalEdge[];
     workers: Worker[];
+    serviceCatalogs: ServiceCatalog[];
 }
 
 const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'closed'];
 
-export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPageProps) {
+export function InquiryDetailPage({ inquiry, edges, workers, serviceCatalogs }: InquiryDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
@@ -47,6 +49,8 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
     const [state, setState] = useState(inquiry.state);
     const [fact, setFact] = useState(inquiry.fact || '');
     const [sourceSystem, setSourceSystem] = useState(inquiry.source_system || '');
+    const [serviceCatalogOid, setServiceCatalogOid] = useState(inquiry.service_catalog_oid || '');
+    const [configurationItemOid, setConfigurationItemOid] = useState(inquiry.configuration_item_oid || '');
     const [messagesJson, setMessagesJson] = useState(JSON.stringify(inquiry.messages || [], null, 2));
     const [createdAt, setCreatedAt] = useState(inquiry.created_at);
     const [updatedAt, setUpdatedAt] = useState(inquiry.updated_at);
@@ -80,6 +84,8 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
             formData.set('state', state);
             formData.set('fact', fact);
             if (sourceSystem.trim()) formData.set('source_system', sourceSystem.trim());
+            formData.set('service_catalog_oid', serviceCatalogOid);
+            formData.set('configuration_item_oid', configurationItemOid);
             formData.set('messages', JSON.stringify(parsedMessages));
             if (createdAt.trim()) formData.set('created_at', createdAt.trim());
             if (updatedAt.trim()) formData.set('updated_at', updatedAt.trim());
@@ -115,6 +121,8 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
         setState(inquiry.state);
         setFact(inquiry.fact || '');
         setSourceSystem(inquiry.source_system || '');
+        setServiceCatalogOid(inquiry.service_catalog_oid || '');
+        setConfigurationItemOid(inquiry.configuration_item_oid || '');
         setMessagesJson(JSON.stringify(inquiry.messages || [], null, 2));
         setCreatedAt(inquiry.created_at);
         setUpdatedAt(inquiry.updated_at);
@@ -190,6 +198,52 @@ export function InquiryDetailPage({ inquiry, edges, workers }: InquiryDetailPage
                                 </select>
                             ) : (
                                 <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{inquiry.state}</div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Catalog</label>
+                            {isEditing ? (
+                                <select
+                                    value={serviceCatalogOid}
+                                    onChange={(e) => setServiceCatalogOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                >
+                                    <option value="">None</option>
+                                    {serviceCatalogs.map((catalog) => (
+                                        <option key={catalog.oid} value={catalog.oid}>{catalog.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find((catalog) => catalog.oid === inquiry.service_catalog_oid)?.name || 'None'}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                {isEditing ? 'Configuration Item OID' : 'Configuration Item'}
+                            </label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={configurationItemOid}
+                                    onChange={(e) => setConfigurationItemOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    placeholder="Optional configuration item OID"
+                                />
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find((catalog) => catalog.oid === inquiry.configuration_item_oid)?.name || inquiry.configuration_item_oid || 'None'}
+                                    </span>
+                                </div>
                             )}
                         </div>
                     </div>
