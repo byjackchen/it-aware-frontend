@@ -3,7 +3,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { getInquiry, getConnectedEdges, getWorkers } from '@/lib/api/objects';
+import { getInquiry, getConnectedEdges, getWorkers, getServiceCatalogs } from '@/lib/api/objects';
 import { InquiryDetailPage } from './InquiryDetailPage';
 
 interface PageProps {
@@ -14,10 +14,11 @@ export default async function InquiryPage({ params }: PageProps) {
     const { oid } = await params;
 
     try {
-        const [inquiry, edgesResponse, workers] = await Promise.all([
+        const [inquiry, edgesResponse, workers, serviceCatalogs] = await Promise.all([
             getInquiry(oid),
             getConnectedEdges(oid),
             getWorkers(),
+            getServiceCatalogs(),
         ]);
 
         return (
@@ -25,6 +26,7 @@ export default async function InquiryPage({ params }: PageProps) {
                 inquiry={inquiry}
                 edges={edgesResponse.items}
                 workers={workers}
+                serviceCatalogs={serviceCatalogs}
             />
         );
     } catch {

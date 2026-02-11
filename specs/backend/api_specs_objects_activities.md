@@ -93,6 +93,8 @@ class Inquiry(Base):
     messages = Column(JSONB, nullable=True) # List of message dicts
     topic = Column(Text, nullable=True)
     state = Column(Text, nullable=False)
+    service_catalog_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
+    configuration_item_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
 ```
 
 ---
@@ -217,6 +219,8 @@ class InquiryCreate(BaseModel):
     actor_role: Optional[str] = None  # Defaults to "user"
     topic: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
+    service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
     fact: Optional[str] = None
     source_system: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -227,6 +231,8 @@ class InquiryUpdate(BaseModel):
     topic: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
     state: Optional[str] = None
+    service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
     fact: Optional[str] = None
     source_system: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -247,6 +253,8 @@ class InquiryResponse(BaseModel):
     source_system: Optional[str]
     fact_embedding_id: Optional[str]
     fact_embedded_at: Optional[datetime]
+    service_catalog_oid: Optional[str]
+    configuration_item_oid: Optional[str]
     
     created_at: datetime
     updated_at: datetime
@@ -290,6 +298,7 @@ class InquiryMaterializeResponse(BaseModel):
 > - Optional text fields are trimmed; blank strings normalize to `null`.
 > - `messages` must be a list of JSON objects.
 > - `state` (when provided on update) must be non-empty.
+> - `service_catalog_oid` / `configuration_item_oid` accept OID strings; update payload may pass empty string to clear field.
 
 ### Endpoints
 
@@ -301,7 +310,7 @@ class InquiryMaterializeResponse(BaseModel):
 | PUT | `/objects/activities/inquiries/{oid}` | Update inquiry | `objects:inquiries:write` |
 | DELETE | `/objects/activities/inquiries/{oid}` | Delete inquiry | `objects:inquiries:write` |
 | GET | `/objects/activities/inquiries/{oid}/interactions` | List interactions assigned to inquiry (ABAC) | `objects:inquiries:read` |
-| POST | `/objects/activities/inquiries/{oid}/materialize` | Rebuild inquiry aggregate (`topic/messages/fact`) from assigned interactions | `objects:inquiries:write` |
+| POST | `/objects/activities/inquiries/{oid}/materialize` | Rebuild inquiry aggregate (`topic/messages/fact`) and classify `service_catalog_oid/configuration_item_oid` from assigned interactions | `objects:inquiries:write` |
 
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
 >
@@ -317,7 +326,8 @@ class InquiryMaterializeResponse(BaseModel):
 > - Inquiry access is checked by ABAC write scope (same access rule as inquiry update/delete).
 > - No assigned interactions returns `{status: "noop", changed: false, ...}`.
 > - Repeated calls with unchanged assigned-interaction projection are idempotent (`changed=false`).
-> - When interactions exist, materialize attempts LLM generation for `topic/fact`; if LLM output is invalid or unavailable, deterministic projection is used and `status` becomes `materialized_with_fallback`.
+> - When interactions exist, materialize attempts LLM generation for `topic/fact` and categorization fields (`service_catalog_oid/configuration_item_oid`).
+> - If LLM output is invalid or unavailable, deterministic projection is used for `topic/fact` and `status` becomes `materialized_with_fallback`.
 > - If embedding backend is temporarily unavailable, materialize still updates raw `fact` text (best effort) and does not fail solely due to embedding connectivity.
 
 ### ABAC Filtering
@@ -343,7 +353,7 @@ class InteractionUpsertItem(BaseModel):
     stable_id: str
     source_system: str
     actor_stable_id: str
-    action_type: Literal["enter", "click", "send_msg"]
+    action_type: str  # preserve raw source action type
     content_text: Optional[str] = None
     content_raw: Optional[Dict[str, Any]] = None
     response_text: Optional[str] = None
@@ -423,7 +433,7 @@ class InteractionResponse(BaseModel):
     object_type: str = "interaction"
     source_system: str
     actor_stable_id: str
-    action_type: Literal["enter", "click", "send_msg"]
+    action_type: str
     content_text: Optional[str]
     content_raw: Optional[Dict[str, Any]]
     response_text: Optional[str]
@@ -505,7 +515,7 @@ Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for st
 ### Constraints and Indexes
 
 - Unique: `stable_id`
-- Check: `action_type IN ('enter', 'click', 'send_msg')`
+- `action_type` is raw source text (not enum-constrained)
 - Check: `assignment_status='assigned'` requires non-null `assigned_inquiry_oid`
 - Indexes:
   - `(actor_stable_id, created_at DESC)`

@@ -785,6 +785,8 @@ export async function createInquiryAction(formData: FormData) {
     const topic = formData.get('topic') as string | null;
     const fact = formData.get('fact') as string | null;
     const source_system = formData.get('source_system') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
     const messagesStr = formData.get('messages') as string | null;
     const created_at = formData.get('created_at') as string | null;
     const updated_at = formData.get('updated_at') as string | null;
@@ -807,6 +809,8 @@ export async function createInquiryAction(formData: FormData) {
             topic: topic || undefined,
             fact: fact || undefined,
             source_system: source_system || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
             messages,
             created_at: created_at?.trim() || undefined,
             updated_at: updated_at?.trim() || undefined,
@@ -832,10 +836,19 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
     const fact = formData.get('fact') as string | null;
     const state = formData.get('state') as string | null;
     const source_system = formData.get('source_system') as string | null;
+    const service_catalog_oid_raw = formData.get('service_catalog_oid');
+    const configuration_item_oid_raw = formData.get('configuration_item_oid');
     const messagesStr = formData.get('messages') as string | null;
     const created_at = formData.get('created_at') as string | null;
     const updated_at = formData.get('updated_at') as string | null;
     const effective_at = formData.get('effective_at') as string | null;
+
+    const service_catalog_oid = service_catalog_oid_raw === null
+        ? undefined
+        : String(service_catalog_oid_raw).trim();
+    const configuration_item_oid = configuration_item_oid_raw === null
+        ? undefined
+        : String(configuration_item_oid_raw).trim();
 
     let messages: any[] | undefined = undefined;
     if (messagesStr) {
@@ -853,6 +866,8 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
             fact: fact || undefined,
             source_system: source_system || undefined,
             state: state || undefined,
+            service_catalog_oid,
+            configuration_item_oid,
             messages,
             created_at: created_at?.trim() || undefined,
             updated_at: updated_at?.trim() || undefined,

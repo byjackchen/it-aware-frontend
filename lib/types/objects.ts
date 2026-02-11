@@ -480,6 +480,8 @@ export interface Inquiry {
     source_system?: string | null;
     fact_embedding_id: string | null;
     fact_embedded_at: string | null;
+    service_catalog_oid: string | null;
+    configuration_item_oid: string | null;
 
     created_at: string;
     updated_at: string;
@@ -492,6 +494,8 @@ export interface InquiryCreate {
     topic?: string | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages?: any[] | null;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
     fact?: string | null;
     source_system?: string | null;
     created_at?: string;
@@ -531,6 +535,8 @@ export interface InquiryUpdate {
     topic?: string | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages?: any[] | null;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
     fact?: string | null;
     source_system?: string | null;
     state?: string;
