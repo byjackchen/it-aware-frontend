@@ -37,7 +37,7 @@ export function ArticlesListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Article>('articles', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
     });
 

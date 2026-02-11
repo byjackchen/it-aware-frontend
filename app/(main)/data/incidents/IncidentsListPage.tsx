@@ -33,7 +33,7 @@ export function IncidentsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Incident, IncidentListResponse>('incidents', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,

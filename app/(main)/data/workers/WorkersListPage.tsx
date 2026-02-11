@@ -31,7 +31,7 @@ export function WorkersListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Worker>('workers', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
     });
 

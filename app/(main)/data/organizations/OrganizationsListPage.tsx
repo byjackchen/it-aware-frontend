@@ -64,7 +64,7 @@ export function OrganizationsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Organization>('organizations', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
     });
 

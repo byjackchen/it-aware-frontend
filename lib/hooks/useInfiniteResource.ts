@@ -69,7 +69,7 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     options: UseInfiniteResourceOptions<TItem, TResponse> = {}
 ): UseInfiniteResourceResult<TItem> {
     const {
-        pageSize = 100,
+        pageSize = 1000,
         query,
         auto = true,
         extractItems,
