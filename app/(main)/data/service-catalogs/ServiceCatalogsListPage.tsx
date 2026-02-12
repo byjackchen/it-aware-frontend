@@ -64,7 +64,7 @@ export function ServiceCatalogsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<ServiceCatalog>('service-catalogs', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
     });
 

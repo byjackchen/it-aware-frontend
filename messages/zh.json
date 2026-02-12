@@ -19,7 +19,8 @@
         "locations": "地点",
         "workers": "员工",
         "serviceCatalogs": "服务目录",
-        "articles": "文章"
+        "articles": "文章",
+        "requests": "请求"
     },
     "Sidebar": {
         "overview": "概览",
@@ -41,6 +42,7 @@
         "articles": "文章",
         "activities": "活动",
         "incidents": "事件",
+        "requests": "请求",
         "inquiries": "咨询",
         "interactions": "交互事件",
         "faqs": "常见问题"

@@ -9,6 +9,7 @@ const RESOURCE_PATHS = {
     'service-catalogs': '/objects/service-catalogs',
     articles: '/objects/articles',
     incidents: '/objects/activities/incidents',
+    requests: '/objects/activities/requests',
     inquiries: '/objects/activities/inquiries',
     interactions: '/objects/activities/interactions',
     roles: '/auth/config/roles',

@@ -39,7 +39,7 @@ export function InteractionsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Interaction, InteractionListResponse>('interactions', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
         query: {
             sort_by: 'created_at',

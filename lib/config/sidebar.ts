@@ -13,6 +13,7 @@ import {
     MapPin,
     Layers,
     AlertCircle,
+    ClipboardList,
     MessageCircle,
     MousePointerClick,
 } from 'lucide-react';
@@ -141,6 +142,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/requests',
+                        labelKey: 'requests',
+                        icon: ClipboardList,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.REQUESTS_READ,
                         ]),
                     },
                     {

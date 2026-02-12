@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { MessageCircle, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
-import type { Inquiry, InquiryListResponse } from '@/lib/types/objects';
+import type { Inquiry, InquiryListResponse, Worker } from '@/lib/types/objects';
 
 export function InquiriesListPage() {
     const { theme } = useTheme();
@@ -25,19 +26,45 @@ export function InquiriesListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Inquiry, InquiryListResponse>('inquiries', {
-        pageSize: 300,
+        pageSize: 1000,
         auto: true,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
         inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
     });
 
+    const { items: workers } = useLazyResourceList<Worker>('workers', {
+        query: { limit: 1000 },
+        auto: true,
+    });
+
+    const workerMap = useMemo(() => (
+        new Map(workers.map((worker) => [worker.oid, worker]))
+    ), [workers]);
+
+    const getActorLabel = (inquiry: Inquiry): string => {
+        const actor = workerMap.get(inquiry.actor_oid);
+        if (!actor) return inquiry.actor_oid;
+        return actor.stable_id || actor.fullname || inquiry.actor_oid;
+    };
+
     const filteredInquiries = useMemo(() => {
         return inquiries.filter((inquiry) => {
             const topic = inquiry.topic || 'Untitled Inquiry';
-            return searchQuery === '' || topic.toLowerCase().includes(searchQuery.toLowerCase());
+            const query = searchQuery.toLowerCase();
+            const actor = workerMap.get(inquiry.actor_oid);
+            const actorStableId = actor?.stable_id?.toLowerCase() || '';
+            const actorFullName = actor?.fullname?.toLowerCase() || '';
+            const actorOid = inquiry.actor_oid.toLowerCase();
+            return (
+                searchQuery === ''
+                || topic.toLowerCase().includes(query)
+                || actorStableId.includes(query)
+                || actorFullName.includes(query)
+                || actorOid.includes(query)
+            );
         });
-    }, [inquiries, searchQuery]);
+    }, [inquiries, searchQuery, workerMap]);
 
     const handleRefresh = () => {
         void reload();
@@ -102,7 +129,7 @@ export function InquiriesListPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{inquiry.topic || 'Untitled Inquiry'}</div>
                                         <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                            {inquiry.state}
+                                            {inquiry.state} • Actor: {getActorLabel(inquiry)}
                                         </div>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded-full capitalize ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-400'}`}>

@@ -4,7 +4,7 @@
 
 Activity objects represent events and interaction aggregates in the system.
 
-- `incident` and `inquiry` inherit from `activities.bases` and share base actor/fact/timestamp fields.
+- `incident`, `request`, and `inquiry` inherit from `activities.bases` and share base actor/fact/timestamp fields.
 - `interaction` is stored in `activities.interactions` as an independent event table (it does **not** inherit from `activities.bases`).
 - Base-backed activity records are synchronized to the **Global Registry** for searchability.
 
@@ -14,6 +14,7 @@ Activity objects represent events and interaction aggregates in the system.
 /objects/
 ├── /activities
 │   ├── /incident            - Incident management
+│   ├── /request             - Request management
 │   ├── /inquiry             - Inquiry management
 │   └── /interaction         - Interaction events and assignment state
 ```
@@ -25,10 +26,11 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 | Resource | Read Permission | Write Permission |
 |----------|-----------------|------------------|
 | Incidents | `objects:incidents:read` | `objects:incidents:write` |
+| Requests | `objects:requests:read` | `objects:requests:write` |
 | Inquiries | `objects:inquiries:read` | `objects:inquiries:write` |
 | Interactions | `objects:interactions:read` | `objects:interactions:write` |
 
-**Note:** `incident` and `inquiry` endpoints use ABAC (anchored on actor worker org). `interaction` endpoints currently enforce permission checks without per-row ABAC filtering.
+**Note:** `incident`, `request`, and `inquiry` endpoints use ABAC (anchored on actor worker org). `interaction` endpoints currently enforce permission checks without per-row ABAC filtering.
 
 ---
 
@@ -75,6 +77,29 @@ class Incident(Base):
     priority = Column(Text, nullable=True)
     urgency = Column(Text, nullable=True)
     
+    assigned_to_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
+    service_catalog_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
+    assigned_group = Column(Text, nullable=True)
+    configuration_item_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
+    chat_transcripts = Column(JSONB, nullable=True)
+```
+
+### Request
+
+```python
+class Request(Base):
+    __tablename__ = "requests"
+    __table_args__ = {"schema": "activities"}
+
+    oid = Column(BYTEA(16), ForeignKey("activities.bases.oid", ondelete="CASCADE"), primary_key=True)
+    stable_id = Column(Text, unique=True, nullable=False)
+    channel = Column(Text, nullable=True)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    state = Column(Text, nullable=False)
+    priority = Column(Text, nullable=True)
+    urgency = Column(Text, nullable=True)
+
     assigned_to_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
     service_catalog_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     assigned_group = Column(Text, nullable=True)
@@ -205,7 +230,109 @@ class IncidentListResponse(BaseModel):
 
 ---
 
-## API 2: Inquiries (`/objects/activities/inquiries`)
+## API 2: Requests (`/objects/activities/requests`)
+
+Requests represent service request records and follow the same model style as incidents:
+`activities.bases (object_type='request') + activities.requests`.
+
+### Schemas
+
+```python
+class RequestCreate(BaseModel):
+    stable_id: Optional[str] = None
+    actor_oid: str
+    actor_role: Optional[str] = None  # Defaults to "requester"
+    title: str
+    description: Optional[str] = None
+    state: str
+    fact: Optional[str] = None
+    priority: Optional[str] = None
+    urgency: Optional[str] = None
+    channel: Optional[str] = None
+    assigned_to_oid: Optional[str] = None
+    service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
+    assigned_group: Optional[str] = None
+    chat_transcripts: Optional[Dict[str, Any]] = None
+    source_system: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
+
+class RequestUpdate(BaseModel):
+    stable_id: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    state: Optional[str] = None
+    fact: Optional[str] = None
+    priority: Optional[str] = None
+    urgency: Optional[str] = None
+    channel: Optional[str] = None
+    assigned_to_oid: Optional[str] = None
+    service_catalog_oid: Optional[str] = None
+    configuration_item_oid: Optional[str] = None
+    assigned_group: Optional[str] = None
+    chat_transcripts: Optional[Dict[str, Any]] = None
+    source_system: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    effective_at: Optional[datetime] = None
+
+class RequestResponse(BaseModel):
+    oid: str
+    stable_id: str
+    object_type: str = "request"
+    title: str
+    description: Optional[str]
+    state: str
+    priority: Optional[str]
+    urgency: Optional[str]
+    channel: Optional[str]
+
+    actor_oid: str
+    actor_role: str
+    fact: Optional[str]
+    source_system: Optional[str]
+    fact_embedding_id: Optional[str]
+    fact_embedded_at: Optional[datetime]
+    assigned_to_oid: Optional[str]
+    service_catalog_oid: Optional[str]
+    configuration_item_oid: Optional[str]
+    assigned_group: Optional[str]
+    chat_transcripts: Optional[Dict[str, Any]]
+
+    created_at: datetime
+    updated_at: datetime
+    effective_at: datetime
+
+class RequestListResponse(BaseModel):
+    items: List[RequestResponse]
+    total: int
+    skip: int
+    limit: int
+```
+
+> **Create behavior**:
+> - `state` is explicitly provided by caller (not forced to `"New"`).
+> - `stable_id` remains optional; when omitted, backend auto-generates a UUID string without fixed prefix.
+
+### Endpoints
+
+| Method | Path | Description | Permission |
+|--------|------|-------------|------------|
+| POST | `/objects/activities/requests` | Create request | `objects:requests:write` |
+| GET | `/objects/activities/requests` | List requests (ABAC) | `objects:requests:read` |
+| GET | `/objects/activities/requests/{oid}` | Get request (ABAC) | `objects:requests:read` |
+| PUT | `/objects/activities/requests/{oid}` | Update request | `objects:requests:write` |
+| DELETE | `/objects/activities/requests/{oid}` | Delete request | `objects:requests:write` |
+
+### ABAC Filtering
+
+Same as Incidents (Anchored on **Actor**).
+
+---
+
+## API 3: Inquiries (`/objects/activities/inquiries`)
 
 Inquiries represent aggregation containers for related interactions of one actor
 over a time window. The physical storage remains unchanged:
@@ -327,6 +454,9 @@ class InquiryMaterializeResponse(BaseModel):
 > - No assigned interactions returns `{status: "noop", changed: false, ...}`.
 > - Repeated calls with unchanged assigned-interaction projection are idempotent (`changed=false`).
 > - When interactions exist, materialize attempts LLM generation for `topic/fact` and categorization fields (`service_catalog_oid/configuration_item_oid`).
+> - Inquiry base timestamps are derived from assigned interactions:
+>   `created_at=min(interaction.created_at)`, `updated_at=max(interaction.created_at)`,
+>   `effective_at=min(interaction.effective_at)`.
 > - If LLM output is invalid or unavailable, deterministic projection is used for `topic/fact` and `status` becomes `materialized_with_fallback`.
 > - If embedding backend is temporarily unavailable, materialize still updates raw `fact` text (best effort) and does not fail solely due to embedding connectivity.
 
@@ -336,7 +466,7 @@ Same as Incidents (Anchored on **Actor**).
 
 ---
 
-## API 3: Interactions (`/objects/activities/interactions`)
+## API 4: Interactions (`/objects/activities/interactions`)
 
 Interactions are atomic source events stored independently in
 `activities.interactions` (they do not inherit from `activities.bases`).
@@ -359,6 +489,7 @@ class InteractionUpsertItem(BaseModel):
     response_text: Optional[str] = None
     response_raw: Optional[Dict[str, Any]] = None
     created_at: datetime
+    effective_at: Optional[datetime] = None  # defaults to created_at when omitted
     ingested_at: Optional[datetime] = None
 
 class InteractionBatchAssignRequest(BaseModel):
@@ -368,7 +499,7 @@ class InteractionBatchAssignRequest(BaseModel):
 
 class InteractionAssignItem(BaseModel):
     stable_id: str
-    assignment_status: Optional[Literal["assigned", "deferred"]] = None  # null allowed (clear assignment)
+    assignment_status: Optional[Literal["assigned"]] = None  # null allowed (clear assignment)
     assigned_inquiry_oid: Optional[str] = None
     assignment_log: Optional[Dict[str, Any]] = None
     assignment_updated_at: Optional[datetime] = None
@@ -438,11 +569,12 @@ class InteractionResponse(BaseModel):
     content_raw: Optional[Dict[str, Any]]
     response_text: Optional[str]
     response_raw: Optional[Dict[str, Any]]
-    assignment_status: Optional[Literal["assigned", "deferred"]]
+    assignment_status: Optional[Literal["assigned"]]
     assigned_inquiry_oid: Optional[str]
     assignment_updated_at: Optional[datetime]
     assignment_log: Optional[Dict[str, Any]]
     created_at: datetime
+    effective_at: datetime
     ingested_at: datetime
     updated_at: datetime
 
@@ -485,7 +617,7 @@ class InteractionListResponse(BaseModel):
 | `stable_id_prefix` | string | null | Prefix stable id filter |
 | `actor_stable_id` | string | null | Actor filter |
 | `source_system` | string | null | Source system filter |
-| `assignment_status` | `assigned`/`deferred`/`null` | null | Assignment state filter |
+| `assignment_status` | `assigned`/`null` | null | Assignment state filter |
 | `assigned_inquiry_oid` | string | null | Assigned inquiry OID filter |
 | `created_at_from` | ISO8601 datetime | null | Created-at lower bound |
 | `created_at_to` | ISO8601 datetime | null | Created-at upper bound |
@@ -516,13 +648,13 @@ Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for st
 
 - Unique: `stable_id`
 - `action_type` is raw source text (not enum-constrained)
-- Check: `assignment_status='assigned'` requires non-null `assigned_inquiry_oid`
+- Check: only `assigned`/`null` are valid assignment states, and `assignment_status='assigned'` requires non-null `assigned_inquiry_oid`
 - Indexes:
   - `(actor_stable_id, created_at DESC)`
   - `(assignment_status, created_at DESC)`
   - `(assigned_inquiry_oid, created_at DESC)`
 
-## API 4: Activities Embed Search (`/objects/activities/embed_search`)
+## API 5: Activities Embed Search (`/objects/activities/embed_search`)
 
 Searches Hyaide embeddings and returns matching activity base records.
 
@@ -555,8 +687,8 @@ class EmbedSearchResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/objects/activities/embed_search` | Search activity embeddings | `objects:incidents:read` or `objects:inquiries:read` |
+| POST | `/objects/activities/embed_search` | Search activity embeddings | `objects:incidents:read` or `objects:requests:read` or `objects:inquiries:read` |
 
 **Notes**
 - Search results are ordered by the embedding search ranking.
-- Each result is filtered by ABAC rules for its object type (incident vs inquiry).
+- Each result is filtered by ABAC rules for its object type (`incident` / `request` / `inquiry`).

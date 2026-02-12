@@ -405,13 +405,42 @@ export interface ArticleUpdate {
 }
 
 // ============================================================================
-// Activity Types (Incidents, Inquiries, Interactions)
+// Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
 export interface Incident {
     oid: string;
     stable_id: string | null;
     object_type: 'incident';
+    title: string;
+    description: string | null;
+    state: string;
+    priority: string | null;
+    urgency: string | null;
+    channel: string | null;
+
+    // Relationships
+    actor_oid: string;
+    actor_role: string;
+    fact: string | null;
+    source_system: string | null;
+    fact_embedding_id: string | null;
+    fact_embedded_at: string | null;
+    assigned_to_oid: string | null;
+    service_catalog_oid: string | null;
+    configuration_item_oid: string | null;
+    assigned_group: string | null;
+    chat_transcripts: Record<string, unknown> | null;
+
+    created_at: string;
+    updated_at: string;
+    effective_at: string;
+}
+
+export interface Request {
+    oid: string;
+    stable_id: string;
+    object_type: 'request';
     title: string;
     description: string | null;
     state: string;
@@ -458,8 +487,37 @@ export interface IncidentCreate {
     effective_at?: string;
 }
 
+export interface RequestCreate {
+    stable_id?: string | null;
+    actor_oid: string;
+    actor_role?: string | null;
+    title: string;
+    description?: string | null;
+    state: string;
+    priority?: string | null;
+    urgency?: string | null;
+    channel?: string | null;
+    assigned_to_oid?: string | null;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
+    assigned_group?: string | null;
+    chat_transcripts?: Record<string, unknown> | null;
+    source_system?: string | null;
+    fact?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
+}
+
 export interface IncidentListResponse {
     items: Incident[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface RequestListResponse {
+    items: Request[];
     total: number;
     skip: number;
     limit: number;
@@ -512,6 +570,26 @@ export interface InquiryListResponse {
 
 
 export interface IncidentUpdate {
+    title: string;
+    stable_id?: string | null;
+    description?: string | null;
+    priority?: string | null;
+    urgency?: string | null;
+    channel?: string | null;
+    assigned_to_oid?: string | null;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
+    assigned_group?: string | null;
+    chat_transcripts?: Record<string, unknown> | null;
+    source_system?: string | null;
+    fact?: string | null;
+    state?: string;
+    created_at?: string;
+    updated_at?: string;
+    effective_at?: string;
+}
+
+export interface RequestUpdate {
     title: string;
     stable_id?: string | null;
     description?: string | null;
