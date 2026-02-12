@@ -26,7 +26,7 @@ export function InquiriesListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Inquiry, InquiryListResponse>('inquiries', {
-        pageSize: 1000,
+        pageSize: 300,
         auto: true,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,

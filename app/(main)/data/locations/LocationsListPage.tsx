@@ -64,7 +64,7 @@ export function LocationsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Location>('locations', {
-        pageSize: 1000,
+        pageSize: 300,
         auto: true,
     });
 

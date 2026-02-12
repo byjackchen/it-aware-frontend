@@ -33,7 +33,7 @@ export function RequestsListPage() {
         loadMore,
         reload,
     } = useInfiniteResource<Request, RequestListResponse>('requests', {
-        pageSize: 1000,
+        pageSize: 300,
         auto: true,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
