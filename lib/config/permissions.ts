@@ -31,6 +31,8 @@ export const PERMISSIONS = {
     ARTICLES_WRITE: 'objects:articles:write',
     INCIDENTS_READ: 'objects:incidents:read',
     INCIDENTS_WRITE: 'objects:incidents:write',
+    REQUESTS_READ: 'objects:requests:read',
+    REQUESTS_WRITE: 'objects:requests:write',
     INQUIRIES_READ: 'objects:inquiries:read',
     INQUIRIES_WRITE: 'objects:inquiries:write',
     INTERACTIONS_READ: 'objects:interactions:read',

@@ -25,6 +25,9 @@ import {
     createIncident,
     updateIncident,
     deleteIncident,
+    createRequest,
+    updateRequest,
+    deleteRequest,
     createInquiry,
     updateInquiry,
     deleteInquiry,
@@ -617,7 +620,7 @@ export async function deleteArticleAction(oid: string) {
 }
 
 // ============================================================================
-// Activity Actions (Incidents & Inquiries)
+// Activity Actions (Incidents, Requests & Inquiries)
 // ============================================================================
 
 export async function createIncidentAction(formData: FormData) {
@@ -774,6 +777,166 @@ export async function deleteIncidentAction(oid: string) {
     }
 }
 
+export async function createRequestAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createRequest';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const stableIdRaw = formData.get('stable_id');
+    let stable_id: string | null | undefined = undefined;
+    if (stableIdRaw !== null) {
+        const trimmed = String(stableIdRaw).trim();
+        stable_id = trimmed === '' ? null : trimmed;
+    }
+    const actor_oid = formData.get('actor_oid') as string;
+    const actor_role = formData.get('actor_role') as string | null;
+    const title = formData.get('title') as string;
+    const state = (formData.get('state') as string | null)?.trim();
+    const description = formData.get('description') as string | null;
+    const priority = formData.get('priority') as string | null;
+    const urgency = formData.get('urgency') as string | null;
+    const channel = formData.get('channel') as string | null;
+    const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const assigned_group = formData.get('assigned_group') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+    const chat_transcripts_str = formData.get('chat_transcripts') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const fact = formData.get('fact') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
+
+    let chat_transcripts: Record<string, unknown> | undefined = undefined;
+    if (chat_transcripts_str) {
+        try {
+            chat_transcripts = JSON.parse(chat_transcripts_str);
+        } catch (e) {
+            logger.error(`Invalid chat_transcripts JSON`, e, { requestId, action });
+            throw new Error('Invalid chat_transcripts JSON format');
+        }
+    }
+
+    if (!state) {
+        throw new Error('state is required');
+    }
+
+    try {
+        await createRequest({
+            stable_id,
+            actor_oid,
+            actor_role: actor_role || undefined,
+            title,
+            state,
+            description: description || undefined,
+            priority: priority || undefined,
+            urgency: urgency || undefined,
+            channel: channel || undefined,
+            assigned_to_oid: assigned_to_oid || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            assigned_group: assigned_group || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
+            chat_transcripts,
+            source_system: source_system || undefined,
+            fact: fact || undefined,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
+        });
+        revalidatePath('/data/requests');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateRequestAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateRequest';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const title = formData.get('title') as string;
+    const stable_id = formData.get('stable_id') as string | null;
+    const description = formData.get('description') as string | null;
+    const priority = formData.get('priority') as string | null;
+    const urgency = formData.get('urgency') as string | null;
+    const channel = formData.get('channel') as string | null;
+    const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const assigned_group = formData.get('assigned_group') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+    const chat_transcripts_str = formData.get('chat_transcripts') as string | null;
+    const source_system = formData.get('source_system') as string | null;
+    const fact = formData.get('fact') as string | null;
+    const state = formData.get('state') as string | null;
+    const created_at = formData.get('created_at') as string | null;
+    const updated_at = formData.get('updated_at') as string | null;
+    const effective_at = formData.get('effective_at') as string | null;
+
+    let chat_transcripts: Record<string, unknown> | undefined = undefined;
+    if (chat_transcripts_str) {
+        try {
+            chat_transcripts = JSON.parse(chat_transcripts_str);
+        } catch (e) {
+            logger.error(`Invalid chat_transcripts JSON`, e, { requestId, action });
+            throw new Error('Invalid chat_transcripts JSON format');
+        }
+    }
+
+    try {
+        await updateRequest(oid, {
+            title,
+            stable_id: stable_id || undefined,
+            description: description || undefined,
+            priority: priority || undefined,
+            urgency: urgency || undefined,
+            channel: channel || undefined,
+            assigned_to_oid: assigned_to_oid || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            assigned_group: assigned_group || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
+            chat_transcripts,
+            source_system: source_system || undefined,
+            fact: fact || undefined,
+            state: state || undefined,
+            created_at: created_at?.trim() || undefined,
+            updated_at: updated_at?.trim() || undefined,
+            effective_at: effective_at?.trim() || undefined,
+        });
+        revalidatePath('/data/requests');
+        revalidatePath(`/data/requests/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteRequestAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteRequest';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteRequest(oid);
+        revalidatePath('/data/requests');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
 export async function createInquiryAction(formData: FormData) {
     const requestId = logger.generateRequestId();
     const action = 'Objects:createInquiry';
@@ -792,7 +955,7 @@ export async function createInquiryAction(formData: FormData) {
     const updated_at = formData.get('updated_at') as string | null;
     const effective_at = formData.get('effective_at') as string | null;
 
-    let messages: any[] | undefined = undefined;
+    let messages: unknown[] | undefined = undefined;
     if (messagesStr) {
         try {
             messages = JSON.parse(messagesStr);
@@ -850,7 +1013,7 @@ export async function updateInquiryAction(oid: string, formData: FormData) {
         ? undefined
         : String(configuration_item_oid_raw).trim();
 
-    let messages: any[] | undefined = undefined;
+    let messages: unknown[] | undefined = undefined;
     if (messagesStr) {
         try {
             messages = JSON.parse(messagesStr);

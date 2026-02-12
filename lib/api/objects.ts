@@ -1,6 +1,6 @@
 /**
  * Server-side API client for Objects module (organizations, locations, workers, service catalogs, articles).
- * Also includes edges, activities (incidents/inquiries/interactions), and worker-hierarchy-role APIs.
+ * Also includes edges, activities (incidents/requests/inquiries/interactions), and worker-hierarchy-role APIs.
  */
 
 // cookies and redirect removed as they are now used in core.ts
@@ -34,6 +34,9 @@ import type {
     Inquiry,
     InquiryCreate,
     InquiryUpdate,
+    Request,
+    RequestCreate,
+    RequestUpdate,
     Interaction,
     InteractionListParams,
     InteractionListResponse,
@@ -499,6 +502,14 @@ export async function getIncident(oid: string): Promise<Incident> {
     return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`);
 }
 
+export async function getRequests(): Promise<Request[]> {
+    return fetchAllPages<Request>(`${OBJECTS_BASE}/activities/requests`);
+}
+
+export async function getRequest(oid: string): Promise<Request> {
+    return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`);
+}
+
 export async function getInquiries(): Promise<Inquiry[]> {
     return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
 }
@@ -598,6 +609,32 @@ export async function updateIncident(oid: string, data: IncidentUpdate): Promise
 
 export async function deleteIncident(oid: string): Promise<void> {
     return fetchApi<void>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function createRequest(data: RequestCreate): Promise<Request> {
+    return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateRequest(oid: string, data: RequestUpdate): Promise<Request> {
+    return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteRequest(oid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }

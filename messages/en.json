@@ -19,7 +19,8 @@
         "locations": "Locations",
         "workers": "Workers",
         "serviceCatalogs": "Service Catalogs",
-        "articles": "Articles"
+        "articles": "Articles",
+        "requests": "Requests"
     },
     "Sidebar": {
         "overview": "Overview",
@@ -41,6 +42,7 @@
         "articles": "Articles",
         "activities": "Activities",
         "incidents": "Incidents",
+        "requests": "Requests",
         "inquiries": "Inquiries",
         "interactions": "Interactions",
         "faqs": "FAQs"
