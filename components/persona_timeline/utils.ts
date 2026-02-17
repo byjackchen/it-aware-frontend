@@ -1,8 +1,10 @@
 import {
     DAY_MS,
     DETAIL_DEFAULT_HEIGHT,
+    DETAIL_DEFAULT_MIN_WIDTH,
     DETAIL_DEFAULT_WIDTH,
     DETAIL_INTERACTION_HEIGHT,
+    DETAIL_INTERACTION_MIN_WIDTH,
     DETAIL_INTERACTION_WIDTH,
     MAX_WINDOW_DAYS,
     MIN_WINDOW_DAYS,
@@ -117,11 +119,25 @@ export function buildEventLabel(event: PersonaActivityEvent): string {
     return `${title}\n${truncateLabel(subtitle, isInteraction ? 34 : 46)}`;
 }
 
-export function getEventBoxSize(type: PersonaActivityEventType): { width: number; height: number } {
+export function getEventBoxSize(type: PersonaActivityEventType, widthScale = 1): { width: number; height: number } {
+    const normalizedScale = clamp(widthScale, 0.6, 1);
+
     if (type === 'interaction') {
-        return { width: DETAIL_INTERACTION_WIDTH, height: DETAIL_INTERACTION_HEIGHT };
+        return {
+            width: Math.max(
+                DETAIL_INTERACTION_MIN_WIDTH,
+                Math.round(DETAIL_INTERACTION_WIDTH * normalizedScale)
+            ),
+            height: DETAIL_INTERACTION_HEIGHT,
+        };
     }
-    return { width: DETAIL_DEFAULT_WIDTH, height: DETAIL_DEFAULT_HEIGHT };
+    return {
+        width: Math.max(
+            DETAIL_DEFAULT_MIN_WIDTH,
+            Math.round(DETAIL_DEFAULT_WIDTH * normalizedScale)
+        ),
+        height: DETAIL_DEFAULT_HEIGHT,
+    };
 }
 
 export function hexToRgba(hexColor: string, alpha: number): string {

@@ -20,7 +20,7 @@ import {
 } from './constants';
 import type { TimelineGeometry, TimelineRenderedEvent } from './types';
 import type { PersonaActivityEvent, TimelineWindowState } from '@/app/(main)/persona/types';
-import { buildEventLabel, formatTickDate, getEventBoxSize, parseTimestamp, toRangeRatio } from './utils';
+import { buildEventLabel, clamp, formatTickDate, getEventBoxSize, parseTimestamp, toRangeRatio } from './utils';
 
 interface UseTimelineGeometryParams {
     events: PersonaActivityEvent[];
@@ -87,6 +87,7 @@ export function useTimelineGeometry({
         const levelLastRight: number[] = [];
         const renderedEvents: TimelineRenderedEvent[] = [];
         let maxBottomY = axisY;
+        const detailWidthScale = clamp(baseAxisWidth / Math.max(densityAxisWidth, 1), 0.72, 1);
 
         eventsSorted.forEach((event) => {
             const timestamp = parseTimestamp(event.createdAt);
@@ -94,9 +95,13 @@ export function useTimelineGeometry({
             const markerX = axisStartX + (ratio * densityAxisWidth);
             const markerY = axisY;
             const color = EVENT_COLORS[event.type];
-            const detailSize = getEventBoxSize(event.type);
-
-            const detailLeft = markerX - (detailSize.width / 2);
+            const detailSize = getEventBoxSize(event.type, detailWidthScale);
+            const unclampedLeft = markerX - (detailSize.width / 2);
+            const detailLeft = clamp(
+                unclampedLeft,
+                axisStartX,
+                axisEndX - detailSize.width
+            );
 
             let level = 0;
             while (
