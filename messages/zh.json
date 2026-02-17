@@ -372,50 +372,79 @@
         }
     },
     "Persona": {
-        "common": {
-            "yes": "是",
-            "no": "否"
+        "sections": {
+            "personalInfo": "个人信息",
+            "jobInfo": "岗位信息",
+            "profileInfo": "画像信息",
+            "activitiesTimeline": "活动时间线",
+            "graphLinks": "图关系"
         },
-        "basicProfile": {
-            "title": "基本资料",
-            "role": "角色",
-            "experience": "经验",
-            "workMode": "工作模式",
-            "onCall": "值班"
+        "fields": {
+            "workerType": "员工类型",
+            "vipStatus": "VIP 状态"
         },
-        "context": {
-            "title": "上下文",
-            "team": "团队",
-            "product": "产品",
-            "environment": "环境"
+        "status": {
+            "active": "活跃",
+            "inactive": "未激活",
+            "vip": "VIP",
+            "notVip": "非 VIP",
+            "notSet": "未设置"
         },
-        "softwares": {
-            "title": "软件",
-            "empty": "暂无软件数据"
+        "sidebar": {
+            "title": "组织与员工",
+            "searchPlaceholder": "搜索组织名称或员工 stable_id...",
+            "organizations": "组织",
+            "workers": "员工",
+            "allOrganizations": "全部组织",
+            "loadingOrganizations": "正在加载组织...",
+            "loadingWorkers": "正在加载员工...",
+            "noOrganizations": "未找到组织",
+            "noWorkers": "未找到员工"
         },
-        "hardwares": {
-            "title": "硬件",
-            "empty": "未分配硬件"
+        "profile": {
+            "summary": "AI 摘要",
+            "topics": "主题",
+            "tags": "标签",
+            "summaryUpdated": "摘要更新时间",
+            "topicsUpdated": "主题更新时间",
+            "tagsUpdated": "标签更新时间",
+            "empty": "暂无画像信息"
         },
-        "goals": {
-            "title": "目标与动机"
-        },
-        "painPoints": {
-            "title": "痛点"
-        },
-        "workflow": {
-            "title": "日常工作流程"
-        },
-        "behavior": {
-            "title": "行为模式"
-        },
-        "communication": {
-            "title": "沟通偏好",
-            "preferred": "偏好",
-            "avoided": "避免"
-        },
-        "notes": {
-            "title": "笔记 / 研究"
+        "timeline": {
+            "window": "时间窗口",
+            "slideLeft": "向左滑动",
+            "slideRight": "向右滑动",
+            "zoomIn": "放大",
+            "zoomOut": "缩小",
+            "reload": "刷新",
+            "showInteractions": "交互明细",
+            "on": "开启",
+            "off": "关闭",
+            "legend": "图例",
+            "loading": "正在加载时间线活动...",
+            "error": "活动时间线加载失败",
+            "retry": "重试",
+            "empty": "所选时间窗口内无活动",
+            "showingLatest": "显示最近 {loaded} / {total} 条活动",
+            "lanes": {
+                "incident": "事件",
+                "request": "请求",
+                "inquiry": "咨询",
+                "interaction": "交互"
+            },
+            "heatBar": "热力条",
+            "dragHint": "在时间轴或热力条上拖拽可平移时间窗口",
+            "rangeStart": "区间起点",
+            "rangeEnd": "区间终点",
+            "backgroundLoading": "正在加载更多时间片...",
+            "heatTooltip": {
+                "total": "总量",
+                "interval": "区间",
+                "incident": "事件",
+                "request": "请求",
+                "inquiry": "咨询",
+                "interaction": "交互"
+            }
         }
     }
 }

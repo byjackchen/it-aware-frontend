@@ -372,50 +372,79 @@
         }
     },
     "Persona": {
-        "common": {
-            "yes": "Yes",
-            "no": "No"
+        "sections": {
+            "personalInfo": "Personal Info",
+            "jobInfo": "Job Info",
+            "profileInfo": "Profile Info",
+            "activitiesTimeline": "Activities Timeline",
+            "graphLinks": "Graph Links"
         },
-        "basicProfile": {
-            "title": "Basic Profile",
-            "role": "Role",
-            "experience": "Experience",
-            "workMode": "Work Mode",
-            "onCall": "On-Call"
+        "fields": {
+            "workerType": "Worker Type",
+            "vipStatus": "VIP Status"
         },
-        "context": {
-            "title": "Context",
-            "team": "Team",
-            "product": "Product",
-            "environment": "Environment"
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "vip": "VIP",
+            "notVip": "Not VIP",
+            "notSet": "Not set"
         },
-        "softwares": {
-            "title": "Softwares",
-            "empty": "No software data available"
+        "sidebar": {
+            "title": "Organization & Worker",
+            "searchPlaceholder": "Search organization or worker stable_id...",
+            "organizations": "Organizations",
+            "workers": "Workers",
+            "allOrganizations": "All organizations",
+            "loadingOrganizations": "Loading organizations...",
+            "loadingWorkers": "Loading workers...",
+            "noOrganizations": "No organizations found",
+            "noWorkers": "No workers found"
         },
-        "hardwares": {
-            "title": "Hardwares",
-            "empty": "No hardware assigned"
+        "profile": {
+            "summary": "AI Summary",
+            "topics": "Topics",
+            "tags": "Tags",
+            "summaryUpdated": "Summary Updated",
+            "topicsUpdated": "Topics Updated",
+            "tagsUpdated": "Tags Updated",
+            "empty": "No profile data available"
         },
-        "goals": {
-            "title": "Goals & Motivations"
-        },
-        "painPoints": {
-            "title": "Pain Points"
-        },
-        "workflow": {
-            "title": "Daily Workflow"
-        },
-        "behavior": {
-            "title": "Behavior Patterns"
-        },
-        "communication": {
-            "title": "Communication Preferences",
-            "preferred": "Preferred",
-            "avoided": "Avoided"
-        },
-        "notes": {
-            "title": "Notes / Research"
+        "timeline": {
+            "window": "Window",
+            "slideLeft": "Slide left",
+            "slideRight": "Slide right",
+            "zoomIn": "Zoom in",
+            "zoomOut": "Zoom out",
+            "reload": "Reload",
+            "showInteractions": "Detailed interactions",
+            "on": "On",
+            "off": "Off",
+            "legend": "Legend",
+            "loading": "Loading timeline activities...",
+            "error": "Failed to load activities timeline",
+            "retry": "Retry",
+            "empty": "No activities in selected window",
+            "showingLatest": "Showing latest {loaded} of {total} activities",
+            "lanes": {
+                "incident": "Incidents",
+                "request": "Requests",
+                "inquiry": "Inquiries",
+                "interaction": "Interactions"
+            },
+            "heatBar": "Heat bar",
+            "dragHint": "Drag on the axis or heat bar to shift the time window",
+            "rangeStart": "Range start",
+            "rangeEnd": "Range end",
+            "backgroundLoading": "Loading additional time slices...",
+            "heatTooltip": {
+                "total": "Total",
+                "interval": "Interval",
+                "incident": "Incidents",
+                "request": "Requests",
+                "inquiry": "Inquiries",
+                "interaction": "Interactions"
+            }
         }
     }
 }

@@ -532,11 +532,41 @@ export interface IncidentListResponse {
     limit: number;
 }
 
+export interface IncidentListParams {
+    state?: string;
+    priority?: string;
+    stable_id?: string;
+    actor_oid?: string;
+    created_at_from?: string;
+    created_at_to?: string;
+    updated_at_from?: string;
+    updated_at_to?: string;
+    effective_at_from?: string;
+    effective_at_to?: string;
+    skip?: number;
+    limit?: number;
+}
+
 export interface RequestListResponse {
     items: Request[];
     total: number;
     skip: number;
     limit: number;
+}
+
+export interface RequestListParams {
+    state?: string;
+    priority?: string;
+    stable_id?: string;
+    actor_oid?: string;
+    created_at_from?: string;
+    created_at_to?: string;
+    updated_at_from?: string;
+    updated_at_to?: string;
+    effective_at_from?: string;
+    effective_at_to?: string;
+    skip?: number;
+    limit?: number;
 }
 
 export interface Inquiry {
@@ -582,6 +612,19 @@ export interface InquiryListResponse {
     total: number;
     skip: number;
     limit: number;
+}
+
+export interface InquiryListParams {
+    state?: string;
+    actor_oid?: string;
+    created_at_from?: string;
+    created_at_to?: string;
+    updated_at_from?: string;
+    updated_at_to?: string;
+    effective_at_from?: string;
+    effective_at_to?: string;
+    skip?: number;
+    limit?: number;
 }
 
 

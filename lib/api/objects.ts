@@ -31,12 +31,18 @@ import type {
     ArticleUpdate,
     ArticleVersion,
     Incident,
+    IncidentListParams,
+    IncidentListResponse,
     IncidentCreate,
     IncidentUpdate,
     Inquiry,
+    InquiryListParams,
+    InquiryListResponse,
     InquiryCreate,
     InquiryUpdate,
     Request,
+    RequestListParams,
+    RequestListResponse,
     RequestCreate,
     RequestUpdate,
     Interaction,
@@ -522,8 +528,35 @@ export async function getArticleVersion(oid: string, versionNumber: number): Pro
 // Activity APIs
 // ============================================================================
 
+function setOptionalQueryParam(query: URLSearchParams, key: string, value: string | number | undefined): void {
+    if (value === undefined) return;
+    const normalized = String(value).trim();
+    if (normalized.length === 0) return;
+    query.set(key, normalized);
+}
+
 export async function getIncidents(): Promise<Incident[]> {
     return fetchAllPages<Incident>(`${OBJECTS_BASE}/activities/incidents`);
+}
+
+export async function getIncidentsPage(params: IncidentListParams = {}): Promise<IncidentListResponse> {
+    const queryParams = new URLSearchParams();
+    setOptionalQueryParam(queryParams, 'state', params.state);
+    setOptionalQueryParam(queryParams, 'priority', params.priority);
+    setOptionalQueryParam(queryParams, 'stable_id', params.stable_id);
+    setOptionalQueryParam(queryParams, 'actor_oid', params.actor_oid);
+    setOptionalQueryParam(queryParams, 'created_at_from', params.created_at_from);
+    setOptionalQueryParam(queryParams, 'created_at_to', params.created_at_to);
+    setOptionalQueryParam(queryParams, 'updated_at_from', params.updated_at_from);
+    setOptionalQueryParam(queryParams, 'updated_at_to', params.updated_at_to);
+    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
+    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
+    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
+
+    const queryString = queryParams.toString();
+    const url = `${OBJECTS_BASE}/activities/incidents${queryString ? `?${queryString}` : ''}`;
+    return fetchApi<IncidentListResponse>(url);
 }
 
 export async function getIncident(oid: string): Promise<Incident> {
@@ -534,12 +567,50 @@ export async function getRequests(): Promise<Request[]> {
     return fetchAllPages<Request>(`${OBJECTS_BASE}/activities/requests`);
 }
 
+export async function getRequestsPage(params: RequestListParams = {}): Promise<RequestListResponse> {
+    const queryParams = new URLSearchParams();
+    setOptionalQueryParam(queryParams, 'state', params.state);
+    setOptionalQueryParam(queryParams, 'priority', params.priority);
+    setOptionalQueryParam(queryParams, 'stable_id', params.stable_id);
+    setOptionalQueryParam(queryParams, 'actor_oid', params.actor_oid);
+    setOptionalQueryParam(queryParams, 'created_at_from', params.created_at_from);
+    setOptionalQueryParam(queryParams, 'created_at_to', params.created_at_to);
+    setOptionalQueryParam(queryParams, 'updated_at_from', params.updated_at_from);
+    setOptionalQueryParam(queryParams, 'updated_at_to', params.updated_at_to);
+    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
+    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
+    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
+
+    const queryString = queryParams.toString();
+    const url = `${OBJECTS_BASE}/activities/requests${queryString ? `?${queryString}` : ''}`;
+    return fetchApi<RequestListResponse>(url);
+}
+
 export async function getRequest(oid: string): Promise<Request> {
     return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`);
 }
 
 export async function getInquiries(): Promise<Inquiry[]> {
     return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
+}
+
+export async function getInquiriesPage(params: InquiryListParams = {}): Promise<InquiryListResponse> {
+    const queryParams = new URLSearchParams();
+    setOptionalQueryParam(queryParams, 'state', params.state);
+    setOptionalQueryParam(queryParams, 'actor_oid', params.actor_oid);
+    setOptionalQueryParam(queryParams, 'created_at_from', params.created_at_from);
+    setOptionalQueryParam(queryParams, 'created_at_to', params.created_at_to);
+    setOptionalQueryParam(queryParams, 'updated_at_from', params.updated_at_from);
+    setOptionalQueryParam(queryParams, 'updated_at_to', params.updated_at_to);
+    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
+    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
+    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
+
+    const queryString = queryParams.toString();
+    const url = `${OBJECTS_BASE}/activities/inquiries${queryString ? `?${queryString}` : ''}`;
+    return fetchApi<InquiryListResponse>(url);
 }
 
 
