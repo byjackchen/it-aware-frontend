@@ -2,6 +2,7 @@
     "TopBar": {
         "title": "Ohla IT-Aware",
         "dashboard": "Dashboard",
+        "rawDataOverview": "Raw Data Overview",
         "auth": "Auth",
         "data": "Data",
         "application": "Applications",
@@ -9,6 +10,43 @@
         "persona": "Persona"
     },
     "Dashboard": {
+        "title": "Data Objects Dashboard",
+        "subtitle": "Live high-level metrics across all data object resources.",
+        "refresh": "Refresh",
+        "loading": "Loading dashboard stats...",
+        "loadFailed": "Failed to load dashboard stats. Try refreshing.",
+        "generatedAt": "Updated at {time}",
+        "summary": {
+            "totalAcrossResources": "Total Across Resources",
+            "activeCapable": "Active (Active-Capable Resources)",
+            "availableResources": "Resources Available"
+        },
+        "groups": {
+            "hierarchies": "Hierarchies",
+            "objects": "Objects",
+            "activities": "Activities"
+        },
+        "resources": {
+            "organizations": "Organizations",
+            "locations": "Locations",
+            "service-catalogs": "Service Catalogs",
+            "workers": "Workers",
+            "articles": "Articles",
+            "incidents": "Incidents",
+            "requests": "Requests",
+            "inquiries": "Inquiries",
+            "interactions": "Interactions"
+        },
+        "metrics": {
+            "total": "Total",
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "status": {
+            "ok": "Available",
+            "forbidden": "No Access",
+            "error": "Unavailable"
+        },
         "comingSoon": "Dashboards coming soon"
     },
     "GlobalSearch": {

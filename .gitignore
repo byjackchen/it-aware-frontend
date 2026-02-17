@@ -43,3 +43,6 @@ next-env.d.ts
 
 # utility scripts
 /scripts
+
+# local git worktrees
+.wt/

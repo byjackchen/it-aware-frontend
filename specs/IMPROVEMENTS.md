@@ -18,3 +18,10 @@
 
 ## Tooling
 - Add Prettier or tighten ESLint rules to enforce consistent formatting.
+
+## Backend API Proposal
+- Add a dedicated `GET /objects/stats` endpoint that returns totals for all object resources in one response:
+  - resources: `organizations`, `locations`, `service_catalogs`, `workers`, `articles`, `incidents`, `requests`, `inquiries`, `interactions`
+  - include `active` and `inactive` only for resources that support `is_active`
+  - include per-resource authorization status (`ok`/`forbidden`) to avoid frontend fan-out retries
+- Keep response lightweight and cache-friendly so the frontend dashboard can replace multiple count requests with one call.

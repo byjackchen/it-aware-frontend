@@ -71,8 +71,8 @@ class GlobalEdge(Base):
 
 | Edge Type | Description | Typical Usage |
 |-----------|-------------|---------------|
-| `assigned_to` | Assignment relationship | Ticket → Worker |
-| `escalated_to` | Escalation relationship | Ticket → Worker |
+| `assigned_to` | Assignment relationship | Incident → Worker |
+| `escalated_to` | Escalation relationship | Incident → Worker |
 | `owned_by` | Ownership relationship | Any → Worker |
 | `created_by` | Creation attribution | Any → Worker |
 | `belongs_to` | Organizational membership | Worker → Organization |
@@ -80,8 +80,8 @@ class GlobalEdge(Base):
 | `reports_to` | Reporting hierarchy | Worker → Worker |
 | `related_to` | Generic relationship | Any → Any |
 | `depends_on` | Dependency relationship | Any → Any |
-| `blocked_by` | Blocker relationship | Ticket → Ticket |
-| `duplicates` | Duplicate indication | Ticket → Ticket |
+| `blocked_by` | Blocker relationship | Incident → Incident |
+| `duplicates` | Duplicate indication | Incident → Incident |
 
 ### Custom Edge Types
 
@@ -195,8 +195,8 @@ Creates a new directional edge between two objects.
   "created_by": null,
   "from_object": {
     "oid": "01JFXYZ123456789ABCDEF",
-    "object_type": "ticket",
-    "descriptor": "TKT-2025-001",
+    "object_type": "incident",
+    "descriptor": "INC-2025-001",
     "created_at": "2025-01-15T09:00:00Z",
     "updated_at": "2025-01-15T09:00:00Z"
   },
@@ -291,8 +291,8 @@ GET /edges/from/01JFXYZ123456789ABCDEF?edge_type=assigned_to&is_active=true&incl
       "created_by": null,
       "from_object": {
         "oid": "01JFXYZ123456789ABCDEF",
-        "object_type": "ticket",
-        "descriptor": "TKT-2025-001",
+        "object_type": "incident",
+        "descriptor": "INC-2025-001",
         "created_at": "2025-01-15T09:00:00Z",
         "updated_at": "2025-01-15T09:00:00Z"
       },
@@ -493,8 +493,8 @@ GET /edges/01JFXYZ123456789ABCDEF/01JFXYZWORKER123456AB/assigned_to?include_obje
   "created_by": null,
   "from_object": {
     "oid": "01JFXYZ123456789ABCDEF",
-    "object_type": "ticket",
-    "descriptor": "TKT-2025-001",
+    "object_type": "incident",
+    "descriptor": "INC-2025-001",
     "created_at": "2025-01-15T09:00:00Z",
     "updated_at": "2025-01-15T09:00:00Z"
   },
@@ -559,7 +559,7 @@ No body returned on success.
 BASE_URL="http://localhost:8000"
 
 # Assume you have two existing objects in the registry
-FROM_OID="01JFXYZ123456789ABCDEF"  # e.g., a ticket
+FROM_OID="01JFXYZ123456789ABCDEF"  # e.g., an incident
 TO_OID="01JFXYZWORKER123456AB"     # e.g., a worker
 
 # 1. List available edge types

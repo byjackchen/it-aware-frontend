@@ -109,7 +109,7 @@ class Role(Base):
 class Permission(Base):
     oid = Column(BYTEA(16), primary_key=True)
     domain = Column(Text, nullable=False)    # e.g., 'auth', 'objects', '*'
-    resource = Column(Text, nullable=False)  # e.g., 'accounts', 'tickets', '*'
+    resource = Column(Text, nullable=False)  # e.g., 'accounts', 'incidents', '*'
     action = Column(Text, nullable=False)    # e.g., 'read', 'edit', '*'
 
 class Group(Base):
@@ -333,8 +333,8 @@ Returns information about the authenticated account including linked worker, gro
   "permissions": [
     "auth:accounts:read",
     "auth:accounts:edit",
-    "objects:tickets:read",
-    "objects:tickets:write"
+    "objects:incidents:read",
+    "objects:incidents:write"
   ]
 }
 ```
@@ -672,7 +672,7 @@ echo -e "\n=== Create Group ==="
 GROUP=$(curl -s -X POST "$BASE_URL/auth/config/groups" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name": "ticket_managers", "scope_type": "role_based"}')
+  -d '{"name": "incident_managers", "scope_type": "role_based"}')
 GROUP_OID=$(echo $GROUP | jq -r '.oid')
 
 # 6. Assign account to group
@@ -711,7 +711,7 @@ echo -e "\n=== Done ==="
 
 Permissions follow the `{domain}:{resource}:{action}` format:
 - `auth:accounts:read` - Read accounts in auth domain
-- `objects:tickets:write` - Write tickets in objects domain
+- `objects:incidents:write` - Write incidents in objects domain
 - `*:*:*` - Super permission (all access)
 
 ### Scope Types

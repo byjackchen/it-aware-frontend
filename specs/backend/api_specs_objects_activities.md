@@ -223,6 +223,25 @@ class IncidentListResponse(BaseModel):
 >
 > **Pagination stability**: default ordering is `created_at DESC`, with secondary tie-breaker `oid DESC` to keep `skip/limit` deterministic.
 
+### Query Parameters (`GET /objects/activities/incidents`)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | string | null | Exact state filter |
+| `priority` | string | null | Exact priority filter |
+| `stable_id` | string | null | Exact stable id filter |
+| `actor_oid` | OID string | null | Exact actor worker OID filter |
+| `created_at_from` | ISO8601 datetime | null | Created-at lower bound (inclusive) |
+| `created_at_to` | ISO8601 datetime | null | Created-at upper bound (inclusive) |
+| `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound (inclusive) |
+| `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
+| `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
+| `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 100 | Max records (1-1000) |
+
+Use `GET /objects/activities/incidents/{oid}` for exact OID lookup.
+
 ### ABAC Filtering
 
 - **Unconstrained**: Sees all incidents.
@@ -325,6 +344,25 @@ class RequestListResponse(BaseModel):
 | GET | `/objects/activities/requests/{oid}` | Get request (ABAC) | `objects:requests:read` |
 | PUT | `/objects/activities/requests/{oid}` | Update request | `objects:requests:write` |
 | DELETE | `/objects/activities/requests/{oid}` | Delete request | `objects:requests:write` |
+
+### Query Parameters (`GET /objects/activities/requests`)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | string | null | Exact state filter |
+| `priority` | string | null | Exact priority filter |
+| `stable_id` | string | null | Exact stable id filter |
+| `actor_oid` | OID string | null | Exact actor worker OID filter |
+| `created_at_from` | ISO8601 datetime | null | Created-at lower bound (inclusive) |
+| `created_at_to` | ISO8601 datetime | null | Created-at upper bound (inclusive) |
+| `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound (inclusive) |
+| `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
+| `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
+| `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 100 | Max records (1-1000) |
+
+Use `GET /objects/activities/requests/{oid}` for exact OID lookup.
 
 ### ABAC Filtering
 
@@ -459,6 +497,23 @@ class InquiryMaterializeResponse(BaseModel):
 >   `effective_at=min(interaction.effective_at)`.
 > - If LLM output is invalid or unavailable, deterministic projection is used for `topic/fact` and `status` becomes `materialized_with_fallback`.
 > - If embedding backend is temporarily unavailable, materialize still updates raw `fact` text (best effort) and does not fail solely due to embedding connectivity.
+
+### Query Parameters (`GET /objects/activities/inquiries`)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | string | null | Exact/normalized state filter |
+| `actor_oid` | OID string | null | Exact actor worker OID filter |
+| `created_at_from` | ISO8601 datetime | null | Created-at lower bound (inclusive) |
+| `created_at_to` | ISO8601 datetime | null | Created-at upper bound (inclusive) |
+| `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound (inclusive) |
+| `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
+| `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
+| `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 100 | Max records (1-1000) |
+
+Use `GET /objects/activities/inquiries/{oid}` for exact OID lookup.
 
 ### ABAC Filtering
 
@@ -621,10 +676,17 @@ class InteractionListResponse(BaseModel):
 | `assigned_inquiry_oid` | string | null | Assigned inquiry OID filter |
 | `created_at_from` | ISO8601 datetime | null | Created-at lower bound |
 | `created_at_to` | ISO8601 datetime | null | Created-at upper bound |
+| `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound |
+| `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound |
+| `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound |
+| `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
 | `sort_by` | `created_at`/`ingested_at`/`updated_at` | `created_at` | Sort field |
 | `order` | `asc`/`desc` | `desc` | Sort direction |
+
+`actor_oid` is not a filter on interaction list because interactions currently store `actor_stable_id` (not `actor_oid`) in `activities.interactions`.
+Use `GET /objects/activities/interactions/{interaction_oid}` for exact OID lookup.
 
 List response now returns `InteractionListResponse` with:
 - `items`: current page records

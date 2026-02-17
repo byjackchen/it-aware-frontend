@@ -112,7 +112,15 @@ export function TopBar() {
       href: '/dashboard',
       label: t('dashboard'),
       icon: LayoutDashboard,
-      permissions: requireAnyPermission([]),  // No permissions required for placeholder
+      permissions: requireAnyPermission([]),
+      children: [
+        {
+          href: '/dashboard',
+          label: t('rawDataOverview'),
+          icon: Database,
+          permissions: requireAnyPermission([]),
+        },
+      ],
     },
   ];
 
@@ -131,10 +139,6 @@ export function TopBar() {
     }
     return pathname.startsWith(item.href);
   };
-
-  // Get the active submenu item for an expanded menu
-  const activeSubmenuItem = hoveredMenu ? authorizedNavItems.find(item => item.href === hoveredMenu) : null;
-  const hasExpandedSubmenu = activeSubmenuItem?.children && activeSubmenuItem.children.length > 0;
 
   return (
     <header

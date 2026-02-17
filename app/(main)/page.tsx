@@ -1,7 +1,5 @@
-export default function Home() {
-    return (
-        <div className="p-8">
-            {/* Blank main content area as requested */}
-        </div>
-    );
+import { ObjectStatsDashboard } from './dashboard/ObjectStatsDashboard';
+
+export default function HomePage() {
+    return <ObjectStatsDashboard />;
 }

@@ -2,6 +2,7 @@
     "TopBar": {
         "title": "Ohla IT-Aware",
         "dashboard": "看板",
+        "rawDataOverview": "原始数据概览",
         "auth": "权限",
         "data": "数据",
         "application": "应用",
@@ -9,6 +10,43 @@
         "persona": "用户画像"
     },
     "Dashboard": {
+        "title": "数据对象看板",
+        "subtitle": "跨所有数据对象资源的实时汇总指标。",
+        "refresh": "刷新",
+        "loading": "正在加载看板统计...",
+        "loadFailed": "看板统计加载失败，请刷新重试。",
+        "generatedAt": "更新时间：{time}",
+        "summary": {
+            "totalAcrossResources": "资源总计",
+            "activeCapable": "活跃数（支持激活状态的资源）",
+            "availableResources": "可用资源"
+        },
+        "groups": {
+            "hierarchies": "层级",
+            "objects": "对象",
+            "activities": "活动"
+        },
+        "resources": {
+            "organizations": "组织",
+            "locations": "地点",
+            "service-catalogs": "服务目录",
+            "workers": "员工",
+            "articles": "文章",
+            "incidents": "事件",
+            "requests": "请求",
+            "inquiries": "咨询",
+            "interactions": "交互事件"
+        },
+        "metrics": {
+            "total": "总数",
+            "active": "活跃",
+            "inactive": "未激活"
+        },
+        "status": {
+            "ok": "可用",
+            "forbidden": "无权限",
+            "error": "不可用"
+        },
         "comingSoon": "看板即将推出"
     },
     "GlobalSearch": {
