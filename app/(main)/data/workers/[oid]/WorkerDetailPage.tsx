@@ -35,18 +35,53 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
-import type { Worker, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
-import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
+import type { Worker, WorkerProfile, WorkerProfileUpsert, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
+import { updateWorkerAction, upsertWorkerProfileAction, deleteWorkerAction } from '@/app/actions/objects';
 
 interface WorkerDetailPageProps {
     worker: Worker;
+    workerProfile: WorkerProfile | null;
     edges: GlobalEdge[];
     organizations: Organization[];
     locations: Location[];
     hardwares: WorkerHardware[];
 }
 
-export function WorkerDetailPage({ worker, edges, organizations, locations, hardwares }: WorkerDetailPageProps) {
+function normalizeSummary(text: string): string | null {
+    const trimmed = text.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+function parseCommaList(text: string): string[] | null {
+    const uniqueValues = new Set<string>();
+
+    text.split(',').forEach((value) => {
+        const trimmed = value.trim();
+        if (trimmed) {
+            uniqueValues.add(trimmed);
+        }
+    });
+
+    const values = Array.from(uniqueValues);
+    return values.length > 0 ? values : null;
+}
+
+function areStringArraysEqual(a: string[] | null, b: string[] | null): boolean {
+    if (a === b) return true;
+    if (a === null || b === null) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function formatCommaList(values: string[] | null): string {
+    if (!values || values.length === 0) return '';
+    return values.join(', ');
+}
+
+export function WorkerDetailPage({ worker, workerProfile, edges, organizations, locations, hardwares }: WorkerDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
@@ -54,6 +89,10 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     const isLight = theme === 'light';
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
+    const [profile, setProfile] = useState<WorkerProfile | null>(workerProfile);
+    const [isProfileEditing, setIsProfileEditing] = useState(false);
+    const [isProfilePending, setIsProfilePending] = useState(false);
+    const [profileError, setProfileError] = useState<string | null>(null);
 
     // Name field
     const [fullname, setFullname] = useState(worker.fullname);
@@ -74,6 +113,9 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
     const [jobTitle, setJobTitle] = useState(worker.job_title || '');
     const [isVip, setIsVip] = useState(worker.is_vip);
     const [vipType, setVipType] = useState(worker.vip_type || '');
+    const [profileSummaryText, setProfileSummaryText] = useState(workerProfile?.summary || '');
+    const [profileTopicsText, setProfileTopicsText] = useState(formatCommaList(workerProfile?.topics || null));
+    const [profileTagsText, setProfileTagsText] = useState(formatCommaList(workerProfile?.tags || null));
 
     const [isActive, setIsActive] = useState(worker.is_active);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
@@ -143,6 +185,55 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
         setVipType(worker.vip_type || '');
         setIsActive(worker.is_active);
         setIsEditing(false);
+    };
+
+    const resetProfileDraft = (nextProfile: WorkerProfile | null) => {
+        setProfileSummaryText(nextProfile?.summary || '');
+        setProfileTopicsText(formatCommaList(nextProfile?.topics || null));
+        setProfileTagsText(formatCommaList(nextProfile?.tags || null));
+    };
+
+    const handleProfileCancel = () => {
+        resetProfileDraft(profile);
+        setProfileError(null);
+        setIsProfileEditing(false);
+    };
+
+    const handleProfileSave = async () => {
+        setIsProfilePending(true);
+        setProfileError(null);
+
+        try {
+            const normalizedSummary = normalizeSummary(profileSummaryText);
+            const normalizedTopics = parseCommaList(profileTopicsText);
+            const normalizedTags = parseCommaList(profileTagsText);
+
+            const payload: WorkerProfileUpsert = {};
+
+            if (normalizedSummary !== (profile?.summary || null)) {
+                payload.summary = normalizedSummary;
+            }
+            if (!areStringArraysEqual(normalizedTopics, profile?.topics || null)) {
+                payload.topics = normalizedTopics;
+            }
+            if (!areStringArraysEqual(normalizedTags, profile?.tags || null)) {
+                payload.tags = normalizedTags;
+            }
+
+            if (payload.summary === undefined && payload.topics === undefined && payload.tags === undefined) {
+                setIsProfileEditing(false);
+                return;
+            }
+
+            const updatedProfile = await upsertWorkerProfileAction(worker.oid, payload);
+            setProfile(updatedProfile);
+            resetProfileDraft(updatedProfile);
+            setIsProfileEditing(false);
+        } catch (error) {
+            setProfileError(error instanceof Error ? error.message : 'Failed to save worker profile');
+        } finally {
+            setIsProfilePending(false);
+        }
     };
 
     const inputClass = `w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`;
@@ -484,6 +575,170 @@ export function WorkerDetailPage({ worker, edges, organizations, locations, hard
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* Worker Profile */}
+                <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <div className="flex items-center justify-between">
+                        <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('workers.profile.title')}</h2>
+                        {!isProfileEditing && (
+                            <button
+                                onClick={() => {
+                                    setProfileError(null);
+                                    resetProfileDraft(profile);
+                                    setIsProfileEditing(true);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            >
+                                <Pencil className="w-4 h-4" />
+                                <span>{t('common.edit')}</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {profileError && (
+                        <div className={`px-3 py-2 rounded-lg text-sm ${isLight ? 'bg-red-50 text-red-700' : 'bg-red-500/10 text-red-300'}`}>
+                            {profileError}
+                        </div>
+                    )}
+
+                    {isProfileEditing ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className={labelClass}>{t('workers.profile.summary')}</label>
+                                <textarea
+                                    rows={4}
+                                    value={profileSummaryText}
+                                    onChange={(e) => setProfileSummaryText(e.target.value)}
+                                    className={`${inputClass} resize-y`}
+                                    placeholder={t('workers.notSet')}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.topics')}</label>
+                                    <input
+                                        type="text"
+                                        value={profileTopicsText}
+                                        onChange={(e) => setProfileTopicsText(e.target.value)}
+                                        className={inputClass}
+                                        placeholder={t('workers.profile.commaDelimited')}
+                                    />
+                                    <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.tags')}</label>
+                                    <input
+                                        type="text"
+                                        value={profileTagsText}
+                                        onChange={(e) => setProfileTagsText(e.target.value)}
+                                        className={inputClass}
+                                        placeholder={t('workers.profile.commaDelimited')}
+                                    />
+                                    <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={handleProfileSave}
+                                    disabled={isProfilePending}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+                                >
+                                    {isProfilePending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    <span>{t('common.save')}</span>
+                                </button>
+                                <button
+                                    onClick={handleProfileCancel}
+                                    disabled={isProfilePending}
+                                    className={`px-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
+                                >
+                                    {t('common.cancel')}
+                                </button>
+                            </div>
+                        </div>
+                    ) : profile ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className={labelClass}>{t('workers.profile.summary')}</label>
+                                <div className={`px-3 py-2 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
+                                    {profile.summary || t('workers.notSet')}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.topics')}</label>
+                                    {profile.topics && profile.topics.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {profile.topics.map((topic, i) => (
+                                                <span
+                                                    key={`${topic}-${i}`}
+                                                    className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
+                                                >
+                                                    {topic}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className={displayClass}>
+                                            <span className={textClass}>{t('workers.notSet')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.tags')}</label>
+                                    {profile.tags && profile.tags.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {profile.tags.map((tag, i) => (
+                                                <span
+                                                    key={`${tag}-${i}`}
+                                                    className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className={displayClass}>
+                                            <span className={textClass}>{t('workers.notSet')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.summaryUpdated')}</label>
+                                    <div className={displayClass}>
+                                        <Calendar className={iconClass} />
+                                        <span className={textClass}>
+                                            {profile.summary_updated_at ? formatDateTime(profile.summary_updated_at, timezone) : t('workers.notSet')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.topicsUpdated')}</label>
+                                    <div className={displayClass}>
+                                        <Calendar className={iconClass} />
+                                        <span className={textClass}>
+                                            {profile.topics_updated_at ? formatDateTime(profile.topics_updated_at, timezone) : t('workers.notSet')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>{t('workers.profile.tagsUpdated')}</label>
+                                    <div className={displayClass}>
+                                        <Calendar className={iconClass} />
+                                        <span className={textClass}>
+                                            {profile.tags_updated_at ? formatDateTime(profile.tags_updated_at, timezone) : t('workers.notSet')}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* Hardware Assets */}

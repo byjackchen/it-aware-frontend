@@ -18,6 +18,8 @@ import type {
     Worker,
     WorkerCreate,
     WorkerUpdate,
+    WorkerProfile,
+    WorkerProfileUpsert,
     WorkerHardware,
     WorkerHardwareCreate,
     WorkerHardwareUpdate,
@@ -297,6 +299,25 @@ export async function getWorker(oid: string): Promise<Worker> {
     return fetchApi<Worker>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`);
 }
 
+export async function getWorkerProfile(workerOid: string): Promise<WorkerProfile | null> {
+    try {
+        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/profile`);
+    } catch (error) {
+        if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+            if (
+                message === 'profile not found' ||
+                message === 'not found' ||
+                message.includes('profile not found') ||
+                message.includes('404')
+            ) {
+                return null;
+            }
+        }
+        throw error;
+    }
+}
+
 export async function createWorker(data: WorkerCreate): Promise<Worker> {
     return fetchApi<Worker>(`${OBJECTS_BASE}/workers`, {
         method: 'POST',
@@ -314,6 +335,13 @@ export async function updateWorker(oid: string, data: WorkerUpdate): Promise<Wor
 export async function deleteWorker(oid: string): Promise<void> {
     return fetchApi<void>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
+    });
+}
+
+export async function upsertWorkerProfile(workerOid: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
+    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/profile`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
     });
 }
 

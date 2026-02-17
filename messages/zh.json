@@ -285,6 +285,17 @@
             "required": "必填",
             "optional": "可选",
             "createWorker": "创建员工",
+            "profile": {
+                "title": "员工画像",
+                "empty": "暂无员工画像。",
+                "summary": "摘要",
+                "topics": "主题",
+                "tags": "标签",
+                "commaDelimited": "用逗号分隔",
+                "summaryUpdated": "摘要更新时间",
+                "topicsUpdated": "主题更新时间",
+                "tagsUpdated": "标签更新时间"
+            },
             "hardware": {
                 "title": "硬件资产",
                 "type": "类型",

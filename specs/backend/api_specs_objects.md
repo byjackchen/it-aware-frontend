@@ -9,6 +9,7 @@ The Objects module manages business entities that are not hierarchical but inter
 ```
 /objects/
 ├── /workers                - Worker (employee) management
+│   ├── /{worker_oid}/profile   - AI-processed profile data
 │   └── /{worker_oid}/hardwares - Hardware assigned to workers
 └── /worker-hierarchy-roles - Role assignments at hierarchy nodes
 ```
@@ -83,6 +84,22 @@ class Worker(Base):
 > - **Regular (NEW system)**: Has `job_category`, `job_subcategory`, `job_band` (no `job_title`)
 > - **Intern**: Has `job_category`, `job_subcategory`, `job_title` = "Intern"
 > - **Partner/Contingent/Consultant**: Has `job_title` only (entire string)
+
+### WorkerProfile
+
+```python
+class WorkerProfile(Base):
+    __tablename__ = "worker_profiles"
+    __table_args__ = {"schema": "objects"}
+
+    worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid", ondelete="CASCADE"), primary_key=True)
+    summary = Column(Text, nullable=True)
+    summary_updated_at = Column(DateTime(timezone=True), nullable=True)
+    topics = Column(JSONB, nullable=True)  # JSON array of strings
+    topics_updated_at = Column(DateTime(timezone=True), nullable=True)
+    tags = Column(JSONB, nullable=True)  # JSON array of strings
+    tags_updated_at = Column(DateTime(timezone=True), nullable=True)
+```
 
 ### WorkerHardware
 
@@ -197,7 +214,7 @@ class WorkerListResponse(BaseModel):
 | DELETE | `/objects/workers/{oid}` | Delete worker | `objects:workers:edit` |
 
 > [!NOTE]
-> Deleting a worker cascades to `account_worker` and `worker_hierarchy_role`.
+> Deleting a worker cascades to `account_worker`, `worker_hierarchy_role`, and `worker_profiles`.
 
 ### Error Responses
 
@@ -345,6 +362,84 @@ class WorkerHardwareResponse(BaseModel):
 
 ---
 
+### Nested Resource: Worker Profile
+
+AI-processed per-worker profile outputs. This endpoint is separate from `WorkerResponse` and is lazily created on first PUT.
+
+#### Schemas
+
+```python
+class WorkerProfileUpsert(BaseModel):
+    summary: Optional[str] = None
+    topics: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+
+class WorkerProfileResponse(BaseModel):
+    worker_oid: str
+    summary: Optional[str] = None
+    summary_updated_at: Optional[datetime] = None
+    topics: Optional[List[str]] = None
+    topics_updated_at: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    tags_updated_at: Optional[datetime] = None
+```
+
+#### Validation Rules
+
+- At least one of `summary`/`topics`/`tags` must be provided in PUT payload.
+- `summary` may be `null` (clear); if string, must be non-empty after trimming.
+- `topics`/`tags` may be `null` (clear); list values must be non-empty trimmed strings and unique.
+- Empty lists (`[]`) are rejected.
+
+#### Endpoints
+
+| Method | Path | Description | Permission |
+|--------|------|-------------|------------|
+| GET | `/objects/workers/{worker_oid}/profile` | Get worker profile | `objects:workers:read` |
+| PUT | `/objects/workers/{worker_oid}/profile` | Create/update worker profile | `objects:workers:edit` |
+
+#### Behavior Notes
+
+- `GET` returns `404` when worker exists but no profile row has been created yet.
+- `PUT` performs partial update: only provided fields are changed.
+- If `summary`/`topics`/`tags` is present in payload (including `null`), the corresponding `*_updated_at` is set to current UTC.
+- If provided value equals existing value, timestamp still refreshes.
+
+#### Error Responses
+
+| Status | Condition | Response |
+|--------|-----------|----------|
+| 404 | Worker not found | `{"detail": "Worker not found"}` |
+| 404 | Profile not found (GET only) | `{"detail": "Profile not found"}` |
+| 422 | Invalid worker_oid | `{"detail": "Invalid worker_oid"}` |
+| 422 | Validation error (empty/duplicate items, empty summary, etc.) | FastAPI validation error |
+
+#### Example PUT Payload
+
+```json
+{
+  "summary": "Senior platform engineer with strong incident triage performance.",
+  "topics": ["incident triage", "service reliability"],
+  "tags": ["ai-generated", "internal"]
+}
+```
+
+#### Example Response
+
+```json
+{
+  "worker_oid": "01JFXYZWORKER1234567890",
+  "summary": "Senior platform engineer with strong incident triage performance.",
+  "summary_updated_at": "2026-02-17T03:13:21.123456Z",
+  "topics": ["incident triage", "service reliability"],
+  "topics_updated_at": "2026-02-17T03:13:21.123456Z",
+  "tags": ["ai-generated", "internal"],
+  "tags_updated_at": "2026-02-17T03:13:21.123456Z"
+}
+```
+
+---
+
 ## API 2: Worker-Hierarchy-Roles (`/objects/worker-hierarchy-roles`)
 
 Assigns workers to roles at specific hierarchy nodes for role-based ABAC.
@@ -393,16 +488,19 @@ class WorkerHierarchyRoleResponse(BaseModel):
 | 3 | GET | `/objects/workers/{oid}` | Get worker | `objects:workers:read` |
 | 4 | PUT | `/objects/workers/{oid}` | Update worker | `objects:workers:edit` |
 | 5 | DELETE | `/objects/workers/{oid}` | Delete worker | `objects:workers:edit` |
+| **Worker Profiles** |||||
+| 6 | GET | `/objects/workers/{worker_oid}/profile` | Get worker profile | `objects:workers:read` |
+| 7 | PUT | `/objects/workers/{worker_oid}/profile` | Create/update worker profile | `objects:workers:edit` |
 | **Worker-Hierarchy-Roles** |||||
-| 6 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
-| 7 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
-| 8 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
+| 8 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
+| 9 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
+| 10 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
 | **Worker Hardwares** |||||
-| 9 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
-| 10 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
-| 11 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
-| 12 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
-| 13 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
+| 11 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
+| 12 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
+| 13 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
+| 14 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
+| 15 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
 
 ---
 
@@ -416,7 +514,7 @@ class WorkerHierarchyRoleResponse(BaseModel):
 ### Cascade Behavior
 
 - Deleting a hierarchy node cascades to all children.
-- Deleting a worker cascades to `account_worker` and `worker_hierarchy_role`.
+- Deleting a worker cascades to `account_worker`, `worker_hierarchy_role`, `worker_profiles`, and worker hardware rows.
 - Foreign key constraints ensure referential integrity.
 
 ---

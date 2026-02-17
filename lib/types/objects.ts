@@ -171,6 +171,22 @@ export interface Worker {
     updated_at: string;
 }
 
+export interface WorkerProfile {
+    worker_oid: string;
+    summary: string | null;
+    summary_updated_at: string | null;
+    topics: string[] | null;
+    topics_updated_at: string | null;
+    tags: string[] | null;
+    tags_updated_at: string | null;
+}
+
+export interface WorkerProfileUpsert {
+    summary?: string | null;
+    topics?: string[] | null;
+    tags?: string[] | null;
+}
+
 export interface WorkerHardware {
     oid: string;
     worker_oid: string;

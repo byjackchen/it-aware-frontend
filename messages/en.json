@@ -285,6 +285,17 @@
             "required": "Required",
             "optional": "Optional",
             "createWorker": "Create Worker",
+            "profile": {
+                "title": "Worker Profile",
+                "empty": "No worker profile yet.",
+                "summary": "Summary",
+                "topics": "Topics",
+                "tags": "Tags",
+                "commaDelimited": "Comma-delimited",
+                "summaryUpdated": "Summary Updated",
+                "topicsUpdated": "Topics Updated",
+                "tagsUpdated": "Tags Updated"
+            },
             "hardware": {
                 "title": "Hardware Assets",
                 "type": "Type",
