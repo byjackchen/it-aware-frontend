@@ -393,7 +393,12 @@
         "sidebar": {
             "title": "组织与员工",
             "searchPlaceholder": "搜索组织名称或员工 stable_id...",
+            "searchButton": "搜索",
+            "vipFilter": "仅 VIP",
+            "activeFilter": "仅活跃",
             "organizations": "组织",
+            "expandAll": "全部展开",
+            "collapseAll": "全部收起",
             "workers": "员工",
             "allOrganizations": "全部组织",
             "loadingOrganizations": "正在加载组织...",

@@ -393,7 +393,12 @@
         "sidebar": {
             "title": "Organization & Worker",
             "searchPlaceholder": "Search organization or worker stable_id...",
+            "searchButton": "Search",
+            "vipFilter": "VIP only",
+            "activeFilter": "Active only",
             "organizations": "Organizations",
+            "expandAll": "Expand all",
+            "collapseAll": "Collapse all",
             "workers": "Workers",
             "allOrganizations": "All organizations",
             "loadingOrganizations": "Loading organizations...",

@@ -13,6 +13,10 @@ const WORKERS_PAGE_LIMIT = 500;
 const WORKERS_MAX_PAGES = 20;
 const SIDEBAR_STATE_CACHE = {
     query: '',
+    appliedQuery: '',
+    vipOnly: false,
+    activeOnly: true,
+    isHierarchyCollapsed: false,
     expandedOrgOids: new Set<string>(),
     expandedWorkerOrgOids: new Set<string>(),
     workersByOrg: new Map<string, Worker[]>(),
@@ -35,6 +39,7 @@ interface OrgTreeNodeProps {
     level: number;
     expandedOrgOids: Set<string>;
     expandedWorkerOrgOids: Set<string>;
+    isHierarchyCollapsed: boolean;
     autoExpandOrg: boolean;
     autoExpandedWorkerOrgOids: Set<string>;
     workersByOrg: Map<string, Worker[]>;
@@ -156,6 +161,7 @@ function OrgTreeNode({
     level,
     expandedOrgOids,
     expandedWorkerOrgOids,
+    isHierarchyCollapsed,
     autoExpandOrg,
     autoExpandedWorkerOrgOids,
     workersByOrg,
@@ -172,7 +178,7 @@ function OrgTreeNode({
     onSelectWorker,
 }: OrgTreeNodeProps) {
     const hasChildren = node.children.length > 0;
-    const isOrgExpanded = autoExpandOrg || expandedOrgOids.has(node.oid);
+    const isOrgExpanded = !isHierarchyCollapsed && (autoExpandOrg || expandedOrgOids.has(node.oid));
 
     const workersAllowedForNode = hasWorkerSearchMatch
         ? workerSearchHitOrgOids.has(node.oid)
@@ -215,34 +221,6 @@ function OrgTreeNode({
                 )}
                 <span className={`truncate text-sm ${!node.is_active ? 'opacity-60 italic' : ''}`}>{node.name}</span>
             </button>
-
-            {hasChildren && isOrgExpanded && (
-                <div>
-                    {node.children.map((child) => (
-                        <OrgTreeNode
-                            key={child.oid}
-                            node={child}
-                            level={level + 1}
-                            expandedOrgOids={expandedOrgOids}
-                            expandedWorkerOrgOids={expandedWorkerOrgOids}
-                            autoExpandOrg={autoExpandOrg}
-                            autoExpandedWorkerOrgOids={autoExpandedWorkerOrgOids}
-                            workersByOrg={workersByOrg}
-                            loadingWorkerOrgOids={loadingWorkerOrgOids}
-                            hasWorkerSearchMatch={hasWorkerSearchMatch}
-                            workerSearchHitOrgOids={workerSearchHitOrgOids}
-                            workerSearchHitOids={workerSearchHitOids}
-                            currentWorker={currentWorker}
-                            isLight={isLight}
-                            loadingWorkersText={loadingWorkersText}
-                            noWorkersText={noWorkersText}
-                            onToggleOrg={onToggleOrg}
-                            onToggleWorkers={onToggleWorkers}
-                            onSelectWorker={onSelectWorker}
-                        />
-                    ))}
-                </div>
-            )}
 
             {workersAllowedForNode && isWorkersExpanded && (
                 <div>
@@ -296,6 +274,35 @@ function OrgTreeNode({
                     )}
                 </div>
             )}
+
+            {hasChildren && isOrgExpanded && (
+                <div>
+                    {node.children.map((child) => (
+                        <OrgTreeNode
+                            key={child.oid}
+                            node={child}
+                            level={level + 1}
+                            expandedOrgOids={expandedOrgOids}
+                            expandedWorkerOrgOids={expandedWorkerOrgOids}
+                            isHierarchyCollapsed={isHierarchyCollapsed}
+                            autoExpandOrg={autoExpandOrg}
+                            autoExpandedWorkerOrgOids={autoExpandedWorkerOrgOids}
+                            workersByOrg={workersByOrg}
+                            loadingWorkerOrgOids={loadingWorkerOrgOids}
+                            hasWorkerSearchMatch={hasWorkerSearchMatch}
+                            workerSearchHitOrgOids={workerSearchHitOrgOids}
+                            workerSearchHitOids={workerSearchHitOids}
+                            currentWorker={currentWorker}
+                            isLight={isLight}
+                            loadingWorkersText={loadingWorkersText}
+                            noWorkersText={noWorkersText}
+                            onToggleOrg={onToggleOrg}
+                            onToggleWorkers={onToggleWorkers}
+                            onSelectWorker={onSelectWorker}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -306,7 +313,15 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
     const router = useRouter();
     const t = useTranslations('Persona');
 
-    const [query, setQuery] = useState(() => SIDEBAR_STATE_CACHE.query);
+    const [searchInput, setSearchInput] = useState(() => SIDEBAR_STATE_CACHE.query);
+    const [appliedQuery, setAppliedQuery] = useState(
+        () => SIDEBAR_STATE_CACHE.appliedQuery || SIDEBAR_STATE_CACHE.query
+    );
+    const [vipOnly, setVipOnly] = useState(() => SIDEBAR_STATE_CACHE.vipOnly);
+    const [activeOnly, setActiveOnly] = useState(() => SIDEBAR_STATE_CACHE.activeOnly);
+    const [isHierarchyCollapsed, setIsHierarchyCollapsed] = useState(
+        () => SIDEBAR_STATE_CACHE.isHierarchyCollapsed
+    );
     const [expandedOrgOids, setExpandedOrgOids] = useState<Set<string>>(
         () => new Set<string>(SIDEBAR_STATE_CACHE.expandedOrgOids)
     );
@@ -318,7 +333,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
     );
     const [loadingWorkerOrgOids, setLoadingWorkerOrgOids] = useState<Set<string>>(() => new Set<string>());
     const [workerSearchHits, setWorkerSearchHits] = useState<Worker[]>(
-        () => SIDEBAR_STATE_CACHE.workerSearchQuery === SIDEBAR_STATE_CACHE.query
+        () => SIDEBAR_STATE_CACHE.workerSearchQuery === (SIDEBAR_STATE_CACHE.appliedQuery || SIDEBAR_STATE_CACHE.query)
             ? [...SIDEBAR_STATE_CACHE.workerSearchHits]
             : []
     );
@@ -344,7 +359,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
     }, [hasMoreOrganizations, isOrganizationsLoading, isOrganizationsLoadingMore, loadMoreOrganizations]);
 
     const organizationTree = useMemo(() => buildHierarchyTree(organizations), [organizations]);
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = appliedQuery.trim().toLowerCase();
 
     const setWorkerSearchHitsWithCache = useCallback((searchQuery: string, hits: Worker[]) => {
         SIDEBAR_STATE_CACHE.workerSearchQuery = searchQuery;
@@ -353,8 +368,21 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
     }, []);
 
     useEffect(() => {
-        SIDEBAR_STATE_CACHE.query = query;
-    }, [query]);
+        SIDEBAR_STATE_CACHE.query = searchInput;
+    }, [searchInput]);
+
+    useEffect(() => {
+        SIDEBAR_STATE_CACHE.appliedQuery = appliedQuery;
+    }, [appliedQuery]);
+
+    useEffect(() => {
+        SIDEBAR_STATE_CACHE.vipOnly = vipOnly;
+        SIDEBAR_STATE_CACHE.activeOnly = activeOnly;
+    }, [activeOnly, vipOnly]);
+
+    useEffect(() => {
+        SIDEBAR_STATE_CACHE.isHierarchyCollapsed = isHierarchyCollapsed;
+    }, [isHierarchyCollapsed]);
 
     useEffect(() => {
         SIDEBAR_STATE_CACHE.expandedOrgOids = new Set(expandedOrgOids);
@@ -375,6 +403,27 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
         element.scrollTop = SIDEBAR_STATE_CACHE.scrollTop;
     }, []);
 
+    const buildWorkerListFilters = useCallback((base: Record<string, string> = {}) => {
+        const next: Record<string, string> = { ...base };
+        if (activeOnly) {
+            next.is_active = 'true';
+        }
+        if (vipOnly) {
+            next.is_vip = 'true';
+        }
+        return next;
+    }, [activeOnly, vipOnly]);
+
+    useEffect(() => {
+        const nextWorkersByOrg = new Map<string, Worker[]>();
+        workersByOrgRef.current = nextWorkersByOrg;
+        setWorkersByOrg(nextWorkersByOrg);
+
+        const nextLoadingOrgOids = new Set<string>();
+        loadingWorkerOrgOidsRef.current = nextLoadingOrgOids;
+        setLoadingWorkerOrgOids(nextLoadingOrgOids);
+    }, [activeOnly, vipOnly]);
+
     const ensureWorkersLoaded = useCallback(async (orgOid: string) => {
         if (workersByOrgRef.current.has(orgOid) || loadingWorkerOrgOidsRef.current.has(orgOid)) {
             return;
@@ -388,10 +437,9 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
         });
 
         try {
-            const workers = await fetchWorkersByFilters({
+            const workers = await fetchWorkersByFilters(buildWorkerListFilters({
                 org_oid: orgOid,
-                is_active: 'true',
-            });
+            }));
 
             setWorkersByOrg((previous) => {
                 const next = new Map(previous);
@@ -415,7 +463,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
                 return next;
             });
         }
-    }, []);
+    }, [buildWorkerListFilters]);
 
     useEffect(() => {
         if (!normalizedQuery) {
@@ -427,10 +475,23 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
 
         async function runWorkerSearch() {
             try {
-                const hits = await fetchWorkersByFilters({
-                    stable_id: normalizedQuery,
-                    is_active: 'true',
-                });
+                const allFilteredWorkers = await fetchWorkersByFilters(buildWorkerListFilters());
+                const hits = allFilteredWorkers
+                    .filter((worker) => {
+                        const searchableText = [
+                            worker.stable_id,
+                            worker.fullname,
+                            worker.worker_id ?? '',
+                            worker.email ?? '',
+                        ].join(' ').toLowerCase();
+                        return searchableText.includes(normalizedQuery);
+                    })
+                    .sort((a, b) => {
+                        const aExact = a.stable_id.toLowerCase() === normalizedQuery ? 0 : 1;
+                        const bExact = b.stable_id.toLowerCase() === normalizedQuery ? 0 : 1;
+                        if (aExact !== bExact) return aExact - bExact;
+                        return a.fullname.localeCompare(b.fullname);
+                    });
 
                 if (isCancelled) return;
                 setWorkerSearchHitsWithCache(normalizedQuery, hits);
@@ -440,7 +501,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
                 }
             } catch (error) {
                 if (isCancelled) return;
-                console.error('Failed to search workers by stable_id', error);
+                console.error('Failed to run worker search', error);
                 setWorkerSearchHitsWithCache(normalizedQuery, []);
             }
         }
@@ -450,7 +511,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
         return () => {
             isCancelled = true;
         };
-    }, [ensureWorkersLoaded, normalizedQuery, setWorkerSearchHitsWithCache]);
+    }, [buildWorkerListFilters, ensureWorkersLoaded, normalizedQuery, setWorkerSearchHitsWithCache]);
 
     useEffect(() => {
         expandedWorkerOrgOids.forEach((orgOid) => {
@@ -470,15 +531,36 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
         return result;
     }, [workerSearchHits]);
 
+    const allOrgOids = useMemo(() => {
+        const oids: string[] = [];
+        const stack = [...organizationTree];
+        while (stack.length > 0) {
+            const node = stack.pop();
+            if (!node) continue;
+            oids.push(node.oid);
+            stack.push(...node.children);
+        }
+        return oids;
+    }, [organizationTree]);
+
     const filteredOrgNodes = useMemo(
-        () => filterTreeByQuery(organizationTree, query, workerSearchHitOrgOids),
-        [organizationTree, query, workerSearchHitOrgOids]
+        () => filterTreeByQuery(organizationTree, appliedQuery, workerSearchHitOrgOids),
+        [appliedQuery, organizationTree, workerSearchHitOrgOids]
     );
 
     const hasWorkerSearchMatch = workerSearchHits.length > 0;
-    const autoExpandOrg = query.trim().length > 0;
+    const autoExpandOrg = appliedQuery.trim().length > 0;
+
+    const runSearch = useCallback(() => {
+        const nextQuery = searchInput.trim();
+        setAppliedQuery(nextQuery);
+        if (nextQuery) {
+            setIsHierarchyCollapsed(false);
+        }
+    }, [searchInput]);
 
     const handleToggleOrg = (oid: string) => {
+        setIsHierarchyCollapsed(false);
         setExpandedOrgOids((previous) => {
             const next = new Set(previous);
             if (next.has(oid)) next.delete(oid);
@@ -488,12 +570,25 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
     };
 
     const handleToggleWorkers = (oid: string) => {
+        setIsHierarchyCollapsed(false);
         setExpandedWorkerOrgOids((previous) => {
             const next = new Set(previous);
             if (next.has(oid)) next.delete(oid);
             else next.add(oid);
             return next;
         });
+    };
+
+    const handleHierarchyToggle = () => {
+        if (isHierarchyCollapsed) {
+            setIsHierarchyCollapsed(false);
+            setExpandedOrgOids(new Set(allOrgOids));
+            return;
+        }
+
+        setIsHierarchyCollapsed(true);
+        setExpandedOrgOids(new Set<string>());
+        setExpandedWorkerOrgOids(new Set<string>());
     };
 
     return (
@@ -509,24 +604,77 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
                     <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
                     <input
                         type="text"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                runSearch();
+                            }
+                        }}
                         placeholder={t('sidebar.searchPlaceholder')}
                         className={`
-                            w-full pl-9 pr-3 py-2 rounded-lg text-sm
+                            w-full pl-9 pr-20 py-2 rounded-lg text-sm
                             ${isLight
                                 ? 'bg-slate-100 text-slate-800 placeholder-slate-400'
                                 : 'bg-slate-800 text-slate-100 placeholder-slate-500'}
                             focus:outline-none focus:ring-2 focus:ring-blue-500/50
                         `}
                     />
+                    <button
+                        type="button"
+                        onClick={runSearch}
+                        className={`
+                            absolute right-1 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-md text-xs font-medium transition-colors
+                            ${isLight
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-blue-500 text-white hover:bg-blue-400'}
+                        `}
+                    >
+                        {t('sidebar.searchButton')}
+                    </button>
+                </div>
+
+                <div className="mt-3 flex items-center gap-3">
+                    <label className={`inline-flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                        <input
+                            type="checkbox"
+                            checked={vipOnly}
+                            onChange={(event) => setVipOnly(event.target.checked)}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/50"
+                        />
+                        <span>{t('sidebar.vipFilter')}</span>
+                    </label>
+                    <label className={`inline-flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                        <input
+                            type="checkbox"
+                            checked={activeOnly}
+                            onChange={(event) => setActiveOnly(event.target.checked)}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/50"
+                        />
+                        <span>{t('sidebar.activeFilter')}</span>
+                    </label>
                 </div>
             </div>
 
             <div className={`px-3 pt-3 pb-2 border-b ${isLight ? 'border-slate-200' : 'border-slate-700'}`}>
-                <div className={`flex items-center gap-2 text-xs font-medium uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    <Building2 className="w-3.5 h-3.5" />
-                    {t('sidebar.organizations')}
+                <div className="flex items-center justify-between gap-2">
+                    <div className={`flex items-center gap-2 text-xs font-medium uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <Building2 className="w-3.5 h-3.5" />
+                        {t('sidebar.organizations')}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleHierarchyToggle}
+                        className={`
+                            text-[11px] px-2 py-1 rounded-md transition-colors
+                            ${isLight
+                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}
+                        `}
+                    >
+                        {isHierarchyCollapsed ? t('sidebar.expandAll') : t('sidebar.collapseAll')}
+                    </button>
                 </div>
             </div>
 
@@ -553,6 +701,7 @@ export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSideb
                             level={0}
                             expandedOrgOids={expandedOrgOids}
                             expandedWorkerOrgOids={expandedWorkerOrgOids}
+                            isHierarchyCollapsed={isHierarchyCollapsed}
                             autoExpandOrg={autoExpandOrg}
                             autoExpandedWorkerOrgOids={workerSearchHitOrgOids}
                             workersByOrg={workersByOrg}
