@@ -16,6 +16,7 @@ import {
     ClipboardList,
     MessageCircle,
     MousePointerClick,
+    BellRing,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -169,6 +170,24 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.INTERACTIONS_READ,
+                        ]),
+                    },
+                ],
+            },
+        ],
+    },
+    '/campaign': {
+        sections: [
+            {
+                labelKey: 'campaign',
+                items: [
+                    {
+                        href: '/campaign/notifications',
+                        labelKey: 'notifications',
+                        icon: BellRing,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
+                            PERMISSIONS.OBJECTS.NOTIFICATIONS_READ,
                         ]),
                     },
                 ],

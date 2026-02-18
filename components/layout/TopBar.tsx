@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown } from 'lucide-react';
+import { Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -87,7 +87,8 @@ export function TopBar() {
       icon: Layers,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
-        PERMISSIONS.UI.NAVIGATION_PERSONA
+        PERMISSIONS.UI.NAVIGATION_PERSONA,
+        PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
       ]),
       children: [
         {
@@ -104,6 +105,14 @@ export function TopBar() {
           icon: UserCircle,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_PERSONA
+          ]),
+        },
+        {
+          href: '/campaign',
+          label: t('campaign'),
+          icon: Megaphone,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_CAMPAIGN
           ]),
         },
       ],

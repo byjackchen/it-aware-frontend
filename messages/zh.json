@@ -7,7 +7,8 @@
         "data": "数据",
         "application": "应用",
         "knowledge": "知识库",
-        "persona": "用户画像"
+        "persona": "用户画像",
+        "campaign": "Campaign"
     },
     "Dashboard": {
         "title": "数据对象看板",
@@ -83,7 +84,9 @@
         "requests": "请求",
         "inquiries": "咨询",
         "interactions": "交互事件",
-        "faqs": "常见问题"
+        "faqs": "常见问题",
+        "campaign": "Campaign",
+        "notifications": "通知"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",
@@ -449,6 +452,124 @@
                 "request": "请求",
                 "inquiry": "咨询",
                 "interaction": "交互"
+            }
+        }
+    },
+    "Campaign": {
+        "accessDenied": {
+            "title": "需要 Campaign 模块权限",
+            "description": "当前账号没有访问 Campaign 模块的权限。"
+        },
+        "errors": {
+            "loadNotifications": "通知列表加载失败",
+            "loadDetails": "通知明细加载失败"
+        },
+        "contentBlockTypes": {
+            "text": "文本",
+            "title": "标题",
+            "link": "链接"
+        },
+        "content": {
+            "blockText": "内容文本",
+            "blockUrl": "链接地址",
+            "addBlock": "新增内容块"
+        },
+        "list": {
+            "title": "通知",
+            "create": "创建通知",
+            "loading": "正在加载通知...",
+            "empty": "暂无通知",
+            "counts": "已加载 {loaded} / 总计 {total}",
+            "filters": {
+                "allStatus": "全部状态",
+                "allChannels": "全部渠道",
+                "search": "搜索通知名称或 OID"
+            }
+        },
+        "details": {
+            "selectNotification": "请选择一条通知查看明细",
+            "trigger": "触发发送",
+            "edit": "编辑",
+            "loading": "正在加载接收人明细...",
+            "empty": "暂无接收人明细",
+            "counts": "已加载 {loaded} / 总计 {total}",
+            "fields": {
+                "status": "状态",
+                "channel": "渠道",
+                "total": "接收人数",
+                "runId": "Run ID",
+                "scheduledAt": "计划时间"
+            },
+            "filters": {
+                "allStatus": "全部明细状态",
+                "search": "搜索接收人或内容"
+            }
+        },
+        "create": {
+            "title": "创建通知",
+            "subtitle": "按步骤配置内容和接收人",
+            "steps": {
+                "content": "通知内容",
+                "receivers": "通知接收人"
+            },
+            "fields": {
+                "name": "通知名称",
+                "namePlaceholder": "例如：weekly_ops_notice",
+                "channel": "渠道",
+                "contentBlocks": "内容块"
+            },
+            "actions": {
+                "next": "下一步",
+                "back": "返回",
+                "create": "创建通知"
+            },
+            "errors": {
+                "noReceivers": "请至少选择一位接收人。",
+                "invalidContent": "每个内容块都必须填写文本，链接类型还需填写 URL。",
+                "receiverNotFound": "未找到该 stable_id 对应员工。"
+            }
+        },
+        "receivers": {
+            "modeDimensions": "按维度选择",
+            "modeSpreadsheet": "上传表格",
+            "loadingWorkers": "正在加载员工...",
+            "downloadTemplate": "下载模板",
+            "uploadFile": "上传文件",
+            "uploadReadError": "上传文件解析失败",
+            "uploadSummary": "共 {total} 行，匹配 {matched} 条，未匹配 {unmatched} 条",
+            "unmatched": "未匹配 stable_id",
+            "autoSelectedCount": "已选择 {count} 位接收人",
+            "manualAddPlaceholder": "员工 stable_id",
+            "manualAdd": "添加接收人",
+            "manualAdded": "手动追加",
+            "filters": {
+                "organization": "组织",
+                "location": "地点",
+                "workerType": "员工类型"
+            }
+        },
+        "edit": {
+            "title": "编辑通知",
+            "readOnlyStatus": "当前通知状态为 \"{status}\"，仅在 \"created\" 状态下可编辑。",
+            "addReceiverTitle": "添加接收人",
+            "newReceiver": "新增",
+            "fields": {
+                "name": "通知名称",
+                "channel": "渠道",
+                "newReceiverStableId": "新增接收人 stable_id",
+                "copySource": "复制内容来源"
+            },
+            "actions": {
+                "addReceiver": "添加接收人",
+                "save": "保存修改"
+            },
+            "errors": {
+                "duplicateReceiver": "该接收人已存在。",
+                "receiverNotFound": "未找到该 stable_id 对应员工。",
+                "notEditable": "当前状态不可编辑。",
+                "emptyName": "通知名称不能为空。",
+                "noReceivers": "至少保留一位接收人。",
+                "invalidContent": "所有接收人的内容块都必须合法。"
             }
         }
     }

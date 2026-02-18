@@ -730,3 +730,127 @@ export interface InteractionListResponse {
     sort_by: InteractionSortBy;
     order: InteractionOrder;
 }
+
+// ============================================================================
+// Campaign Notification Types
+// ============================================================================
+
+export type NotificationChannel = 'wecom_bot' | 'wecom_ops_bot';
+
+export type NotificationStatus =
+    | 'created'
+    | 'processing'
+    | 'partial'
+    | 'completed'
+    | 'completed_with_failures'
+    | 'cancelled';
+
+export type NotificationDetailStatus = 'created' | 'sent' | 'failed';
+
+export interface NotificationContentTextBlock {
+    type: 'text';
+    text: string;
+}
+
+export interface NotificationContentLinkBlock {
+    type: 'link';
+    text: string;
+    url: string;
+}
+
+export interface NotificationContentTitleBlock {
+    type: 'title';
+    text: string;
+}
+
+export type NotificationContentBlock =
+    | NotificationContentTextBlock
+    | NotificationContentLinkBlock
+    | NotificationContentTitleBlock;
+
+export interface Notification {
+    oid: string;
+    name: string;
+    channel: NotificationChannel;
+    status: NotificationStatus;
+    run_id: string | null;
+    total_count: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface NotificationCreate {
+    name: string;
+    channel?: NotificationChannel;
+    details?: NotificationDetailCreate[];
+}
+
+export interface NotificationUpdate {
+    name?: string;
+    channel?: NotificationChannel;
+    status?: 'processing' | 'cancelled';
+}
+
+export interface NotificationListParams {
+    status?: NotificationStatus;
+    channel?: NotificationChannel;
+    skip?: number;
+    limit?: number;
+}
+
+export interface NotificationListResponse {
+    items: Notification[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface NotificationDetail {
+    notification_oid: string;
+    receiver_stable_id: string;
+    receiver_oid: string | null;
+    content_blocks: NotificationContentBlock[];
+    status: NotificationDetailStatus;
+    scheduled_at: string | null;
+    error_message: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface NotificationDetailCreate {
+    receiver_stable_id: string;
+    content_blocks: NotificationContentBlock[];
+    status?: NotificationDetailStatus;
+    scheduled_at?: string | null;
+    error_message?: string | null;
+}
+
+export interface NotificationDetailUpdate {
+    content_blocks?: NotificationContentBlock[];
+    status?: NotificationDetailStatus;
+    scheduled_at?: string | null;
+    error_message?: string | null;
+}
+
+export interface NotificationDetailListParams {
+    status?: NotificationDetailStatus;
+    receiver_stable_id?: string;
+    scheduled_at_from?: string;
+    scheduled_at_to?: string;
+    skip?: number;
+    limit?: number;
+}
+
+export interface NotificationDetailListResponse {
+    items: NotificationDetail[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface NotificationTriggerResponse {
+    notification_oid: string;
+    status: NotificationStatus;
+    to_process_count: number;
+    run_id: string;
+}

@@ -14,6 +14,7 @@ export const PERMISSIONS = {
     NAVIGATION_PERSONA: 'ui:navigation:persona',
     NAVIGATION_KNOWLEDGE: 'ui:navigation:knowledge',
     NAVIGATION_DATA: 'ui:navigation:data',
+    NAVIGATION_CAMPAIGN: 'ui:navigation:campaign',
   },
   // Objects domain permissions
   OBJECTS: {
@@ -37,6 +38,8 @@ export const PERMISSIONS = {
     INQUIRIES_WRITE: 'objects:inquiries:write',
     INTERACTIONS_READ: 'objects:interactions:read',
     INTERACTIONS_WRITE: 'objects:interactions:write',
+    NOTIFICATIONS_READ: 'objects:notifications:read',
+    NOTIFICATIONS_WRITE: 'objects:notifications:write',
   },
 } as const;
 

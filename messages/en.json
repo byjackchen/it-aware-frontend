@@ -7,7 +7,8 @@
         "data": "Data",
         "application": "Applications",
         "knowledge": "Knowledge",
-        "persona": "Persona"
+        "persona": "Persona",
+        "campaign": "Campaign"
     },
     "Dashboard": {
         "title": "Data Objects Dashboard",
@@ -83,7 +84,9 @@
         "requests": "Requests",
         "inquiries": "Inquiries",
         "interactions": "Interactions",
-        "faqs": "FAQs"
+        "faqs": "FAQs",
+        "campaign": "Campaign",
+        "notifications": "Notifications"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware Assistant",
@@ -449,6 +452,124 @@
                 "request": "Requests",
                 "inquiry": "Inquiries",
                 "interaction": "Interactions"
+            }
+        }
+    },
+    "Campaign": {
+        "accessDenied": {
+            "title": "Campaign Module Access Required",
+            "description": "You do not have permission to access this Campaign module."
+        },
+        "errors": {
+            "loadNotifications": "Failed to load notifications",
+            "loadDetails": "Failed to load notification details"
+        },
+        "contentBlockTypes": {
+            "text": "Text",
+            "title": "Title",
+            "link": "Link"
+        },
+        "content": {
+            "blockText": "Content text",
+            "blockUrl": "Link URL",
+            "addBlock": "Add content block"
+        },
+        "list": {
+            "title": "Notifications",
+            "create": "Create Notification",
+            "loading": "Loading notifications...",
+            "empty": "No notifications found",
+            "counts": "{loaded} loaded / {total} total",
+            "filters": {
+                "allStatus": "All status",
+                "allChannels": "All channels",
+                "search": "Search notification name or OID"
+            }
+        },
+        "details": {
+            "selectNotification": "Select a notification to view details",
+            "trigger": "Trigger Send",
+            "edit": "Edit",
+            "loading": "Loading receiver details...",
+            "empty": "No receiver details found",
+            "counts": "{loaded} loaded / {total} total",
+            "fields": {
+                "status": "Status",
+                "channel": "Channel",
+                "total": "Total Receivers",
+                "runId": "Run ID",
+                "scheduledAt": "Scheduled"
+            },
+            "filters": {
+                "allStatus": "All detail status",
+                "search": "Search receiver or content"
+            }
+        },
+        "create": {
+            "title": "Create Notification",
+            "subtitle": "Guided steps for content and receivers",
+            "steps": {
+                "content": "Notification Content",
+                "receivers": "Notification Receivers"
+            },
+            "fields": {
+                "name": "Notification Name",
+                "namePlaceholder": "e.g. weekly_ops_notice",
+                "channel": "Channel",
+                "contentBlocks": "Content Blocks"
+            },
+            "actions": {
+                "next": "Next",
+                "back": "Back",
+                "create": "Create Notification"
+            },
+            "errors": {
+                "noReceivers": "Please select at least one receiver.",
+                "invalidContent": "Each content block requires valid text (and URL for link blocks).",
+                "receiverNotFound": "Stable ID was not found in workers."
+            }
+        },
+        "receivers": {
+            "modeDimensions": "Select by Dimensions",
+            "modeSpreadsheet": "Upload Spreadsheet",
+            "loadingWorkers": "Loading workers...",
+            "downloadTemplate": "Download Template",
+            "uploadFile": "Upload File",
+            "uploadReadError": "Failed to parse uploaded file",
+            "uploadSummary": "{matched} matched from {total} rows ({unmatched} unmatched)",
+            "unmatched": "Unmatched stable IDs",
+            "autoSelectedCount": "{count} receivers selected",
+            "manualAddPlaceholder": "Worker stable_id",
+            "manualAdd": "Add receiver",
+            "manualAdded": "Manual additions",
+            "filters": {
+                "organization": "Organization",
+                "location": "Location",
+                "workerType": "Worker Type"
+            }
+        },
+        "edit": {
+            "title": "Edit Notification",
+            "readOnlyStatus": "Notification status is \"{status}\". Editing is only allowed while status is \"created\".",
+            "addReceiverTitle": "Add Receiver",
+            "newReceiver": "New",
+            "fields": {
+                "name": "Notification Name",
+                "channel": "Channel",
+                "newReceiverStableId": "New receiver stable_id",
+                "copySource": "Copy content from"
+            },
+            "actions": {
+                "addReceiver": "Add Receiver",
+                "save": "Save Changes"
+            },
+            "errors": {
+                "duplicateReceiver": "Receiver is already included.",
+                "receiverNotFound": "Stable ID was not found in workers.",
+                "notEditable": "Notification is not editable in current status.",
+                "emptyName": "Notification name is required.",
+                "noReceivers": "At least one receiver is required.",
+                "invalidContent": "Each receiver must have valid content blocks."
             }
         }
     }
