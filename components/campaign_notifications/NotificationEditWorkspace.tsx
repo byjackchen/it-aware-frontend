@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
 import {
     batchUpsertCampaignNotificationDetailsAction,
     deleteCampaignNotificationDetailAction,
@@ -16,11 +15,11 @@ import type {
     NotificationChannel,
     NotificationContentBlock,
     NotificationDetail,
-    Worker,
 } from '@/lib/types/objects';
 import { CampaignAccessGate } from './CampaignAccessGate';
 import { NotificationContentBlocksEditor } from './NotificationContentBlocksEditor';
 import { cloneContentBlocks, createEmptyBlock } from './utils';
+import { useAllActiveWorkers } from './useAllActiveWorkers';
 
 interface NotificationEditWorkspaceProps {
     notification: Notification;
@@ -70,12 +69,9 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
     const [error, setError] = useState<string | null>(null);
 
     const {
-        items: workers,
+        workers,
         isLoading: isWorkersLoading,
-    } = useLazyResourceList<Worker>('workers', {
-        auto: true,
-        query: { limit: 1000, is_active: true },
-    });
+    } = useAllActiveWorkers();
 
     const isEditable = notification.status === 'created';
 

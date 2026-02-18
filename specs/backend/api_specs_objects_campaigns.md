@@ -30,6 +30,7 @@ class Notification(Base):
     channel = Column(Text, nullable=False, server_default="wecom_bot")
     status = Column(Text, nullable=False, server_default="created")
     run_id = Column(Text, nullable=True)  # latest services DAG run id
+    creator_account = Column(Text, nullable=True)  # stamped account_id from create caller
     total_count = Column(Integer, nullable=False, server_default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -96,6 +97,7 @@ class NotificationResponse(BaseModel):
     channel: Literal["wecom_bot", "wecom_ops_bot"]
     status: Literal["created", "processing", "partial", "completed", "completed_with_failures", "cancelled"]
     run_id: Optional[str]
+    creator_account: Optional[str]
     total_count: int
     created_at: datetime
     updated_at: datetime
@@ -140,6 +142,7 @@ Example response (`GET /objects/campaigns/notifications?channel=wecom_bot&skip=0
       "channel": "wecom_bot",
       "status": "created",
       "run_id": null,
+      "creator_account": "byjackchen",
       "total_count": 2,
       "created_at": "2026-02-17T10:00:00Z",
       "updated_at": "2026-02-17T10:00:00Z"

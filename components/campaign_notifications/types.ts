@@ -7,12 +7,33 @@ import type {
     NotificationStatus,
 } from '@/lib/types/objects';
 
-export type ReceiverMode = 'dimensions' | 'spreadsheet';
+export type CreateEntryMode = 'guided' | 'excel_direct';
 
 export interface WorkerFilters {
-    organizationOids: string[];
     locationOids: string[];
     workerTypes: string[];
+}
+
+export interface NotificationReceiverContentRowDraft {
+    receiverStableId: string;
+    contentBlocks: NotificationContentBlock[];
+    sourceRow: number;
+}
+
+export interface NotificationReceiverContentRowError {
+    sourceRow: number;
+    receiverStableId: string;
+    message: string;
+}
+
+export interface NotificationReceiverContentParseResult {
+    rows: NotificationReceiverContentRowDraft[];
+    totalRows: number;
+    validRows: number;
+    duplicateRowsIgnored: number;
+    unmatchedStableIds: string[];
+    rowErrors: NotificationReceiverContentRowError[];
+    fatalError: string | null;
 }
 
 export interface NotificationListQueryState {

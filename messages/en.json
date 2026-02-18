@@ -507,7 +507,11 @@
         },
         "create": {
             "title": "Create Notification",
-            "subtitle": "Guided steps for content and receivers",
+            "subtitle": "Use guided steps or create directly from an Excel upload",
+            "entryModes": {
+                "guided": "Guided Create",
+                "excelDirect": "Excel Direct Create"
+            },
             "steps": {
                 "content": "Notification Content",
                 "receivers": "Notification Receivers"
@@ -526,26 +530,54 @@
             "errors": {
                 "noReceivers": "Please select at least one receiver.",
                 "invalidContent": "Each content block requires valid text (and URL for link blocks).",
-                "receiverNotFound": "Stable ID was not found in workers."
+                "receiverNotFound": "Stable ID was not found in workers.",
+                "emptyName": "Notification name is required."
             }
         },
         "receivers": {
-            "modeDimensions": "Select by Dimensions",
-            "modeSpreadsheet": "Upload Spreadsheet",
             "loadingWorkers": "Loading workers...",
-            "downloadTemplate": "Download Template",
-            "uploadFile": "Upload File",
-            "uploadReadError": "Failed to parse uploaded file",
-            "uploadSummary": "{matched} matched from {total} rows ({unmatched} unmatched)",
-            "unmatched": "Unmatched stable IDs",
             "autoSelectedCount": "{count} receivers selected",
             "manualAddPlaceholder": "Worker stable_id",
             "manualAdd": "Add receiver",
             "manualAdded": "Manual additions",
+            "locationTreeHint": "Selecting a parent location includes all descendants. Uncheck lower nodes for manual override.",
+            "expandAll": "Expand all",
+            "collapseAll": "Collapse all",
+            "expand": "Expand",
+            "collapse": "Collapse",
+            "selectAll": "Select all",
+            "unselectAll": "Unselect all",
+            "noLocations": "No locations available",
             "filters": {
                 "organization": "Organization",
                 "location": "Location",
                 "workerType": "Worker Type"
+            }
+        },
+        "directUpload": {
+            "title": "Excel Direct Create",
+            "subtitle": "Upload one row per receiver with receiver-specific content blocks.",
+            "downloadTemplate": "Download Template",
+            "uploadFile": "Upload .xlsx",
+            "templateHint": "Template columns: receiver_stable_id and block_01..block_20 triplets (type/text/url).",
+            "waitWorkers": "Please wait until worker data has finished loading before uploading.",
+            "parseFatal": "Failed to parse uploaded file.",
+            "noValidRows": "No valid receiver rows found in upload.",
+            "summary": {
+                "totalRows": "Total rows",
+                "validRows": "Valid rows",
+                "unmatchedRows": "Unmatched rows",
+                "duplicateRowsIgnored": "Duplicates ignored",
+                "invalidRows": "Invalid rows"
+            },
+            "unmatchedTitle": "Unmatched stable IDs",
+            "rowErrorsTitle": "Row validation issues",
+            "rowErrorLine": "Row {row} ({stableId}): {message}",
+            "previewTitle": "Parsed row preview",
+            "previewColumns": {
+                "row": "Row",
+                "receiver": "Receiver",
+                "blockCount": "Blocks"
             }
         },
         "edit": {

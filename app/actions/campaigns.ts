@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
 import {
     batchUpsertNotificationDetails,
@@ -10,6 +11,8 @@ import {
     triggerNotificationNonBlock,
     updateNotification,
 } from '@/lib/api/campaigns';
+import { PERMISSIONS } from '@/lib/config/permissions';
+import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import type {
     Notification,
     NotificationCreate,
@@ -21,9 +24,93 @@ type CampaignActionResult<T> =
     | { success: true; data: T }
     | { success: false; error: string };
 
+interface AuthMePayload {
+    account?: {
+        oid?: string;
+        username?: string;
+    };
+    permissions?: {
+        unconstrained?: string[];
+        self_scoped?: string[];
+        role_based?: string[];
+    };
+}
+
 function formatError(error: unknown, fallback: string): string {
     if (error instanceof Error && error.message.trim().length > 0) return error.message;
     return fallback;
+}
+
+function permissionMatches(userPermission: string, requiredPermission: string): boolean {
+    if (userPermission === requiredPermission) return true;
+
+    const userSegments = userPermission.split(':');
+    const requiredSegments = requiredPermission.split(':');
+    if (userSegments.length !== requiredSegments.length) return false;
+
+    return userSegments.every((segment, index) => segment === '*' || segment === requiredSegments[index]);
+}
+
+function getPermissionList(payload: AuthMePayload): string[] {
+    const permissions = [
+        ...(Array.isArray(payload.permissions?.unconstrained) ? payload.permissions.unconstrained : []),
+        ...(Array.isArray(payload.permissions?.self_scoped) ? payload.permissions.self_scoped : []),
+        ...(Array.isArray(payload.permissions?.role_based) ? payload.permissions.role_based : []),
+    ].filter((permission): permission is string => typeof permission === 'string' && permission.length > 0);
+
+    return [...new Set(permissions)];
+}
+
+function getCreatorAccount(payload: AuthMePayload): string | null {
+    const username = payload.account?.username?.trim();
+    if (username) return username;
+    const accountOid = payload.account?.oid?.trim();
+    if (accountOid) return accountOid;
+    return null;
+}
+
+async function checkNotificationsWritePermission(
+    requestId: string,
+    action: string
+): Promise<{ authPayload: AuthMePayload } | { error: string }> {
+    try {
+        const cookieStore = await cookies();
+        const cookieHeader = cookieStore
+            .getAll()
+            .filter(cookie => cookie.name.startsWith('it_aware_'))
+            .map(cookie => `${cookie.name}=${cookie.value}`)
+            .join('; ');
+
+        const response = await fetch(`${RUNTIME_CONFIG.backend.domain}/auth/me`, {
+            method: 'GET',
+            headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            logger.warn(`Permission check failed with status ${response.status}`, { requestId, action });
+            return { error: 'Failed to verify write permission' };
+        }
+
+        const authPayload = (await response.json()) as AuthMePayload;
+        const hasWritePermission = getPermissionList(authPayload).some(permission =>
+            permissionMatches(permission, PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE)
+        );
+
+        if (!hasWritePermission) {
+            logger.warn('Missing notifications write permission', {
+                requestId,
+                action,
+                requiredPermission: PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+            });
+            return { error: 'Write permission is required for this action' };
+        }
+
+        return { authPayload };
+    } catch (error) {
+        logger.error('Permission check failed', error, { requestId, action });
+        return { error: 'Failed to verify write permission' };
+    }
 }
 
 export async function createCampaignNotificationAction(
@@ -33,8 +120,17 @@ export async function createCampaignNotificationAction(
     const action = 'Campaign:createNotification';
     const startTime = Date.now();
 
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
     try {
-        const created = await createNotification(payload);
+        const creatorAccount = getCreatorAccount(writeCheck.authPayload);
+        const created = await createNotification({
+            ...payload,
+            ...(creatorAccount ? { creator_account: creatorAccount } : {}),
+        });
         revalidatePath('/campaign');
         revalidatePath('/campaign/notifications');
         const duration = Date.now() - startTime;
@@ -55,6 +151,11 @@ export async function updateCampaignNotificationAction(
     const action = 'Campaign:updateNotification';
     const startTime = Date.now();
 
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
     try {
         const updated = await updateNotification(notificationOid, payload);
         revalidatePath('/campaign/notifications');
@@ -73,6 +174,11 @@ export async function deleteCampaignNotificationAction(notificationOid: string):
     const requestId = logger.generateRequestId();
     const action = 'Campaign:deleteNotification';
     const startTime = Date.now();
+
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
 
     try {
         await deleteNotification(notificationOid);
@@ -94,6 +200,11 @@ export async function batchUpsertCampaignNotificationDetailsAction(
     const requestId = logger.generateRequestId();
     const action = 'Campaign:batchUpsertNotificationDetails';
     const startTime = Date.now();
+
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
 
     try {
         const result = await batchUpsertNotificationDetails(notificationOid, details);
@@ -122,6 +233,11 @@ export async function deleteCampaignNotificationDetailAction(
     const action = 'Campaign:deleteNotificationDetail';
     const startTime = Date.now();
 
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
     try {
         await deleteNotificationDetail(notificationOid, receiverStableId);
         revalidatePath('/campaign/notifications');
@@ -140,6 +256,11 @@ export async function triggerCampaignNotificationAction(notificationOid: string)
     const requestId = logger.generateRequestId();
     const action = 'Campaign:triggerNotification';
     const startTime = Date.now();
+
+    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
 
     try {
         const result = await triggerNotificationNonBlock(notificationOid);

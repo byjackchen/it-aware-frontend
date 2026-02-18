@@ -774,6 +774,7 @@ export interface Notification {
     channel: NotificationChannel;
     status: NotificationStatus;
     run_id: string | null;
+    creator_account: string | null;
     total_count: number;
     created_at: string;
     updated_at: string;
@@ -782,6 +783,7 @@ export interface Notification {
 export interface NotificationCreate {
     name: string;
     channel?: NotificationChannel;
+    creator_account?: string;
     details?: NotificationDetailCreate[];
 }
 
