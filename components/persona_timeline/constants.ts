@@ -51,6 +51,12 @@ export const HOVER_TOOLTIP_OFFSET_Y = 20;
 export const DRAG_SHIFT_MIN_MS = 60 * 1000;
 export const CLICK_SUPPRESS_MS = 180;
 
+export const INFINITE_SCROLL_SIDE_BUFFER_MIN = 640;
+export const INFINITE_SCROLL_SIDE_BUFFER_VIEWPORT_RATIO = 0.75;
+export const INFINITE_SCROLL_EDGE_THRESHOLD_MIN = 120;
+export const INFINITE_SCROLL_WINDOW_SHIFT_RATIO = 0.5;
+export const INFINITE_SCROLL_RECENTER_RATIO = 0.4;
+
 export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'inquiry', 'interaction'];
 
 export const EVENT_COLORS: Record<PersonaActivityEventType, string> = {

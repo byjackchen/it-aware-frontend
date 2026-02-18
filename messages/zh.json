@@ -498,7 +498,10 @@
                 "channel": "渠道",
                 "total": "接收人数",
                 "runId": "Run ID",
-                "scheduledAt": "计划时间"
+                "scheduledAt": "计划时间",
+                "creator": "创建账号",
+                "createdAt": "创建时间",
+                "updatedAt": "更新时间"
             },
             "filters": {
                 "allStatus": "全部明细状态",

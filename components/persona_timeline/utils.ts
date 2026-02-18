@@ -120,7 +120,7 @@ export function buildEventLabel(event: PersonaActivityEvent): string {
 }
 
 export function getEventBoxSize(type: PersonaActivityEventType, widthScale = 1): { width: number; height: number } {
-    const normalizedScale = clamp(widthScale, 0.6, 1);
+    const normalizedScale = clamp(widthScale, 0.48, 1);
 
     if (type === 'interaction') {
         return {

@@ -1,14 +1,13 @@
 import { useMemo } from 'react';
 import {
     AXIS_MIN_WIDTH,
-    AXIS_SIDE_PADDING,
     CANVAS_BOTTOM_GUARD,
     DETAIL_DEFAULT_HEIGHT,
+    DETAIL_DEFAULT_WIDTH,
     DETAIL_GAP,
     DETAIL_MIN_HORIZONTAL_GAP,
     DETAIL_TOP_GAP,
     EVENT_COLORS,
-    EVENT_SPACING,
     HEAT_AXIS_GAP,
     HEAT_ROW_GAP,
     HEAT_ROW_HEIGHT,
@@ -45,20 +44,16 @@ export function useTimelineGeometry({
     return useMemo(() => {
         const startMs = windowState.start.getTime();
         const endMs = windowState.end.getTime();
-
-        const viewportAxisWidth = viewportWidth > 0
-            ? Math.max(0, viewportWidth - (AXIS_SIDE_PADDING * 2))
-            : 0;
-        const baseAxisWidth = Math.max(AXIS_MIN_WIDTH, viewportAxisWidth);
+        const canvasWidth = Math.max(
+            viewportWidth > 0 ? viewportWidth : AXIS_MIN_WIDTH,
+            (TIMELINE_GUARD_X * 2) + 320
+        );
+        const baseAxisWidth = canvasWidth - (TIMELINE_GUARD_X * 2);
         const visibleCount = Math.max(events.length, 1);
-        const densityAxisWidth = Math.max(baseAxisWidth, (visibleCount - 1) * EVENT_SPACING);
-        const overflow = Math.max(0, densityAxisWidth - baseAxisWidth);
-
-        // Keep axis anchored to the canvas guard and let scrollLeft absorb overflow changes.
-        // This avoids double-applying overflow shifts that can push the right endpoint outside canvas bounds.
+        const densityAxisWidth = baseAxisWidth;
         const axisStartX = TIMELINE_GUARD_X;
         const axisEndX = axisStartX + densityAxisWidth;
-        const canvasWidth = densityAxisWidth + (TIMELINE_GUARD_X * 2);
+        const overflow = 0;
 
         const heatRowCount = includeInteractions ? 4 : 3;
         const heatHeight = (heatRowCount * HEAT_ROW_HEIGHT) + ((heatRowCount - 1) * HEAT_ROW_GAP);
@@ -87,7 +82,14 @@ export function useTimelineGeometry({
         const levelLastRight: number[] = [];
         const renderedEvents: TimelineRenderedEvent[] = [];
         let maxBottomY = axisY;
-        const detailWidthScale = clamp(baseAxisWidth / Math.max(densityAxisWidth, 1), 0.72, 1);
+        const nominalSpacing = visibleCount > 1
+            ? densityAxisWidth / (visibleCount - 1)
+            : densityAxisWidth;
+        const detailWidthScale = clamp(
+            nominalSpacing / (DETAIL_DEFAULT_WIDTH * 0.95),
+            0.48,
+            1
+        );
 
         eventsSorted.forEach((event) => {
             const timestamp = parseTimestamp(event.createdAt);

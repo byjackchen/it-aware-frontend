@@ -18,7 +18,9 @@ import {
     TimelineInitialLoadingState,
     TimelineNonBlockingErrorBadge,
 } from '@/components/persona_timeline/TimelineStates';
-import { DAY_MS } from '@/components/persona_timeline/constants';
+import {
+    DAY_MS,
+} from '@/components/persona_timeline/constants';
 import { useTimelineGeometry } from '@/components/persona_timeline/useTimelineGeometry';
 import { useTimelineHeatBins } from '@/components/persona_timeline/useTimelineHeatBins';
 import { useTimelineDragPan } from '@/components/persona_timeline/useTimelineDragPan';
@@ -42,7 +44,6 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
     const [hover, setHover] = useState<TimelineHoverPayload | null>(null);
 
     const viewportRef = useRef<HTMLDivElement | null>(null);
-    const previousOverflowRef = useRef<number | null>(null);
 
     const {
         events,
@@ -89,28 +90,6 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         axisWidth: geometry.axisWidth,
         includeInteractions: showInteractions,
     });
-
-    useEffect(() => {
-        const viewport = viewportRef.current;
-        if (!viewport) return;
-
-        if (previousOverflowRef.current === null) {
-            previousOverflowRef.current = geometry.overflow;
-            if (geometry.overflow > 0 && viewport.scrollLeft === 0) {
-                viewport.scrollLeft = geometry.overflow / 2;
-            }
-            return;
-        }
-
-        const deltaOverflow = geometry.overflow - previousOverflowRef.current;
-        previousOverflowRef.current = geometry.overflow;
-
-        if (Math.abs(deltaOverflow) < 0.5) {
-            return;
-        }
-
-        viewport.scrollLeft = Math.max(0, viewport.scrollLeft + (deltaOverflow / 2));
-    }, [geometry.overflow]);
 
     const updateHoverPosition = useCallback((clientX: number, clientY: number, label: string) => {
         const viewport = viewportRef.current;
@@ -243,7 +222,7 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
                 onPointerCancel={dragPan.onPointerCancel}
                 onPointerLeave={dragPan.onPointerLeave}
                 className={`
-                    w-full rounded-xl border overflow-auto relative select-none
+                    w-full rounded-xl border overflow-hidden relative select-none
                     ${dragPan.isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab'}
                     ${isLight ? 'border-slate-200 bg-slate-50' : 'border-slate-700 bg-slate-950'}
                 `}

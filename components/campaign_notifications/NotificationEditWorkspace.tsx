@@ -35,6 +35,13 @@ interface EditableRow {
     isNew: boolean;
 }
 
+function formatDateTime(value: string | null): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+}
+
 function hasInvalidContentBlocks(blocks: NotificationContentBlock[]): boolean {
     return blocks.some((block) => {
         if (block.text.trim().length === 0) return true;
@@ -221,6 +228,23 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
                             {t('edit.readOnlyStatus', { status: notification.status })}
                         </div>
                     )}
+
+                    <section className={`rounded-xl border p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div>
+                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.creator')}</p>
+                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{notification.creator_account || '—'}</p>
+                            </div>
+                            <div>
+                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(notification.created_at)}</p>
+                            </div>
+                            <div>
+                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(notification.updated_at)}</p>
+                            </div>
+                        </div>
+                    </section>
 
                     {error && (
                         <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-100">

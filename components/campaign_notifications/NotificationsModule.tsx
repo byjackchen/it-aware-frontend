@@ -296,7 +296,13 @@ export function NotificationsModule() {
                                             </div>
                                             <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{item.channel}</p>
                                             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {formatDateTime(item.updated_at)}
+                                                {t('details.fields.creator')}: {item.creator_account || '—'}
+                                            </p>
+                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {t('details.fields.createdAt')}: {formatDateTime(item.created_at)}
+                                            </p>
+                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {t('details.fields.updatedAt')}: {formatDateTime(item.updated_at)}
                                             </p>
                                         </button>
                                     );
@@ -365,6 +371,21 @@ export function NotificationsModule() {
                                         <div>
                                             <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.runId')}</p>
                                             <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'} truncate`}>{selectedNotification.run_id || '—'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                                        <div>
+                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.creator')}</p>
+                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.creator_account || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.created_at)}</p>
+                                        </div>
+                                        <div>
+                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.updated_at)}</p>
                                         </div>
                                     </div>
 

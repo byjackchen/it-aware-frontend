@@ -498,7 +498,10 @@
                 "channel": "Channel",
                 "total": "Total Receivers",
                 "runId": "Run ID",
-                "scheduledAt": "Scheduled"
+                "scheduledAt": "Scheduled",
+                "creator": "Creator Account",
+                "createdAt": "Created At",
+                "updatedAt": "Updated At"
             },
             "filters": {
                 "allStatus": "All detail status",
