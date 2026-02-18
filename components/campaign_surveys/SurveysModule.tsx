@@ -8,9 +8,11 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import type {
+    SurveyAnswer,
     Survey,
     SurveyDetail,
     SurveyDetailStatus,
+    SurveyQuestion,
     SurveyListResponse,
     SurveyStatus,
 } from '@/lib/types/objects';
@@ -35,6 +37,28 @@ function formatDateTime(value: string | null): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString();
+}
+
+function formatSurveyAnswerValue(answer: SurveyAnswer, question: SurveyQuestion | undefined): string {
+    if (answer.type === 'single_select') {
+        if (question && (question.type === 'single_select' || question.type === 'multi_select')) {
+            const option = question.options.find((item) => item.option_id === answer.selected_option_id);
+            return option ? `${option.label} (${answer.selected_option_id})` : answer.selected_option_id;
+        }
+        return answer.selected_option_id;
+    }
+
+    if (answer.type === 'multi_select') {
+        if (question && (question.type === 'single_select' || question.type === 'multi_select')) {
+            const optionsById = new Map(question.options.map((item) => [item.option_id, item.label]));
+            return answer.selected_option_ids
+                .map((optionId) => optionsById.get(optionId) ? `${optionsById.get(optionId)} (${optionId})` : optionId)
+                .join(', ');
+        }
+        return answer.selected_option_ids.join(', ');
+    }
+
+    return answer.text || '—';
 }
 
 export function SurveysModule() {
@@ -65,6 +89,7 @@ export function SurveysModule() {
     const [isDetailsLoadingMore, setIsDetailsLoadingMore] = useState(false);
     const [hasMoreDetails, setHasMoreDetails] = useState(true);
     const [detailsError, setDetailsError] = useState<string | null>(null);
+    const [selectedDetailStableId, setSelectedDetailStableId] = useState<string | null>(null);
 
     const surveysListRef = useRef<HTMLDivElement>(null);
     const surveyDetailsListRef = useRef<HTMLDivElement>(null);
@@ -237,6 +262,7 @@ export function SurveysModule() {
             setDetails([]);
             setDetailsTotal(0);
             setHasMoreDetails(true);
+            setSelectedDetailStableId(null);
             return;
         }
         setHasMoreDetails(true);
@@ -283,6 +309,26 @@ export function SurveysModule() {
             || summarizeSurveyAnswer(item.survey_answer).toLowerCase().includes(query)
         ));
     }, [details, detailsSearch]);
+
+    useEffect(() => {
+        if (filteredDetails.length === 0) {
+            setSelectedDetailStableId(null);
+            return;
+        }
+        if (!selectedDetailStableId || !filteredDetails.some((item) => item.receiver_stable_id === selectedDetailStableId)) {
+            setSelectedDetailStableId(filteredDetails[0].receiver_stable_id);
+        }
+    }, [filteredDetails, selectedDetailStableId]);
+
+    const selectedDetail = useMemo(
+        () => filteredDetails.find((item) => item.receiver_stable_id === selectedDetailStableId) ?? null,
+        [filteredDetails, selectedDetailStableId]
+    );
+
+    const selectedSurveyQuestionsById = useMemo(() => {
+        if (!selectedSurvey) return new Map<string, SurveyQuestion>();
+        return new Map(selectedSurvey.survey_questions.questions.map((question) => [question.question_id, question]));
+    }, [selectedSurvey]);
 
     const handleSurveysListScroll = useCallback(() => {
         const container = surveysListRef.current;
@@ -491,6 +537,70 @@ export function SurveysModule() {
                                     </p>
                                 </header>
 
+                                {selectedDetail && (
+                                    <section className={`m-4 mb-3 rounded-lg border p-3 space-y-3 ${isLight ? 'border-slate-200 bg-slate-50/80' : 'border-white/10 bg-slate-900/40'}`}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.receiver')}</p>
+                                                <p className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedDetail.receiver_stable_id}</p>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${getSurveyDetailStatusClass(selectedDetail.status)}`}>
+                                                {selectedDetail.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.submittedAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.submitted_at)}</p>
+                                            </div>
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.created_at)}</p>
+                                            </div>
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.updated_at)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.questions')}</p>
+                                            <ul className="space-y-1">
+                                                {selectedSurvey?.survey_questions.questions.map((question) => (
+                                                    <li key={question.question_id} className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                                        <span className="font-medium">{question.question_id}</span>
+                                                        <span className={isLight ? 'text-slate-500' : 'text-gray-400'}> · {question.type}</span>
+                                                        <div className={isLight ? 'text-slate-600' : 'text-gray-300'}>{question.title}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <div>
+                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.answer')}</p>
+                                            {!selectedDetail.survey_answer || selectedDetail.survey_answer.answers.length === 0 ? (
+                                                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>—</p>
+                                            ) : (
+                                                <ul className="space-y-1">
+                                                    {selectedDetail.survey_answer.answers.map((answer, index) => {
+                                                        const question = selectedSurveyQuestionsById.get(answer.question_id);
+                                                        return (
+                                                            <li key={`${answer.question_id}-${index}`} className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                                                <span className="font-medium">{answer.question_id}</span>
+                                                                {question && <span className={isLight ? 'text-slate-500' : 'text-gray-400'}> · {question.title}</span>}
+                                                                <div className={isLight ? 'text-slate-600' : 'text-gray-300'}>
+                                                                    {formatSurveyAnswerValue(answer, question)}
+                                                                </div>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </section>
+                                )}
+
                                 <div className="flex flex-1 min-h-0">
                                     <div
                                         ref={surveyDetailsListRef}
@@ -508,8 +618,15 @@ export function SurveysModule() {
                                             <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
                                         ) : (
                                             <div className="divide-y divide-white/5">
-                                                {filteredDetails.map((detail) => (
-                                                    <div key={detail.receiver_stable_id} className="px-4 py-3">
+                                                {filteredDetails.map((detail) => {
+                                                    const isSelected = detail.receiver_stable_id === selectedDetailStableId;
+                                                    return (
+                                                        <button
+                                                            key={detail.receiver_stable_id}
+                                                            type="button"
+                                                            onClick={() => setSelectedDetailStableId(detail.receiver_stable_id)}
+                                                            className={`w-full text-left px-4 py-3 hover:bg-white/5 ${isSelected ? 'bg-blue-500/10' : ''}`}
+                                                        >
                                                         <div className="flex items-center justify-between gap-2">
                                                             <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
                                                             <span className={`px-2 py-0.5 rounded-full text-xs border ${getSurveyDetailStatusClass(detail.status)}`}>
@@ -522,8 +639,9 @@ export function SurveysModule() {
                                                         <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                             {t('details.fields.answer')}: {summarizeSurveyAnswer(detail.survey_answer)}
                                                         </p>
-                                                    </div>
-                                                ))}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         )}
 

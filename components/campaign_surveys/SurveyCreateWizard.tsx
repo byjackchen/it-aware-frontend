@@ -18,7 +18,7 @@ import {
 } from './utils';
 import type { SurveyCreateEntryMode } from './types';
 import { useAllActiveWorkers } from './useAllActiveWorkers';
-import { upsertSurveyDetailsInBatches } from './detailBatchWriter';
+import { upsertSurveyDetailsInBatches, type SurveyDetailBatchProgress } from './detailBatchWriter';
 
 export function SurveyCreateWizard() {
     const t = useTranslations('CampaignSurvey');
@@ -38,6 +38,7 @@ export function SurveyCreateWizard() {
     ]);
     const [selectedReceiverStableIds, setSelectedReceiverStableIds] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [batchProgress, setBatchProgress] = useState<SurveyDetailBatchProgress | null>(null);
 
     const {
         workers,
@@ -57,6 +58,7 @@ export function SurveyCreateWizard() {
 
     const handleGuidedSubmit = () => {
         setError(null);
+        setBatchProgress(null);
 
         if (name.trim().length === 0) {
             setError(t('create.errors.emptyName'));
@@ -92,7 +94,7 @@ export function SurveyCreateWizard() {
                 status: 'created',
             }));
 
-            const upsertResult = await upsertSurveyDetailsInBatches(surveyOid, details);
+            const upsertResult = await upsertSurveyDetailsInBatches(surveyOid, details, setBatchProgress);
             if (!upsertResult.success) {
                 setError(t('create.errors.partialWrite', {
                     surveyOid,
@@ -132,6 +134,7 @@ export function SurveyCreateWizard() {
                             setCreateMode('guided');
                             setSelectedReceiverStableIds([]);
                             setError(null);
+                            setBatchProgress(null);
                         }}
                         className={`px-3 py-1.5 text-sm rounded-md ${createMode === 'guided' ? 'bg-blue-500 text-white' : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-gray-300 hover:bg-white/10'}`}
                     >
@@ -143,6 +146,7 @@ export function SurveyCreateWizard() {
                             setCreateMode('spreadsheet');
                             setSelectedReceiverStableIds([]);
                             setError(null);
+                            setBatchProgress(null);
                         }}
                         className={`px-3 py-1.5 text-sm rounded-md ${createMode === 'spreadsheet' ? 'bg-blue-500 text-white' : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-gray-300 hover:bg-white/10'}`}
                     >
@@ -191,7 +195,17 @@ export function SurveyCreateWizard() {
                             onErrorChange={setError}
                         />
 
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-end gap-3">
+                            {batchProgress && isPending && (
+                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    {t('batchProgress', {
+                                        processed: batchProgress.processedRows,
+                                        total: batchProgress.totalRows,
+                                        currentBatch: batchProgress.currentBatch,
+                                        totalBatches: batchProgress.totalBatches,
+                                    })}
+                                </p>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleGuidedSubmit}

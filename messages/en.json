@@ -497,10 +497,12 @@
             "counts": "{loaded} loaded / {total} total",
             "fields": {
                 "status": "Status",
+                "receiver": "Receiver",
                 "channel": "Channel",
                 "total": "Total Receivers",
                 "runId": "Run ID",
                 "scheduledAt": "Scheduled",
+                "content": "Notification Content",
                 "creator": "Creator Account",
                 "createdAt": "Created At",
                 "updatedAt": "Updated At"
@@ -629,6 +631,7 @@
             "loadSurveys": "Failed to load surveys",
             "loadDetails": "Failed to load survey details"
         },
+        "batchProgress": "Writing receivers: {processed} / {total} (batch {currentBatch} / {totalBatches})",
         "list": {
             "title": "Surveys",
             "create": "Create Survey",
@@ -648,11 +651,13 @@
             "counts": "{loaded} loaded / {total} total",
             "fields": {
                 "status": "Status",
+                "receiver": "Receiver",
                 "total": "Total Receivers",
                 "creator": "Creator Account",
                 "createdAt": "Created At",
                 "updatedAt": "Updated At",
                 "submittedAt": "Submitted At",
+                "questions": "Questions",
                 "answer": "Answer"
             },
             "filters": {

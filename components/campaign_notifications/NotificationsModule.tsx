@@ -70,6 +70,7 @@ export function NotificationsModule() {
     const [isDetailsLoadingMore, setIsDetailsLoadingMore] = useState(false);
     const [hasMoreDetails, setHasMoreDetails] = useState(true);
     const [detailsError, setDetailsError] = useState<string | null>(null);
+    const [selectedDetailStableId, setSelectedDetailStableId] = useState<string | null>(null);
 
     const notificationsListRef = useRef<HTMLDivElement>(null);
     const notificationDetailsListRef = useRef<HTMLDivElement>(null);
@@ -243,6 +244,7 @@ export function NotificationsModule() {
             setDetails([]);
             setDetailsTotal(0);
             setHasMoreDetails(true);
+            setSelectedDetailStableId(null);
             return;
         }
         setHasMoreDetails(true);
@@ -289,6 +291,21 @@ export function NotificationsModule() {
             || summarizeContentBlocks(item.content_blocks).toLowerCase().includes(query)
         ));
     }, [details, detailsSearch]);
+
+    useEffect(() => {
+        if (filteredDetails.length === 0) {
+            setSelectedDetailStableId(null);
+            return;
+        }
+        if (!selectedDetailStableId || !filteredDetails.some((item) => item.receiver_stable_id === selectedDetailStableId)) {
+            setSelectedDetailStableId(filteredDetails[0].receiver_stable_id);
+        }
+    }, [filteredDetails, selectedDetailStableId]);
+
+    const selectedDetail = useMemo(
+        () => filteredDetails.find((item) => item.receiver_stable_id === selectedDetailStableId) ?? null,
+        [filteredDetails, selectedDetailStableId]
+    );
 
     const handleNotificationsListScroll = useCallback(() => {
         const container = notificationsListRef.current;
@@ -560,6 +577,46 @@ export function NotificationsModule() {
                                     </p>
                                 </header>
 
+                                {selectedDetail && (
+                                    <section className={`m-4 mb-3 rounded-lg border p-3 space-y-3 ${isLight ? 'border-slate-200 bg-slate-50/80' : 'border-white/10 bg-slate-900/40'}`}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.receiver')}</p>
+                                                <p className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedDetail.receiver_stable_id}</p>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(selectedDetail.status)}`}>
+                                                {selectedDetail.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.scheduledAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.scheduled_at)}</p>
+                                            </div>
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.created_at)}</p>
+                                            </div>
+                                            <div>
+                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.updated_at)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.content')}</p>
+                                            <pre className={`max-h-40 overflow-auto rounded-md border px-2 py-1.5 text-xs whitespace-pre-wrap break-words ${isLight ? 'border-slate-200 bg-white text-slate-700' : 'border-white/10 bg-slate-950/60 text-gray-200'}`}>
+                                                {JSON.stringify(selectedDetail.content_blocks, null, 2)}
+                                            </pre>
+                                        </div>
+
+                                        {selectedDetail.error_message && (
+                                            <p className="text-xs text-rose-300">{selectedDetail.error_message}</p>
+                                        )}
+                                    </section>
+                                )}
+
                                 <div className="flex flex-1 min-h-0">
                                     <div
                                         ref={notificationDetailsListRef}
@@ -577,8 +634,15 @@ export function NotificationsModule() {
                                             <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
                                         ) : (
                                             <div className="divide-y divide-white/5">
-                                                {filteredDetails.map((detail) => (
-                                                    <div key={detail.receiver_stable_id} className="px-4 py-3">
+                                                {filteredDetails.map((detail) => {
+                                                    const isSelected = detail.receiver_stable_id === selectedDetailStableId;
+                                                    return (
+                                                        <button
+                                                            key={detail.receiver_stable_id}
+                                                            type="button"
+                                                            onClick={() => setSelectedDetailStableId(detail.receiver_stable_id)}
+                                                            className={`w-full text-left px-4 py-3 hover:bg-white/5 ${isSelected ? 'bg-blue-500/10' : ''}`}
+                                                        >
                                                         <div className="flex items-center justify-between gap-2">
                                                             <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
                                                             <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(detail.status)}`}>
@@ -594,8 +658,9 @@ export function NotificationsModule() {
                                                         {detail.error_message && (
                                                             <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
                                                         )}
-                                                    </div>
-                                                ))}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         )}
 

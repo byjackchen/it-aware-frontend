@@ -497,10 +497,12 @@
             "counts": "已加载 {loaded} / 总计 {total}",
             "fields": {
                 "status": "状态",
+                "receiver": "接收人",
                 "channel": "渠道",
                 "total": "接收人数",
                 "runId": "Run ID",
                 "scheduledAt": "计划时间",
+                "content": "通知内容",
                 "creator": "创建账号",
                 "createdAt": "创建时间",
                 "updatedAt": "更新时间"
@@ -629,6 +631,7 @@
             "loadSurveys": "问卷列表加载失败",
             "loadDetails": "问卷明细加载失败"
         },
+        "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
         "list": {
             "title": "问卷",
             "create": "创建问卷",
@@ -648,11 +651,13 @@
             "counts": "已加载 {loaded} / 总计 {total}",
             "fields": {
                 "status": "状态",
+                "receiver": "接收人",
                 "total": "接收人数",
                 "creator": "创建账号",
                 "createdAt": "创建时间",
                 "updatedAt": "更新时间",
                 "submittedAt": "提交时间",
+                "questions": "题目",
                 "answer": "回答"
             },
             "filters": {
