@@ -5,11 +5,18 @@ import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
 import {
     batchUpsertNotificationDetails,
+    batchUpsertSurveyDetails,
     createNotification,
+    createSurvey,
+    createSurveyDetail,
     deleteNotification,
     deleteNotificationDetail,
+    deleteSurvey,
+    deleteSurveyDetail,
     triggerNotificationNonBlock,
     updateNotification,
+    updateSurvey,
+    updateSurveyDetail,
 } from '@/lib/api/campaigns';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
@@ -18,6 +25,13 @@ import type {
     NotificationCreate,
     NotificationDetailCreate,
     NotificationUpdate,
+    Survey,
+    SurveyCreate,
+    SurveyDetail,
+    SurveyDetailCreate,
+    SurveyDetailUpdate,
+    SurveyQuestions,
+    SurveyUpdate,
 } from '@/lib/types/objects';
 
 type CampaignActionResult<T> =
@@ -34,6 +48,12 @@ interface AuthMePayload {
         self_scoped?: string[];
         role_based?: string[];
     };
+}
+
+export interface SurveySpreadsheetImportRow {
+    name: string;
+    receiver_stable_id: string;
+    survey_questions: SurveyQuestions;
 }
 
 function formatError(error: unknown, fallback: string): string {
@@ -69,9 +89,11 @@ function getCreatorAccount(payload: AuthMePayload): string | null {
     return null;
 }
 
-async function checkNotificationsWritePermission(
+async function checkCampaignWritePermission(
     requestId: string,
-    action: string
+    action: string,
+    requiredPermission: string,
+    resourceLabel: string
 ): Promise<{ authPayload: AuthMePayload } | { error: string }> {
     try {
         const cookieStore = await cookies();
@@ -94,14 +116,14 @@ async function checkNotificationsWritePermission(
 
         const authPayload = (await response.json()) as AuthMePayload;
         const hasWritePermission = getPermissionList(authPayload).some(permission =>
-            permissionMatches(permission, PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE)
+            permissionMatches(permission, requiredPermission)
         );
 
         if (!hasWritePermission) {
-            logger.warn('Missing notifications write permission', {
+            logger.warn(`Missing ${resourceLabel} write permission`, {
                 requestId,
                 action,
-                requiredPermission: PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+                requiredPermission,
             });
             return { error: 'Write permission is required for this action' };
         }
@@ -120,7 +142,12 @@ export async function createCampaignNotificationAction(
     const action = 'Campaign:createNotification';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -151,7 +178,12 @@ export async function updateCampaignNotificationAction(
     const action = 'Campaign:updateNotification';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -175,7 +207,12 @@ export async function deleteCampaignNotificationAction(notificationOid: string):
     const action = 'Campaign:deleteNotification';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -201,7 +238,12 @@ export async function batchUpsertCampaignNotificationDetailsAction(
     const action = 'Campaign:batchUpsertNotificationDetails';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -233,7 +275,12 @@ export async function deleteCampaignNotificationDetailAction(
     const action = 'Campaign:deleteNotificationDetail';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -257,7 +304,12 @@ export async function triggerCampaignNotificationAction(notificationOid: string)
     const action = 'Campaign:triggerNotification';
     const startTime = Date.now();
 
-    const writeCheck = await checkNotificationsWritePermission(requestId, action);
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE,
+        'notifications'
+    );
     if ('error' in writeCheck) {
         return { success: false, error: writeCheck.error };
     }
@@ -278,5 +330,326 @@ export async function triggerCampaignNotificationAction(notificationOid: string)
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action, notificationOid });
         return { success: false, error: formatError(error, 'Failed to trigger notification') };
+    }
+}
+
+export async function createCampaignSurveyAction(
+    payload: SurveyCreate
+): Promise<CampaignActionResult<Survey>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:createSurvey';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const creatorAccount = getCreatorAccount(writeCheck.authPayload);
+        const created = await createSurvey({
+            ...payload,
+            ...(creatorAccount ? { creator_account: creatorAccount } : {}),
+        });
+        revalidatePath('/campaign');
+        revalidatePath('/campaign/surveys');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid: created.oid });
+        return { success: true, data: created };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        return { success: false, error: formatError(error, 'Failed to create survey') };
+    }
+}
+
+export async function updateCampaignSurveyAction(
+    surveyOid: string,
+    payload: SurveyUpdate
+): Promise<CampaignActionResult<Survey>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:updateSurvey';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const updated = await updateSurvey(surveyOid, payload);
+        revalidatePath('/campaign/surveys');
+        revalidatePath(`/campaign/surveys/${surveyOid}/edit`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
+        return { success: true, data: updated };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to update survey') };
+    }
+}
+
+export async function deleteCampaignSurveyAction(surveyOid: string): Promise<CampaignActionResult<null>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:deleteSurvey';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        await deleteSurvey(surveyOid);
+        revalidatePath('/campaign/surveys');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
+        return { success: true, data: null };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to delete survey') };
+    }
+}
+
+export async function createCampaignSurveyDetailAction(
+    surveyOid: string,
+    detail: SurveyDetailCreate
+): Promise<CampaignActionResult<SurveyDetail>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:createSurveyDetail';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const created = await createSurveyDetail(surveyOid, detail);
+        revalidatePath('/campaign/surveys');
+        revalidatePath(`/campaign/surveys/${surveyOid}/edit`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, receiverStableId: created.receiver_stable_id });
+        return { success: true, data: created };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to create survey detail') };
+    }
+}
+
+export async function updateCampaignSurveyDetailAction(
+    surveyOid: string,
+    receiverStableId: string,
+    detail: SurveyDetailUpdate
+): Promise<CampaignActionResult<SurveyDetail>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:updateSurveyDetail';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const updated = await updateSurveyDetail(surveyOid, receiverStableId, detail);
+        revalidatePath('/campaign/surveys');
+        revalidatePath(`/campaign/surveys/${surveyOid}/edit`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, receiverStableId });
+        return { success: true, data: updated };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid, receiverStableId });
+        return { success: false, error: formatError(error, 'Failed to update survey detail') };
+    }
+}
+
+export async function batchUpsertCampaignSurveyDetailsAction(
+    surveyOid: string,
+    details: SurveyDetailCreate[]
+): Promise<CampaignActionResult<number>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:batchUpsertSurveyDetails';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await batchUpsertSurveyDetails(surveyOid, details);
+        revalidatePath('/campaign/surveys');
+        revalidatePath(`/campaign/surveys/${surveyOid}/edit`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, {
+            requestId,
+            action,
+            surveyOid,
+            detailsCount: result.items.length,
+        });
+        return { success: true, data: result.items.length };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to update survey receivers') };
+    }
+}
+
+export async function deleteCampaignSurveyDetailAction(
+    surveyOid: string,
+    receiverStableId: string
+): Promise<CampaignActionResult<null>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:deleteSurveyDetail';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        await deleteSurveyDetail(surveyOid, receiverStableId);
+        revalidatePath('/campaign/surveys');
+        revalidatePath(`/campaign/surveys/${surveyOid}/edit`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, receiverStableId });
+        return { success: true, data: null };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid, receiverStableId });
+        return { success: false, error: formatError(error, 'Failed to remove survey receiver') };
+    }
+}
+
+export async function createCampaignSurveySpreadsheetImportAction(
+    rows: SurveySpreadsheetImportRow[]
+): Promise<CampaignActionResult<{ created_oids: string[] }>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:createSurveySpreadsheetImport';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEYS_WRITE,
+        'surveys'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    const normalizedRows = rows
+        .map((row) => ({
+            name: row.name.trim(),
+            receiver_stable_id: row.receiver_stable_id.trim(),
+            survey_questions: row.survey_questions,
+        }))
+        .filter((row) => row.name.length > 0 && row.receiver_stable_id.length > 0);
+
+    if (normalizedRows.length === 0) {
+        return { success: false, error: 'No valid rows to import' };
+    }
+
+    const creatorAccount = getCreatorAccount(writeCheck.authPayload);
+    const createdOids: string[] = [];
+
+    try {
+        for (const row of normalizedRows) {
+            const created = await createSurvey({
+                name: row.name,
+                survey_questions: row.survey_questions,
+                ...(creatorAccount ? { creator_account: creatorAccount } : {}),
+                details: [
+                    {
+                        receiver_stable_id: row.receiver_stable_id,
+                        status: 'created',
+                    },
+                ],
+            });
+            createdOids.push(created.oid);
+        }
+
+        revalidatePath('/campaign');
+        revalidatePath('/campaign/surveys');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, createdCount: createdOids.length });
+        return {
+            success: true,
+            data: {
+                created_oids: createdOids,
+            },
+        };
+    } catch (error) {
+        const rollbackFailures: string[] = [];
+
+        for (const oid of [...createdOids].reverse()) {
+            try {
+                await deleteSurvey(oid);
+            } catch (rollbackError) {
+                rollbackFailures.push(`${oid}: ${formatError(rollbackError, 'rollback delete failed')}`);
+            }
+        }
+
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, {
+            requestId,
+            action,
+            createdCountBeforeRollback: createdOids.length,
+            rollbackFailures,
+        });
+
+        const baseError = formatError(error, 'Failed to import surveys');
+        if (rollbackFailures.length > 0) {
+            return {
+                success: false,
+                error: `${baseError}. Rollback incomplete: ${rollbackFailures.join(' | ')}`,
+            };
+        }
+
+        return {
+            success: false,
+            error: `${baseError}. All created surveys were rolled back.`,
+        };
     }
 }

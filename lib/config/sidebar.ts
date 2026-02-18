@@ -17,6 +17,7 @@ import {
     MessageCircle,
     MousePointerClick,
     BellRing,
+    ClipboardCheck,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -188,6 +189,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
                             PERMISSIONS.OBJECTS.NOTIFICATIONS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/campaign/surveys',
+                        labelKey: 'surveys',
+                        icon: ClipboardCheck,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
+                            PERMISSIONS.OBJECTS.SURVEYS_READ,
                         ]),
                     },
                 ],

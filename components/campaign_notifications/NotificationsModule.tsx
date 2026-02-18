@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Megaphone, Pencil, Plus, RefreshCw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -16,6 +16,7 @@ import type {
     NotificationStatus,
 } from '@/lib/types/objects';
 import { triggerCampaignNotificationAction } from '@/app/actions/campaigns';
+import { PaneQuickScrollButtons } from '@/components/campaign_shared/PaneQuickScrollButtons';
 import { CampaignAccessGate } from './CampaignAccessGate';
 import { getNotificationDetailStatusClass, getNotificationStatusClass, summarizeContentBlocks } from './utils';
 
@@ -25,6 +26,11 @@ interface NotificationDetailListResponse {
     skip: number;
     limit: number;
 }
+
+const LIST_PAGE_SIZE = 300;
+const LIST_SCROLL_LOAD_THRESHOLD = 160;
+const DETAILS_PAGE_SIZE = 500;
+const DETAILS_SCROLL_LOAD_THRESHOLD = 160;
 
 function formatDateTime(value: string | null): string {
     if (!value) return '—';
@@ -54,12 +60,19 @@ export function NotificationsModule() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [notificationsTotal, setNotificationsTotal] = useState<number>(0);
     const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+    const [isNotificationsLoadingMore, setIsNotificationsLoadingMore] = useState(false);
+    const [hasMoreNotifications, setHasMoreNotifications] = useState(true);
     const [notificationsError, setNotificationsError] = useState<string | null>(null);
 
     const [details, setDetails] = useState<NotificationDetail[]>([]);
     const [detailsTotal, setDetailsTotal] = useState<number>(0);
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+    const [isDetailsLoadingMore, setIsDetailsLoadingMore] = useState(false);
+    const [hasMoreDetails, setHasMoreDetails] = useState(true);
     const [detailsError, setDetailsError] = useState<string | null>(null);
+
+    const notificationsListRef = useRef<HTMLDivElement>(null);
+    const notificationDetailsListRef = useRef<HTMLDivElement>(null);
 
     const selectedNotificationOid = searchParams.get('notification');
 
@@ -75,13 +88,18 @@ export function NotificationsModule() {
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, [pathname, router, searchParams]);
 
-    const fetchNotifications = useCallback(async () => {
-        setIsNotificationsLoading(true);
+    const fetchNotificationsPage = useCallback(async (skip: number, replace: boolean) => {
+        if (replace) {
+            setIsNotificationsLoading(true);
+        } else {
+            setIsNotificationsLoadingMore(true);
+        }
         setNotificationsError(null);
+
         try {
             const params = new URLSearchParams();
-            params.set('limit', '300');
-            params.set('skip', '0');
+            params.set('limit', String(LIST_PAGE_SIZE));
+            params.set('skip', String(skip));
             if (statusFilter) params.set('status', statusFilter);
             if (channelFilter) params.set('channel', channelFilter);
 
@@ -94,26 +112,66 @@ export function NotificationsModule() {
             }
 
             const payload = (await response.json()) as NotificationListResponse;
-            setNotifications(payload.items);
-            setNotificationsTotal(payload.total ?? payload.items.length);
+            const pageItems = Array.isArray(payload.items) ? payload.items : [];
+
+            setNotifications((current) => {
+                const base = replace ? [] : current;
+                const seen = new Set(base.map((item) => item.oid));
+                const additions = pageItems.filter((item) => {
+                    if (seen.has(item.oid)) return false;
+                    seen.add(item.oid);
+                    return true;
+                });
+                const next = [...base, ...additions];
+                const nextTotal = payload.total ?? next.length;
+                const nextHasMore = typeof payload.total === 'number'
+                    ? next.length < payload.total
+                    : pageItems.length >= LIST_PAGE_SIZE;
+
+                setNotificationsTotal(nextTotal);
+                setHasMoreNotifications(nextHasMore);
+
+                return next;
+            });
         } catch (error) {
             const message = error instanceof Error ? error.message : t('errors.loadNotifications');
             setNotificationsError(message);
-            setNotifications([]);
-            setNotificationsTotal(0);
+            if (replace) {
+                setNotifications([]);
+                setNotificationsTotal(0);
+                setHasMoreNotifications(true);
+            }
         } finally {
-            setIsNotificationsLoading(false);
+            if (replace) {
+                setIsNotificationsLoading(false);
+            } else {
+                setIsNotificationsLoadingMore(false);
+            }
         }
     }, [channelFilter, statusFilter, t]);
 
-    const fetchDetails = useCallback(async (notificationOid: string) => {
-        setIsDetailsLoading(true);
+    const reloadNotifications = useCallback(async () => {
+        setHasMoreNotifications(true);
+        await fetchNotificationsPage(0, true);
+    }, [fetchNotificationsPage]);
+
+    const loadMoreNotifications = useCallback(async () => {
+        if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
+        await fetchNotificationsPage(notifications.length, false);
+    }, [fetchNotificationsPage, hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, notifications.length]);
+
+    const fetchDetailsPage = useCallback(async (notificationOid: string, skip: number, replace: boolean) => {
+        if (replace) {
+            setIsDetailsLoading(true);
+        } else {
+            setIsDetailsLoadingMore(true);
+        }
         setDetailsError(null);
 
         try {
             const params = new URLSearchParams();
-            params.set('limit', '1000');
-            params.set('skip', '0');
+            params.set('limit', String(DETAILS_PAGE_SIZE));
+            params.set('skip', String(skip));
             if (detailsStatusFilter) params.set('status', detailsStatusFilter);
 
             const response = await fetch(
@@ -126,21 +184,52 @@ export function NotificationsModule() {
             }
 
             const payload = (await response.json()) as NotificationDetailListResponse;
-            setDetails(payload.items);
-            setDetailsTotal(payload.total ?? payload.items.length);
+            const pageItems = Array.isArray(payload.items) ? payload.items : [];
+
+            setDetails((current) => {
+                const base = replace ? [] : current;
+                const seen = new Set(base.map((item) => item.receiver_stable_id));
+                const additions = pageItems.filter((item) => {
+                    if (seen.has(item.receiver_stable_id)) return false;
+                    seen.add(item.receiver_stable_id);
+                    return true;
+                });
+                const next = [...base, ...additions];
+                const nextTotal = payload.total ?? next.length;
+                const nextHasMore = typeof payload.total === 'number'
+                    ? next.length < payload.total
+                    : pageItems.length >= DETAILS_PAGE_SIZE;
+
+                setDetailsTotal(nextTotal);
+                setHasMoreDetails(nextHasMore);
+
+                return next;
+            });
         } catch (error) {
             const message = error instanceof Error ? error.message : t('errors.loadDetails');
             setDetailsError(message);
-            setDetails([]);
-            setDetailsTotal(0);
+            if (replace) {
+                setDetails([]);
+                setDetailsTotal(0);
+                setHasMoreDetails(true);
+            }
         } finally {
-            setIsDetailsLoading(false);
+            if (replace) {
+                setIsDetailsLoading(false);
+            } else {
+                setIsDetailsLoadingMore(false);
+            }
         }
     }, [detailsStatusFilter, t]);
 
+    const loadMoreDetails = useCallback(async () => {
+        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails || !selectedNotificationOid) return;
+        await fetchDetailsPage(selectedNotificationOid, details.length, false);
+    }, [details.length, fetchDetailsPage, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, selectedNotificationOid]);
+
     useEffect(() => {
-        void fetchNotifications();
-    }, [fetchNotifications]);
+        void reloadNotifications();
+    }, [reloadNotifications]);
 
     useEffect(() => {
         if (notifications.length === 0) return;
@@ -153,10 +242,30 @@ export function NotificationsModule() {
         if (!selectedNotificationOid) {
             setDetails([]);
             setDetailsTotal(0);
+            setHasMoreDetails(true);
             return;
         }
-        void fetchDetails(selectedNotificationOid);
-    }, [fetchDetails, selectedNotificationOid]);
+        setHasMoreDetails(true);
+        void fetchDetailsPage(selectedNotificationOid, 0, true);
+    }, [fetchDetailsPage, selectedNotificationOid]);
+
+    useEffect(() => {
+        const container = notificationsListRef.current;
+        if (!container) return;
+        if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
+        if (container.scrollHeight <= container.clientHeight + 1) {
+            void loadMoreNotifications();
+        }
+    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications, notifications.length]);
+
+    useEffect(() => {
+        const container = notificationDetailsListRef.current;
+        if (!container) return;
+        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
+        if (container.scrollHeight <= container.clientHeight + 1) {
+            void loadMoreDetails();
+        }
+    }, [details.length, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
 
     const selectedNotification = useMemo(
         () => notifications.find((notification) => notification.oid === selectedNotificationOid) ?? null,
@@ -181,6 +290,24 @@ export function NotificationsModule() {
         ));
     }, [details, detailsSearch]);
 
+    const handleNotificationsListScroll = useCallback(() => {
+        const container = notificationsListRef.current;
+        if (!container || isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
+        const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (remaining <= LIST_SCROLL_LOAD_THRESHOLD) {
+            void loadMoreNotifications();
+        }
+    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications]);
+
+    const handleNotificationDetailsListScroll = useCallback(() => {
+        const container = notificationDetailsListRef.current;
+        if (!container || isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
+        const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (remaining <= DETAILS_SCROLL_LOAD_THRESHOLD) {
+            void loadMoreDetails();
+        }
+    }, [hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
+
     const handleTrigger = () => {
         if (!selectedNotificationOid) return;
         startTriggerTransition(async () => {
@@ -190,16 +317,16 @@ export function NotificationsModule() {
                 return;
             }
 
-            await fetchNotifications();
-            await fetchDetails(selectedNotificationOid);
+            await reloadNotifications();
+            await fetchDetailsPage(selectedNotificationOid, 0, true);
         });
     };
 
     return (
         <CampaignAccessGate>
             <div className="h-[calc(100vh-4rem)] p-4 overflow-hidden">
-                <div className="h-full grid grid-cols-[360px_1fr] gap-4">
-                    <section className={`h-full rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                <div className="h-full min-h-0 grid grid-cols-[360px_1fr] gap-4">
+                    <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         <header className="p-4 border-b border-white/10 space-y-3">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
@@ -208,10 +335,10 @@ export function NotificationsModule() {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => void fetchNotifications()}
+                                    onClick={() => void reloadNotifications()}
                                     className={`p-1.5 rounded-md ${isLight ? 'hover:bg-slate-100 text-slate-600' : 'hover:bg-white/10 text-gray-300'}`}
                                 >
-                                    <RefreshCw className={`w-4 h-4 ${isNotificationsLoading ? 'animate-spin' : ''}`} />
+                                    <RefreshCw className={`w-4 h-4 ${(isNotificationsLoading || isNotificationsLoadingMore) ? 'animate-spin' : ''}`} />
                                 </button>
                             </div>
 
@@ -268,50 +395,65 @@ export function NotificationsModule() {
                             )}
                         </header>
 
-                        <div className="flex-1 overflow-y-auto">
-                            {isNotificationsLoading && filteredNotifications.length === 0 ? (
-                                <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    {t('list.loading')}
-                                </div>
-                            ) : notificationsError ? (
-                                <div className="p-4 text-sm text-rose-300">{notificationsError}</div>
-                            ) : filteredNotifications.length === 0 ? (
-                                <div className="p-4 text-sm text-gray-400">{t('list.empty')}</div>
-                            ) : (
-                                filteredNotifications.map((item) => {
-                                    const selected = item.oid === selectedNotificationOid;
-                                    return (
-                                        <button
-                                            key={item.oid}
-                                            type="button"
-                                            onClick={() => setQueryParam('notification', item.oid)}
-                                            className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 ${selected ? 'bg-blue-500/10' : ''}`}
-                                        >
-                                            <div className="flex items-center justify-between gap-2">
-                                                <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.name}</p>
-                                                <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationStatusClass(item.status)}`}>
-                                                    {item.status}
-                                                </span>
-                                            </div>
-                                            <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{item.channel}</p>
-                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {t('details.fields.creator')}: {item.creator_account || '—'}
-                                            </p>
-                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {t('details.fields.createdAt')}: {formatDateTime(item.created_at)}
-                                            </p>
-                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {t('details.fields.updatedAt')}: {formatDateTime(item.updated_at)}
-                                            </p>
-                                        </button>
-                                    );
-                                })
-                            )}
+                        <div className="flex flex-1 min-h-0">
+                            <div
+                                ref={notificationsListRef}
+                                onScroll={handleNotificationsListScroll}
+                                className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
+                            >
+                                {isNotificationsLoading && filteredNotifications.length === 0 ? (
+                                    <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        {t('list.loading')}
+                                    </div>
+                                ) : notificationsError ? (
+                                    <div className="p-4 text-sm text-rose-300">{notificationsError}</div>
+                                ) : filteredNotifications.length === 0 ? (
+                                    <div className="p-4 text-sm text-gray-400">{t('list.empty')}</div>
+                                ) : (
+                                    filteredNotifications.map((item) => {
+                                        const selected = item.oid === selectedNotificationOid;
+                                        return (
+                                            <button
+                                                key={item.oid}
+                                                type="button"
+                                                onClick={() => setQueryParam('notification', item.oid)}
+                                                className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 ${selected ? 'bg-blue-500/10' : ''}`}
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.name}</p>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationStatusClass(item.status)}`}>
+                                                        {item.status}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{item.channel}</p>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                    {t('details.fields.creator')}: {item.creator_account || '—'}
+                                                </p>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                    {t('details.fields.createdAt')}: {formatDateTime(item.created_at)}
+                                                </p>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                    {t('details.fields.updatedAt')}: {formatDateTime(item.updated_at)}
+                                                </p>
+                                            </button>
+                                        );
+                                    })
+                                )}
+
+                                {isNotificationsLoadingMore && (
+                                    <div className={`p-3 text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'} inline-flex items-center gap-2`}>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        {t('list.loading')}
+                                    </div>
+                                )}
+                            </div>
+
+                            <PaneQuickScrollButtons containerRef={notificationsListRef} isLight={isLight} />
                         </div>
                     </section>
 
-                    <section className={`h-full rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         {!selectedNotification ? (
                             <div className="h-full flex items-center justify-center text-sm text-gray-400">
                                 {t('details.selectNotification')}
@@ -418,39 +560,54 @@ export function NotificationsModule() {
                                     </p>
                                 </header>
 
-                                <div className="flex-1 overflow-y-auto">
-                                    {isDetailsLoading && filteredDetails.length === 0 ? (
-                                        <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            {t('details.loading')}
-                                        </div>
-                                    ) : detailsError ? (
-                                        <div className="p-4 text-sm text-rose-300">{detailsError}</div>
-                                    ) : filteredDetails.length === 0 ? (
-                                        <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
-                                    ) : (
-                                        <div className="divide-y divide-white/5">
-                                            {filteredDetails.map((detail) => (
-                                                <div key={detail.receiver_stable_id} className="px-4 py-3">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
-                                                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(detail.status)}`}>
-                                                            {detail.status}
-                                                        </span>
+                                <div className="flex flex-1 min-h-0">
+                                    <div
+                                        ref={notificationDetailsListRef}
+                                        onScroll={handleNotificationDetailsListScroll}
+                                        className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
+                                    >
+                                        {isDetailsLoading && filteredDetails.length === 0 ? (
+                                            <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                {t('details.loading')}
+                                            </div>
+                                        ) : detailsError ? (
+                                            <div className="p-4 text-sm text-rose-300">{detailsError}</div>
+                                        ) : filteredDetails.length === 0 ? (
+                                            <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
+                                        ) : (
+                                            <div className="divide-y divide-white/5">
+                                                {filteredDetails.map((detail) => (
+                                                    <div key={detail.receiver_stable_id} className="px-4 py-3">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
+                                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(detail.status)}`}>
+                                                                {detail.status}
+                                                            </span>
+                                                        </div>
+                                                        <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                            {summarizeContentBlocks(detail.content_blocks)}
+                                                        </p>
+                                                        <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                            {t('details.fields.scheduledAt')}: {formatDateTime(detail.scheduled_at)}
+                                                        </p>
+                                                        {detail.error_message && (
+                                                            <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
+                                                        )}
                                                     </div>
-                                                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                                                        {summarizeContentBlocks(detail.content_blocks)}
-                                                    </p>
-                                                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                        {t('details.fields.scheduledAt')}: {formatDateTime(detail.scheduled_at)}
-                                                    </p>
-                                                    {detail.error_message && (
-                                                        <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {isDetailsLoadingMore && (
+                                            <div className={`p-3 text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'} inline-flex items-center gap-2`}>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                {t('details.loading')}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <PaneQuickScrollButtons containerRef={notificationDetailsListRef} isLight={isLight} />
                                 </div>
                             </>
                         )}

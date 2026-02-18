@@ -40,6 +40,8 @@ export const PERMISSIONS = {
     INTERACTIONS_WRITE: 'objects:interactions:write',
     NOTIFICATIONS_READ: 'objects:notifications:read',
     NOTIFICATIONS_WRITE: 'objects:notifications:write',
+    SURVEYS_READ: 'objects:surveys:read',
+    SURVEYS_WRITE: 'objects:surveys:write',
   },
 } as const;
 

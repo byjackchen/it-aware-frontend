@@ -86,7 +86,8 @@
         "interactions": "Interactions",
         "faqs": "FAQs",
         "campaign": "Campaign",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "surveys": "Surveys"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware Assistant",
@@ -464,6 +465,7 @@
             "loadNotifications": "Failed to load notifications",
             "loadDetails": "Failed to load notification details"
         },
+        "batchProgress": "Writing receivers: {processed} / {total} (batch {currentBatch} / {totalBatches})",
         "contentBlockTypes": {
             "text": "Text",
             "title": "Title",
@@ -510,7 +512,7 @@
         },
         "create": {
             "title": "Create Notification",
-            "subtitle": "Use guided steps or create directly from an Excel upload",
+            "subtitle": "Use guided sections or create directly from an Excel upload",
             "entryModes": {
                 "guided": "Guided Create",
                 "excelDirect": "Excel Direct Create"
@@ -534,7 +536,8 @@
                 "noReceivers": "Please select at least one receiver.",
                 "invalidContent": "Each content block requires valid text (and URL for link blocks).",
                 "receiverNotFound": "Stable ID was not found in workers.",
-                "emptyName": "Notification name is required."
+                "emptyName": "Notification name is required.",
+                "partialWrite": "Notification {notificationOid} was created, but only {processed} of {total} receivers were written. {error}"
             }
         },
         "receivers": {
@@ -543,6 +546,7 @@
             "manualAddPlaceholder": "Worker stable_id",
             "manualAdd": "Add receiver",
             "manualAdded": "Manual additions",
+            "empty": "No receivers available for current filters.",
             "locationTreeHint": "Selecting a parent location includes all descendants. Uncheck lower nodes for manual override.",
             "expandAll": "Expand all",
             "collapseAll": "Collapse all",
@@ -551,6 +555,12 @@
             "selectAll": "Select all",
             "unselectAll": "Unselect all",
             "noLocations": "No locations available",
+            "sources": {
+                "selected": "Selected",
+                "manual": "Manual",
+                "manualExternal": "Manual External",
+                "outsideFilter": "outside filters"
+            },
             "filters": {
                 "organization": "Organization",
                 "location": "Location",
@@ -566,6 +576,7 @@
             "waitWorkers": "Please wait until worker data has finished loading before uploading.",
             "parseFatal": "Failed to parse uploaded file.",
             "noValidRows": "No valid receiver rows found in upload.",
+            "partialWrite": "Notification {notificationOid} was created, but only {processed} of {total} rows were written. {error}",
             "summary": {
                 "totalRows": "Total rows",
                 "validRows": "Valid rows",
@@ -604,7 +615,180 @@
                 "notEditable": "Notification is not editable in current status.",
                 "emptyName": "Notification name is required.",
                 "noReceivers": "At least one receiver is required.",
-                "invalidContent": "Each receiver must have valid content blocks."
+                "invalidContent": "Each receiver must have valid content blocks.",
+                "partialWrite": "Saved partially for notification {notificationOid}: {processed} of {total} receivers were written. {error}"
+            }
+        }
+    },
+    "CampaignSurvey": {
+        "accessDenied": {
+            "title": "Campaign Survey Access Required",
+            "description": "You do not have permission to access Campaign surveys."
+        },
+        "errors": {
+            "loadSurveys": "Failed to load surveys",
+            "loadDetails": "Failed to load survey details"
+        },
+        "list": {
+            "title": "Surveys",
+            "create": "Create Survey",
+            "loading": "Loading surveys...",
+            "empty": "No surveys found",
+            "counts": "{loaded} loaded / {total} total",
+            "filters": {
+                "allStatus": "All status",
+                "search": "Search survey name or OID"
+            }
+        },
+        "details": {
+            "selectSurvey": "Select a survey to view details",
+            "edit": "Edit",
+            "loading": "Loading receiver details...",
+            "empty": "No receiver details found",
+            "counts": "{loaded} loaded / {total} total",
+            "fields": {
+                "status": "Status",
+                "total": "Total Receivers",
+                "creator": "Creator Account",
+                "createdAt": "Created At",
+                "updatedAt": "Updated At",
+                "submittedAt": "Submitted At",
+                "answer": "Answer"
+            },
+            "filters": {
+                "allStatus": "All detail status",
+                "search": "Search receiver or answer"
+            }
+        },
+        "create": {
+            "title": "Create Survey",
+            "subtitle": "Use a guided form or spreadsheet upload to create surveys.",
+            "entryModes": {
+                "guided": "Guided Create",
+                "spreadsheet": "Spreadsheet Import"
+            },
+            "sections": {
+                "questions": "Question Content",
+                "receivers": "Receiver Selection"
+            },
+            "fields": {
+                "name": "Survey Name",
+                "namePlaceholder": "e.g. employee_pulse_weekly"
+            },
+            "actions": {
+                "create": "Create Survey"
+            },
+            "errors": {
+                "noReceivers": "Please select at least one receiver.",
+                "receiverNotFound": "Stable ID was not found in workers.",
+                "emptyName": "Survey name is required.",
+                "partialWrite": "Survey {surveyOid} was created, but only {processed} of {total} receivers were written. {error}"
+            }
+        },
+        "questionBuilder": {
+            "title": "Survey Questions",
+            "subtitle": "Define intro text and structured question blocks.",
+            "empty": "No question has been added yet.",
+            "questionLabel": "Question",
+            "fields": {
+                "intro": "Intro",
+                "introPlaceholder": "Intro text shown to receivers",
+                "questionId": "Question ID",
+                "type": "Type",
+                "title": "Title",
+                "required": "Required",
+                "options": "Options",
+                "optionId": "option_id",
+                "optionLabel": "label"
+            },
+            "actions": {
+                "removeQuestion": "Remove Question",
+                "addOption": "Add Option",
+                "addQuestion": "Add Question"
+            }
+        },
+        "receivers": {
+            "loadingWorkers": "Loading workers...",
+            "autoSelectedCount": "{count} receivers selected",
+            "manualAddPlaceholder": "Worker stable_id",
+            "manualAdd": "Add receiver",
+            "manualAdded": "Manual additions",
+            "empty": "No receivers available for current filters.",
+            "locationTreeHint": "Selecting a parent location includes descendants. Uncheck child nodes to override.",
+            "expandAll": "Expand all",
+            "collapseAll": "Collapse all",
+            "selectAll": "Select all",
+            "unselectAll": "Unselect all",
+            "noLocations": "No locations available",
+            "sources": {
+                "selected": "Selected",
+                "manual": "Manual",
+                "manualExternal": "Manual External",
+                "outsideFilter": "outside filters"
+            },
+            "filters": {
+                "location": "Location",
+                "workerType": "Worker Type"
+            }
+        },
+        "directUpload": {
+            "title": "Spreadsheet Import",
+            "subtitle": "One row creates one survey and one receiver detail.",
+            "downloadTemplate": "Download Template",
+            "uploadFile": "Upload .xlsx",
+            "import": "Import Surveys",
+            "templateHint": "Required columns: name, receiver_stable_id, intro, and q01..q20 question columns.",
+            "waitWorkers": "Please wait until worker data has finished loading before uploading.",
+            "parseFatal": "Failed to parse uploaded file.",
+            "noValidRows": "No valid rows found in upload.",
+            "summary": {
+                "totalRows": "Total rows",
+                "validRows": "Valid rows",
+                "unmatchedRows": "Unmatched rows",
+                "duplicateRowsIgnored": "Duplicates ignored",
+                "invalidRows": "Invalid rows"
+            },
+            "unmatchedTitle": "Unmatched stable IDs",
+            "rowErrorsTitle": "Row validation issues",
+            "rowErrorLine": "Row {row} ({stableId}): {message}",
+            "previewTitle": "Parsed row preview",
+            "previewColumns": {
+                "row": "Row",
+                "name": "Survey Name",
+                "receiver": "Receiver",
+                "questionCount": "Questions"
+            }
+        },
+        "edit": {
+            "title": "Edit Survey",
+            "readOnlyQuestionStatus": "Survey status is \"{status}\". Question editing is only allowed in \"created\" status.",
+            "readOnlyDetailStatus": "Survey status is \"{status}\". Receiver detail editing is blocked when cancelled.",
+            "receiversTitle": "Receivers",
+            "receiverCount": "{count} receivers",
+            "fields": {
+                "name": "Survey Name",
+                "newReceiverStableId": "New receiver stable_id",
+                "detailStatus": "Detail Status",
+                "submittedAt": "Submitted At",
+                "answerJson": "Survey Answer JSON",
+                "answerJsonPlaceholder": "{\"answers\":[...]}"
+            },
+            "actions": {
+                "addReceiver": "Add Receiver",
+                "removeReceiver": "Remove Receiver",
+                "save": "Save Changes"
+            },
+            "errors": {
+                "duplicateReceiver": "Receiver is already included.",
+                "receiverNotFound": "Stable ID was not found in workers.",
+                "notEditable": "Survey is not editable in current status.",
+                "emptyName": "Survey name is required.",
+                "noReceivers": "At least one receiver is required.",
+                "emptyReceiver": "Receiver stable_id is required.",
+                "submittedAtRequired": "submitted_at is required when status is submitted.",
+                "invalidAnswerJson": "Invalid survey answer JSON.",
+                "answerRequired": "survey_answer is required when status is submitted.",
+                "partialWrite": "Saved partially for survey {surveyOid}: {processed} of {total} receivers were written. {error}"
             }
         }
     }

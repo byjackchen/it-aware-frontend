@@ -515,6 +515,19 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.5);
 }
 
+@media (min-width: 1024px) {
+  .campaign-pane-scroll-no-native {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .campaign-pane-scroll-no-native::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
 /* ========================================
    Base Body Styles
    ======================================== */

@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation';
 import { Download, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { createCampaignNotificationAction } from '@/app/actions/campaigns';
-import type { NotificationChannel, NotificationDetailCreate } from '@/lib/types/objects';
-import type { NotificationReceiverContentParseResult } from './types';
-import { upsertNotificationDetailsInBatches, type DetailBatchProgress } from './detailBatchWriter';
-import { buildReceiverContentTemplateXlsx, cloneContentBlocks, parseReceiverContentSpreadsheetFile } from './utils';
+import {
+    createCampaignSurveySpreadsheetImportAction,
+    type SurveySpreadsheetImportRow,
+} from '@/app/actions/campaigns';
+import type { SurveySpreadsheetParseResult } from './types';
+import { buildSurveySpreadsheetTemplateXlsx, parseSurveySpreadsheetFile } from './utils';
 
-interface NotificationDirectSpreadsheetCreateProps {
+interface SurveyDirectSpreadsheetCreateProps {
     validStableIds: string[];
     isWorkersLoading: boolean;
     workersError: string | null;
 }
 
-const EMPTY_PARSE_RESULT: NotificationReceiverContentParseResult = {
+const EMPTY_PARSE_RESULT: SurveySpreadsheetParseResult = {
     rows: [],
     totalRows: 0,
     validRows: 0,
@@ -27,35 +28,31 @@ const EMPTY_PARSE_RESULT: NotificationReceiverContentParseResult = {
     fatalError: null,
 };
 
-export function NotificationDirectSpreadsheetCreate({
+export function SurveyDirectSpreadsheetCreate({
     validStableIds,
     isWorkersLoading,
     workersError,
-}: NotificationDirectSpreadsheetCreateProps) {
-    const t = useTranslations('Campaign');
+}: SurveyDirectSpreadsheetCreateProps) {
+    const t = useTranslations('CampaignSurvey');
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
 
-    const [name, setName] = useState('');
-    const [channel, setChannel] = useState<NotificationChannel>('wecom_bot');
-    const [parseResult, setParseResult] = useState<NotificationReceiverContentParseResult>(EMPTY_PARSE_RESULT);
+    const [parseResult, setParseResult] = useState<SurveySpreadsheetParseResult>(EMPTY_PARSE_RESULT);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [batchProgress, setBatchProgress] = useState<DetailBatchProgress | null>(null);
     const [isSubmitting, startSubmitting] = useTransition();
 
     const validStableIdSet = useMemo(() => new Set(validStableIds), [validStableIds]);
     const previewRows = useMemo(() => parseResult.rows.slice(0, 50), [parseResult.rows]);
 
     const canSubmit =
-        !isWorkersLoading &&
-        !workersError &&
-        name.trim().length > 0 &&
-        parseResult.fatalError === null &&
-        parseResult.validRows > 0;
+        !isWorkersLoading
+        && !workersError
+        && parseResult.fatalError === null
+        && parseResult.validRows > 0;
 
     const handleTemplateDownload = () => {
-        const bytes = buildReceiverContentTemplateXlsx();
+        const bytes = buildSurveySpreadsheetTemplateXlsx();
         const normalizedBytes = Uint8Array.from(bytes);
         const blob = new Blob(
             [normalizedBytes],
@@ -64,7 +61,7 @@ export function NotificationDirectSpreadsheetCreate({
         const url = window.URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = 'notification_receivers_with_content_template.xlsx';
+        anchor.download = 'survey_import_template.xlsx';
         anchor.click();
         window.URL.revokeObjectURL(url);
     };
@@ -74,7 +71,6 @@ export function NotificationDirectSpreadsheetCreate({
         if (!file) return;
 
         setSubmitError(null);
-        setBatchProgress(null);
 
         if (isWorkersLoading) {
             setSubmitError(t('directUpload.waitWorkers'));
@@ -87,7 +83,7 @@ export function NotificationDirectSpreadsheetCreate({
         }
 
         try {
-            const result = await parseReceiverContentSpreadsheetFile(file, validStableIdSet);
+            const result = await parseSurveySpreadsheetFile(file, validStableIdSet);
             setParseResult(result);
         } catch {
             setParseResult({
@@ -97,17 +93,12 @@ export function NotificationDirectSpreadsheetCreate({
         }
     };
 
-    const handleCreate = () => {
+    const handleImport = () => {
         setSubmitError(null);
-        setBatchProgress(null);
 
         if (!canSubmit) {
             if (parseResult.fatalError) {
                 setSubmitError(parseResult.fatalError);
-                return;
-            }
-            if (name.trim().length === 0) {
-                setSubmitError(t('create.errors.emptyName'));
                 return;
             }
             setSubmitError(t('directUpload.noValidRows'));
@@ -115,35 +106,25 @@ export function NotificationDirectSpreadsheetCreate({
         }
 
         startSubmitting(async () => {
-            const createResult = await createCampaignNotificationAction({
-                name: name.trim(),
-                channel,
-            });
-
-            if (!createResult.success) {
-                setSubmitError(createResult.error);
-                return;
-            }
-
-            const notificationOid = createResult.data.oid;
-            const details: NotificationDetailCreate[] = parseResult.rows.map((row) => ({
+            const rows: SurveySpreadsheetImportRow[] = parseResult.rows.map((row) => ({
+                name: row.name,
                 receiver_stable_id: row.receiverStableId,
-                content_blocks: cloneContentBlocks(row.contentBlocks),
-                status: 'created',
+                survey_questions: row.surveyQuestions,
             }));
 
-            const upsertResult = await upsertNotificationDetailsInBatches(notificationOid, details, setBatchProgress);
-            if (!upsertResult.success) {
-                setSubmitError(t('directUpload.partialWrite', {
-                    notificationOid,
-                    processed: upsertResult.processedRows,
-                    total: upsertResult.totalRows,
-                    error: upsertResult.error,
-                }));
+            const result = await createCampaignSurveySpreadsheetImportAction(rows);
+
+            if (!result.success) {
+                setSubmitError(result.error);
                 return;
             }
 
-            router.push(`/campaign/notifications?notification=${encodeURIComponent(notificationOid)}`);
+            const firstOid = result.data.created_oids[0];
+            if (firstOid) {
+                router.push(`/campaign/surveys?survey=${encodeURIComponent(firstOid)}`);
+            } else {
+                router.push('/campaign/surveys');
+            }
             router.refresh();
         });
     };
@@ -157,30 +138,6 @@ export function NotificationDirectSpreadsheetCreate({
                 <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     {t('directUpload.subtitle')}
                 </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('create.fields.name')}</label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        placeholder={t('create.fields.namePlaceholder')}
-                        className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                    />
-                </div>
-                <div>
-                    <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('create.fields.channel')}</label>
-                    <select
-                        value={channel}
-                        onChange={(event) => setChannel(event.target.value as NotificationChannel)}
-                        className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                    >
-                        <option value="wecom_bot">wecom_bot</option>
-                        <option value="wecom_ops_bot">wecom_ops_bot</option>
-                    </select>
-                </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -204,6 +161,16 @@ export function NotificationDirectSpreadsheetCreate({
                         className="hidden"
                     />
                 </label>
+
+                <button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={!canSubmit || isSubmitting}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
+                >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    <span>{t('directUpload.import')}</span>
+                </button>
             </div>
 
             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('directUpload.templateHint')}</p>
@@ -282,16 +249,18 @@ export function NotificationDirectSpreadsheetCreate({
                             <thead className={isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-gray-300'}>
                                 <tr>
                                     <th className="text-left px-3 py-2">{t('directUpload.previewColumns.row')}</th>
+                                    <th className="text-left px-3 py-2">{t('directUpload.previewColumns.name')}</th>
                                     <th className="text-left px-3 py-2">{t('directUpload.previewColumns.receiver')}</th>
-                                    <th className="text-left px-3 py-2">{t('directUpload.previewColumns.blockCount')}</th>
+                                    <th className="text-left px-3 py-2">{t('directUpload.previewColumns.questionCount')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {previewRows.map((row) => (
                                     <tr key={`${row.sourceRow}-${row.receiverStableId}`} className="border-t border-white/5">
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.sourceRow}</td>
+                                        <td className={`px-3 py-1.5 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.name}</td>
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.receiverStableId}</td>
-                                        <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.contentBlocks.length}</td>
+                                        <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.surveyQuestions.questions.length}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -299,28 +268,6 @@ export function NotificationDirectSpreadsheetCreate({
                     </div>
                 </div>
             )}
-
-            <div className="flex items-center justify-end gap-3">
-                {batchProgress && isSubmitting && (
-                    <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                        {t('batchProgress', {
-                            processed: batchProgress.processedRows,
-                            total: batchProgress.totalRows,
-                            currentBatch: batchProgress.currentBatch,
-                            totalBatches: batchProgress.totalBatches,
-                        })}
-                    </p>
-                )}
-                <button
-                    type="button"
-                    onClick={handleCreate}
-                    disabled={!canSubmit || isSubmitting}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-                >
-                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    <span>{t('create.actions.create')}</span>
-                </button>
-            </div>
         </section>
     );
 }

@@ -6,7 +6,6 @@ import { ArrowLeft, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import {
-    batchUpsertCampaignNotificationDetailsAction,
     deleteCampaignNotificationDetailAction,
     updateCampaignNotificationAction,
 } from '@/app/actions/campaigns';
@@ -15,9 +14,11 @@ import type {
     NotificationChannel,
     NotificationContentBlock,
     NotificationDetail,
+    NotificationDetailCreate,
 } from '@/lib/types/objects';
 import { CampaignAccessGate } from './CampaignAccessGate';
 import { NotificationContentBlocksEditor } from './NotificationContentBlocksEditor';
+import { upsertNotificationDetailsInBatches, type DetailBatchProgress } from './detailBatchWriter';
 import { cloneContentBlocks, createEmptyBlock } from './utils';
 import { useAllActiveWorkers } from './useAllActiveWorkers';
 
@@ -74,6 +75,7 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
     const [newReceiverStableId, setNewReceiverStableId] = useState('');
     const [copySourceStableId, setCopySourceStableId] = useState(details[0]?.receiver_stable_id ?? '');
     const [error, setError] = useState<string | null>(null);
+    const [batchProgress, setBatchProgress] = useState<DetailBatchProgress | null>(null);
 
     const {
         workers,
@@ -145,6 +147,7 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
 
     const handleSave = () => {
         setError(null);
+        setBatchProgress(null);
 
         if (!isEditable) {
             setError(t('edit.errors.notEditable'));
@@ -184,19 +187,22 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
                 }
             }
 
-            const upsertResult = await batchUpsertCampaignNotificationDetailsAction(
-                notification.oid,
-                rows.map((row) => ({
-                    receiver_stable_id: row.receiver_stable_id,
-                    content_blocks: cloneContentBlocks(row.content_blocks),
-                    status: row.status,
-                    scheduled_at: row.scheduled_at,
-                    error_message: row.error_message,
-                }))
-            );
+            const detailPayloads: NotificationDetailCreate[] = rows.map((row) => ({
+                receiver_stable_id: row.receiver_stable_id,
+                content_blocks: cloneContentBlocks(row.content_blocks),
+                status: row.status,
+                scheduled_at: row.scheduled_at,
+                error_message: row.error_message,
+            }));
 
+            const upsertResult = await upsertNotificationDetailsInBatches(notification.oid, detailPayloads, setBatchProgress);
             if (!upsertResult.success) {
-                setError(upsertResult.error);
+                setError(t('edit.errors.partialWrite', {
+                    notificationOid: notification.oid,
+                    processed: upsertResult.processedRows,
+                    total: upsertResult.totalRows,
+                    error: upsertResult.error,
+                }));
                 return;
             }
 
@@ -320,7 +326,7 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
                             </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="max-h-[32rem] overflow-y-auto pr-1 space-y-3">
                             {rows.map((row) => (
                                 <div key={row.receiver_stable_id} className="rounded-lg border border-white/10 p-3 space-y-2">
                                     <div className="flex items-center gap-2">
@@ -349,7 +355,17 @@ export function NotificationEditWorkspace({ notification, details }: Notificatio
                             ))}
                         </div>
 
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-end gap-3">
+                            {batchProgress && isPending && (
+                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    {t('batchProgress', {
+                                        processed: batchProgress.processedRows,
+                                        total: batchProgress.totalRows,
+                                        currentBatch: batchProgress.currentBatch,
+                                        totalBatches: batchProgress.totalBatches,
+                                    })}
+                                </p>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleSave}

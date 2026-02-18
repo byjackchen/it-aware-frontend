@@ -86,7 +86,8 @@
         "interactions": "交互事件",
         "faqs": "常见问题",
         "campaign": "Campaign",
-        "notifications": "通知"
+        "notifications": "通知",
+        "surveys": "问卷"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",
@@ -464,6 +465,7 @@
             "loadNotifications": "通知列表加载失败",
             "loadDetails": "通知明细加载失败"
         },
+        "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
         "contentBlockTypes": {
             "text": "文本",
             "title": "标题",
@@ -510,7 +512,7 @@
         },
         "create": {
             "title": "创建通知",
-            "subtitle": "可按向导配置，或通过 Excel 直接创建",
+            "subtitle": "可按向导分区配置，或通过 Excel 直接创建",
             "entryModes": {
                 "guided": "向导创建",
                 "excelDirect": "Excel 直传创建"
@@ -534,7 +536,8 @@
                 "noReceivers": "请至少选择一位接收人。",
                 "invalidContent": "每个内容块都必须填写文本，链接类型还需填写 URL。",
                 "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "emptyName": "通知名称不能为空。"
+                "emptyName": "通知名称不能为空。",
+                "partialWrite": "通知 {notificationOid} 已创建，但仅写入 {processed}/{total} 位接收人。{error}"
             }
         },
         "receivers": {
@@ -543,6 +546,7 @@
             "manualAddPlaceholder": "员工 stable_id",
             "manualAdd": "添加接收人",
             "manualAdded": "手动追加",
+            "empty": "当前筛选条件下暂无可展示接收人。",
             "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
             "expandAll": "全部展开",
             "collapseAll": "全部收起",
@@ -551,6 +555,12 @@
             "selectAll": "全选",
             "unselectAll": "取消全选",
             "noLocations": "暂无地点数据",
+            "sources": {
+                "selected": "筛选命中",
+                "manual": "手动添加",
+                "manualExternal": "手动外部",
+                "outsideFilter": "不在当前筛选条件"
+            },
             "filters": {
                 "organization": "组织",
                 "location": "地点",
@@ -566,6 +576,7 @@
             "waitWorkers": "请等待员工数据加载完成后再上传。",
             "parseFatal": "上传文件解析失败。",
             "noValidRows": "未找到可用的接收人数据行。",
+            "partialWrite": "通知 {notificationOid} 已创建，但仅写入 {processed}/{total} 行。{error}",
             "summary": {
                 "totalRows": "总行数",
                 "validRows": "有效行",
@@ -604,7 +615,180 @@
                 "notEditable": "当前状态不可编辑。",
                 "emptyName": "通知名称不能为空。",
                 "noReceivers": "至少保留一位接收人。",
-                "invalidContent": "所有接收人的内容块都必须合法。"
+                "invalidContent": "所有接收人的内容块都必须合法。",
+                "partialWrite": "通知 {notificationOid} 已部分保存：仅写入 {processed}/{total} 位接收人。{error}"
+            }
+        }
+    },
+    "CampaignSurvey": {
+        "accessDenied": {
+            "title": "需要 Campaign Survey 权限",
+            "description": "当前账号没有访问 Campaign Survey 的权限。"
+        },
+        "errors": {
+            "loadSurveys": "问卷列表加载失败",
+            "loadDetails": "问卷明细加载失败"
+        },
+        "list": {
+            "title": "问卷",
+            "create": "创建问卷",
+            "loading": "正在加载问卷...",
+            "empty": "暂无问卷",
+            "counts": "已加载 {loaded} / 总计 {total}",
+            "filters": {
+                "allStatus": "全部状态",
+                "search": "搜索问卷名称或 OID"
+            }
+        },
+        "details": {
+            "selectSurvey": "请选择一条问卷查看明细",
+            "edit": "编辑",
+            "loading": "正在加载接收人明细...",
+            "empty": "暂无接收人明细",
+            "counts": "已加载 {loaded} / 总计 {total}",
+            "fields": {
+                "status": "状态",
+                "total": "接收人数",
+                "creator": "创建账号",
+                "createdAt": "创建时间",
+                "updatedAt": "更新时间",
+                "submittedAt": "提交时间",
+                "answer": "回答"
+            },
+            "filters": {
+                "allStatus": "全部明细状态",
+                "search": "搜索接收人或回答"
+            }
+        },
+        "create": {
+            "title": "创建问卷",
+            "subtitle": "可按向导配置，或通过表格批量导入创建。",
+            "entryModes": {
+                "guided": "向导创建",
+                "spreadsheet": "表格导入"
+            },
+            "sections": {
+                "questions": "题目内容",
+                "receivers": "接收人选择"
+            },
+            "fields": {
+                "name": "问卷名称",
+                "namePlaceholder": "例如：employee_pulse_weekly"
+            },
+            "actions": {
+                "create": "创建问卷"
+            },
+            "errors": {
+                "noReceivers": "请至少选择一位接收人。",
+                "receiverNotFound": "未找到该 stable_id 对应员工。",
+                "emptyName": "问卷名称不能为空。",
+                "partialWrite": "问卷 {surveyOid} 已创建，但仅写入 {processed}/{total} 位接收人。{error}"
+            }
+        },
+        "questionBuilder": {
+            "title": "问卷题目",
+            "subtitle": "配置问卷引导语与结构化题目。",
+            "empty": "尚未添加题目。",
+            "questionLabel": "题目",
+            "fields": {
+                "intro": "引导语",
+                "introPlaceholder": "展示给接收人的引导文本",
+                "questionId": "题目 ID",
+                "type": "类型",
+                "title": "标题",
+                "required": "必答",
+                "options": "选项",
+                "optionId": "option_id",
+                "optionLabel": "label"
+            },
+            "actions": {
+                "removeQuestion": "删除题目",
+                "addOption": "添加选项",
+                "addQuestion": "添加题目"
+            }
+        },
+        "receivers": {
+            "loadingWorkers": "正在加载员工...",
+            "autoSelectedCount": "已选择 {count} 位接收人",
+            "manualAddPlaceholder": "员工 stable_id",
+            "manualAdd": "添加接收人",
+            "manualAdded": "手动追加",
+            "empty": "当前筛选条件下暂无可展示接收人。",
+            "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
+            "expandAll": "全部展开",
+            "collapseAll": "全部收起",
+            "selectAll": "全选",
+            "unselectAll": "取消全选",
+            "noLocations": "暂无地点数据",
+            "sources": {
+                "selected": "筛选命中",
+                "manual": "手动添加",
+                "manualExternal": "手动外部",
+                "outsideFilter": "不在当前筛选条件"
+            },
+            "filters": {
+                "location": "地点",
+                "workerType": "员工类型"
+            }
+        },
+        "directUpload": {
+            "title": "表格导入",
+            "subtitle": "每一行创建一条问卷及其单个接收人明细。",
+            "downloadTemplate": "下载模板",
+            "uploadFile": "上传 .xlsx",
+            "import": "导入问卷",
+            "templateHint": "必填列：name、receiver_stable_id、intro，以及 q01..q20 题目列。",
+            "waitWorkers": "请等待员工数据加载完成后再上传。",
+            "parseFatal": "上传文件解析失败。",
+            "noValidRows": "未找到可用数据行。",
+            "summary": {
+                "totalRows": "总行数",
+                "validRows": "有效行",
+                "unmatchedRows": "未匹配行",
+                "duplicateRowsIgnored": "重复已忽略",
+                "invalidRows": "非法行"
+            },
+            "unmatchedTitle": "未匹配 stable_id",
+            "rowErrorsTitle": "行校验问题",
+            "rowErrorLine": "第 {row} 行（{stableId}）：{message}",
+            "previewTitle": "解析预览",
+            "previewColumns": {
+                "row": "行号",
+                "name": "问卷名称",
+                "receiver": "接收人",
+                "questionCount": "题目数"
+            }
+        },
+        "edit": {
+            "title": "编辑问卷",
+            "readOnlyQuestionStatus": "当前问卷状态为 \"{status}\"，仅在 \"created\" 状态下可编辑题目。",
+            "readOnlyDetailStatus": "当前问卷状态为 \"{status}\"，当状态为 cancelled 时不可编辑接收人明细。",
+            "receiversTitle": "接收人",
+            "receiverCount": "{count} 位接收人",
+            "fields": {
+                "name": "问卷名称",
+                "newReceiverStableId": "新增接收人 stable_id",
+                "detailStatus": "明细状态",
+                "submittedAt": "提交时间",
+                "answerJson": "问卷回答 JSON",
+                "answerJsonPlaceholder": "{\"answers\":[...]}"
+            },
+            "actions": {
+                "addReceiver": "添加接收人",
+                "removeReceiver": "删除接收人",
+                "save": "保存修改"
+            },
+            "errors": {
+                "duplicateReceiver": "该接收人已存在。",
+                "receiverNotFound": "未找到该 stable_id 对应员工。",
+                "notEditable": "当前状态不可编辑。",
+                "emptyName": "问卷名称不能为空。",
+                "noReceivers": "至少保留一位接收人。",
+                "emptyReceiver": "接收人 stable_id 不能为空。",
+                "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
+                "invalidAnswerJson": "问卷回答 JSON 非法。",
+                "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
+                "partialWrite": "问卷 {surveyOid} 已部分保存：仅写入 {processed}/{total} 位接收人。{error}"
             }
         }
     }

@@ -856,3 +856,153 @@ export interface NotificationTriggerResponse {
     to_process_count: number;
     run_id: string;
 }
+
+// ============================================================================
+// Campaign Survey Types
+// ============================================================================
+
+export type SurveyStatus = 'created' | 'partial' | 'completed' | 'cancelled';
+
+export type SurveyDetailStatus = 'created' | 'submitted';
+
+export type SurveyQuestionType = 'single_select' | 'multi_select' | 'text';
+
+export interface SurveyQuestionOption {
+    option_id: string;
+    label: string;
+}
+
+interface BaseSurveyQuestion {
+    question_id: string;
+    type: SurveyQuestionType;
+    title: string;
+    required: boolean;
+}
+
+export interface SurveySingleSelectQuestion extends BaseSurveyQuestion {
+    type: 'single_select';
+    options: SurveyQuestionOption[];
+}
+
+export interface SurveyMultiSelectQuestion extends BaseSurveyQuestion {
+    type: 'multi_select';
+    options: SurveyQuestionOption[];
+}
+
+export interface SurveyTextQuestion extends BaseSurveyQuestion {
+    type: 'text';
+}
+
+export type SurveyQuestion =
+    | SurveySingleSelectQuestion
+    | SurveyMultiSelectQuestion
+    | SurveyTextQuestion;
+
+export interface SurveyQuestions {
+    intro: string;
+    questions: SurveyQuestion[];
+}
+
+export interface SurveySingleSelectAnswer {
+    question_id: string;
+    type: 'single_select';
+    selected_option_id: string;
+}
+
+export interface SurveyMultiSelectAnswer {
+    question_id: string;
+    type: 'multi_select';
+    selected_option_ids: string[];
+}
+
+export interface SurveyTextAnswer {
+    question_id: string;
+    type: 'text';
+    text: string;
+}
+
+export type SurveyAnswer =
+    | SurveySingleSelectAnswer
+    | SurveyMultiSelectAnswer
+    | SurveyTextAnswer;
+
+export interface SurveyAnswerPayload {
+    answers: SurveyAnswer[];
+}
+
+export interface Survey {
+    oid: string;
+    name: string;
+    status: SurveyStatus;
+    survey_questions: SurveyQuestions;
+    creator_account: string | null;
+    total_count: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SurveyCreate {
+    name: string;
+    survey_questions: SurveyQuestions;
+    creator_account?: string;
+    details?: SurveyDetailCreate[];
+}
+
+export interface SurveyUpdate {
+    name?: string;
+    survey_questions?: SurveyQuestions;
+    status?: 'cancelled';
+}
+
+export interface SurveyListParams {
+    status?: SurveyStatus;
+    skip?: number;
+    limit?: number;
+}
+
+export interface SurveyListResponse {
+    items: Survey[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface SurveyDetail {
+    survey_oid: string;
+    receiver_stable_id: string;
+    receiver_oid: string | null;
+    survey_answer: SurveyAnswerPayload | null;
+    status: SurveyDetailStatus;
+    submitted_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SurveyDetailCreate {
+    receiver_stable_id: string;
+    survey_answer?: SurveyAnswerPayload | null;
+    status?: SurveyDetailStatus;
+    submitted_at?: string | null;
+}
+
+export interface SurveyDetailUpdate {
+    survey_answer?: SurveyAnswerPayload | null;
+    status?: SurveyDetailStatus;
+    submitted_at?: string | null;
+}
+
+export interface SurveyDetailListParams {
+    status?: SurveyDetailStatus;
+    receiver_stable_id?: string;
+    submitted_at_from?: string;
+    submitted_at_to?: string;
+    skip?: number;
+    limit?: number;
+}
+
+export interface SurveyDetailListResponse {
+    items: SurveyDetail[];
+    total: number;
+    skip: number;
+    limit: number;
+}
