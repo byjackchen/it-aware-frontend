@@ -2,26 +2,34 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Megaphone, Pencil, Plus, RefreshCw, Send } from 'lucide-react';
+import { Loader2, Megaphone, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import type {
     Notification,
-    NotificationChannel,
-    NotificationDetail,
-    NotificationDetailStatus,
-    NotificationListResponse,
+    NotificationBatch,
+    NotificationBatchChannel,
+    NotificationBatchListResponse,
+    NotificationBatchStatus,
+    NotificationContentBlock,
     NotificationStatus,
 } from '@/lib/types/objects';
-import { triggerCampaignNotificationAction } from '@/app/actions/campaigns';
-import { PaneQuickScrollButtons } from '@/components/campaign_shared/PaneQuickScrollButtons';
+import {
+    createCampaignNotificationAction,
+    deleteCampaignNotificationAction,
+    triggerCampaignNotificationBatchAction,
+    updateCampaignNotificationAction,
+    updateCampaignNotificationBatchAction,
+} from '@/app/actions/campaigns';
+import { PaneQuickScrollButtons } from '@/components/campaign_shared';
 import { CampaignAccessGate } from './CampaignAccessGate';
-import { getNotificationDetailStatusClass, getNotificationStatusClass, summarizeContentBlocks } from './utils';
+import { NotificationContentBlocksEditor } from './NotificationContentBlocksEditor';
+import { cloneContentBlocks, createEmptyBlock, getNotificationStatusClass, getNotificationStatusRowClass, summarizeContentBlocks } from './utils';
 
-interface NotificationDetailListResponse {
-    items: NotificationDetail[];
+interface NotificationChildListResponse {
+    items: Notification[];
     total: number;
     skip: number;
     limit: number;
@@ -39,6 +47,29 @@ function formatDateTime(value: string | null): string {
     return date.toLocaleString();
 }
 
+function toDateTimeInputValue(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+}
+
+function fromDateTimeInputValue(value: string): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString();
+}
+
+function hasInvalidContentBlocks(blocks: NotificationContentBlock[]): boolean {
+    return blocks.some((block) => {
+        if (block.text.trim().length === 0) return true;
+        if (block.type === 'link' && block.url.trim().length === 0) return true;
+        return false;
+    });
+}
+
 export function NotificationsModule() {
     const t = useTranslations('Campaign');
     const { theme } = useTheme();
@@ -47,35 +78,56 @@ export function NotificationsModule() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { hasPermission } = usePermissions();
-    const canWrite = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE);
+    const canWrite = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_WRITE);
 
     const [isTriggerPending, startTriggerTransition] = useTransition();
+    const [isObjectSaving, startObjectSavingTransition] = useTransition();
+    const [isRowSaving, startRowSavingTransition] = useTransition();
+    const [isRowDeleting, startRowDeletingTransition] = useTransition();
 
-    const [statusFilter, setStatusFilter] = useState<NotificationStatus | ''>('');
-    const [channelFilter, setChannelFilter] = useState<NotificationChannel | ''>('');
+    const [statusFilter, setStatusFilter] = useState<NotificationBatchStatus | ''>('');
+    const [channelFilter, setChannelFilter] = useState<NotificationBatchChannel | ''>('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [detailsStatusFilter, setDetailsStatusFilter] = useState<NotificationDetailStatus | ''>('');
+    const [detailsStatusFilter, setDetailsStatusFilter] = useState<NotificationStatus | ''>('');
     const [detailsSearch, setDetailsSearch] = useState('');
 
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notificationBatches, setNotificationBatches] = useState<NotificationBatch[]>([]);
     const [notificationsTotal, setNotificationsTotal] = useState<number>(0);
     const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
     const [isNotificationsLoadingMore, setIsNotificationsLoadingMore] = useState(false);
     const [hasMoreNotifications, setHasMoreNotifications] = useState(true);
     const [notificationsError, setNotificationsError] = useState<string | null>(null);
 
-    const [details, setDetails] = useState<NotificationDetail[]>([]);
+    const [details, setDetails] = useState<Notification[]>([]);
     const [detailsTotal, setDetailsTotal] = useState<number>(0);
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     const [isDetailsLoadingMore, setIsDetailsLoadingMore] = useState(false);
     const [hasMoreDetails, setHasMoreDetails] = useState(true);
     const [detailsError, setDetailsError] = useState<string | null>(null);
-    const [selectedDetailStableId, setSelectedDetailStableId] = useState<string | null>(null);
+
+    const [selectedNotificationOid, setSelectedNotificationOid] = useState<string | null>(null);
+
+    const [isObjectEditing, setIsObjectEditing] = useState(false);
+    const [objectName, setObjectName] = useState('');
+    const [objectChannel, setObjectChannel] = useState<NotificationBatchChannel>('wecom_bot');
+    const [objectError, setObjectError] = useState<string | null>(null);
+
+    const [isRowEditorOpen, setIsRowEditorOpen] = useState(false);
+    const [rowEditorMode, setRowEditorMode] = useState<'create' | 'edit'>('edit');
+    const [editingNotificationOid, setEditingNotificationOid] = useState<string | null>(null);
+    const [rowReceiverStableId, setRowReceiverStableId] = useState('');
+    const [rowContentBlocks, setRowContentBlocks] = useState<NotificationContentBlock[]>([createEmptyBlock('text')]);
+    const [rowStatus, setRowStatus] = useState<NotificationStatus>('created');
+    const [rowScheduledAt, setRowScheduledAt] = useState('');
+    const [rowErrorMessage, setRowErrorMessage] = useState('');
+    const [rowCreatedAt, setRowCreatedAt] = useState<string | null>(null);
+    const [rowUpdatedAt, setRowUpdatedAt] = useState<string | null>(null);
+    const [rowError, setRowError] = useState<string | null>(null);
 
     const notificationsListRef = useRef<HTMLDivElement>(null);
     const notificationDetailsListRef = useRef<HTMLDivElement>(null);
 
-    const selectedNotificationOid = searchParams.get('notification');
+    const selectedNotificationBatchOid = searchParams.get('notificationBatch');
 
     const setQueryParam = useCallback((key: string, value: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -104,7 +156,7 @@ export function NotificationsModule() {
             if (statusFilter) params.set('status', statusFilter);
             if (channelFilter) params.set('channel', channelFilter);
 
-            const response = await fetch(`/api/campaigns/notifications?${params.toString()}`, {
+            const response = await fetch(`/api/campaigns/notification_batchs?${params.toString()}`, {
                 cache: 'no-store',
             });
 
@@ -112,10 +164,10 @@ export function NotificationsModule() {
                 throw new Error(t('errors.loadNotifications'));
             }
 
-            const payload = (await response.json()) as NotificationListResponse;
+            const payload = (await response.json()) as NotificationBatchListResponse;
             const pageItems = Array.isArray(payload.items) ? payload.items : [];
 
-            setNotifications((current) => {
+            setNotificationBatches((current) => {
                 const base = replace ? [] : current;
                 const seen = new Set(base.map((item) => item.oid));
                 const additions = pageItems.filter((item) => {
@@ -138,7 +190,7 @@ export function NotificationsModule() {
             const message = error instanceof Error ? error.message : t('errors.loadNotifications');
             setNotificationsError(message);
             if (replace) {
-                setNotifications([]);
+                setNotificationBatches([]);
                 setNotificationsTotal(0);
                 setHasMoreNotifications(true);
             }
@@ -158,10 +210,10 @@ export function NotificationsModule() {
 
     const loadMoreNotifications = useCallback(async () => {
         if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
-        await fetchNotificationsPage(notifications.length, false);
-    }, [fetchNotificationsPage, hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, notifications.length]);
+        await fetchNotificationsPage(notificationBatches.length, false);
+    }, [fetchNotificationsPage, hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, notificationBatches.length]);
 
-    const fetchDetailsPage = useCallback(async (notificationOid: string, skip: number, replace: boolean) => {
+    const fetchDetailsPage = useCallback(async (notificationBatchOid: string, skip: number, replace: boolean) => {
         if (replace) {
             setIsDetailsLoading(true);
         } else {
@@ -176,7 +228,7 @@ export function NotificationsModule() {
             if (detailsStatusFilter) params.set('status', detailsStatusFilter);
 
             const response = await fetch(
-                `/api/campaigns/notifications/${encodeURIComponent(notificationOid)}/details?${params.toString()}`,
+                `/api/campaigns/notification_batchs/${encodeURIComponent(notificationBatchOid)}/notifications?${params.toString()}`,
                 { cache: 'no-store' }
             );
 
@@ -184,15 +236,15 @@ export function NotificationsModule() {
                 throw new Error(t('errors.loadDetails'));
             }
 
-            const payload = (await response.json()) as NotificationDetailListResponse;
+            const payload = (await response.json()) as NotificationChildListResponse;
             const pageItems = Array.isArray(payload.items) ? payload.items : [];
 
             setDetails((current) => {
                 const base = replace ? [] : current;
-                const seen = new Set(base.map((item) => item.receiver_stable_id));
+                const seen = new Set(base.map((item) => item.oid));
                 const additions = pageItems.filter((item) => {
-                    if (seen.has(item.receiver_stable_id)) return false;
-                    seen.add(item.receiver_stable_id);
+                    if (seen.has(item.oid)) return false;
+                    seen.add(item.oid);
                     return true;
                 });
                 const next = [...base, ...additions];
@@ -224,32 +276,32 @@ export function NotificationsModule() {
     }, [detailsStatusFilter, t]);
 
     const loadMoreDetails = useCallback(async () => {
-        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails || !selectedNotificationOid) return;
-        await fetchDetailsPage(selectedNotificationOid, details.length, false);
-    }, [details.length, fetchDetailsPage, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, selectedNotificationOid]);
+        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails || !selectedNotificationBatchOid) return;
+        await fetchDetailsPage(selectedNotificationBatchOid, details.length, false);
+    }, [details.length, fetchDetailsPage, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, selectedNotificationBatchOid]);
 
     useEffect(() => {
         void reloadNotifications();
     }, [reloadNotifications]);
 
     useEffect(() => {
-        if (notifications.length === 0) return;
-        if (!selectedNotificationOid || !notifications.some((item) => item.oid === selectedNotificationOid)) {
-            setQueryParam('notification', notifications[0]?.oid ?? null);
+        if (notificationBatches.length === 0) return;
+        if (!selectedNotificationBatchOid || !notificationBatches.some((item) => item.oid === selectedNotificationBatchOid)) {
+            setQueryParam('notificationBatch', notificationBatches[0]?.oid ?? null);
         }
-    }, [notifications, selectedNotificationOid, setQueryParam]);
+    }, [notificationBatches, selectedNotificationBatchOid, setQueryParam]);
 
     useEffect(() => {
-        if (!selectedNotificationOid) {
+        if (!selectedNotificationBatchOid) {
             setDetails([]);
             setDetailsTotal(0);
             setHasMoreDetails(true);
-            setSelectedDetailStableId(null);
+            setSelectedNotificationOid(null);
             return;
         }
         setHasMoreDetails(true);
-        void fetchDetailsPage(selectedNotificationOid, 0, true);
-    }, [fetchDetailsPage, selectedNotificationOid]);
+        void fetchDetailsPage(selectedNotificationBatchOid, 0, true);
+    }, [fetchDetailsPage, selectedNotificationBatchOid]);
 
     useEffect(() => {
         const container = notificationsListRef.current;
@@ -258,7 +310,7 @@ export function NotificationsModule() {
         if (container.scrollHeight <= container.clientHeight + 1) {
             void loadMoreNotifications();
         }
-    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications, notifications.length]);
+    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications, notificationBatches.length]);
 
     useEffect(() => {
         const container = notificationDetailsListRef.current;
@@ -270,18 +322,31 @@ export function NotificationsModule() {
     }, [details.length, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
 
     const selectedNotification = useMemo(
-        () => notifications.find((notification) => notification.oid === selectedNotificationOid) ?? null,
-        [notifications, selectedNotificationOid]
+        () => notificationBatches.find((notification) => notification.oid === selectedNotificationBatchOid) ?? null,
+        [notificationBatches, selectedNotificationBatchOid]
     );
+
+    useEffect(() => {
+        if (!selectedNotification) return;
+        setObjectName(selectedNotification.name);
+        setObjectChannel(selectedNotification.channel);
+        setObjectError(null);
+        setIsObjectEditing(false);
+    }, [selectedNotification]);
+
+    useEffect(() => {
+        setIsRowEditorOpen(false);
+        setRowError(null);
+    }, [selectedNotificationBatchOid]);
 
     const filteredNotifications = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
-        if (!query) return notifications;
-        return notifications.filter((item) => (
+        if (!query) return notificationBatches;
+        return notificationBatches.filter((item) => (
             item.name.toLowerCase().includes(query)
             || item.oid.toLowerCase().includes(query)
         ));
-    }, [notifications, searchQuery]);
+    }, [notificationBatches, searchQuery]);
 
     const filteredDetails = useMemo(() => {
         const query = detailsSearch.trim().toLowerCase();
@@ -294,18 +359,13 @@ export function NotificationsModule() {
 
     useEffect(() => {
         if (filteredDetails.length === 0) {
-            setSelectedDetailStableId(null);
+            setSelectedNotificationOid(null);
             return;
         }
-        if (!selectedDetailStableId || !filteredDetails.some((item) => item.receiver_stable_id === selectedDetailStableId)) {
-            setSelectedDetailStableId(filteredDetails[0].receiver_stable_id);
+        if (!selectedNotificationOid || !filteredDetails.some((item) => item.oid === selectedNotificationOid)) {
+            setSelectedNotificationOid(filteredDetails[0].oid);
         }
-    }, [filteredDetails, selectedDetailStableId]);
-
-    const selectedDetail = useMemo(
-        () => filteredDetails.find((item) => item.receiver_stable_id === selectedDetailStableId) ?? null,
-        [filteredDetails, selectedDetailStableId]
-    );
+    }, [filteredDetails, selectedNotificationOid]);
 
     const handleNotificationsListScroll = useCallback(() => {
         const container = notificationsListRef.current;
@@ -326,16 +386,162 @@ export function NotificationsModule() {
     }, [hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
 
     const handleTrigger = () => {
-        if (!selectedNotificationOid) return;
+        if (!selectedNotificationBatchOid) return;
         startTriggerTransition(async () => {
-            const result = await triggerCampaignNotificationAction(selectedNotificationOid);
+            const result = await triggerCampaignNotificationBatchAction(selectedNotificationBatchOid);
             if (!result.success) {
                 setDetailsError(result.error);
                 return;
             }
 
             await reloadNotifications();
-            await fetchDetailsPage(selectedNotificationOid, 0, true);
+            await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
+        });
+    };
+
+    const openCreateRowEditor = () => {
+        const sourceBlocks = details[0] ? cloneContentBlocks(details[0].content_blocks) : [createEmptyBlock('text')];
+        setRowEditorMode('create');
+        setEditingNotificationOid(null);
+        setRowReceiverStableId('');
+        setRowContentBlocks(sourceBlocks);
+        setRowStatus('created');
+        setRowScheduledAt('');
+        setRowErrorMessage('');
+        setRowCreatedAt(null);
+        setRowUpdatedAt(null);
+        setRowError(null);
+        setIsRowEditorOpen(true);
+    };
+
+    const openEditRowEditor = (detail: Notification) => {
+        setSelectedNotificationOid(detail.oid);
+        setRowEditorMode('edit');
+        setEditingNotificationOid(detail.oid);
+        setRowReceiverStableId(detail.receiver_stable_id);
+        setRowContentBlocks(cloneContentBlocks(detail.content_blocks));
+        setRowStatus(detail.status);
+        setRowScheduledAt(toDateTimeInputValue(detail.scheduled_at));
+        setRowErrorMessage(detail.error_message ?? '');
+        setRowCreatedAt(detail.created_at);
+        setRowUpdatedAt(detail.updated_at);
+        setRowError(null);
+        setIsRowEditorOpen(true);
+    };
+
+    const closeRowEditor = () => {
+        if (isRowSaving || isRowDeleting) return;
+        setIsRowEditorOpen(false);
+        setRowError(null);
+    };
+
+    const handleSaveObject = () => {
+        if (!selectedNotification) return;
+
+        const nextName = objectName.trim();
+        if (nextName.length === 0) {
+            setObjectError(t('edit.errors.emptyName'));
+            return;
+        }
+
+        setObjectError(null);
+        startObjectSavingTransition(async () => {
+            const result = await updateCampaignNotificationBatchAction(selectedNotification.oid, {
+                name: nextName,
+                channel: objectChannel,
+            });
+
+            if (!result.success) {
+                setObjectError(result.error);
+                return;
+            }
+
+            setIsObjectEditing(false);
+            await reloadNotifications();
+            await fetchDetailsPage(selectedNotification.oid, 0, true);
+        });
+    };
+
+    const handleSaveRow = () => {
+        if (!selectedNotification) return;
+
+        const receiverStableId = rowReceiverStableId.trim();
+        if (receiverStableId.length === 0) {
+            setRowError(t('details.rowEditor.errors.emptyReceiver'));
+            return;
+        }
+
+        if (rowEditorMode === 'create' && details.some((item) => item.receiver_stable_id === receiverStableId)) {
+            setRowError(t('edit.errors.duplicateReceiver'));
+            return;
+        }
+
+        if (hasInvalidContentBlocks(rowContentBlocks)) {
+            setRowError(t('edit.errors.invalidContent'));
+            return;
+        }
+
+        const normalizedErrorMessage = rowErrorMessage.trim();
+        if (rowStatus === 'failed' && normalizedErrorMessage.length === 0) {
+            setRowError(t('details.rowEditor.errors.failedNeedsError'));
+            return;
+        }
+
+        if (rowEditorMode === 'edit' && !editingNotificationOid) {
+            setRowError(t('errors.loadDetails'));
+            return;
+        }
+
+        setRowError(null);
+
+        const payload = {
+            content_blocks: cloneContentBlocks(rowContentBlocks),
+            status: rowStatus,
+            scheduled_at: fromDateTimeInputValue(rowScheduledAt),
+            error_message: rowStatus === 'failed' ? normalizedErrorMessage : null,
+        };
+
+        startRowSavingTransition(async () => {
+            const result = rowEditorMode === 'create'
+                ? await createCampaignNotificationAction(selectedNotification.oid, {
+                    receiver_stable_id: receiverStableId,
+                    ...payload,
+                })
+                : await updateCampaignNotificationAction(
+                    selectedNotification.oid,
+                    editingNotificationOid as string,
+                    payload
+                );
+
+            if (!result.success) {
+                setRowError(result.error);
+                return;
+            }
+
+            setIsRowEditorOpen(false);
+            await fetchDetailsPage(selectedNotification.oid, 0, true);
+            await reloadNotifications();
+        });
+    };
+
+    const handleDeleteRow = () => {
+        if (!selectedNotification || rowEditorMode !== 'edit' || !editingNotificationOid) return;
+
+        setRowError(null);
+        startRowDeletingTransition(async () => {
+            const result = await deleteCampaignNotificationAction(
+                selectedNotification.oid,
+                editingNotificationOid
+            );
+
+            if (!result.success) {
+                setRowError(result.error);
+                return;
+            }
+
+            setIsRowEditorOpen(false);
+            await fetchDetailsPage(selectedNotification.oid, 0, true);
+            await reloadNotifications();
         });
     };
 
@@ -362,7 +568,7 @@ export function NotificationsModule() {
                             <div className="grid grid-cols-2 gap-2">
                                 <select
                                     value={statusFilter}
-                                    onChange={(event) => setStatusFilter(event.target.value as NotificationStatus | '')}
+                                    onChange={(event) => setStatusFilter(event.target.value as NotificationBatchStatus | '')}
                                     className={`px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                 >
                                     <option value="">{t('list.filters.allStatus')}</option>
@@ -376,7 +582,7 @@ export function NotificationsModule() {
 
                                 <select
                                     value={channelFilter}
-                                    onChange={(event) => setChannelFilter(event.target.value as NotificationChannel | '')}
+                                    onChange={(event) => setChannelFilter(event.target.value as NotificationBatchChannel | '')}
                                     className={`px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                 >
                                     <option value="">{t('list.filters.allChannels')}</option>
@@ -403,7 +609,7 @@ export function NotificationsModule() {
                             {canWrite && (
                                 <button
                                     type="button"
-                                    onClick={() => router.push('/campaign/notifications/new')}
+                                    onClick={() => router.push('/campaign/notification-batches/new')}
                                     className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600"
                                 >
                                     <Plus className="w-4 h-4" />
@@ -429,12 +635,12 @@ export function NotificationsModule() {
                                     <div className="p-4 text-sm text-gray-400">{t('list.empty')}</div>
                                 ) : (
                                     filteredNotifications.map((item) => {
-                                        const selected = item.oid === selectedNotificationOid;
+                                        const selected = item.oid === selectedNotificationBatchOid;
                                         return (
                                             <button
                                                 key={item.oid}
                                                 type="button"
-                                                onClick={() => setQueryParam('notification', item.oid)}
+                                                onClick={() => setQueryParam('notificationBatch', item.oid)}
                                                 className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 ${selected ? 'bg-blue-500/10' : ''}`}
                                             >
                                                 <div className="flex items-center justify-between gap-2">
@@ -478,7 +684,7 @@ export function NotificationsModule() {
                         ) : (
                             <>
                                 <header className="p-4 border-b border-white/10 space-y-3">
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedNotification.name}</h2>
                                             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -502,56 +708,132 @@ export function NotificationsModule() {
                                             {canWrite && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.push(`/campaign/notifications/${selectedNotification.oid}/edit`)}
+                                                    onClick={() => {
+                                                        setIsObjectEditing((current) => !current);
+                                                        setObjectError(null);
+                                                        setObjectName(selectedNotification.name);
+                                                        setObjectChannel(selectedNotification.channel);
+                                                    }}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Pencil className="w-4 h-4" />
-                                                    <span>{t('details.edit')}</span>
+                                                    <span>{t('details.actions.editObject')}</span>
+                                                </button>
+                                            )}
+
+                                            {canWrite && (
+                                                <button
+                                                    type="button"
+                                                    onClick={openCreateRowEditor}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    <span>{t('details.actions.addRow')}</span>
                                                 </button>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-4 gap-2 text-xs">
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.status')}</p>
-                                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border ${getNotificationStatusClass(selectedNotification.status)}`}>
-                                                {selectedNotification.status}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.channel')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.channel}</p>
-                                        </div>
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.total')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.total_count}</p>
-                                        </div>
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.runId')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'} truncate`}>{selectedNotification.run_id || '—'}</p>
-                                        </div>
-                                    </div>
+                                    {isObjectEditing ? (
+                                        <div className="space-y-3 rounded-lg border border-white/10 p-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('edit.fields.name')}</label>
+                                                    <input
+                                                        type="text"
+                                                        value={objectName}
+                                                        onChange={(event) => setObjectName(event.target.value)}
+                                                        disabled={isObjectSaving}
+                                                        className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('edit.fields.channel')}</label>
+                                                    <select
+                                                        value={objectChannel}
+                                                        onChange={(event) => setObjectChannel(event.target.value as NotificationBatchChannel)}
+                                                        disabled={isObjectSaving}
+                                                        className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                    >
+                                                        <option value="wecom_bot">wecom_bot</option>
+                                                        <option value="wecom_ops_bot">wecom_ops_bot</option>
+                                                    </select>
+                                                </div>
+                                            </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.creator')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.creator_account || '—'}</p>
+                                            {objectError && (
+                                                <p className="text-xs text-rose-300">{objectError}</p>
+                                            )}
+
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setIsObjectEditing(false);
+                                                        setObjectError(null);
+                                                        setObjectName(selectedNotification.name);
+                                                        setObjectChannel(selectedNotification.channel);
+                                                    }}
+                                                    disabled={isObjectSaving}
+                                                    className={`px-3 py-1.5 rounded-md text-sm border ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/10 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                >
+                                                    {t('details.actions.cancel')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveObject}
+                                                    disabled={isObjectSaving}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
+                                                >
+                                                    {isObjectSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                    <span>{t('edit.actions.save')}</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.created_at)}</p>
-                                        </div>
-                                        <div>
-                                            <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
-                                            <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.updated_at)}</p>
-                                        </div>
-                                    </div>
+                                    ) : (
+                                        <>
+                                            <div className="grid grid-cols-4 gap-2 text-xs">
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.status')}</p>
+                                                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border ${getNotificationStatusClass(selectedNotification.status)}`}>
+                                                        {selectedNotification.status}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.channel')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.channel}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.total')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.total_count}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.runId')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'} truncate`}>{selectedNotification.run_id || '—'}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.creator')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedNotification.creator_account || '—'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.created_at)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.updated_at)}</p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-2">
                                         <select
                                             value={detailsStatusFilter}
-                                            onChange={(event) => setDetailsStatusFilter(event.target.value as NotificationDetailStatus | '')}
+                                            onChange={(event) => setDetailsStatusFilter(event.target.value as NotificationStatus | '')}
                                             className={`px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                         >
                                             <option value="">{t('details.filters.allStatus')}</option>
@@ -577,43 +859,123 @@ export function NotificationsModule() {
                                     </p>
                                 </header>
 
-                                {selectedDetail && (
-                                    <section className={`m-4 mb-3 rounded-lg border p-3 space-y-3 ${isLight ? 'border-slate-200 bg-slate-50/80' : 'border-white/10 bg-slate-900/40'}`}>
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div>
-                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.receiver')}</p>
-                                                <p className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedDetail.receiver_stable_id}</p>
+                                {isRowEditorOpen && (
+                                    <section className={`mx-4 mt-4 mb-3 rounded-lg border p-4 space-y-3 max-h-[60vh] overflow-y-auto campaign-pane-scroll-no-native ${isLight ? 'border-slate-200 bg-slate-50/80' : 'border-white/10 bg-slate-900/40'}`}>
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                                {rowEditorMode === 'create'
+                                                    ? t('details.rowEditor.createTitle')
+                                                    : t('details.rowEditor.editTitle', { receiver: rowReceiverStableId })}
+                                            </h3>
+
+                                            <div className="flex items-center gap-2">
+                                                {rowEditorMode === 'edit' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleDeleteRow}
+                                                        disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isRowDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                                        <span>{t('details.rowEditor.actions.delete')}</span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={closeRowEditor}
+                                                    disabled={isRowSaving || isRowDeleting}
+                                                    className={`px-3 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/10 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                >
+                                                    {t('details.actions.cancel')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveRow}
+                                                    disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
+                                                >
+                                                    {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                    <span>{rowEditorMode === 'create' ? t('details.rowEditor.actions.create') : t('details.rowEditor.actions.save')}</span>
+                                                </button>
                                             </div>
-                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(selectedDetail.status)}`}>
-                                                {selectedDetail.status}
-                                            </span>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                                            <div>
-                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.scheduledAt')}</p>
-                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.scheduled_at)}</p>
+                                        {rowError && (
+                                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                                                {rowError}
                                             </div>
+                                        )}
+
+                                        <div>
+                                            <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.receiver')}</label>
+                                            <input
+                                                type="text"
+                                                value={rowReceiverStableId}
+                                                onChange={(event) => setRowReceiverStableId(event.target.value)}
+                                                disabled={rowEditorMode === 'edit' || isRowSaving || isRowDeleting || !canWrite}
+                                                className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
-                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
-                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.created_at)}</p>
+                                                <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.status')}</label>
+                                                <select
+                                                    value={rowStatus}
+                                                    onChange={(event) => setRowStatus(event.target.value as NotificationStatus)}
+                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                    className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                >
+                                                    <option value="created">created</option>
+                                                    <option value="sent">sent</option>
+                                                    <option value="failed">failed</option>
+                                                </select>
                                             </div>
+
                                             <div>
-                                                <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
-                                                <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedDetail.updated_at)}</p>
+                                                <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.scheduledAt')}</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={rowScheduledAt}
+                                                    onChange={(event) => setRowScheduledAt(event.target.value)}
+                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                    className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('details.fields.content')}</p>
-                                            <pre className={`max-h-40 overflow-auto rounded-md border px-2 py-1.5 text-xs whitespace-pre-wrap break-words ${isLight ? 'border-slate-200 bg-white text-slate-700' : 'border-white/10 bg-slate-950/60 text-gray-200'}`}>
-                                                {JSON.stringify(selectedDetail.content_blocks, null, 2)}
-                                            </pre>
+                                            <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.errorMessage')}</label>
+                                            <input
+                                                type="text"
+                                                value={rowErrorMessage}
+                                                onChange={(event) => setRowErrorMessage(event.target.value)}
+                                                disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                            />
                                         </div>
 
-                                        {selectedDetail.error_message && (
-                                            <p className="text-xs text-rose-300">{selectedDetail.error_message}</p>
+                                        {(rowCreatedAt || rowUpdatedAt) && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowCreatedAt)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowUpdatedAt)}</p>
+                                                </div>
+                                            </div>
                                         )}
+
+                                        <div>
+                                            <p className={`text-xs mb-2 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.content')}</p>
+                                            <NotificationContentBlocksEditor
+                                                blocks={rowContentBlocks}
+                                                onChange={setRowContentBlocks}
+                                                disabled={isRowSaving || isRowDeleting || !canWrite}
+                                            />
+                                        </div>
                                     </section>
                                 )}
 
@@ -635,29 +997,29 @@ export function NotificationsModule() {
                                         ) : (
                                             <div className="divide-y divide-white/5">
                                                 {filteredDetails.map((detail) => {
-                                                    const isSelected = detail.receiver_stable_id === selectedDetailStableId;
+                                                    const isSelected = detail.oid === selectedNotificationOid;
                                                     return (
                                                         <button
-                                                            key={detail.receiver_stable_id}
+                                                            key={detail.oid}
                                                             type="button"
-                                                            onClick={() => setSelectedDetailStableId(detail.receiver_stable_id)}
+                                                            onClick={() => openEditRowEditor(detail)}
                                                             className={`w-full text-left px-4 py-3 hover:bg-white/5 ${isSelected ? 'bg-blue-500/10' : ''}`}
                                                         >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationDetailStatusClass(detail.status)}`}>
-                                                                {detail.status}
-                                                            </span>
-                                                        </div>
-                                                        <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                                                            {summarizeContentBlocks(detail.content_blocks)}
-                                                        </p>
-                                                        <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                            {t('details.fields.scheduledAt')}: {formatDateTime(detail.scheduled_at)}
-                                                        </p>
-                                                        {detail.error_message && (
-                                                            <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
-                                                        )}
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
+                                                                <span className={`px-2 py-0.5 rounded-full text-xs border ${getNotificationStatusRowClass(detail.status)}`}>
+                                                                    {detail.status}
+                                                                </span>
+                                                            </div>
+                                                            <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                                {summarizeContentBlocks(detail.content_blocks)}
+                                                            </p>
+                                                            <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                                {t('details.fields.scheduledAt')}: {formatDateTime(detail.scheduled_at)}
+                                                            </p>
+                                                            {detail.error_message && (
+                                                                <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
+                                                            )}
                                                         </button>
                                                     );
                                                 })}

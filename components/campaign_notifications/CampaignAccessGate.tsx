@@ -16,8 +16,8 @@ export function CampaignAccessGate({ children, requireWrite = false }: CampaignA
     const { hasPermission } = usePermissions();
 
     const canNavigate = hasPermission(PERMISSIONS.UI.NAVIGATION_CAMPAIGN);
-    const canRead = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATIONS_READ);
-    const canWrite = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATIONS_WRITE);
+    const canRead = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_READ);
+    const canWrite = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_WRITE);
 
     const hasAccess = canNavigate && canRead && (!requireWrite || canWrite);
 

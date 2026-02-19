@@ -6,8 +6,8 @@ import { Download, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import {
-    createCampaignSurveySpreadsheetImportAction,
-    type SurveySpreadsheetImportRow,
+    createCampaignSurveyBatchSpreadsheetImportAction,
+    type SurveyBatchSpreadsheetImportRow,
 } from '@/app/actions/campaigns';
 import type { SurveySpreadsheetParseResult } from './types';
 import { buildSurveySpreadsheetTemplateXlsx, parseSurveySpreadsheetFile } from './utils';
@@ -106,24 +106,24 @@ export function SurveyDirectSpreadsheetCreate({
         }
 
         startSubmitting(async () => {
-            const rows: SurveySpreadsheetImportRow[] = parseResult.rows.map((row) => ({
+            const rows: SurveyBatchSpreadsheetImportRow[] = parseResult.rows.map((row) => ({
                 name: row.name,
                 receiver_stable_id: row.receiverStableId,
                 survey_questions: row.surveyQuestions,
             }));
 
-            const result = await createCampaignSurveySpreadsheetImportAction(rows);
+            const result = await createCampaignSurveyBatchSpreadsheetImportAction(rows);
 
             if (!result.success) {
                 setSubmitError(result.error);
                 return;
             }
 
-            const firstOid = result.data.created_oids[0];
+            const firstOid = result.data.created_batch_oids[0];
             if (firstOid) {
-                router.push(`/campaign/surveys?survey=${encodeURIComponent(firstOid)}`);
+                router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(firstOid)}`);
             } else {
-                router.push('/campaign/surveys');
+                router.push('/campaign/survey-batches');
             }
             router.refresh();
         });

@@ -1,5 +1,5 @@
 import type {
-    SurveyDetail,
+    Survey,
     SurveyQuestionType,
     SurveyQuestions,
 } from '@/lib/types/objects';
@@ -44,6 +44,6 @@ export interface SurveySpreadsheetParseResult {
     fatalError: string | null;
 }
 
-export interface EditableSurveyDetail extends SurveyDetail {
+export interface EditableSurvey extends Survey {
     isNew?: boolean;
 }

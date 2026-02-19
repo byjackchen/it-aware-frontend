@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Download, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { createCampaignNotificationAction } from '@/app/actions/campaigns';
-import type { NotificationChannel, NotificationDetailCreate } from '@/lib/types/objects';
+import { createCampaignNotificationBatchAction } from '@/app/actions/campaigns';
+import type { NotificationBatchChannel, NotificationCreate } from '@/lib/types/objects';
 import type { NotificationReceiverContentParseResult } from './types';
-import { upsertNotificationDetailsInBatches, type DetailBatchProgress } from './detailBatchWriter';
+import { upsertNotificationsInBatches, type NotificationBatchWriteProgress } from './detailBatchWriter';
 import { buildReceiverContentTemplateXlsx, cloneContentBlocks, parseReceiverContentSpreadsheetFile } from './utils';
 
 interface NotificationDirectSpreadsheetCreateProps {
@@ -38,10 +38,10 @@ export function NotificationDirectSpreadsheetCreate({
     const isLight = theme === 'light';
 
     const [name, setName] = useState('');
-    const [channel, setChannel] = useState<NotificationChannel>('wecom_bot');
+    const [channel, setChannel] = useState<NotificationBatchChannel>('wecom_bot');
     const [parseResult, setParseResult] = useState<NotificationReceiverContentParseResult>(EMPTY_PARSE_RESULT);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [batchProgress, setBatchProgress] = useState<DetailBatchProgress | null>(null);
+    const [batchProgress, setBatchProgress] = useState<NotificationBatchWriteProgress | null>(null);
     const [isSubmitting, startSubmitting] = useTransition();
 
     const validStableIdSet = useMemo(() => new Set(validStableIds), [validStableIds]);
@@ -115,7 +115,7 @@ export function NotificationDirectSpreadsheetCreate({
         }
 
         startSubmitting(async () => {
-            const createResult = await createCampaignNotificationAction({
+            const createResult = await createCampaignNotificationBatchAction({
                 name: name.trim(),
                 channel,
             });
@@ -125,17 +125,17 @@ export function NotificationDirectSpreadsheetCreate({
                 return;
             }
 
-            const notificationOid = createResult.data.oid;
-            const details: NotificationDetailCreate[] = parseResult.rows.map((row) => ({
+            const notificationBatchOid = createResult.data.oid;
+            const notifications: NotificationCreate[] = parseResult.rows.map((row) => ({
                 receiver_stable_id: row.receiverStableId,
                 content_blocks: cloneContentBlocks(row.contentBlocks),
                 status: 'created',
             }));
 
-            const upsertResult = await upsertNotificationDetailsInBatches(notificationOid, details, setBatchProgress);
+            const upsertResult = await upsertNotificationsInBatches(notificationBatchOid, notifications, setBatchProgress);
             if (!upsertResult.success) {
                 setSubmitError(t('directUpload.partialWrite', {
-                    notificationOid,
+                    notificationBatchOid,
                     processed: upsertResult.processedRows,
                     total: upsertResult.totalRows,
                     error: upsertResult.error,
@@ -143,7 +143,7 @@ export function NotificationDirectSpreadsheetCreate({
                 return;
             }
 
-            router.push(`/campaign/notifications?notification=${encodeURIComponent(notificationOid)}`);
+            router.push(`/campaign/notification-batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
             router.refresh();
         });
     };
@@ -174,7 +174,7 @@ export function NotificationDirectSpreadsheetCreate({
                     <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('create.fields.channel')}</label>
                     <select
                         value={channel}
-                        onChange={(event) => setChannel(event.target.value as NotificationChannel)}
+                        onChange={(event) => setChannel(event.target.value as NotificationBatchChannel)}
                         className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                     >
                         <option value="wecom_bot">wecom_bot</option>

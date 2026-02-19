@@ -1,9 +1,9 @@
 import type {
     Notification,
-    NotificationChannel,
+    NotificationBatch,
+    NotificationBatchChannel,
+    NotificationBatchStatus,
     NotificationContentBlock,
-    NotificationDetail,
-    NotificationDetailStatus,
     NotificationStatus,
 } from '@/lib/types/objects';
 
@@ -37,17 +37,17 @@ export interface NotificationReceiverContentParseResult {
 }
 
 export interface NotificationListQueryState {
+    status: NotificationBatchStatus | '';
+    channel: NotificationBatchChannel | '';
+    search: string;
+}
+
+export interface NotificationRowsQueryState {
     status: NotificationStatus | '';
-    channel: NotificationChannel | '';
     search: string;
 }
 
-export interface NotificationDetailsQueryState {
-    status: NotificationDetailStatus | '';
-    search: string;
-}
-
-export interface EditableNotificationDetail extends NotificationDetail {
+export interface EditableNotification extends Notification {
     isNew?: boolean;
 }
 
@@ -57,14 +57,14 @@ export interface ContentBlockDraft {
 }
 
 export interface NotificationListFetchState {
-    items: Notification[];
+    items: NotificationBatch[];
     total: number;
     isLoading: boolean;
     error: string | null;
 }
 
-export interface NotificationDetailsFetchState {
-    items: NotificationDetail[];
+export interface NotificationRowsFetchState {
+    items: Notification[];
     total: number;
     isLoading: boolean;
     error: string | null;

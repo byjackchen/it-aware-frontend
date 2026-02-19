@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function CampaignPage() {
-    redirect('/campaign/notifications');
+    redirect('/campaign/notification-batches');
 }

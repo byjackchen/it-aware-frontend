@@ -1,7 +1,7 @@
 import type {
     SurveyAnswer,
     SurveyAnswerPayload,
-    SurveyDetailStatus,
+    SurveyBatchStatus,
     SurveyQuestion,
     SurveyQuestionOption,
     SurveyQuestionType,
@@ -601,7 +601,7 @@ export function stringifySurveyAnswer(answerPayload: SurveyAnswerPayload | null)
     return JSON.stringify(answerPayload, null, 2);
 }
 
-export function getSurveyStatusClass(status: SurveyStatus | string): string {
+export function getSurveyBatchStatusClass(status: SurveyBatchStatus | string): string {
     switch (status) {
         case 'created':
             return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
@@ -616,7 +616,7 @@ export function getSurveyStatusClass(status: SurveyStatus | string): string {
     }
 }
 
-export function getSurveyDetailStatusClass(status: SurveyDetailStatus | string): string {
+export function getSurveyStatusClass(status: SurveyStatus | string): string {
     switch (status) {
         case 'created':
             return 'bg-slate-500/20 text-slate-300 border-slate-400/40';

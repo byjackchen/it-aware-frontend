@@ -31,10 +31,17 @@ function parsePayloadTotal(payload: unknown): string | null {
     return String(Math.trunc(total));
 }
 
-export async function GET(request: Request) {
+export async function GET(
+    request: Request,
+    context: { params: Promise<{ oid: string }> }
+) {
+    const { oid } = await context.params;
+
     try {
         const incomingUrl = new URL(request.url);
-        const upstreamUrl = new URL(`${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notifications`);
+        const upstreamUrl = new URL(
+            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notification_batchs/${encodeURIComponent(oid)}/notifications`
+        );
 
         incomingUrl.searchParams.forEach((value, key) => {
             upstreamUrl.searchParams.append(key, value);
@@ -72,7 +79,7 @@ export async function GET(request: Request) {
             headers: totalHeader ? { 'x-total-count': totalHeader } : undefined,
         });
     } catch (error) {
-        console.error('Failed to proxy /api/campaigns/notifications:', error);
+        console.error('Failed to proxy /api/campaigns/notification_batchs/[oid]/notifications:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

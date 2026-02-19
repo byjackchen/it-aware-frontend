@@ -1,25 +1,25 @@
-import { batchUpsertCampaignSurveyDetailsAction } from '@/app/actions/campaigns';
-import type { SurveyDetailCreate } from '@/lib/types/objects';
+import { batchUpsertCampaignSurveysAction } from '@/app/actions/campaigns';
+import type { SurveyCreate } from '@/lib/types/objects';
 
-export const SURVEY_DETAIL_BATCH_SIZE = 500;
+export const SURVEY_BATCH_WRITE_SIZE = 500;
 
-export interface SurveyDetailBatchProgress {
+export interface SurveyBatchWriteProgress {
     processedRows: number;
     totalRows: number;
     currentBatch: number;
     totalBatches: number;
 }
 
-export interface SurveyDetailBatchSuccess {
+export interface SurveyBatchWriteSuccess {
     success: true;
     processedRows: number;
     totalRows: number;
     totalBatches: number;
 }
 
-export interface SurveyDetailBatchFailure {
+export interface SurveyBatchWriteFailure {
     success: false;
-    surveyOid: string;
+    surveyBatchOid: string;
     processedRows: number;
     totalRows: number;
     failedBatch: number;
@@ -27,23 +27,23 @@ export interface SurveyDetailBatchFailure {
     error: string;
 }
 
-type SurveyDetailBatchResult = SurveyDetailBatchSuccess | SurveyDetailBatchFailure;
+type SurveyBatchResult = SurveyBatchWriteSuccess | SurveyBatchWriteFailure;
 
-function chunkDetails(details: SurveyDetailCreate[], size: number): SurveyDetailCreate[][] {
-    if (size <= 0) return [details];
-    const chunks: SurveyDetailCreate[][] = [];
-    for (let index = 0; index < details.length; index += size) {
-        chunks.push(details.slice(index, index + size));
+function chunkSurveys(surveys: SurveyCreate[], size: number): SurveyCreate[][] {
+    if (size <= 0) return [surveys];
+    const chunks: SurveyCreate[][] = [];
+    for (let index = 0; index < surveys.length; index += size) {
+        chunks.push(surveys.slice(index, index + size));
     }
     return chunks;
 }
 
-export async function upsertSurveyDetailsInBatches(
-    surveyOid: string,
-    details: SurveyDetailCreate[],
-    onProgress?: (progress: SurveyDetailBatchProgress) => void
-): Promise<SurveyDetailBatchResult> {
-    const totalRows = details.length;
+export async function upsertSurveysInBatches(
+    surveyBatchOid: string,
+    surveys: SurveyCreate[],
+    onProgress?: (progress: SurveyBatchWriteProgress) => void
+): Promise<SurveyBatchResult> {
+    const totalRows = surveys.length;
     if (totalRows === 0) {
         return {
             success: true,
@@ -53,7 +53,7 @@ export async function upsertSurveyDetailsInBatches(
         };
     }
 
-    const batches = chunkDetails(details, SURVEY_DETAIL_BATCH_SIZE);
+    const batches = chunkSurveys(surveys, SURVEY_BATCH_WRITE_SIZE);
     const totalBatches = batches.length;
     let processedRows = 0;
 
@@ -61,11 +61,11 @@ export async function upsertSurveyDetailsInBatches(
         const batch = batches[index];
         const currentBatch = index + 1;
 
-        const result = await batchUpsertCampaignSurveyDetailsAction(surveyOid, batch);
+        const result = await batchUpsertCampaignSurveysAction(surveyBatchOid, batch);
         if (!result.success) {
             return {
                 success: false,
-                surveyOid,
+                surveyBatchOid,
                 processedRows,
                 totalRows,
                 failedBatch: currentBatch,

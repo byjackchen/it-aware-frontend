@@ -28,7 +28,7 @@ export async function GET(
         const cookieHeader = buildSafeCookieHeader(cookieStore.getAll());
 
         const response = await fetch(
-            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notifications/${encodeURIComponent(oid)}`,
+            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/survey_batchs/${encodeURIComponent(oid)}`,
             {
                 method: 'GET',
                 headers: {
@@ -41,7 +41,7 @@ export async function GET(
 
         if (!response.ok) {
             return NextResponse.json(
-                { error: 'Failed to fetch notification' },
+                { error: 'Failed to fetch survey batch' },
                 { status: response.status }
             );
         }
@@ -49,7 +49,7 @@ export async function GET(
         const data = await response.json();
         return NextResponse.json(data);
     } catch (error) {
-        console.error('Failed to proxy /api/campaigns/notifications/[oid]:', error);
+        console.error('Failed to proxy /api/campaigns/survey_batchs/[oid]:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

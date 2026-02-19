@@ -297,7 +297,7 @@ export function getNotificationStatusClass(status: string): string {
     }
 }
 
-export function getNotificationDetailStatusClass(status: string): string {
+export function getNotificationStatusRowClass(status: string): string {
     switch (status) {
         case 'created':
             return 'bg-slate-500/20 text-slate-300 border-slate-400/40';

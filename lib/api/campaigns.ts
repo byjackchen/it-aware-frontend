@@ -6,30 +6,31 @@ import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { fetchApi } from '@/lib/api/core';
 import type {
     Notification,
+    NotificationBatch,
+    NotificationBatchCreate,
+    NotificationBatchListParams,
+    NotificationBatchListResponse,
+    NotificationBatchTriggerResponse,
+    NotificationBatchUpdate,
     NotificationCreate,
-    NotificationDetail,
-    NotificationDetailCreate,
-    NotificationDetailListParams,
-    NotificationDetailListResponse,
-    NotificationDetailUpdate,
     NotificationListParams,
     NotificationListResponse,
-    NotificationTriggerResponse,
     NotificationUpdate,
     Survey,
+    SurveyAnswerPayload,
+    SurveyBatch,
+    SurveyBatchCreate,
+    SurveyBatchListParams,
+    SurveyBatchListResponse,
+    SurveyBatchUpdate,
     SurveyCreate,
-    SurveyDetail,
-    SurveyDetailCreate,
-    SurveyDetailListParams,
-    SurveyDetailListResponse,
-    SurveyDetailUpdate,
     SurveyListParams,
     SurveyListResponse,
     SurveyUpdate,
 } from '@/lib/types/objects';
 
-const NOTIFICATIONS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notifications`;
-const SURVEYS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/surveys`;
+const NOTIFICATION_BATCHS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notification_batchs`;
+const SURVEY_BATCHS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/survey_batchs`;
 const CAMPAIGN_SERVICES_BASE = `${RUNTIME_CONFIG.backend.domain}/services/campaigns`;
 
 function setOptionalQueryParam(query: URLSearchParams, key: string, value: string | number | undefined): void {
@@ -44,44 +45,46 @@ function withQuery(baseUrl: string, query: URLSearchParams): string {
     return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-export async function getNotifications(params: NotificationListParams = {}): Promise<NotificationListResponse> {
+// Notification batch parent APIs
+export async function getNotificationBatches(params: NotificationBatchListParams = {}): Promise<NotificationBatchListResponse> {
     const query = new URLSearchParams();
     setOptionalQueryParam(query, 'status', params.status);
     setOptionalQueryParam(query, 'channel', params.channel);
     if (params.skip !== undefined) query.set('skip', String(params.skip));
     if (params.limit !== undefined) query.set('limit', String(params.limit));
 
-    return fetchApi<NotificationListResponse>(withQuery(NOTIFICATIONS_BASE, query));
+    return fetchApi<NotificationBatchListResponse>(withQuery(NOTIFICATION_BATCHS_BASE, query));
 }
 
-export async function getNotification(oid: string): Promise<Notification> {
-    return fetchApi<Notification>(`${NOTIFICATIONS_BASE}/${encodeURIComponent(oid)}`);
+export async function getNotificationBatch(oid: string): Promise<NotificationBatch> {
+    return fetchApi<NotificationBatch>(`${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(oid)}`);
 }
 
-export async function createNotification(data: NotificationCreate): Promise<Notification> {
-    return fetchApi<Notification>(NOTIFICATIONS_BASE, {
+export async function createNotificationBatch(data: NotificationBatchCreate): Promise<NotificationBatch> {
+    return fetchApi<NotificationBatch>(NOTIFICATION_BATCHS_BASE, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
-export async function updateNotification(oid: string, data: NotificationUpdate): Promise<Notification> {
-    return fetchApi<Notification>(`${NOTIFICATIONS_BASE}/${encodeURIComponent(oid)}`, {
+export async function updateNotificationBatch(oid: string, data: NotificationBatchUpdate): Promise<NotificationBatch> {
+    return fetchApi<NotificationBatch>(`${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteNotification(oid: string): Promise<void> {
-    return fetchApi<void>(`${NOTIFICATIONS_BASE}/${encodeURIComponent(oid)}`, {
+export async function deleteNotificationBatch(oid: string): Promise<void> {
+    return fetchApi<void>(`${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
 
-export async function getNotificationDetails(
-    notificationOid: string,
-    params: NotificationDetailListParams = {}
-): Promise<NotificationDetailListResponse> {
+// Notification child APIs
+export async function getNotifications(
+    notificationBatchOid: string,
+    params: NotificationListParams = {}
+): Promise<NotificationListResponse> {
     const query = new URLSearchParams();
     setOptionalQueryParam(query, 'status', params.status);
     setOptionalQueryParam(query, 'receiver_stable_id', params.receiver_stable_id);
@@ -90,44 +93,50 @@ export async function getNotificationDetails(
     if (params.skip !== undefined) query.set('skip', String(params.skip));
     if (params.limit !== undefined) query.set('limit', String(params.limit));
 
-    return fetchApi<NotificationDetailListResponse>(
-        withQuery(`${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details`, query)
+    return fetchApi<NotificationListResponse>(
+        withQuery(`${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications`, query)
     );
 }
 
-export async function getNotificationDetail(notificationOid: string, receiverStableId: string): Promise<NotificationDetail> {
-    return fetchApi<NotificationDetail>(
-        `${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details/${encodeURIComponent(receiverStableId)}`
+export async function getNotification(notificationBatchOid: string, notificationOid: string): Promise<Notification> {
+    return fetchApi<Notification>(
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications/${encodeURIComponent(notificationOid)}`
     );
 }
 
-export async function createNotificationDetail(notificationOid: string, data: NotificationDetailCreate): Promise<NotificationDetail> {
-    return fetchApi<NotificationDetail>(`${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-}
-
-export async function batchUpsertNotificationDetails(
-    notificationOid: string,
-    details: NotificationDetailCreate[]
-): Promise<NotificationDetailListResponse> {
-    return fetchApi<NotificationDetailListResponse>(
-        `${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details/batch-upsert`,
+export async function createNotification(
+    notificationBatchOid: string,
+    data: NotificationCreate
+): Promise<Notification> {
+    return fetchApi<Notification>(
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications`,
         {
             method: 'POST',
-            body: JSON.stringify({ details }),
+            body: JSON.stringify(data),
         }
     );
 }
 
-export async function updateNotificationDetail(
+export async function batchUpsertNotifications(
+    notificationBatchOid: string,
+    notifications: NotificationCreate[]
+): Promise<NotificationListResponse> {
+    return fetchApi<NotificationListResponse>(
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications/batch-upsert`,
+        {
+            method: 'POST',
+            body: JSON.stringify({ notifications }),
+        }
+    );
+}
+
+export async function updateNotification(
+    notificationBatchOid: string,
     notificationOid: string,
-    receiverStableId: string,
-    data: NotificationDetailUpdate
-): Promise<NotificationDetail> {
-    return fetchApi<NotificationDetail>(
-        `${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details/${encodeURIComponent(receiverStableId)}`,
+    data: NotificationUpdate
+): Promise<Notification> {
+    return fetchApi<Notification>(
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications/${encodeURIComponent(notificationOid)}`,
         {
             method: 'PUT',
             body: JSON.stringify(data),
@@ -135,52 +144,54 @@ export async function updateNotificationDetail(
     );
 }
 
-export async function deleteNotificationDetail(notificationOid: string, receiverStableId: string): Promise<void> {
+export async function deleteNotification(notificationBatchOid: string, notificationOid: string): Promise<void> {
     return fetchApi<void>(
-        `${NOTIFICATIONS_BASE}/${encodeURIComponent(notificationOid)}/details/${encodeURIComponent(receiverStableId)}`,
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/notifications/${encodeURIComponent(notificationOid)}`,
         {
             method: 'DELETE',
         }
     );
 }
 
-export async function getSurveys(params: SurveyListParams = {}): Promise<SurveyListResponse> {
+// Survey batch parent APIs
+export async function getSurveyBatches(params: SurveyBatchListParams = {}): Promise<SurveyBatchListResponse> {
     const query = new URLSearchParams();
     setOptionalQueryParam(query, 'status', params.status);
     if (params.skip !== undefined) query.set('skip', String(params.skip));
     if (params.limit !== undefined) query.set('limit', String(params.limit));
 
-    return fetchApi<SurveyListResponse>(withQuery(SURVEYS_BASE, query));
+    return fetchApi<SurveyBatchListResponse>(withQuery(SURVEY_BATCHS_BASE, query));
 }
 
-export async function getSurvey(oid: string): Promise<Survey> {
-    return fetchApi<Survey>(`${SURVEYS_BASE}/${encodeURIComponent(oid)}`);
+export async function getSurveyBatch(oid: string): Promise<SurveyBatch> {
+    return fetchApi<SurveyBatch>(`${SURVEY_BATCHS_BASE}/${encodeURIComponent(oid)}`);
 }
 
-export async function createSurvey(data: SurveyCreate): Promise<Survey> {
-    return fetchApi<Survey>(SURVEYS_BASE, {
+export async function createSurveyBatch(data: SurveyBatchCreate): Promise<SurveyBatch> {
+    return fetchApi<SurveyBatch>(SURVEY_BATCHS_BASE, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
-export async function updateSurvey(oid: string, data: SurveyUpdate): Promise<Survey> {
-    return fetchApi<Survey>(`${SURVEYS_BASE}/${encodeURIComponent(oid)}`, {
+export async function updateSurveyBatch(oid: string, data: SurveyBatchUpdate): Promise<SurveyBatch> {
+    return fetchApi<SurveyBatch>(`${SURVEY_BATCHS_BASE}/${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteSurvey(oid: string): Promise<void> {
-    return fetchApi<void>(`${SURVEYS_BASE}/${encodeURIComponent(oid)}`, {
+export async function deleteSurveyBatch(oid: string): Promise<void> {
+    return fetchApi<void>(`${SURVEY_BATCHS_BASE}/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
 
-export async function getSurveyDetails(
-    surveyOid: string,
-    params: SurveyDetailListParams = {}
-): Promise<SurveyDetailListResponse> {
+// Survey child APIs
+export async function getSurveys(
+    surveyBatchOid: string,
+    params: SurveyListParams = {}
+): Promise<SurveyListResponse> {
     const query = new URLSearchParams();
     setOptionalQueryParam(query, 'status', params.status);
     setOptionalQueryParam(query, 'receiver_stable_id', params.receiver_stable_id);
@@ -189,44 +200,47 @@ export async function getSurveyDetails(
     if (params.skip !== undefined) query.set('skip', String(params.skip));
     if (params.limit !== undefined) query.set('limit', String(params.limit));
 
-    return fetchApi<SurveyDetailListResponse>(
-        withQuery(`${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details`, query)
+    return fetchApi<SurveyListResponse>(
+        withQuery(`${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys`, query)
     );
 }
 
-export async function getSurveyDetail(surveyOid: string, receiverStableId: string): Promise<SurveyDetail> {
-    return fetchApi<SurveyDetail>(
-        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details/${encodeURIComponent(receiverStableId)}`
+export async function getSurvey(surveyBatchOid: string, surveyOid: string): Promise<Survey> {
+    return fetchApi<Survey>(
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`
     );
 }
 
-export async function createSurveyDetail(surveyOid: string, data: SurveyDetailCreate): Promise<SurveyDetail> {
-    return fetchApi<SurveyDetail>(`${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details`, {
+export async function createSurvey(
+    surveyBatchOid: string,
+    data: SurveyCreate
+): Promise<Survey> {
+    return fetchApi<Survey>(`${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys`, {
         method: 'POST',
         body: JSON.stringify(data),
     });
 }
 
-export async function batchUpsertSurveyDetails(
-    surveyOid: string,
-    details: SurveyDetailCreate[]
-): Promise<SurveyDetailListResponse> {
-    return fetchApi<SurveyDetailListResponse>(
-        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details/batch-upsert`,
+export async function batchUpsertSurveys(
+    surveyBatchOid: string,
+    surveys: SurveyCreate[]
+): Promise<SurveyListResponse> {
+    return fetchApi<SurveyListResponse>(
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/batch-upsert`,
         {
             method: 'POST',
-            body: JSON.stringify({ details }),
+            body: JSON.stringify({ surveys }),
         }
     );
 }
 
-export async function updateSurveyDetail(
+export async function updateSurvey(
+    surveyBatchOid: string,
     surveyOid: string,
-    receiverStableId: string,
-    data: SurveyDetailUpdate
-): Promise<SurveyDetail> {
-    return fetchApi<SurveyDetail>(
-        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details/${encodeURIComponent(receiverStableId)}`,
+    data: SurveyUpdate
+): Promise<Survey> {
+    return fetchApi<Survey>(
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`,
         {
             method: 'PUT',
             body: JSON.stringify(data),
@@ -234,18 +248,57 @@ export async function updateSurveyDetail(
     );
 }
 
-export async function deleteSurveyDetail(surveyOid: string, receiverStableId: string): Promise<void> {
+export async function deleteSurvey(surveyBatchOid: string, surveyOid: string): Promise<void> {
     return fetchApi<void>(
-        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/details/${encodeURIComponent(receiverStableId)}`,
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`,
         {
             method: 'DELETE',
         }
     );
 }
 
-export async function triggerNotificationNonBlock(notificationOid: string): Promise<NotificationTriggerResponse> {
-    return fetchApi<NotificationTriggerResponse>(`${CAMPAIGN_SERVICES_BASE}/trigger_notification_non-block`, {
+// Campaign service APIs
+export async function triggerNotificationBatchNonBlock(
+    notificationBatchOid: string
+): Promise<NotificationBatchTriggerResponse> {
+    return fetchApi<NotificationBatchTriggerResponse>(`${CAMPAIGN_SERVICES_BASE}/trigger_notification_batch_non-block`, {
         method: 'POST',
-        body: JSON.stringify({ notification_oid: notificationOid }),
+        body: JSON.stringify({ notification_batch_oid: notificationBatchOid }),
     });
+}
+
+export interface SurveyReceiverSubmitOperation {
+    operation: 'submit';
+    survey_answer: SurveyAnswerPayload;
+}
+
+export interface SurveyReceiverRevokeOperation {
+    operation: 'revoke';
+}
+
+export type SurveyReceiverOperation = SurveyReceiverSubmitOperation | SurveyReceiverRevokeOperation;
+
+export async function getSurveyBatchSurveyReceiver(
+    surveyBatchOid: string,
+    surveyOid: string,
+    receiverStableId: string
+): Promise<Survey> {
+    return fetchApi<Survey>(
+        `${CAMPAIGN_SERVICES_BASE}/survey_batchs/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/receiver/${encodeURIComponent(receiverStableId)}`
+    );
+}
+
+export async function postSurveyBatchSurveyReceiverOperation(
+    surveyBatchOid: string,
+    surveyOid: string,
+    receiverStableId: string,
+    operation: SurveyReceiverOperation
+): Promise<Survey> {
+    return fetchApi<Survey>(
+        `${CAMPAIGN_SERVICES_BASE}/survey_batchs/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/receiver/${encodeURIComponent(receiverStableId)}`,
+        {
+            method: 'POST',
+            body: JSON.stringify(operation),
+        }
+    );
 }

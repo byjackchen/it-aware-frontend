@@ -34,7 +34,7 @@ function parsePayloadTotal(payload: unknown): string | null {
 export async function GET(request: Request) {
     try {
         const incomingUrl = new URL(request.url);
-        const upstreamUrl = new URL(`${RUNTIME_CONFIG.backend.domain}/objects/campaigns/surveys`);
+        const upstreamUrl = new URL(`${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notification_batchs`);
 
         incomingUrl.searchParams.forEach((value, key) => {
             upstreamUrl.searchParams.append(key, value);
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
         if (!response.ok) {
             return NextResponse.json(
-                { error: 'Failed to fetch surveys' },
+                { error: 'Failed to fetch notification batches' },
                 { status: response.status }
             );
         }
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
             headers: totalHeader ? { 'x-total-count': totalHeader } : undefined,
         });
     } catch (error) {
-        console.error('Failed to proxy /api/campaigns/surveys:', error);
+        console.error('Failed to proxy /api/campaigns/notification_batchs:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

@@ -38,10 +38,10 @@ export const PERMISSIONS = {
     INQUIRIES_WRITE: 'objects:inquiries:write',
     INTERACTIONS_READ: 'objects:interactions:read',
     INTERACTIONS_WRITE: 'objects:interactions:write',
-    NOTIFICATIONS_READ: 'objects:notifications:read',
-    NOTIFICATIONS_WRITE: 'objects:notifications:write',
-    SURVEYS_READ: 'objects:surveys:read',
-    SURVEYS_WRITE: 'objects:surveys:write',
+    NOTIFICATION_BATCHS_READ: 'objects:notification_batchs:read',
+    NOTIFICATION_BATCHS_WRITE: 'objects:notification_batchs:write',
+    SURVEY_BATCHS_READ: 'objects:survey_batchs:read',
+    SURVEY_BATCHS_WRITE: 'objects:survey_batchs:write',
   },
 } as const;
 

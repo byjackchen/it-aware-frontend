@@ -31,17 +31,10 @@ function parsePayloadTotal(payload: unknown): string | null {
     return String(Math.trunc(total));
 }
 
-export async function GET(
-    request: Request,
-    context: { params: Promise<{ oid: string }> }
-) {
-    const { oid } = await context.params;
-
+export async function GET(request: Request) {
     try {
         const incomingUrl = new URL(request.url);
-        const upstreamUrl = new URL(
-            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notifications/${encodeURIComponent(oid)}/details`
-        );
+        const upstreamUrl = new URL(`${RUNTIME_CONFIG.backend.domain}/objects/campaigns/survey_batchs`);
 
         incomingUrl.searchParams.forEach((value, key) => {
             upstreamUrl.searchParams.append(key, value);
@@ -65,7 +58,7 @@ export async function GET(
 
         if (!response.ok) {
             return NextResponse.json(
-                { error: 'Failed to fetch notification details' },
+                { error: 'Failed to fetch survey batches' },
                 { status: response.status }
             );
         }
@@ -79,7 +72,7 @@ export async function GET(
             headers: totalHeader ? { 'x-total-count': totalHeader } : undefined,
         });
     } catch (error) {
-        console.error('Failed to proxy /api/campaigns/notifications/[oid]/details:', error);
+        console.error('Failed to proxy /api/campaigns/survey_batchs:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

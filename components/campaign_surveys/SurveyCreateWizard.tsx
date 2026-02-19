@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { createCampaignSurveyAction } from '@/app/actions/campaigns';
-import type { SurveyDetailCreate } from '@/lib/types/objects';
+import { createCampaignSurveyBatchAction } from '@/app/actions/campaigns';
+import type { SurveyCreate } from '@/lib/types/objects';
 import { CampaignReceiverSelector } from '@/components/campaign_shared/CampaignReceiverSelector';
 import { SurveyQuestionBuilder } from './SurveyQuestionBuilder';
 import { SurveyDirectSpreadsheetCreate } from './SurveyDirectSpreadsheetCreate';
@@ -18,7 +18,7 @@ import {
 } from './utils';
 import type { SurveyCreateEntryMode } from './types';
 import { useAllActiveWorkers } from './useAllActiveWorkers';
-import { upsertSurveyDetailsInBatches, type SurveyDetailBatchProgress } from './detailBatchWriter';
+import { upsertSurveysInBatches, type SurveyBatchWriteProgress } from './detailBatchWriter';
 
 export function SurveyCreateWizard() {
     const t = useTranslations('CampaignSurvey');
@@ -38,7 +38,7 @@ export function SurveyCreateWizard() {
     ]);
     const [selectedReceiverStableIds, setSelectedReceiverStableIds] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [batchProgress, setBatchProgress] = useState<SurveyDetailBatchProgress | null>(null);
+    const [batchProgress, setBatchProgress] = useState<SurveyBatchWriteProgress | null>(null);
 
     const {
         workers,
@@ -78,9 +78,8 @@ export function SurveyCreateWizard() {
         const surveyQuestions = toSurveyQuestions(intro, questions);
 
         startTransition(async () => {
-            const createResult = await createCampaignSurveyAction({
+            const createResult = await createCampaignSurveyBatchAction({
                 name: name.trim(),
-                survey_questions: surveyQuestions,
             });
 
             if (!createResult.success) {
@@ -88,16 +87,19 @@ export function SurveyCreateWizard() {
                 return;
             }
 
-            const surveyOid = createResult.data.oid;
-            const details: SurveyDetailCreate[] = selectedReceiverStableIds.map((stableId) => ({
+            const surveyBatchOid = createResult.data.oid;
+            const surveys: SurveyCreate[] = selectedReceiverStableIds.map((stableId) => ({
                 receiver_stable_id: stableId,
+                survey_questions: surveyQuestions,
                 status: 'created',
+                survey_answer: null,
+                submitted_at: null,
             }));
 
-            const upsertResult = await upsertSurveyDetailsInBatches(surveyOid, details, setBatchProgress);
+            const upsertResult = await upsertSurveysInBatches(surveyBatchOid, surveys, setBatchProgress);
             if (!upsertResult.success) {
                 setError(t('create.errors.partialWrite', {
-                    surveyOid,
+                    surveyBatchOid,
                     processed: upsertResult.processedRows,
                     total: upsertResult.totalRows,
                     error: upsertResult.error,
@@ -105,7 +107,7 @@ export function SurveyCreateWizard() {
                 return;
             }
 
-            router.push(`/campaign/surveys?survey=${encodeURIComponent(surveyOid)}`);
+            router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
             router.refresh();
         });
     };
@@ -116,7 +118,7 @@ export function SurveyCreateWizard() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.push('/campaign/surveys')}
+                        onClick={() => router.push('/campaign/survey-batches')}
                         className={`p-2 rounded-lg ${isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
                     >
                         <ArrowLeft className="w-4 h-4" />

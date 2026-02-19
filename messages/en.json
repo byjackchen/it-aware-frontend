@@ -86,8 +86,8 @@
         "interactions": "Interactions",
         "faqs": "FAQs",
         "campaign": "Campaign",
-        "notifications": "Notifications",
-        "surveys": "Surveys"
+        "notificationBatches": "Notification Batches",
+        "surveyBatches": "Survey Batches"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware Assistant",
@@ -462,8 +462,8 @@
             "description": "You do not have permission to access this Campaign module."
         },
         "errors": {
-            "loadNotifications": "Failed to load notifications",
-            "loadDetails": "Failed to load notification details"
+            "loadNotifications": "Failed to load notification batches",
+            "loadDetails": "Failed to load notifications"
         },
         "batchProgress": "Writing receivers: {processed} / {total} (batch {currentBatch} / {totalBatches})",
         "contentBlockTypes": {
@@ -477,23 +477,22 @@
             "addBlock": "Add content block"
         },
         "list": {
-            "title": "Notifications",
-            "create": "Create Notification",
-            "loading": "Loading notifications...",
-            "empty": "No notifications found",
+            "title": "Notification Batches",
+            "create": "Create Notification Batch",
+            "loading": "Loading notification batches...",
+            "empty": "No notification batches found",
             "counts": "{loaded} loaded / {total} total",
             "filters": {
                 "allStatus": "All status",
                 "allChannels": "All channels",
-                "search": "Search notification name or OID"
+                "search": "Search batch name or OID"
             }
         },
         "details": {
-            "selectNotification": "Select a notification to view details",
-            "trigger": "Trigger Send",
-            "edit": "Edit",
-            "loading": "Loading receiver details...",
-            "empty": "No receiver details found",
+            "selectNotification": "Select a notification batch to view notifications",
+            "trigger": "Trigger Batch",
+            "loading": "Loading notifications...",
+            "empty": "No notifications found",
             "counts": "{loaded} loaded / {total} total",
             "fields": {
                 "status": "Status",
@@ -508,23 +507,48 @@
                 "updatedAt": "Updated At"
             },
             "filters": {
-                "allStatus": "All detail status",
+                "allStatus": "All notification status",
                 "search": "Search receiver or content"
+            },
+            "actions": {
+                "editObject": "Edit Batch",
+                "addRow": "Add Notification",
+                "cancel": "Cancel"
+            },
+            "rowEditor": {
+                "createTitle": "Create Notification",
+                "editTitle": "Edit Notification: {receiver}",
+                "fields": {
+                    "receiver": "Receiver stable_id",
+                    "status": "Status",
+                    "scheduledAt": "Scheduled At",
+                    "errorMessage": "Error Message",
+                    "content": "Content Blocks"
+                },
+                "actions": {
+                    "create": "Create Notification",
+                    "save": "Save Notification",
+                    "delete": "Delete Notification"
+                },
+                "errors": {
+                    "emptyReceiver": "Receiver stable_id is required.",
+                    "failedNeedsError": "error_message is required when status is failed."
+                }
             }
         },
         "create": {
-            "title": "Create Notification",
-            "subtitle": "Use guided sections or create directly from an Excel upload",
+            "title": "Create Notification Batch",
+            "subtitle": "Use guided setup or Excel upload to create a notification batch.",
             "entryModes": {
                 "guided": "Guided Create",
                 "excelDirect": "Excel Direct Create"
             },
             "steps": {
-                "content": "Notification Content",
+                "content": "Notification Template",
                 "receivers": "Notification Receivers"
             },
             "fields": {
-                "name": "Notification Name",
+                "name": "Notification Batch Name",
                 "namePlaceholder": "e.g. weekly_ops_notice",
                 "channel": "Channel",
                 "contentBlocks": "Content Blocks"
@@ -532,14 +556,14 @@
             "actions": {
                 "next": "Next",
                 "back": "Back",
-                "create": "Create Notification"
+                "create": "Create Batch"
             },
             "errors": {
                 "noReceivers": "Please select at least one receiver.",
                 "invalidContent": "Each content block requires valid text (and URL for link blocks).",
                 "receiverNotFound": "Stable ID was not found in workers.",
-                "emptyName": "Notification name is required.",
-                "partialWrite": "Notification {notificationOid} was created, but only {processed} of {total} receivers were written. {error}"
+                "emptyName": "Notification batch name is required.",
+                "partialWrite": "Notification batch {notificationBatchOid} was created, but only {processed} of {total} notifications were written. {error}"
             }
         },
         "receivers": {
@@ -571,14 +595,14 @@
         },
         "directUpload": {
             "title": "Excel Direct Create",
-            "subtitle": "Upload one row per receiver with receiver-specific content blocks.",
+            "subtitle": "Upload one row per notification with receiver-specific content blocks.",
             "downloadTemplate": "Download Template",
             "uploadFile": "Upload .xlsx",
             "templateHint": "Template columns: receiver_stable_id and block_01..block_20 triplets (type/text/url).",
             "waitWorkers": "Please wait until worker data has finished loading before uploading.",
             "parseFatal": "Failed to parse uploaded file.",
-            "noValidRows": "No valid receiver rows found in upload.",
-            "partialWrite": "Notification {notificationOid} was created, but only {processed} of {total} rows were written. {error}",
+            "noValidRows": "No valid notification rows found in upload.",
+            "partialWrite": "Notification batch {notificationBatchOid} was created, but only {processed} of {total} rows were written. {error}",
             "summary": {
                 "totalRows": "Total rows",
                 "validRows": "Valid rows",
@@ -597,12 +621,12 @@
             }
         },
         "edit": {
-            "title": "Edit Notification",
-            "readOnlyStatus": "Notification status is \"{status}\". Editing is only allowed while status is \"created\".",
+            "title": "Edit Notification Batch",
+            "readOnlyStatus": "Notification batch status is \"{status}\". Editing is only allowed while status is \"created\".",
             "addReceiverTitle": "Add Receiver",
             "newReceiver": "New",
             "fields": {
-                "name": "Notification Name",
+                "name": "Notification Batch Name",
                 "channel": "Channel",
                 "newReceiverStableId": "New receiver stable_id",
                 "copySource": "Copy content from"
@@ -614,40 +638,39 @@
             "errors": {
                 "duplicateReceiver": "Receiver is already included.",
                 "receiverNotFound": "Stable ID was not found in workers.",
-                "notEditable": "Notification is not editable in current status.",
-                "emptyName": "Notification name is required.",
+                "notEditable": "Notification batch is not editable in current status.",
+                "emptyName": "Notification batch name is required.",
                 "noReceivers": "At least one receiver is required.",
                 "invalidContent": "Each receiver must have valid content blocks.",
-                "partialWrite": "Saved partially for notification {notificationOid}: {processed} of {total} receivers were written. {error}"
+                "partialWrite": "Saved partially for notification batch {notificationBatchOid}: {processed} of {total} notifications were written. {error}"
             }
         }
     },
     "CampaignSurvey": {
         "accessDenied": {
-            "title": "Campaign Survey Access Required",
-            "description": "You do not have permission to access Campaign surveys."
+            "title": "Campaign Survey Batch Access Required",
+            "description": "You do not have permission to access campaign survey batches."
         },
         "errors": {
-            "loadSurveys": "Failed to load surveys",
-            "loadDetails": "Failed to load survey details"
+            "loadSurveys": "Failed to load survey batches",
+            "loadDetails": "Failed to load surveys"
         },
         "batchProgress": "Writing receivers: {processed} / {total} (batch {currentBatch} / {totalBatches})",
         "list": {
-            "title": "Surveys",
-            "create": "Create Survey",
-            "loading": "Loading surveys...",
-            "empty": "No surveys found",
+            "title": "Survey Batches",
+            "create": "Create Survey Batch",
+            "loading": "Loading survey batches...",
+            "empty": "No survey batches found",
             "counts": "{loaded} loaded / {total} total",
             "filters": {
                 "allStatus": "All status",
-                "search": "Search survey name or OID"
+                "search": "Search batch name or OID"
             }
         },
         "details": {
-            "selectSurvey": "Select a survey to view details",
-            "edit": "Edit",
-            "loading": "Loading receiver details...",
-            "empty": "No receiver details found",
+            "selectSurvey": "Select a survey batch to view surveys",
+            "loading": "Loading surveys...",
+            "empty": "No surveys found",
             "counts": "{loaded} loaded / {total} total",
             "fields": {
                 "status": "Status",
@@ -661,13 +684,42 @@
                 "answer": "Answer"
             },
             "filters": {
-                "allStatus": "All detail status",
+                "allStatus": "All survey status",
                 "search": "Search receiver or answer"
+            },
+            "actions": {
+                "editObject": "Edit Batch",
+                "addRow": "Add Survey",
+                "cancel": "Cancel"
+            },
+            "rowEditor": {
+                "createTitle": "Create Survey Row",
+                "editTitle": "Edit Survey Row: {receiver}",
+                "fields": {
+                    "receiver": "Receiver stable_id",
+                    "status": "Status",
+                    "submittedAt": "Submitted At",
+                    "answerJson": "Survey Answer JSON",
+                    "answerJsonPlaceholder": "{\"answers\":[...]}",
+                    "questions": "Survey Questions"
+                },
+                "actions": {
+                    "create": "Create Row",
+                    "save": "Save Row",
+                    "delete": "Delete Row"
+                },
+                "errors": {
+                    "emptyReceiver": "Receiver stable_id is required.",
+                    "submittedAtRequired": "submitted_at is required when status is submitted.",
+                    "answerRequired": "survey_answer is required when status is submitted.",
+                    "createdSubmittedAtNotAllowed": "submitted_at must be empty when status is created.",
+                    "createdAnswerNotAllowed": "survey_answer must be empty when status is created."
+                }
             }
         },
         "create": {
-            "title": "Create Survey",
-            "subtitle": "Use a guided form or spreadsheet upload to create surveys.",
+            "title": "Create Survey Batch",
+            "subtitle": "Use a guided form or spreadsheet upload to create a survey batch.",
             "entryModes": {
                 "guided": "Guided Create",
                 "spreadsheet": "Spreadsheet Import"
@@ -677,17 +729,17 @@
                 "receivers": "Receiver Selection"
             },
             "fields": {
-                "name": "Survey Name",
+                "name": "Survey Batch Name",
                 "namePlaceholder": "e.g. employee_pulse_weekly"
             },
             "actions": {
-                "create": "Create Survey"
+                "create": "Create Batch"
             },
             "errors": {
                 "noReceivers": "Please select at least one receiver.",
                 "receiverNotFound": "Stable ID was not found in workers.",
-                "emptyName": "Survey name is required.",
-                "partialWrite": "Survey {surveyOid} was created, but only {processed} of {total} receivers were written. {error}"
+                "emptyName": "Survey batch name is required.",
+                "partialWrite": "Survey batch {surveyBatchOid} was created, but only {processed} of {total} surveys were written. {error}"
             }
         },
         "questionBuilder": {
@@ -738,10 +790,10 @@
         },
         "directUpload": {
             "title": "Spreadsheet Import",
-            "subtitle": "One row creates one survey and one receiver detail.",
+            "subtitle": "One row creates one survey batch with one survey receiver row.",
             "downloadTemplate": "Download Template",
             "uploadFile": "Upload .xlsx",
-            "import": "Import Surveys",
+            "import": "Import Survey Batches",
             "templateHint": "Required columns: name, receiver_stable_id, intro, and q01..q20 question columns.",
             "waitWorkers": "Please wait until worker data has finished loading before uploading.",
             "parseFatal": "Failed to parse uploaded file.",
@@ -765,15 +817,15 @@
             }
         },
         "edit": {
-            "title": "Edit Survey",
-            "readOnlyQuestionStatus": "Survey status is \"{status}\". Question editing is only allowed in \"created\" status.",
-            "readOnlyDetailStatus": "Survey status is \"{status}\". Receiver detail editing is blocked when cancelled.",
+            "title": "Edit Survey Batch",
+            "readOnlyQuestionStatus": "Survey batch status is \"{status}\". Question editing is only allowed in \"created\" status.",
+            "readOnlyDetailStatus": "Survey batch status is \"{status}\". Receiver row editing is blocked when cancelled.",
             "receiversTitle": "Receivers",
             "receiverCount": "{count} receivers",
             "fields": {
-                "name": "Survey Name",
+                "name": "Survey Batch Name",
                 "newReceiverStableId": "New receiver stable_id",
-                "detailStatus": "Detail Status",
+                "detailStatus": "Survey Status",
                 "submittedAt": "Submitted At",
                 "answerJson": "Survey Answer JSON",
                 "answerJsonPlaceholder": "{\"answers\":[...]}"
@@ -786,14 +838,14 @@
             "errors": {
                 "duplicateReceiver": "Receiver is already included.",
                 "receiverNotFound": "Stable ID was not found in workers.",
-                "notEditable": "Survey is not editable in current status.",
-                "emptyName": "Survey name is required.",
+                "notEditable": "Survey batch is not editable in current status.",
+                "emptyName": "Survey batch name is required.",
                 "noReceivers": "At least one receiver is required.",
                 "emptyReceiver": "Receiver stable_id is required.",
                 "submittedAtRequired": "submitted_at is required when status is submitted.",
                 "invalidAnswerJson": "Invalid survey answer JSON.",
                 "answerRequired": "survey_answer is required when status is submitted.",
-                "partialWrite": "Saved partially for survey {surveyOid}: {processed} of {total} receivers were written. {error}"
+                "partialWrite": "Saved partially for survey batch {surveyBatchOid}: {processed} of {total} surveys were written. {error}"
             }
         }
     }

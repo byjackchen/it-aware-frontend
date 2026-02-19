@@ -732,12 +732,12 @@ export interface InteractionListResponse {
 }
 
 // ============================================================================
-// Campaign Notification Types
+// Campaign Notification Batch Types
 // ============================================================================
 
-export type NotificationChannel = 'wecom_bot' | 'wecom_ops_bot';
+export type NotificationBatchChannel = 'wecom_bot' | 'wecom_ops_bot';
 
-export type NotificationStatus =
+export type NotificationBatchStatus =
     | 'created'
     | 'processing'
     | 'partial'
@@ -745,7 +745,7 @@ export type NotificationStatus =
     | 'completed_with_failures'
     | 'cancelled';
 
-export type NotificationDetailStatus = 'created' | 'sent' | 'failed';
+export type NotificationStatus = 'created' | 'sent' | 'failed';
 
 export interface NotificationContentTextBlock {
     type: 'text';
@@ -768,11 +768,11 @@ export type NotificationContentBlock =
     | NotificationContentLinkBlock
     | NotificationContentTitleBlock;
 
-export interface Notification {
+export interface NotificationBatch {
     oid: string;
     name: string;
-    channel: NotificationChannel;
-    status: NotificationStatus;
+    channel: NotificationBatchChannel;
+    status: NotificationBatchStatus;
     run_id: string | null;
     creator_account: string | null;
     total_count: number;
@@ -780,22 +780,68 @@ export interface Notification {
     updated_at: string;
 }
 
-export interface NotificationCreate {
+export interface NotificationBatchCreate {
     name: string;
-    channel?: NotificationChannel;
+    channel?: NotificationBatchChannel;
     creator_account?: string;
-    details?: NotificationDetailCreate[];
+    notifications?: NotificationCreate[];
+}
+
+export interface NotificationBatchUpdate {
+    name?: string;
+    channel?: NotificationBatchChannel;
+    status?: 'processing' | 'cancelled';
+}
+
+export interface NotificationBatchListParams {
+    status?: NotificationBatchStatus;
+    channel?: NotificationBatchChannel;
+    skip?: number;
+    limit?: number;
+}
+
+export interface NotificationBatchListResponse {
+    items: NotificationBatch[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface Notification {
+    oid: string;
+    notification_batch_oid: string;
+    receiver_stable_id: string;
+    receiver_oid: string | null;
+    content_blocks: NotificationContentBlock[];
+    status: NotificationStatus;
+    scheduled_at: string | null;
+    error_message: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface NotificationCreate {
+    receiver_stable_id: string;
+    receiver_oid?: string | null;
+    content_blocks: NotificationContentBlock[];
+    status?: NotificationStatus;
+    scheduled_at?: string | null;
+    error_message?: string | null;
 }
 
 export interface NotificationUpdate {
-    name?: string;
-    channel?: NotificationChannel;
-    status?: 'processing' | 'cancelled';
+    receiver_oid?: string | null;
+    content_blocks?: NotificationContentBlock[];
+    status?: NotificationStatus;
+    scheduled_at?: string | null;
+    error_message?: string | null;
 }
 
 export interface NotificationListParams {
     status?: NotificationStatus;
-    channel?: NotificationChannel;
+    receiver_stable_id?: string;
+    scheduled_at_from?: string;
+    scheduled_at_to?: string;
     skip?: number;
     limit?: number;
 }
@@ -807,63 +853,20 @@ export interface NotificationListResponse {
     limit: number;
 }
 
-export interface NotificationDetail {
-    notification_oid: string;
-    receiver_stable_id: string;
-    receiver_oid: string | null;
-    content_blocks: NotificationContentBlock[];
-    status: NotificationDetailStatus;
-    scheduled_at: string | null;
-    error_message: string | null;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface NotificationDetailCreate {
-    receiver_stable_id: string;
-    content_blocks: NotificationContentBlock[];
-    status?: NotificationDetailStatus;
-    scheduled_at?: string | null;
-    error_message?: string | null;
-}
-
-export interface NotificationDetailUpdate {
-    content_blocks?: NotificationContentBlock[];
-    status?: NotificationDetailStatus;
-    scheduled_at?: string | null;
-    error_message?: string | null;
-}
-
-export interface NotificationDetailListParams {
-    status?: NotificationDetailStatus;
-    receiver_stable_id?: string;
-    scheduled_at_from?: string;
-    scheduled_at_to?: string;
-    skip?: number;
-    limit?: number;
-}
-
-export interface NotificationDetailListResponse {
-    items: NotificationDetail[];
-    total: number;
-    skip: number;
-    limit: number;
-}
-
-export interface NotificationTriggerResponse {
-    notification_oid: string;
-    status: NotificationStatus;
+export interface NotificationBatchTriggerResponse {
+    notification_batch_oid: string;
+    status: NotificationBatchStatus;
     to_process_count: number;
     run_id: string;
 }
 
 // ============================================================================
-// Campaign Survey Types
+// Campaign Survey Batch Types
 // ============================================================================
 
-export type SurveyStatus = 'created' | 'partial' | 'completed' | 'cancelled';
+export type SurveyBatchStatus = 'created' | 'partial' | 'completed' | 'cancelled';
 
-export type SurveyDetailStatus = 'created' | 'submitted';
+export type SurveyStatus = 'created' | 'submitted';
 
 export type SurveyQuestionType = 'single_select' | 'multi_select' | 'text';
 
@@ -930,69 +933,72 @@ export interface SurveyAnswerPayload {
     answers: SurveyAnswer[];
 }
 
-export interface Survey {
+export interface SurveyBatch {
     oid: string;
     name: string;
-    status: SurveyStatus;
-    survey_questions: SurveyQuestions;
+    status: SurveyBatchStatus;
     creator_account: string | null;
     total_count: number;
     created_at: string;
     updated_at: string;
 }
 
-export interface SurveyCreate {
+export interface SurveyBatchCreate {
     name: string;
-    survey_questions: SurveyQuestions;
     creator_account?: string;
-    details?: SurveyDetailCreate[];
+    surveys?: SurveyCreate[];
 }
 
-export interface SurveyUpdate {
+export interface SurveyBatchUpdate {
     name?: string;
-    survey_questions?: SurveyQuestions;
     status?: 'cancelled';
 }
 
-export interface SurveyListParams {
-    status?: SurveyStatus;
+export interface SurveyBatchListParams {
+    status?: SurveyBatchStatus;
     skip?: number;
     limit?: number;
 }
 
-export interface SurveyListResponse {
-    items: Survey[];
+export interface SurveyBatchListResponse {
+    items: SurveyBatch[];
     total: number;
     skip: number;
     limit: number;
 }
 
-export interface SurveyDetail {
-    survey_oid: string;
+export interface Survey {
+    oid: string;
+    survey_batch_oid: string;
     receiver_stable_id: string;
     receiver_oid: string | null;
+    survey_questions: SurveyQuestions;
     survey_answer: SurveyAnswerPayload | null;
-    status: SurveyDetailStatus;
+    status: SurveyStatus;
     submitted_at: string | null;
     created_at: string;
     updated_at: string;
 }
 
-export interface SurveyDetailCreate {
+export interface SurveyCreate {
     receiver_stable_id: string;
+    receiver_oid?: string | null;
+    survey_questions: SurveyQuestions;
     survey_answer?: SurveyAnswerPayload | null;
-    status?: SurveyDetailStatus;
+    status?: SurveyStatus;
     submitted_at?: string | null;
 }
 
-export interface SurveyDetailUpdate {
+export interface SurveyUpdate {
+    receiver_oid?: string | null;
+    survey_questions?: SurveyQuestions;
     survey_answer?: SurveyAnswerPayload | null;
-    status?: SurveyDetailStatus;
+    status?: SurveyStatus;
     submitted_at?: string | null;
 }
 
-export interface SurveyDetailListParams {
-    status?: SurveyDetailStatus;
+export interface SurveyListParams {
+    status?: SurveyStatus;
     receiver_stable_id?: string;
     submitted_at_from?: string;
     submitted_at_to?: string;
@@ -1000,8 +1006,8 @@ export interface SurveyDetailListParams {
     limit?: number;
 }
 
-export interface SurveyDetailListResponse {
-    items: SurveyDetail[];
+export interface SurveyListResponse {
+    items: Survey[];
     total: number;
     skip: number;
     limit: number;

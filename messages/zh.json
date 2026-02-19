@@ -86,8 +86,8 @@
         "interactions": "交互事件",
         "faqs": "常见问题",
         "campaign": "Campaign",
-        "notifications": "通知",
-        "surveys": "问卷"
+        "notificationBatches": "通知批次",
+        "surveyBatches": "问卷批次"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",
@@ -462,8 +462,8 @@
             "description": "当前账号没有访问 Campaign 模块的权限。"
         },
         "errors": {
-            "loadNotifications": "通知列表加载失败",
-            "loadDetails": "通知明细加载失败"
+            "loadNotifications": "通知批次列表加载失败",
+            "loadDetails": "通知列表加载失败"
         },
         "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
         "contentBlockTypes": {
@@ -477,23 +477,22 @@
             "addBlock": "新增内容块"
         },
         "list": {
-            "title": "通知",
-            "create": "创建通知",
-            "loading": "正在加载通知...",
-            "empty": "暂无通知",
+            "title": "通知批次",
+            "create": "创建通知批次",
+            "loading": "正在加载通知批次...",
+            "empty": "暂无通知批次",
             "counts": "已加载 {loaded} / 总计 {total}",
             "filters": {
                 "allStatus": "全部状态",
                 "allChannels": "全部渠道",
-                "search": "搜索通知名称或 OID"
+                "search": "搜索批次名称或 OID"
             }
         },
         "details": {
-            "selectNotification": "请选择一条通知查看明细",
-            "trigger": "触发发送",
-            "edit": "编辑",
-            "loading": "正在加载接收人明细...",
-            "empty": "暂无接收人明细",
+            "selectNotification": "请选择通知批次查看通知行",
+            "trigger": "触发批次发送",
+            "loading": "正在加载通知...",
+            "empty": "暂无通知",
             "counts": "已加载 {loaded} / 总计 {total}",
             "fields": {
                 "status": "状态",
@@ -508,23 +507,48 @@
                 "updatedAt": "更新时间"
             },
             "filters": {
-                "allStatus": "全部明细状态",
+                "allStatus": "全部通知状态",
                 "search": "搜索接收人或内容"
+            },
+            "actions": {
+                "editObject": "编辑批次",
+                "addRow": "新增通知",
+                "cancel": "取消"
+            },
+            "rowEditor": {
+                "createTitle": "新增通知",
+                "editTitle": "编辑通知：{receiver}",
+                "fields": {
+                    "receiver": "接收人 stable_id",
+                    "status": "状态",
+                    "scheduledAt": "计划时间",
+                    "errorMessage": "错误信息",
+                    "content": "内容块"
+                },
+                "actions": {
+                    "create": "创建通知",
+                    "save": "保存通知",
+                    "delete": "删除通知"
+                },
+                "errors": {
+                    "emptyReceiver": "接收人 stable_id 不能为空。",
+                    "failedNeedsError": "状态为 failed 时必须填写 error_message。"
+                }
             }
         },
         "create": {
-            "title": "创建通知",
-            "subtitle": "可按向导分区配置，或通过 Excel 直接创建",
+            "title": "创建通知批次",
+            "subtitle": "可按向导配置，或通过 Excel 上传创建通知批次。",
             "entryModes": {
                 "guided": "向导创建",
                 "excelDirect": "Excel 直传创建"
             },
             "steps": {
-                "content": "通知内容",
+                "content": "通知模板",
                 "receivers": "通知接收人"
             },
             "fields": {
-                "name": "通知名称",
+                "name": "通知批次名称",
                 "namePlaceholder": "例如：weekly_ops_notice",
                 "channel": "渠道",
                 "contentBlocks": "内容块"
@@ -532,14 +556,14 @@
             "actions": {
                 "next": "下一步",
                 "back": "返回",
-                "create": "创建通知"
+                "create": "创建批次"
             },
             "errors": {
                 "noReceivers": "请至少选择一位接收人。",
                 "invalidContent": "每个内容块都必须填写文本，链接类型还需填写 URL。",
                 "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "emptyName": "通知名称不能为空。",
-                "partialWrite": "通知 {notificationOid} 已创建，但仅写入 {processed}/{total} 位接收人。{error}"
+                "emptyName": "通知批次名称不能为空。",
+                "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 条通知。{error}"
             }
         },
         "receivers": {
@@ -571,14 +595,14 @@
         },
         "directUpload": {
             "title": "Excel 直传创建",
-            "subtitle": "每行对应一个接收人，并携带该接收人的独立内容块。",
+            "subtitle": "每行对应一条通知，包含接收人及独立内容块。",
             "downloadTemplate": "下载模板",
             "uploadFile": "上传 .xlsx",
             "templateHint": "模板列：receiver_stable_id + block_01..block_20 三元组（type/text/url）。",
             "waitWorkers": "请等待员工数据加载完成后再上传。",
             "parseFatal": "上传文件解析失败。",
-            "noValidRows": "未找到可用的接收人数据行。",
-            "partialWrite": "通知 {notificationOid} 已创建，但仅写入 {processed}/{total} 行。{error}",
+            "noValidRows": "未找到可用的通知数据行。",
+            "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 行。{error}",
             "summary": {
                 "totalRows": "总行数",
                 "validRows": "有效行",
@@ -597,12 +621,12 @@
             }
         },
         "edit": {
-            "title": "编辑通知",
-            "readOnlyStatus": "当前通知状态为 \"{status}\"，仅在 \"created\" 状态下可编辑。",
+            "title": "编辑通知批次",
+            "readOnlyStatus": "当前通知批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑。",
             "addReceiverTitle": "添加接收人",
             "newReceiver": "新增",
             "fields": {
-                "name": "通知名称",
+                "name": "通知批次名称",
                 "channel": "渠道",
                 "newReceiverStableId": "新增接收人 stable_id",
                 "copySource": "复制内容来源"
@@ -614,40 +638,39 @@
             "errors": {
                 "duplicateReceiver": "该接收人已存在。",
                 "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "notEditable": "当前状态不可编辑。",
-                "emptyName": "通知名称不能为空。",
+                "notEditable": "当前通知批次状态不可编辑。",
+                "emptyName": "通知批次名称不能为空。",
                 "noReceivers": "至少保留一位接收人。",
                 "invalidContent": "所有接收人的内容块都必须合法。",
-                "partialWrite": "通知 {notificationOid} 已部分保存：仅写入 {processed}/{total} 位接收人。{error}"
+                "partialWrite": "通知批次 {notificationBatchOid} 已部分保存：仅写入 {processed}/{total} 条通知。{error}"
             }
         }
     },
     "CampaignSurvey": {
         "accessDenied": {
-            "title": "需要 Campaign Survey 权限",
-            "description": "当前账号没有访问 Campaign Survey 的权限。"
+            "title": "需要 Campaign Survey Batch 权限",
+            "description": "当前账号没有访问 Campaign 问卷批次的权限。"
         },
         "errors": {
-            "loadSurveys": "问卷列表加载失败",
-            "loadDetails": "问卷明细加载失败"
+            "loadSurveys": "问卷批次列表加载失败",
+            "loadDetails": "问卷列表加载失败"
         },
         "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
         "list": {
-            "title": "问卷",
-            "create": "创建问卷",
-            "loading": "正在加载问卷...",
-            "empty": "暂无问卷",
+            "title": "问卷批次",
+            "create": "创建问卷批次",
+            "loading": "正在加载问卷批次...",
+            "empty": "暂无问卷批次",
             "counts": "已加载 {loaded} / 总计 {total}",
             "filters": {
                 "allStatus": "全部状态",
-                "search": "搜索问卷名称或 OID"
+                "search": "搜索批次名称或 OID"
             }
         },
         "details": {
-            "selectSurvey": "请选择一条问卷查看明细",
-            "edit": "编辑",
-            "loading": "正在加载接收人明细...",
-            "empty": "暂无接收人明细",
+            "selectSurvey": "请选择问卷批次查看问卷行",
+            "loading": "正在加载问卷...",
+            "empty": "暂无问卷",
             "counts": "已加载 {loaded} / 总计 {total}",
             "fields": {
                 "status": "状态",
@@ -661,13 +684,42 @@
                 "answer": "回答"
             },
             "filters": {
-                "allStatus": "全部明细状态",
+                "allStatus": "全部问卷状态",
                 "search": "搜索接收人或回答"
+            },
+            "actions": {
+                "editObject": "编辑批次",
+                "addRow": "新增问卷",
+                "cancel": "取消"
+            },
+            "rowEditor": {
+                "createTitle": "新增问卷",
+                "editTitle": "编辑问卷：{receiver}",
+                "fields": {
+                    "receiver": "接收人 stable_id",
+                    "status": "状态",
+                    "submittedAt": "提交时间",
+                    "answerJson": "问卷回答 JSON",
+                    "answerJsonPlaceholder": "{\"answers\":[...]}",
+                    "questions": "问卷题目"
+                },
+                "actions": {
+                    "create": "创建问卷",
+                    "save": "保存问卷",
+                    "delete": "删除问卷"
+                },
+                "errors": {
+                    "emptyReceiver": "接收人 stable_id 不能为空。",
+                    "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
+                    "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
+                    "createdSubmittedAtNotAllowed": "状态为 created 时 submitted_at 必须为空。",
+                    "createdAnswerNotAllowed": "状态为 created 时 survey_answer 必须为空。"
+                }
             }
         },
         "create": {
-            "title": "创建问卷",
-            "subtitle": "可按向导配置，或通过表格批量导入创建。",
+            "title": "创建问卷批次",
+            "subtitle": "可按向导配置，或通过表格批量导入创建问卷批次。",
             "entryModes": {
                 "guided": "向导创建",
                 "spreadsheet": "表格导入"
@@ -677,17 +729,17 @@
                 "receivers": "接收人选择"
             },
             "fields": {
-                "name": "问卷名称",
+                "name": "问卷批次名称",
                 "namePlaceholder": "例如：employee_pulse_weekly"
             },
             "actions": {
-                "create": "创建问卷"
+                "create": "创建批次"
             },
             "errors": {
                 "noReceivers": "请至少选择一位接收人。",
                 "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "emptyName": "问卷名称不能为空。",
-                "partialWrite": "问卷 {surveyOid} 已创建，但仅写入 {processed}/{total} 位接收人。{error}"
+                "emptyName": "问卷批次名称不能为空。",
+                "partialWrite": "问卷批次 {surveyBatchOid} 已创建，但仅写入 {processed}/{total} 条问卷。{error}"
             }
         },
         "questionBuilder": {
@@ -738,10 +790,10 @@
         },
         "directUpload": {
             "title": "表格导入",
-            "subtitle": "每一行创建一条问卷及其单个接收人明细。",
+            "subtitle": "每一行创建一个问卷批次及其单条问卷接收人记录。",
             "downloadTemplate": "下载模板",
             "uploadFile": "上传 .xlsx",
-            "import": "导入问卷",
+            "import": "导入问卷批次",
             "templateHint": "必填列：name、receiver_stable_id、intro，以及 q01..q20 题目列。",
             "waitWorkers": "请等待员工数据加载完成后再上传。",
             "parseFatal": "上传文件解析失败。",
@@ -765,15 +817,15 @@
             }
         },
         "edit": {
-            "title": "编辑问卷",
-            "readOnlyQuestionStatus": "当前问卷状态为 \"{status}\"，仅在 \"created\" 状态下可编辑题目。",
-            "readOnlyDetailStatus": "当前问卷状态为 \"{status}\"，当状态为 cancelled 时不可编辑接收人明细。",
+            "title": "编辑问卷批次",
+            "readOnlyQuestionStatus": "当前问卷批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑题目。",
+            "readOnlyDetailStatus": "当前问卷批次状态为 \"{status}\"，当状态为 cancelled 时不可编辑接收人行。",
             "receiversTitle": "接收人",
             "receiverCount": "{count} 位接收人",
             "fields": {
-                "name": "问卷名称",
+                "name": "问卷批次名称",
                 "newReceiverStableId": "新增接收人 stable_id",
-                "detailStatus": "明细状态",
+                "detailStatus": "问卷状态",
                 "submittedAt": "提交时间",
                 "answerJson": "问卷回答 JSON",
                 "answerJsonPlaceholder": "{\"answers\":[...]}"
@@ -786,14 +838,14 @@
             "errors": {
                 "duplicateReceiver": "该接收人已存在。",
                 "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "notEditable": "当前状态不可编辑。",
-                "emptyName": "问卷名称不能为空。",
+                "notEditable": "当前问卷批次状态不可编辑。",
+                "emptyName": "问卷批次名称不能为空。",
                 "noReceivers": "至少保留一位接收人。",
                 "emptyReceiver": "接收人 stable_id 不能为空。",
                 "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
                 "invalidAnswerJson": "问卷回答 JSON 非法。",
                 "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
-                "partialWrite": "问卷 {surveyOid} 已部分保存：仅写入 {processed}/{total} 位接收人。{error}"
+                "partialWrite": "问卷批次 {surveyBatchOid} 已部分保存：仅写入 {processed}/{total} 条问卷。{error}"
             }
         }
     }

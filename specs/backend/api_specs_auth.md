@@ -43,7 +43,7 @@ All configuration endpoints require authentication plus specific permissions:
 | Group Permissions | `auth:group_permissions:read` | `auth:group_permissions:edit` |
 | Group Roles | `auth:group_roles:read` | `auth:group_roles:edit` |
 
-**Note:** Worker and Worker-Hierarchy-Role management is under `/objects/*` with `objects:workers:*` and `objects:worker_hierarchy_roles:*` permissions. Campaign notifications use `objects:notifications:read` / `objects:notifications:write`. See `api_specs_objects.md` and `api_specs_campaigns.md`.
+**Note:** Worker and Worker-Hierarchy-Role management is under `/objects/*` with `objects:workers:*` and `objects:worker_hierarchy_roles:*` permissions. Campaign notification batches use `objects:notification_batchs:read` / `objects:notification_batchs:write`; campaign survey batches use `objects:survey_batchs:read` / `objects:survey_batchs:write`. See `api_specs_objects.md` and `api_specs_campaigns.md`.
 
 ---
 

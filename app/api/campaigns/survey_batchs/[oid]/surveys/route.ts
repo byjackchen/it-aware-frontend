@@ -40,7 +40,7 @@ export async function GET(
     try {
         const incomingUrl = new URL(request.url);
         const upstreamUrl = new URL(
-            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/surveys/${encodeURIComponent(oid)}/details`
+            `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/survey_batchs/${encodeURIComponent(oid)}/surveys`
         );
 
         incomingUrl.searchParams.forEach((value, key) => {
@@ -65,7 +65,7 @@ export async function GET(
 
         if (!response.ok) {
             return NextResponse.json(
-                { error: 'Failed to fetch survey details' },
+                { error: 'Failed to fetch surveys' },
                 { status: response.status }
             );
         }
@@ -79,7 +79,7 @@ export async function GET(
             headers: totalHeader ? { 'x-total-count': totalHeader } : undefined,
         });
     } catch (error) {
-        console.error('Failed to proxy /api/campaigns/surveys/[oid]/details:', error);
+        console.error('Failed to proxy /api/campaigns/survey_batchs/[oid]/surveys:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

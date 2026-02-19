@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { createCampaignNotificationAction } from '@/app/actions/campaigns';
+import { createCampaignNotificationBatchAction } from '@/app/actions/campaigns';
 import type {
-    NotificationChannel,
+    NotificationBatchChannel,
     NotificationContentBlock,
-    NotificationDetailCreate,
+    NotificationCreate,
 } from '@/lib/types/objects';
 import { CampaignReceiverSelector } from '@/components/campaign_shared/CampaignReceiverSelector';
 import { NotificationContentBlocksEditor } from './NotificationContentBlocksEditor';
 import { NotificationDirectSpreadsheetCreate } from './NotificationDirectSpreadsheetCreate';
-import { upsertNotificationDetailsInBatches, type DetailBatchProgress } from './detailBatchWriter';
+import { upsertNotificationsInBatches, type NotificationBatchWriteProgress } from './detailBatchWriter';
 import { cloneContentBlocks, createEmptyBlock } from './utils';
 import type { CreateEntryMode } from './types';
 import { useAllActiveWorkers } from './useAllActiveWorkers';
@@ -36,11 +36,11 @@ export function NotificationCreateWizard() {
     const [isPending, startTransition] = useTransition();
     const [createMode, setCreateMode] = useState<CreateEntryMode>('guided');
     const [name, setName] = useState('');
-    const [channel, setChannel] = useState<NotificationChannel>('wecom_bot');
+    const [channel, setChannel] = useState<NotificationBatchChannel>('wecom_bot');
     const [contentBlocks, setContentBlocks] = useState<NotificationContentBlock[]>([createEmptyBlock('text')]);
     const [selectedReceiverStableIds, setSelectedReceiverStableIds] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [batchProgress, setBatchProgress] = useState<DetailBatchProgress | null>(null);
+    const [batchProgress, setBatchProgress] = useState<NotificationBatchWriteProgress | null>(null);
 
     const {
         workers,
@@ -70,7 +70,7 @@ export function NotificationCreateWizard() {
         }
 
         startTransition(async () => {
-            const createResult = await createCampaignNotificationAction({
+            const createResult = await createCampaignNotificationBatchAction({
                 name: name.trim(),
                 channel,
             });
@@ -80,17 +80,17 @@ export function NotificationCreateWizard() {
                 return;
             }
 
-            const notificationOid = createResult.data.oid;
-            const details: NotificationDetailCreate[] = selectedReceiverStableIds.map((stableId) => ({
+            const notificationBatchOid = createResult.data.oid;
+            const notifications: NotificationCreate[] = selectedReceiverStableIds.map((stableId) => ({
                 receiver_stable_id: stableId,
                 content_blocks: cloneContentBlocks(contentBlocks),
                 status: 'created',
             }));
 
-            const upsertResult = await upsertNotificationDetailsInBatches(notificationOid, details, setBatchProgress);
+            const upsertResult = await upsertNotificationsInBatches(notificationBatchOid, notifications, setBatchProgress);
             if (!upsertResult.success) {
                 setError(t('create.errors.partialWrite', {
-                    notificationOid,
+                    notificationBatchOid,
                     processed: upsertResult.processedRows,
                     total: upsertResult.totalRows,
                     error: upsertResult.error,
@@ -98,7 +98,7 @@ export function NotificationCreateWizard() {
                 return;
             }
 
-            router.push(`/campaign/notifications?notification=${encodeURIComponent(notificationOid)}`);
+            router.push(`/campaign/notification-batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
             router.refresh();
         });
     };
@@ -109,7 +109,7 @@ export function NotificationCreateWizard() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.push('/campaign/notifications')}
+                        onClick={() => router.push('/campaign/notification-batches')}
                         className={`p-2 rounded-lg ${isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -182,7 +182,7 @@ export function NotificationCreateWizard() {
                                     <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('create.fields.channel')}</label>
                                     <select
                                         value={channel}
-                                        onChange={(event) => setChannel(event.target.value as NotificationChannel)}
+                                        onChange={(event) => setChannel(event.target.value as NotificationBatchChannel)}
                                         className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                     >
                                         <option value="wecom_bot">wecom_bot</option>

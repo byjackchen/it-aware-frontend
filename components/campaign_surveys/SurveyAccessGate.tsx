@@ -16,8 +16,8 @@ export function SurveyAccessGate({ children, requireWrite = false }: SurveyAcces
     const { hasPermission } = usePermissions();
 
     const canNavigate = hasPermission(PERMISSIONS.UI.NAVIGATION_CAMPAIGN);
-    const canRead = hasPermission(PERMISSIONS.OBJECTS.SURVEYS_READ);
-    const canWrite = hasPermission(PERMISSIONS.OBJECTS.SURVEYS_WRITE);
+    const canRead = hasPermission(PERMISSIONS.OBJECTS.SURVEY_BATCHS_READ);
+    const canWrite = hasPermission(PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE);
 
     const hasAccess = canNavigate && canRead && (!requireWrite || canWrite);
 

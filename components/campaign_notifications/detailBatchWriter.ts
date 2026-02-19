@@ -1,25 +1,25 @@
-import { batchUpsertCampaignNotificationDetailsAction } from '@/app/actions/campaigns';
-import type { NotificationDetailCreate } from '@/lib/types/objects';
+import { batchUpsertCampaignNotificationsAction } from '@/app/actions/campaigns';
+import type { NotificationCreate } from '@/lib/types/objects';
 
-export const DETAIL_BATCH_SIZE = 500;
+export const NOTIFICATION_BATCH_WRITE_SIZE = 500;
 
-export interface DetailBatchProgress {
+export interface NotificationBatchWriteProgress {
     processedRows: number;
     totalRows: number;
     currentBatch: number;
     totalBatches: number;
 }
 
-export interface DetailBatchSuccess {
+export interface NotificationBatchWriteSuccess {
     success: true;
     processedRows: number;
     totalRows: number;
     totalBatches: number;
 }
 
-export interface DetailBatchFailure {
+export interface NotificationBatchWriteFailure {
     success: false;
-    notificationOid: string;
+    notificationBatchOid: string;
     processedRows: number;
     totalRows: number;
     failedBatch: number;
@@ -27,23 +27,23 @@ export interface DetailBatchFailure {
     error: string;
 }
 
-type DetailBatchResult = DetailBatchSuccess | DetailBatchFailure;
+type NotificationBatchWriteResult = NotificationBatchWriteSuccess | NotificationBatchWriteFailure;
 
-function chunkDetails(details: NotificationDetailCreate[], size: number): NotificationDetailCreate[][] {
-    if (size <= 0) return [details];
-    const chunks: NotificationDetailCreate[][] = [];
-    for (let index = 0; index < details.length; index += size) {
-        chunks.push(details.slice(index, index + size));
+function chunkNotifications(notifications: NotificationCreate[], size: number): NotificationCreate[][] {
+    if (size <= 0) return [notifications];
+    const chunks: NotificationCreate[][] = [];
+    for (let index = 0; index < notifications.length; index += size) {
+        chunks.push(notifications.slice(index, index + size));
     }
     return chunks;
 }
 
-export async function upsertNotificationDetailsInBatches(
-    notificationOid: string,
-    details: NotificationDetailCreate[],
-    onProgress?: (progress: DetailBatchProgress) => void
-): Promise<DetailBatchResult> {
-    const totalRows = details.length;
+export async function upsertNotificationsInBatches(
+    notificationBatchOid: string,
+    notifications: NotificationCreate[],
+    onProgress?: (progress: NotificationBatchWriteProgress) => void
+): Promise<NotificationBatchWriteResult> {
+    const totalRows = notifications.length;
     if (totalRows === 0) {
         return {
             success: true,
@@ -53,7 +53,7 @@ export async function upsertNotificationDetailsInBatches(
         };
     }
 
-    const batches = chunkDetails(details, DETAIL_BATCH_SIZE);
+    const batches = chunkNotifications(notifications, NOTIFICATION_BATCH_WRITE_SIZE);
     const totalBatches = batches.length;
     let processedRows = 0;
 
@@ -61,11 +61,11 @@ export async function upsertNotificationDetailsInBatches(
         const batch = batches[index];
         const currentBatch = index + 1;
 
-        const result = await batchUpsertCampaignNotificationDetailsAction(notificationOid, batch);
+        const result = await batchUpsertCampaignNotificationsAction(notificationBatchOid, batch);
         if (!result.success) {
             return {
                 success: false,
-                notificationOid,
+                notificationBatchOid,
                 processedRows,
                 totalRows,
                 failedBatch: currentBatch,

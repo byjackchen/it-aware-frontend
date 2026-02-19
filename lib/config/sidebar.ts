@@ -183,21 +183,21 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 labelKey: 'campaign',
                 items: [
                     {
-                        href: '/campaign/notifications',
-                        labelKey: 'notifications',
+                        href: '/campaign/notification-batches',
+                        labelKey: 'notificationBatches',
                         icon: BellRing,
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
-                            PERMISSIONS.OBJECTS.NOTIFICATIONS_READ,
+                            PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_READ,
                         ]),
                     },
                     {
-                        href: '/campaign/surveys',
-                        labelKey: 'surveys',
+                        href: '/campaign/survey-batches',
+                        labelKey: 'surveyBatches',
                         icon: ClipboardCheck,
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
-                            PERMISSIONS.OBJECTS.SURVEYS_READ,
+                            PERMISSIONS.OBJECTS.SURVEY_BATCHS_READ,
                         ]),
                     },
                 ],
