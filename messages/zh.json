@@ -510,9 +510,13 @@
                 "allStatus": "全部通知状态",
                 "search": "搜索接收人或内容"
             },
+            "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。",
+            "serverManagedStatus": "当前状态下批次为只读。",
+            "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
             "actions": {
                 "editObject": "编辑批次",
                 "addRow": "新增通知",
+                "cancelBatch": "取消批次",
                 "cancel": "取消"
             },
             "rowEditor": {
@@ -687,9 +691,15 @@
                 "allStatus": "全部问卷状态",
                 "search": "搜索接收人或回答"
             },
+            "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。提交/撤回为动作操作。",
+            "serverManagedStatus": "当前状态下批次为只读。",
             "actions": {
                 "editObject": "编辑批次",
                 "addRow": "新增问卷",
+                "publishBatch": "发布批次",
+                "closeBatch": "关闭批次",
+                "reopenBatch": "重新开启批次",
+                "cancelBatch": "取消批次",
                 "cancel": "取消"
             },
             "rowEditor": {
@@ -706,12 +716,16 @@
                 "actions": {
                     "create": "创建问卷",
                     "save": "保存问卷",
+                    "submit": "提交",
+                    "revoke": "撤回",
                     "delete": "删除问卷"
                 },
                 "errors": {
                     "emptyReceiver": "接收人 stable_id 不能为空。",
                     "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
                     "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
+                    "submitNotAllowed": "当前问卷状态不允许提交。",
+                    "revokeNotAllowed": "当前问卷状态不允许撤回。",
                     "createdSubmittedAtNotAllowed": "状态为 created 时 submitted_at 必须为空。",
                     "createdAnswerNotAllowed": "状态为 created 时 survey_answer 必须为空。"
                 }

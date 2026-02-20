@@ -17,9 +17,15 @@ import type {
     SurveyStatus,
 } from '@/lib/types/objects';
 import {
+    cancelCampaignSurveyBatchAction,
+    closeCampaignSurveyBatchAction,
     createCampaignSurveyAction,
-    updateCampaignSurveyAction,
+    publishCampaignSurveyBatchAction,
+    reopenCampaignSurveyBatchAction,
+    revokeCampaignSurveyAction,
+    submitCampaignSurveyAction,
     updateCampaignSurveyBatchAction,
+    updateCampaignSurveyAction,
     deleteCampaignSurveyAction,
 } from '@/app/actions/campaigns';
 import { PaneQuickScrollButtons } from '@/components/campaign_shared';
@@ -58,21 +64,6 @@ function formatDateTime(value: string | null): string {
     return date.toLocaleString();
 }
 
-function toDateTimeInputValue(value: string | null): string {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return localDate.toISOString().slice(0, 16);
-}
-
-function fromDateTimeInputValue(value: string): string | null {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-    return date.toISOString();
-}
-
 function toQuestionDrafts(surveyQuestions: SurveyQuestions): SurveyQuestionDraft[] {
     if (!Array.isArray(surveyQuestions.questions) || surveyQuestions.questions.length === 0) {
         return [createEmptyQuestionDraft('text')];
@@ -98,6 +89,7 @@ export function SurveysModule() {
     const { hasPermission } = usePermissions();
     const canWrite = hasPermission(PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE);
 
+    const [isBatchActionPending, startBatchActionTransition] = useTransition();
     const [isObjectSaving, startObjectSavingTransition] = useTransition();
     const [isRowSaving, startRowSavingTransition] = useTransition();
     const [isRowDeleting, startRowDeletingTransition] = useTransition();
@@ -133,8 +125,7 @@ export function SurveysModule() {
     const [rowReceiverStableId, setRowReceiverStableId] = useState('');
     const [rowIntro, setRowIntro] = useState('');
     const [rowQuestions, setRowQuestions] = useState<SurveyQuestionDraft[]>([createEmptyQuestionDraft('text')]);
-    const [rowStatus, setRowStatus] = useState<SurveyStatus>('created');
-    const [rowSubmittedAt, setRowSubmittedAt] = useState('');
+    const [rowStatus, setRowStatus] = useState<SurveyStatus>('not_started');
     const [rowAnswerText, setRowAnswerText] = useState('');
     const [rowCreatedAt, setRowCreatedAt] = useState<string | null>(null);
     const [rowUpdatedAt, setRowUpdatedAt] = useState<string | null>(null);
@@ -340,6 +331,8 @@ export function SurveysModule() {
         () => surveyBatches.find((survey) => survey.oid === selectedSurveyBatchOid) ?? null,
         [surveyBatches, selectedSurveyBatchOid]
     );
+    const isBatchDraft = selectedSurveyBatch?.status === 'draft';
+    const shouldAutoRefreshBatch = selectedSurveyBatch?.status === 'collecting';
 
     useEffect(() => {
         if (!selectedSurveyBatch) return;
@@ -352,6 +345,23 @@ export function SurveysModule() {
         setIsRowEditorOpen(false);
         setRowError(null);
     }, [selectedSurveyBatchOid]);
+
+    useEffect(() => {
+        if (!selectedSurveyBatchOid || !shouldAutoRefreshBatch) return;
+
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+
+            void (async () => {
+                await reloadSurveys();
+                await fetchDetailsPage(selectedSurveyBatchOid, 0, true);
+            })();
+        }, 8_000);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [fetchDetailsPage, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
 
     const filteredSurveys = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -401,6 +411,10 @@ export function SurveysModule() {
 
     const handleSaveObject = () => {
         if (!selectedSurveyBatch) return;
+        if (!isBatchDraft) {
+            setObjectError(t('details.serverManagedStatus'));
+            return;
+        }
 
         const nextName = objectName.trim();
         if (nextName.length === 0) {
@@ -425,15 +439,37 @@ export function SurveysModule() {
         });
     };
 
+    const handleBatchAction = (actionType: 'publish' | 'close' | 'reopen' | 'cancel') => {
+        if (!selectedSurveyBatch) return;
+
+        startBatchActionTransition(async () => {
+            const result = actionType === 'publish'
+                ? await publishCampaignSurveyBatchAction(selectedSurveyBatch.oid)
+                : actionType === 'close'
+                    ? await closeCampaignSurveyBatchAction(selectedSurveyBatch.oid)
+                    : actionType === 'reopen'
+                        ? await reopenCampaignSurveyBatchAction(selectedSurveyBatch.oid)
+                        : await cancelCampaignSurveyBatchAction(selectedSurveyBatch.oid);
+
+            if (!result.success) {
+                setDetailsError(result.error);
+                return;
+            }
+
+            await reloadSurveys();
+            await fetchDetailsPage(selectedSurveyBatch.oid, 0, true);
+        });
+    };
+
     const openCreateRowEditor = () => {
+        if (!isBatchDraft) return;
         const reference = details[0]?.survey_questions ?? fallbackSurveyQuestions();
         setRowEditorMode('create');
         setEditingSurveyOid(null);
         setRowReceiverStableId('');
         setRowIntro(reference.intro);
         setRowQuestions(toQuestionDrafts(reference));
-        setRowStatus('created');
-        setRowSubmittedAt('');
+        setRowStatus('not_started');
         setRowAnswerText('');
         setRowCreatedAt(null);
         setRowUpdatedAt(null);
@@ -449,7 +485,6 @@ export function SurveysModule() {
         setRowIntro(detail.survey_questions.intro);
         setRowQuestions(toQuestionDrafts(detail.survey_questions));
         setRowStatus(detail.status);
-        setRowSubmittedAt(toDateTimeInputValue(detail.submitted_at));
         setRowAnswerText(stringifySurveyAnswer(detail.survey_answer));
         setRowCreatedAt(detail.created_at);
         setRowUpdatedAt(detail.updated_at);
@@ -465,6 +500,10 @@ export function SurveysModule() {
 
     const handleSaveRow = () => {
         if (!selectedSurveyBatch) return;
+        if (!isBatchDraft) {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
 
         const receiverStableId = rowReceiverStableId.trim();
         if (receiverStableId.length === 0) {
@@ -484,51 +523,8 @@ export function SurveysModule() {
             return;
         }
 
-        const submittedAt = fromDateTimeInputValue(rowSubmittedAt);
-        let surveyAnswerPayload: SurveyAnswerPayload | null = null;
-
-        if (rowAnswerText.trim().length > 0) {
-            try {
-                surveyAnswerPayload = parseSurveyAnswerJson(rowAnswerText);
-            } catch (error) {
-                setRowError(error instanceof Error ? error.message : t('edit.errors.invalidAnswerJson'));
-                return;
-            }
-        }
-
-        if (rowStatus === 'submitted') {
-            if (!submittedAt) {
-                setRowError(t('details.rowEditor.errors.submittedAtRequired'));
-                return;
-            }
-
-            if (!surveyAnswerPayload) {
-                setRowError(t('details.rowEditor.errors.answerRequired'));
-                return;
-            }
-
-            const answerError = validateSurveyAnswerPayload(surveyQuestions, surveyAnswerPayload);
-            if (answerError) {
-                setRowError(answerError);
-                return;
-            }
-        } else {
-            if (submittedAt) {
-                setRowError(t('details.rowEditor.errors.createdSubmittedAtNotAllowed'));
-                return;
-            }
-
-            if (surveyAnswerPayload) {
-                setRowError(t('details.rowEditor.errors.createdAnswerNotAllowed'));
-                return;
-            }
-        }
-
         const payload = {
             survey_questions: surveyQuestions,
-            status: rowStatus,
-            submitted_at: rowStatus === 'submitted' ? submittedAt : null,
-            survey_answer: rowStatus === 'submitted' ? surveyAnswerPayload : null,
         };
 
         setRowError(null);
@@ -561,8 +557,97 @@ export function SurveysModule() {
         });
     };
 
+    const handleSubmitRowAction = () => {
+        if (!selectedSurveyBatch || rowEditorMode !== 'edit' || !editingSurveyOid) return;
+        if (selectedSurveyBatch.status === 'draft' || selectedSurveyBatch.status === 'cancelled') {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
+        if (rowStatus !== 'not_started' && rowStatus !== 'revoked') {
+            setRowError(t('details.rowEditor.errors.submitNotAllowed'));
+            return;
+        }
+
+        const surveyQuestions = toSurveyQuestions(rowIntro, rowQuestions);
+        const questionError = validateSurveyQuestions(surveyQuestions);
+        if (questionError) {
+            setRowError(questionError);
+            return;
+        }
+
+        let surveyAnswerPayload: SurveyAnswerPayload | null;
+        try {
+            surveyAnswerPayload = parseSurveyAnswerJson(rowAnswerText);
+        } catch (error) {
+            setRowError(error instanceof Error ? error.message : t('edit.errors.invalidAnswerJson'));
+            return;
+        }
+
+        if (!surveyAnswerPayload) {
+            setRowError(t('details.rowEditor.errors.answerRequired'));
+            return;
+        }
+
+        const answerError = validateSurveyAnswerPayload(surveyQuestions, surveyAnswerPayload);
+        if (answerError) {
+            setRowError(answerError);
+            return;
+        }
+
+        setRowError(null);
+        startRowSavingTransition(async () => {
+            const result = await submitCampaignSurveyAction(
+                selectedSurveyBatch.oid,
+                editingSurveyOid,
+                surveyAnswerPayload
+            );
+
+            if (!result.success) {
+                setRowError(result.error);
+                return;
+            }
+
+            setIsRowEditorOpen(false);
+            await fetchDetailsPage(selectedSurveyBatch.oid, 0, true);
+            await reloadSurveys();
+        });
+    };
+
+    const handleRevokeRowAction = () => {
+        if (!selectedSurveyBatch || rowEditorMode !== 'edit' || !editingSurveyOid) return;
+        if (selectedSurveyBatch.status === 'draft' || selectedSurveyBatch.status === 'cancelled') {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
+        if (rowStatus !== 'submitted') {
+            setRowError(t('details.rowEditor.errors.revokeNotAllowed'));
+            return;
+        }
+
+        setRowError(null);
+        startRowSavingTransition(async () => {
+            const result = await revokeCampaignSurveyAction(
+                selectedSurveyBatch.oid,
+                editingSurveyOid
+            );
+
+            if (!result.success) {
+                setRowError(result.error);
+                return;
+            }
+
+            setIsRowEditorOpen(false);
+            await fetchDetailsPage(selectedSurveyBatch.oid, 0, true);
+            await reloadSurveys();
+        });
+    };
+
     const handleDeleteRow = () => {
         if (!selectedSurveyBatch || rowEditorMode !== 'edit' || !editingSurveyOid) return;
+        if (!isBatchDraft) {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
 
         setRowError(null);
         startRowDeletingTransition(async () => {
@@ -581,6 +666,20 @@ export function SurveysModule() {
             await reloadSurveys();
         });
     };
+
+    const isRowMetadataEditable = canWrite && isBatchDraft;
+    const canSubmitRowAction = (
+        rowEditorMode === 'edit'
+        && (rowStatus === 'not_started' || rowStatus === 'revoked')
+        && selectedSurveyBatch?.status !== 'draft'
+        && selectedSurveyBatch?.status !== 'cancelled'
+    );
+    const canRevokeRowAction = (
+        rowEditorMode === 'edit'
+        && rowStatus === 'submitted'
+        && selectedSurveyBatch?.status !== 'draft'
+        && selectedSurveyBatch?.status !== 'cancelled'
+    );
 
     return (
         <SurveyAccessGate>
@@ -608,9 +707,9 @@ export function SurveysModule() {
                                 className={`w-full px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                             >
                                 <option value="">{t('list.filters.allStatus')}</option>
-                                <option value="created">created</option>
-                                <option value="partial">partial</option>
-                                <option value="completed">completed</option>
+                                <option value="draft">draft</option>
+                                <option value="collecting">collecting</option>
+                                <option value="closed">closed</option>
                                 <option value="cancelled">cancelled</option>
                             </select>
 
@@ -668,7 +767,7 @@ export function SurveysModule() {
                                             >
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.name}</p>
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${getSurveyStatusClass(item.status)}`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${getSurveyBatchStatusClass(item.status)}`}>
                                                         {item.status}
                                                     </span>
                                                 </div>
@@ -715,14 +814,77 @@ export function SurveysModule() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
+                                            {canWrite && selectedSurveyBatch.status === 'draft' && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBatchAction('publish')}
+                                                        disabled={isBatchActionPending}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                        <span>{t('details.actions.publishBatch')}</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBatchAction('cancel')}
+                                                        disabled={isBatchActionPending}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                        <span>{t('details.actions.cancelBatch')}</span>
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {canWrite && selectedSurveyBatch.status === 'collecting' && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBatchAction('close')}
+                                                        disabled={isBatchActionPending}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                        <span>{t('details.actions.closeBatch')}</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleBatchAction('cancel')}
+                                                        disabled={isBatchActionPending}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                        <span>{t('details.actions.cancelBatch')}</span>
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {canWrite && selectedSurveyBatch.status === 'closed' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleBatchAction('reopen')}
+                                                    disabled={isBatchActionPending}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                >
+                                                    {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                    <span>{t('details.actions.reopenBatch')}</span>
+                                                </button>
+                                            )}
+
                                             {canWrite && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
+                                                        if (!isBatchDraft) {
+                                                            setObjectError(t('details.serverManagedStatus'));
+                                                            return;
+                                                        }
                                                         setIsObjectEditing((current) => !current);
                                                         setObjectError(null);
                                                         setObjectName(selectedSurveyBatch.name);
                                                     }}
+                                                    disabled={!isBatchDraft}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Pencil className="w-4 h-4" />
@@ -734,6 +896,7 @@ export function SurveysModule() {
                                                 <button
                                                     type="button"
                                                     onClick={openCreateRowEditor}
+                                                    disabled={!isBatchDraft}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Plus className="w-4 h-4" />
@@ -742,6 +905,10 @@ export function SurveysModule() {
                                             )}
                                         </div>
                                     </div>
+
+                                    <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                        {t('details.serverManagedHint')}
+                                    </p>
 
                                     {isObjectEditing ? (
                                         <div className="space-y-3 rounded-lg border border-white/10 p-3">
@@ -821,8 +988,10 @@ export function SurveysModule() {
                                             className={`px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                         >
                                             <option value="">{t('details.filters.allStatus')}</option>
-                                            <option value="created">created</option>
+                                            <option value="not_started">not_started</option>
                                             <option value="submitted">submitted</option>
+                                            <option value="revoked">revoked</option>
+                                            <option value="expired">expired</option>
                                         </select>
 
                                         <input
@@ -856,11 +1025,33 @@ export function SurveysModule() {
                                                     <button
                                                         type="button"
                                                         onClick={handleDeleteRow}
-                                                        disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                        disabled={!isRowMetadataEditable || isRowSaving || isRowDeleting}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                                                         <span>{t('details.rowEditor.actions.delete')}</span>
+                                                    </button>
+                                                )}
+                                                {canSubmitRowAction && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSubmitRowAction}
+                                                        disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                        <span>{t('details.rowEditor.actions.submit')}</span>
+                                                    </button>
+                                                )}
+                                                {canRevokeRowAction && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleRevokeRowAction}
+                                                        disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                                                    >
+                                                        {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                        <span>{t('details.rowEditor.actions.revoke')}</span>
                                                     </button>
                                                 )}
                                                 <button
@@ -874,7 +1065,7 @@ export function SurveysModule() {
                                                 <button
                                                     type="button"
                                                     onClick={handleSaveRow}
-                                                    disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                    disabled={!isRowMetadataEditable || isRowSaving || isRowDeleting}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
                                                 >
                                                     {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -895,7 +1086,7 @@ export function SurveysModule() {
                                                 type="text"
                                                 value={rowReceiverStableId}
                                                 onChange={(event) => setRowReceiverStableId(event.target.value)}
-                                                disabled={rowEditorMode === 'edit' || isRowSaving || isRowDeleting || !canWrite}
+                                                disabled={rowEditorMode === 'edit' || isRowSaving || isRowDeleting || !isRowMetadataEditable}
                                                 className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                             />
                                         </div>
@@ -903,26 +1094,18 @@ export function SurveysModule() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
                                                 <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.status')}</label>
-                                                <select
-                                                    value={rowStatus}
-                                                    onChange={(event) => setRowStatus(event.target.value as SurveyStatus)}
-                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
-                                                    className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                                                >
-                                                    <option value="created">created</option>
-                                                    <option value="submitted">submitted</option>
-                                                </select>
+                                                <span className={`inline-block px-2 py-1 rounded-md text-xs border ${getSurveyStatusClass(rowStatus)}`}>
+                                                    {rowStatus}
+                                                </span>
                                             </div>
 
                                             <div>
                                                 <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.submittedAt')}</label>
-                                                <input
-                                                    type="datetime-local"
-                                                    value={rowSubmittedAt}
-                                                    onChange={(event) => setRowSubmittedAt(event.target.value)}
-                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
-                                                    className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                                                />
+                                                <p className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900 bg-slate-50' : 'border-white/10 bg-slate-900/80 text-white'}`}>
+                                                    {rowEditorMode === 'edit' && editingSurveyOid
+                                                        ? formatDateTime(details.find((item) => item.oid === editingSurveyOid)?.submitted_at ?? null)
+                                                        : '—'}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -944,7 +1127,7 @@ export function SurveysModule() {
                                             <textarea
                                                 value={rowAnswerText}
                                                 onChange={(event) => setRowAnswerText(event.target.value)}
-                                                disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                disabled={isRowSaving || isRowDeleting || !canWrite || rowEditorMode !== 'edit' || !canSubmitRowAction}
                                                 rows={8}
                                                 placeholder={t('details.rowEditor.fields.answerJsonPlaceholder')}
                                                 className={`w-full px-2 py-1.5 rounded-md border text-sm font-mono resize-y ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
@@ -958,7 +1141,7 @@ export function SurveysModule() {
                                                 onIntroChange={setRowIntro}
                                                 questions={rowQuestions}
                                                 onQuestionsChange={setRowQuestions}
-                                                disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                disabled={isRowSaving || isRowDeleting || !isRowMetadataEditable}
                                             />
                                         </div>
                                     </section>

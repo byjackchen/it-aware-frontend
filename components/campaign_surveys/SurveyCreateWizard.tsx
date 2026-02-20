@@ -91,9 +91,6 @@ export function SurveyCreateWizard() {
             const surveys: SurveyCreate[] = selectedReceiverStableIds.map((stableId) => ({
                 receiver_stable_id: stableId,
                 survey_questions: surveyQuestions,
-                status: 'created',
-                survey_answer: null,
-                submitted_at: null,
             }));
 
             const upsertResult = await upsertSurveysInBatches(surveyBatchOid, surveys, setBatchProgress);

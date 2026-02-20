@@ -14,7 +14,9 @@ import {
     deleteNotificationBatch,
     deleteSurvey,
     deleteSurveyBatch,
-    triggerNotificationBatchNonBlock,
+    postNotificationBatchAction,
+    postSurveyAction,
+    postSurveyBatchAction,
     updateNotification,
     updateNotificationBatch,
     updateSurvey,
@@ -30,6 +32,7 @@ import type {
     NotificationCreate,
     NotificationUpdate,
     Survey,
+    SurveyAnswerPayload,
     SurveyBatch,
     SurveyBatchCreate,
     SurveyBatchUpdate,
@@ -371,7 +374,7 @@ export async function deleteCampaignNotificationAction(
 
 export async function triggerCampaignNotificationBatchAction(
     notificationBatchOid: string
-): Promise<CampaignActionResult<string>> {
+): Promise<CampaignActionResult<NotificationBatch>> {
     const requestId = logger.generateRequestId();
     const action = 'Campaign:triggerNotificationBatch';
     const startTime = Date.now();
@@ -387,20 +390,55 @@ export async function triggerCampaignNotificationBatchAction(
     }
 
     try {
-        const result = await triggerNotificationBatchNonBlock(notificationBatchOid);
+        const result = await postNotificationBatchAction(notificationBatchOid, { action: 'trigger' });
         revalidatePath('/campaign/notification-batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
             action,
             notificationBatchOid,
-            runId: result.run_id,
+            status: result.status,
         });
-        return { success: true, data: result.run_id };
+        return { success: true, data: result };
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action, notificationBatchOid });
         return { success: false, error: formatError(error, 'Failed to trigger notification batch') };
+    }
+}
+
+export async function cancelCampaignNotificationBatchAction(
+    notificationBatchOid: string
+): Promise<CampaignActionResult<NotificationBatch>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:cancelNotificationBatch';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_WRITE,
+        'notification_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await postNotificationBatchAction(notificationBatchOid, { action: 'cancel' });
+        revalidatePath('/campaign/notification-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, {
+            requestId,
+            action,
+            notificationBatchOid,
+            status: result.status,
+        });
+        return { success: true, data: result };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, notificationBatchOid });
+        return { success: false, error: formatError(error, 'Failed to cancel notification batch') };
     }
 }
 
@@ -498,6 +536,126 @@ export async function deleteCampaignSurveyBatchAction(surveyBatchOid: string): P
     }
 }
 
+export async function publishCampaignSurveyBatchAction(
+    surveyBatchOid: string
+): Promise<CampaignActionResult<SurveyBatch>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:publishSurveyBatch';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await postSurveyBatchAction(surveyBatchOid, { action: 'publish' });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
+        return { success: true, data: result };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid });
+        return { success: false, error: formatError(error, 'Failed to publish survey batch') };
+    }
+}
+
+export async function closeCampaignSurveyBatchAction(
+    surveyBatchOid: string
+): Promise<CampaignActionResult<SurveyBatch>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:closeSurveyBatch';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await postSurveyBatchAction(surveyBatchOid, { action: 'close' });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
+        return { success: true, data: result };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid });
+        return { success: false, error: formatError(error, 'Failed to close survey batch') };
+    }
+}
+
+export async function reopenCampaignSurveyBatchAction(
+    surveyBatchOid: string
+): Promise<CampaignActionResult<SurveyBatch>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:reopenSurveyBatch';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await postSurveyBatchAction(surveyBatchOid, { action: 'reopen' });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
+        return { success: true, data: result };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid });
+        return { success: false, error: formatError(error, 'Failed to reopen survey batch') };
+    }
+}
+
+export async function cancelCampaignSurveyBatchAction(
+    surveyBatchOid: string
+): Promise<CampaignActionResult<SurveyBatch>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:cancelSurveyBatch';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const result = await postSurveyBatchAction(surveyBatchOid, { action: 'cancel' });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
+        return { success: true, data: result };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid });
+        return { success: false, error: formatError(error, 'Failed to cancel survey batch') };
+    }
+}
+
 export async function createCampaignSurveyAction(
     surveyBatchOid: string,
     survey: SurveyCreate
@@ -564,6 +722,74 @@ export async function updateCampaignSurveyAction(
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
         return { success: false, error: formatError(error, 'Failed to update survey row') };
+    }
+}
+
+export async function submitCampaignSurveyAction(
+    surveyBatchOid: string,
+    surveyOid: string,
+    surveyAnswer: SurveyAnswerPayload
+): Promise<CampaignActionResult<Survey>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:submitSurvey';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const updated = await postSurveyAction(surveyBatchOid, surveyOid, {
+            action: 'submit',
+            survey_answer: surveyAnswer,
+        });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid, status: updated.status });
+        return { success: true, data: updated };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to submit survey row') };
+    }
+}
+
+export async function revokeCampaignSurveyAction(
+    surveyBatchOid: string,
+    surveyOid: string
+): Promise<CampaignActionResult<Survey>> {
+    const requestId = logger.generateRequestId();
+    const action = 'Campaign:revokeSurvey';
+    const startTime = Date.now();
+
+    const writeCheck = await checkCampaignWritePermission(
+        requestId,
+        action,
+        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
+        'survey_batchs'
+    );
+    if ('error' in writeCheck) {
+        return { success: false, error: writeCheck.error };
+    }
+
+    try {
+        const updated = await postSurveyAction(surveyBatchOid, surveyOid, {
+            action: 'revoke',
+        });
+        revalidatePath('/campaign/survey-batches');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid, status: updated.status });
+        return { success: true, data: updated };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        return { success: false, error: formatError(error, 'Failed to revoke survey row') };
     }
 }
 
@@ -677,9 +903,6 @@ export async function createCampaignSurveyBatchSpreadsheetImportAction(
             await createSurvey(createdBatch.oid, {
                 receiver_stable_id: row.receiver_stable_id,
                 survey_questions: row.survey_questions,
-                status: 'created',
-                survey_answer: null,
-                submitted_at: null,
             });
         }
 

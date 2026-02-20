@@ -17,6 +17,7 @@ import type {
     NotificationStatus,
 } from '@/lib/types/objects';
 import {
+    cancelCampaignNotificationBatchAction,
     createCampaignNotificationAction,
     deleteCampaignNotificationAction,
     triggerCampaignNotificationBatchAction,
@@ -80,7 +81,7 @@ export function NotificationsModule() {
     const { hasPermission } = usePermissions();
     const canWrite = hasPermission(PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_WRITE);
 
-    const [isTriggerPending, startTriggerTransition] = useTransition();
+    const [isBatchActionPending, startBatchActionTransition] = useTransition();
     const [isObjectSaving, startObjectSavingTransition] = useTransition();
     const [isRowSaving, startRowSavingTransition] = useTransition();
     const [isRowDeleting, startRowDeletingTransition] = useTransition();
@@ -119,7 +120,7 @@ export function NotificationsModule() {
     const [rowContentBlocks, setRowContentBlocks] = useState<NotificationContentBlock[]>([createEmptyBlock('text')]);
     const [rowStatus, setRowStatus] = useState<NotificationStatus>('created');
     const [rowScheduledAt, setRowScheduledAt] = useState('');
-    const [rowErrorMessage, setRowErrorMessage] = useState('');
+    const [rowServerErrorMessage, setRowServerErrorMessage] = useState('');
     const [rowCreatedAt, setRowCreatedAt] = useState<string | null>(null);
     const [rowUpdatedAt, setRowUpdatedAt] = useState<string | null>(null);
     const [rowError, setRowError] = useState<string | null>(null);
@@ -325,6 +326,8 @@ export function NotificationsModule() {
         () => notificationBatches.find((notification) => notification.oid === selectedNotificationBatchOid) ?? null,
         [notificationBatches, selectedNotificationBatchOid]
     );
+    const isBatchMetadataEditable = selectedNotification?.status === 'ready';
+    const shouldAutoRefreshBatch = selectedNotification?.status === 'running';
 
     useEffect(() => {
         if (!selectedNotification) return;
@@ -338,6 +341,23 @@ export function NotificationsModule() {
         setIsRowEditorOpen(false);
         setRowError(null);
     }, [selectedNotificationBatchOid]);
+
+    useEffect(() => {
+        if (!selectedNotificationBatchOid || !shouldAutoRefreshBatch) return;
+
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+
+            void (async () => {
+                await reloadNotifications();
+                await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
+            })();
+        }, 8_000);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [fetchDetailsPage, reloadNotifications, selectedNotificationBatchOid, shouldAutoRefreshBatch]);
 
     const filteredNotifications = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -387,8 +407,22 @@ export function NotificationsModule() {
 
     const handleTrigger = () => {
         if (!selectedNotificationBatchOid) return;
-        startTriggerTransition(async () => {
+        startBatchActionTransition(async () => {
             const result = await triggerCampaignNotificationBatchAction(selectedNotificationBatchOid);
+            if (!result.success) {
+                setDetailsError(result.error);
+                return;
+            }
+
+            await reloadNotifications();
+            await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
+        });
+    };
+
+    const handleCancelBatch = () => {
+        if (!selectedNotificationBatchOid) return;
+        startBatchActionTransition(async () => {
+            const result = await cancelCampaignNotificationBatchAction(selectedNotificationBatchOid);
             if (!result.success) {
                 setDetailsError(result.error);
                 return;
@@ -407,10 +441,10 @@ export function NotificationsModule() {
         setRowContentBlocks(sourceBlocks);
         setRowStatus('created');
         setRowScheduledAt('');
-        setRowErrorMessage('');
+        setRowServerErrorMessage('');
         setRowCreatedAt(null);
         setRowUpdatedAt(null);
-        setRowError(null);
+        setRowError(isBatchMetadataEditable ? null : t('details.serverManagedStatus'));
         setIsRowEditorOpen(true);
     };
 
@@ -422,7 +456,7 @@ export function NotificationsModule() {
         setRowContentBlocks(cloneContentBlocks(detail.content_blocks));
         setRowStatus(detail.status);
         setRowScheduledAt(toDateTimeInputValue(detail.scheduled_at));
-        setRowErrorMessage(detail.error_message ?? '');
+        setRowServerErrorMessage(detail.error_message ?? '');
         setRowCreatedAt(detail.created_at);
         setRowUpdatedAt(detail.updated_at);
         setRowError(null);
@@ -437,6 +471,10 @@ export function NotificationsModule() {
 
     const handleSaveObject = () => {
         if (!selectedNotification) return;
+        if (!isBatchMetadataEditable) {
+            setObjectError(t('details.serverManagedStatus'));
+            return;
+        }
 
         const nextName = objectName.trim();
         if (nextName.length === 0) {
@@ -464,6 +502,10 @@ export function NotificationsModule() {
 
     const handleSaveRow = () => {
         if (!selectedNotification) return;
+        if (!isBatchMetadataEditable) {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
 
         const receiverStableId = rowReceiverStableId.trim();
         if (receiverStableId.length === 0) {
@@ -481,12 +523,6 @@ export function NotificationsModule() {
             return;
         }
 
-        const normalizedErrorMessage = rowErrorMessage.trim();
-        if (rowStatus === 'failed' && normalizedErrorMessage.length === 0) {
-            setRowError(t('details.rowEditor.errors.failedNeedsError'));
-            return;
-        }
-
         if (rowEditorMode === 'edit' && !editingNotificationOid) {
             setRowError(t('errors.loadDetails'));
             return;
@@ -496,9 +532,7 @@ export function NotificationsModule() {
 
         const payload = {
             content_blocks: cloneContentBlocks(rowContentBlocks),
-            status: rowStatus,
             scheduled_at: fromDateTimeInputValue(rowScheduledAt),
-            error_message: rowStatus === 'failed' ? normalizedErrorMessage : null,
         };
 
         startRowSavingTransition(async () => {
@@ -526,6 +560,10 @@ export function NotificationsModule() {
 
     const handleDeleteRow = () => {
         if (!selectedNotification || rowEditorMode !== 'edit' || !editingNotificationOid) return;
+        if (!isBatchMetadataEditable) {
+            setRowError(t('details.serverManagedStatus'));
+            return;
+        }
 
         setRowError(null);
         startRowDeletingTransition(async () => {
@@ -572,11 +610,10 @@ export function NotificationsModule() {
                                     className={`px-2 py-1.5 text-sm rounded-md border ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                 >
                                     <option value="">{t('list.filters.allStatus')}</option>
-                                    <option value="created">created</option>
-                                    <option value="processing">processing</option>
-                                    <option value="partial">partial</option>
+                                    <option value="ready">ready</option>
+                                    <option value="running">running</option>
+                                    <option value="partially_completed">partially_completed</option>
                                     <option value="completed">completed</option>
-                                    <option value="completed_with_failures">completed_with_failures</option>
                                     <option value="cancelled">cancelled</option>
                                 </select>
 
@@ -693,19 +730,31 @@ export function NotificationsModule() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {canWrite && selectedNotification.status === 'created' && (
+                                            {canWrite && (selectedNotification.status === 'ready' || selectedNotification.status === 'partially_completed') && (
                                                 <button
                                                     type="button"
                                                     onClick={handleTrigger}
-                                                    disabled={isTriggerPending}
+                                                    disabled={isBatchActionPending}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
                                                 >
-                                                    {isTriggerPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                                    {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                                     <span>{t('details.trigger')}</span>
                                                 </button>
                                             )}
 
-                                            {canWrite && (
+                                            {canWrite && (selectedNotification.status === 'ready' || selectedNotification.status === 'running') && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelBatch}
+                                                    disabled={isBatchActionPending}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                                                >
+                                                    {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                                    <span>{t('details.actions.cancelBatch')}</span>
+                                                </button>
+                                            )}
+
+                                            {canWrite && isBatchMetadataEditable && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -721,7 +770,7 @@ export function NotificationsModule() {
                                                 </button>
                                             )}
 
-                                            {canWrite && (
+                                            {canWrite && isBatchMetadataEditable && (
                                                 <button
                                                     type="button"
                                                     onClick={openCreateRowEditor}
@@ -734,6 +783,15 @@ export function NotificationsModule() {
                                         </div>
                                     </div>
 
+                                    <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                        {t('details.serverManagedHint')}
+                                    </p>
+                                    {!isBatchMetadataEditable && (
+                                        <p className={`text-xs ${isLight ? 'text-amber-600' : 'text-amber-300'}`}>
+                                            {t('details.nonEditableState')}
+                                        </p>
+                                    )}
+
                                     {isObjectEditing ? (
                                         <div className="space-y-3 rounded-lg border border-white/10 p-3">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -743,7 +801,7 @@ export function NotificationsModule() {
                                                         type="text"
                                                         value={objectName}
                                                         onChange={(event) => setObjectName(event.target.value)}
-                                                        disabled={isObjectSaving}
+                                                        disabled={isObjectSaving || !isBatchMetadataEditable}
                                                         className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                                     />
                                                 </div>
@@ -752,7 +810,7 @@ export function NotificationsModule() {
                                                     <select
                                                         value={objectChannel}
                                                         onChange={(event) => setObjectChannel(event.target.value as NotificationBatchChannel)}
-                                                        disabled={isObjectSaving}
+                                                        disabled={isObjectSaving || !isBatchMetadataEditable}
                                                         className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                                     >
                                                         <option value="wecom_bot">wecom_bot</option>
@@ -782,7 +840,7 @@ export function NotificationsModule() {
                                                 <button
                                                     type="button"
                                                     onClick={handleSaveObject}
-                                                    disabled={isObjectSaving}
+                                                    disabled={isObjectSaving || !isBatchMetadataEditable}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
                                                 >
                                                     {isObjectSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -840,6 +898,7 @@ export function NotificationsModule() {
                                             <option value="created">created</option>
                                             <option value="sent">sent</option>
                                             <option value="failed">failed</option>
+                                            <option value="cancelled">cancelled</option>
                                         </select>
 
                                         <input
@@ -873,7 +932,7 @@ export function NotificationsModule() {
                                                     <button
                                                         type="button"
                                                         onClick={handleDeleteRow}
-                                                        disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                        disabled={!canWrite || !isBatchMetadataEditable || isRowSaving || isRowDeleting}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -891,7 +950,7 @@ export function NotificationsModule() {
                                                 <button
                                                     type="button"
                                                     onClick={handleSaveRow}
-                                                    disabled={!canWrite || isRowSaving || isRowDeleting}
+                                                    disabled={!canWrite || !isBatchMetadataEditable || isRowSaving || isRowDeleting}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
                                                 >
                                                     {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -912,7 +971,7 @@ export function NotificationsModule() {
                                                 type="text"
                                                 value={rowReceiverStableId}
                                                 onChange={(event) => setRowReceiverStableId(event.target.value)}
-                                                disabled={rowEditorMode === 'edit' || isRowSaving || isRowDeleting || !canWrite}
+                                                disabled={rowEditorMode === 'edit' || isRowSaving || isRowDeleting || !canWrite || !isBatchMetadataEditable}
                                                 className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                             />
                                         </div>
@@ -920,16 +979,9 @@ export function NotificationsModule() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
                                                 <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.status')}</label>
-                                                <select
-                                                    value={rowStatus}
-                                                    onChange={(event) => setRowStatus(event.target.value as NotificationStatus)}
-                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
-                                                    className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                                                >
-                                                    <option value="created">created</option>
-                                                    <option value="sent">sent</option>
-                                                    <option value="failed">failed</option>
-                                                </select>
+                                                <span className={`inline-block px-2 py-1 rounded-md text-xs border ${getNotificationStatusRowClass(rowStatus)}`}>
+                                                    {rowStatus}
+                                                </span>
                                             </div>
 
                                             <div>
@@ -938,7 +990,7 @@ export function NotificationsModule() {
                                                     type="datetime-local"
                                                     value={rowScheduledAt}
                                                     onChange={(event) => setRowScheduledAt(event.target.value)}
-                                                    disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                    disabled={isRowSaving || isRowDeleting || !canWrite || !isBatchMetadataEditable}
                                                     className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                                 />
                                             </div>
@@ -946,13 +998,9 @@ export function NotificationsModule() {
 
                                         <div>
                                             <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.errorMessage')}</label>
-                                            <input
-                                                type="text"
-                                                value={rowErrorMessage}
-                                                onChange={(event) => setRowErrorMessage(event.target.value)}
-                                                disabled={isRowSaving || isRowDeleting || !canWrite}
-                                                className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                                            />
+                                            <p className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900 bg-slate-50' : 'border-white/10 bg-slate-900/80 text-white'}`}>
+                                                {rowServerErrorMessage || '—'}
+                                            </p>
                                         </div>
 
                                         {(rowCreatedAt || rowUpdatedAt) && (
@@ -973,7 +1021,7 @@ export function NotificationsModule() {
                                             <NotificationContentBlocksEditor
                                                 blocks={rowContentBlocks}
                                                 onChange={setRowContentBlocks}
-                                                disabled={isRowSaving || isRowDeleting || !canWrite}
+                                                disabled={isRowSaving || isRowDeleting || !canWrite || !isBatchMetadataEditable}
                                             />
                                         </div>
                                     </section>

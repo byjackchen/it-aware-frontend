@@ -5,20 +5,22 @@
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { fetchApi } from '@/lib/api/core';
 import type {
+    CrossBatchSurveyListParams,
     Notification,
     NotificationBatch,
+    NotificationBatchActionRequest,
     NotificationBatchCreate,
     NotificationBatchListParams,
     NotificationBatchListResponse,
-    NotificationBatchTriggerResponse,
     NotificationBatchUpdate,
     NotificationCreate,
     NotificationListParams,
     NotificationListResponse,
     NotificationUpdate,
     Survey,
-    SurveyAnswerPayload,
+    SurveyActionRequest,
     SurveyBatch,
+    SurveyBatchActionRequest,
     SurveyBatchCreate,
     SurveyBatchListParams,
     SurveyBatchListResponse,
@@ -31,7 +33,7 @@ import type {
 
 const NOTIFICATION_BATCHS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/notification_batchs`;
 const SURVEY_BATCHS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/survey_batchs`;
-const CAMPAIGN_SERVICES_BASE = `${RUNTIME_CONFIG.backend.domain}/services/campaigns`;
+const SURVEYS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/campaigns/surveys`;
 
 function setOptionalQueryParam(query: URLSearchParams, key: string, value: string | number | undefined): void {
     if (value === undefined) return;
@@ -78,6 +80,19 @@ export async function deleteNotificationBatch(oid: string): Promise<void> {
     return fetchApi<void>(`${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
+}
+
+export async function postNotificationBatchAction(
+    notificationBatchOid: string,
+    payload: NotificationBatchActionRequest
+): Promise<NotificationBatch> {
+    return fetchApi<NotificationBatch>(
+        `${NOTIFICATION_BATCHS_BASE}/${encodeURIComponent(notificationBatchOid)}/actions`,
+        {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }
+    );
 }
 
 // Notification child APIs
@@ -187,6 +202,19 @@ export async function deleteSurveyBatch(oid: string): Promise<void> {
     });
 }
 
+export async function postSurveyBatchAction(
+    surveyBatchOid: string,
+    payload: SurveyBatchActionRequest
+): Promise<SurveyBatch> {
+    return fetchApi<SurveyBatch>(
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/actions`,
+        {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }
+    );
+}
+
 // Survey child APIs
 export async function getSurveys(
     surveyBatchOid: string,
@@ -257,48 +285,28 @@ export async function deleteSurvey(surveyBatchOid: string, surveyOid: string): P
     );
 }
 
-// Campaign service APIs
-export async function triggerNotificationBatchNonBlock(
-    notificationBatchOid: string
-): Promise<NotificationBatchTriggerResponse> {
-    return fetchApi<NotificationBatchTriggerResponse>(`${CAMPAIGN_SERVICES_BASE}/trigger_notification_batch_non-block`, {
-        method: 'POST',
-        body: JSON.stringify({ notification_batch_oid: notificationBatchOid }),
-    });
-}
-
-export interface SurveyReceiverSubmitOperation {
-    operation: 'submit';
-    survey_answer: SurveyAnswerPayload;
-}
-
-export interface SurveyReceiverRevokeOperation {
-    operation: 'revoke';
-}
-
-export type SurveyReceiverOperation = SurveyReceiverSubmitOperation | SurveyReceiverRevokeOperation;
-
-export async function getSurveyBatchSurveyReceiver(
+export async function postSurveyAction(
     surveyBatchOid: string,
     surveyOid: string,
-    receiverStableId: string
+    payload: SurveyActionRequest
 ): Promise<Survey> {
     return fetchApi<Survey>(
-        `${CAMPAIGN_SERVICES_BASE}/survey_batchs/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/receiver/${encodeURIComponent(receiverStableId)}`
-    );
-}
-
-export async function postSurveyBatchSurveyReceiverOperation(
-    surveyBatchOid: string,
-    surveyOid: string,
-    receiverStableId: string,
-    operation: SurveyReceiverOperation
-): Promise<Survey> {
-    return fetchApi<Survey>(
-        `${CAMPAIGN_SERVICES_BASE}/survey_batchs/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/receiver/${encodeURIComponent(receiverStableId)}`,
+        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/actions`,
         {
             method: 'POST',
-            body: JSON.stringify(operation),
+            body: JSON.stringify(payload),
         }
     );
+}
+
+export async function getCampaignSurveys(params: CrossBatchSurveyListParams): Promise<SurveyListResponse> {
+    const query = new URLSearchParams();
+    setOptionalQueryParam(query, 'receiver_stable_id', params.receiver_stable_id);
+    setOptionalQueryParam(query, 'survey_status', params.survey_status);
+    setOptionalQueryParam(query, 'survey_batch_status', params.survey_batch_status);
+    setOptionalQueryParam(query, 'survey_batch_oid', params.survey_batch_oid);
+    if (params.skip !== undefined) query.set('skip', String(params.skip));
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+
+    return fetchApi<SurveyListResponse>(withQuery(SURVEYS_BASE, query));
 }

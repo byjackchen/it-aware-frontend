@@ -738,14 +738,13 @@ export interface InteractionListResponse {
 export type NotificationBatchChannel = 'wecom_bot' | 'wecom_ops_bot';
 
 export type NotificationBatchStatus =
-    | 'created'
-    | 'processing'
-    | 'partial'
+    | 'ready'
+    | 'running'
+    | 'partially_completed'
     | 'completed'
-    | 'completed_with_failures'
     | 'cancelled';
 
-export type NotificationStatus = 'created' | 'sent' | 'failed';
+export type NotificationStatus = 'created' | 'sent' | 'failed' | 'cancelled';
 
 export interface NotificationContentTextBlock {
     type: 'text';
@@ -790,7 +789,10 @@ export interface NotificationBatchCreate {
 export interface NotificationBatchUpdate {
     name?: string;
     channel?: NotificationBatchChannel;
-    status?: 'processing' | 'cancelled';
+}
+
+export interface NotificationBatchActionRequest {
+    action: 'trigger' | 'cancel';
 }
 
 export interface NotificationBatchListParams {
@@ -832,9 +834,7 @@ export interface NotificationCreate {
 export interface NotificationUpdate {
     receiver_oid?: string | null;
     content_blocks?: NotificationContentBlock[];
-    status?: NotificationStatus;
     scheduled_at?: string | null;
-    error_message?: string | null;
 }
 
 export interface NotificationListParams {
@@ -853,20 +853,13 @@ export interface NotificationListResponse {
     limit: number;
 }
 
-export interface NotificationBatchTriggerResponse {
-    notification_batch_oid: string;
-    status: NotificationBatchStatus;
-    to_process_count: number;
-    run_id: string;
-}
-
 // ============================================================================
 // Campaign Survey Batch Types
 // ============================================================================
 
-export type SurveyBatchStatus = 'created' | 'partial' | 'completed' | 'cancelled';
+export type SurveyBatchStatus = 'draft' | 'collecting' | 'closed' | 'cancelled';
 
-export type SurveyStatus = 'created' | 'submitted';
+export type SurveyStatus = 'not_started' | 'submitted' | 'revoked' | 'expired';
 
 export type SurveyQuestionType = 'single_select' | 'multi_select' | 'text';
 
@@ -951,7 +944,10 @@ export interface SurveyBatchCreate {
 
 export interface SurveyBatchUpdate {
     name?: string;
-    status?: 'cancelled';
+}
+
+export interface SurveyBatchActionRequest {
+    action: 'publish' | 'close' | 'reopen' | 'cancel';
 }
 
 export interface SurveyBatchListParams {
@@ -984,18 +980,23 @@ export interface SurveyCreate {
     receiver_stable_id: string;
     receiver_oid?: string | null;
     survey_questions: SurveyQuestions;
-    survey_answer?: SurveyAnswerPayload | null;
-    status?: SurveyStatus;
-    submitted_at?: string | null;
 }
 
 export interface SurveyUpdate {
     receiver_oid?: string | null;
     survey_questions?: SurveyQuestions;
-    survey_answer?: SurveyAnswerPayload | null;
-    status?: SurveyStatus;
-    submitted_at?: string | null;
 }
+
+export interface SurveySubmitActionRequest {
+    action: 'submit';
+    survey_answer: SurveyAnswerPayload;
+}
+
+export interface SurveyRevokeActionRequest {
+    action: 'revoke';
+}
+
+export type SurveyActionRequest = SurveySubmitActionRequest | SurveyRevokeActionRequest;
 
 export interface SurveyListParams {
     status?: SurveyStatus;
@@ -1011,4 +1012,13 @@ export interface SurveyListResponse {
     total: number;
     skip: number;
     limit: number;
+}
+
+export interface CrossBatchSurveyListParams {
+    receiver_stable_id: string;
+    survey_status?: SurveyStatus;
+    survey_batch_status?: SurveyBatchStatus;
+    survey_batch_oid?: string;
+    skip?: number;
+    limit?: number;
 }
