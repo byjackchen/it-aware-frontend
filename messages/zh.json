@@ -693,6 +693,7 @@
             },
             "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。提交/撤回为动作操作。",
             "serverManagedStatus": "当前状态下批次为只读。",
+            "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
             "actions": {
                 "editObject": "编辑批次",
                 "addRow": "新增问卷",

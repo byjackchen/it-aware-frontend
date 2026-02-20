@@ -693,6 +693,7 @@
             },
             "serverManagedHint": "Status is server-managed; use actions. Submit/Revoke are action operations.",
             "serverManagedStatus": "Batch is read-only in current state.",
+            "nonEditableState": "Non-editable state: this batch is read-only.",
             "actions": {
                 "editObject": "Edit Batch",
                 "addRow": "Add Survey",

@@ -9,6 +9,7 @@ import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import type {
     Survey,
+    SurveyAnswer,
     SurveyAnswerPayload,
     SurveyBatch,
     SurveyBatchListResponse,
@@ -37,8 +38,6 @@ import {
     draftFromQuestion,
     getSurveyBatchStatusClass,
     getSurveyStatusClass,
-    parseSurveyAnswerJson,
-    stringifySurveyAnswer,
     summarizeSurveyAnswer,
     toSurveyQuestions,
     validateSurveyAnswerPayload,
@@ -77,6 +76,94 @@ function fallbackSurveyQuestions(): SurveyQuestions {
         intro: '',
         questions: [],
     };
+}
+
+function getSurveyAnswerForQuestion(
+    answerPayload: SurveyAnswerPayload | null,
+    questionId: string
+): SurveyAnswer | null {
+    if (!answerPayload || !Array.isArray(answerPayload.answers)) return null;
+    return answerPayload.answers.find((answer) => answer.question_id === questionId) ?? null;
+}
+
+function formatSurveyAnswerValue(
+    question: SurveyQuestions['questions'][number],
+    answer: SurveyAnswer | null
+): string {
+    if (!answer || answer.type !== question.type) return '—';
+
+    if (answer.type === 'text') {
+        return answer.text.trim().length > 0 ? answer.text : '—';
+    }
+
+    if (answer.type === 'single_select') {
+        if (!('options' in question)) return answer.selected_option_id || '—';
+        const matchedOption = question.options.find((option) => option.option_id === answer.selected_option_id);
+        return matchedOption ? matchedOption.label : (answer.selected_option_id || '—');
+    }
+
+    if (!('options' in question) || answer.selected_option_ids.length === 0) return '—';
+    const labels = answer.selected_option_ids.map((optionId) => {
+        const matchedOption = question.options.find((option) => option.option_id === optionId);
+        return matchedOption ? matchedOption.label : optionId;
+    });
+
+    return labels.length > 0 ? labels.join(', ') : '—';
+}
+
+function normalizeSurveyAnswerPayload(
+    surveyQuestions: SurveyQuestions,
+    answerPayload: SurveyAnswerPayload | null
+): SurveyAnswerPayload | null {
+    if (!answerPayload || !Array.isArray(answerPayload.answers) || answerPayload.answers.length === 0) {
+        return null;
+    }
+
+    const questionById = new Map(surveyQuestions.questions.map((question) => [question.question_id, question]));
+    const answersByQuestionId = new Map<string, SurveyAnswer>();
+
+    for (const answer of answerPayload.answers) {
+        const question = questionById.get(answer.question_id);
+        if (!question || answer.type !== question.type) continue;
+
+        if (answer.type === 'text') {
+            const nextText = answer.text.trim();
+            if (nextText.length === 0) continue;
+            answersByQuestionId.set(answer.question_id, {
+                ...answer,
+                text: nextText,
+            });
+            continue;
+        }
+
+        if (answer.type === 'single_select') {
+            const nextOptionId = answer.selected_option_id.trim();
+            if (nextOptionId.length === 0) continue;
+            if (!('options' in question)) continue;
+            const validOptionIds = new Set(question.options.map((option) => option.option_id));
+            if (!validOptionIds.has(nextOptionId)) continue;
+            answersByQuestionId.set(answer.question_id, {
+                ...answer,
+                selected_option_id: nextOptionId,
+            });
+            continue;
+        }
+
+        if (!('options' in question)) continue;
+        const validOptionIds = new Set(question.options.map((option) => option.option_id));
+        const nextOptionIds = answer.selected_option_ids
+            .map((optionId) => optionId.trim())
+            .filter((optionId) => optionId.length > 0 && validOptionIds.has(optionId));
+        if (nextOptionIds.length === 0) continue;
+
+        answersByQuestionId.set(answer.question_id, {
+            ...answer,
+            selected_option_ids: Array.from(new Set(nextOptionIds)),
+        });
+    }
+
+    const answers = Array.from(answersByQuestionId.values());
+    return answers.length > 0 ? { answers } : null;
 }
 
 export function SurveysModule() {
@@ -126,7 +213,7 @@ export function SurveysModule() {
     const [rowIntro, setRowIntro] = useState('');
     const [rowQuestions, setRowQuestions] = useState<SurveyQuestionDraft[]>([createEmptyQuestionDraft('text')]);
     const [rowStatus, setRowStatus] = useState<SurveyStatus>('not_started');
-    const [rowAnswerText, setRowAnswerText] = useState('');
+    const [rowSurveyAnswer, setRowSurveyAnswer] = useState<SurveyAnswerPayload | null>(null);
     const [rowCreatedAt, setRowCreatedAt] = useState<string | null>(null);
     const [rowUpdatedAt, setRowUpdatedAt] = useState<string | null>(null);
     const [rowError, setRowError] = useState<string | null>(null);
@@ -470,7 +557,7 @@ export function SurveysModule() {
         setRowIntro(reference.intro);
         setRowQuestions(toQuestionDrafts(reference));
         setRowStatus('not_started');
-        setRowAnswerText('');
+        setRowSurveyAnswer(null);
         setRowCreatedAt(null);
         setRowUpdatedAt(null);
         setRowError(null);
@@ -485,7 +572,7 @@ export function SurveysModule() {
         setRowIntro(detail.survey_questions.intro);
         setRowQuestions(toQuestionDrafts(detail.survey_questions));
         setRowStatus(detail.status);
-        setRowAnswerText(stringifySurveyAnswer(detail.survey_answer));
+        setRowSurveyAnswer(detail.survey_answer);
         setRowCreatedAt(detail.created_at);
         setRowUpdatedAt(detail.updated_at);
         setRowError(null);
@@ -575,14 +662,7 @@ export function SurveysModule() {
             return;
         }
 
-        let surveyAnswerPayload: SurveyAnswerPayload | null;
-        try {
-            surveyAnswerPayload = parseSurveyAnswerJson(rowAnswerText);
-        } catch (error) {
-            setRowError(error instanceof Error ? error.message : t('edit.errors.invalidAnswerJson'));
-            return;
-        }
-
+        const surveyAnswerPayload = normalizeSurveyAnswerPayload(surveyQuestions, rowSurveyAnswer);
         if (!surveyAnswerPayload) {
             setRowError(t('details.rowEditor.errors.answerRequired'));
             return;
@@ -680,6 +760,33 @@ export function SurveysModule() {
         && selectedSurveyBatch?.status !== 'draft'
         && selectedSurveyBatch?.status !== 'cancelled'
     );
+    const rowSurveyQuestions = useMemo(
+        () => toSurveyQuestions(rowIntro, rowQuestions),
+        [rowIntro, rowQuestions]
+    );
+    const isSubmittedSurveyRow = rowEditorMode === 'edit' && rowStatus === 'submitted';
+    const showSurveyQuestionBuilder = !isSubmittedSurveyRow && (rowEditorMode === 'create' || isRowMetadataEditable);
+    const showInlineQuestionAnswerView = rowEditorMode === 'edit' && !showSurveyQuestionBuilder;
+    const isInlineAnswerEditable = (
+        !isSubmittedSurveyRow
+        && canWrite
+        && canSubmitRowAction
+        && !isRowSaving
+        && !isRowDeleting
+    );
+
+    const upsertRowSurveyAnswer = useCallback((questionId: string, nextAnswer: SurveyAnswer | null) => {
+        setRowSurveyAnswer((current) => {
+            const baseAnswers = Array.isArray(current?.answers) ? current.answers : [];
+            const filtered = baseAnswers.filter((answer) => answer.question_id !== questionId);
+            if (!nextAnswer) {
+                return filtered.length > 0 ? { answers: filtered } : null;
+            }
+            return {
+                answers: [...filtered, nextAnswer],
+            };
+        });
+    }, []);
 
     return (
         <SurveyAccessGate>
@@ -872,19 +979,14 @@ export function SurveysModule() {
                                                 </button>
                                             )}
 
-                                            {canWrite && (
+                                            {canWrite && isBatchDraft && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        if (!isBatchDraft) {
-                                                            setObjectError(t('details.serverManagedStatus'));
-                                                            return;
-                                                        }
                                                         setIsObjectEditing((current) => !current);
                                                         setObjectError(null);
                                                         setObjectName(selectedSurveyBatch.name);
                                                     }}
-                                                    disabled={!isBatchDraft}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Pencil className="w-4 h-4" />
@@ -892,11 +994,10 @@ export function SurveysModule() {
                                                 </button>
                                             )}
 
-                                            {canWrite && (
+                                            {canWrite && isBatchDraft && (
                                                 <button
                                                     type="button"
                                                     onClick={openCreateRowEditor}
-                                                    disabled={!isBatchDraft}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Plus className="w-4 h-4" />
@@ -909,6 +1010,11 @@ export function SurveysModule() {
                                     <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {t('details.serverManagedHint')}
                                     </p>
+                                    {!isBatchDraft && (
+                                        <p className={`text-xs ${isLight ? 'text-amber-600' : 'text-amber-300'}`}>
+                                            {t('details.nonEditableState')}
+                                        </p>
+                                    )}
 
                                     {isObjectEditing ? (
                                         <div className="space-y-3 rounded-lg border border-white/10 p-3">
@@ -1123,26 +1229,177 @@ export function SurveysModule() {
                                         )}
 
                                         <div>
-                                            <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.answerJson')}</label>
-                                            <textarea
-                                                value={rowAnswerText}
-                                                onChange={(event) => setRowAnswerText(event.target.value)}
-                                                disabled={isRowSaving || isRowDeleting || !canWrite || rowEditorMode !== 'edit' || !canSubmitRowAction}
-                                                rows={8}
-                                                placeholder={t('details.rowEditor.fields.answerJsonPlaceholder')}
-                                                className={`w-full px-2 py-1.5 rounded-md border text-sm font-mono resize-y ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
-                                            />
-                                        </div>
-
-                                        <div>
                                             <p className={`text-xs mb-2 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.questions')}</p>
-                                            <SurveyQuestionBuilder
-                                                intro={rowIntro}
-                                                onIntroChange={setRowIntro}
-                                                questions={rowQuestions}
-                                                onQuestionsChange={setRowQuestions}
-                                                disabled={isRowSaving || isRowDeleting || !isRowMetadataEditable}
-                                            />
+                                            {showSurveyQuestionBuilder ? (
+                                                <SurveyQuestionBuilder
+                                                    intro={rowIntro}
+                                                    onIntroChange={setRowIntro}
+                                                    questions={rowQuestions}
+                                                    onQuestionsChange={setRowQuestions}
+                                                    disabled={isRowSaving || isRowDeleting || !isRowMetadataEditable}
+                                                />
+                                            ) : showInlineQuestionAnswerView ? (
+                                                <section className={`rounded-xl border p-4 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                                                    {rowSurveyQuestions.intro.trim().length > 0 && (
+                                                        <div className={`rounded-md border p-3 text-sm whitespace-pre-wrap ${isLight ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-white/10 bg-slate-900/60 text-gray-200'}`}>
+                                                            {rowSurveyQuestions.intro}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-3">
+                                                        {rowSurveyQuestions.questions.map((question, questionIndex) => {
+                                                            const questionAnswer = getSurveyAnswerForQuestion(rowSurveyAnswer, question.question_id);
+                                                            const questionLabel = `${t('questionBuilder.questionLabel')} #${questionIndex + 1}`;
+                                                            const answerValue = questionAnswer && questionAnswer.type === question.type
+                                                                ? questionAnswer
+                                                                : null;
+                                                            const textAnswerValue = answerValue && answerValue.type === 'text'
+                                                                ? answerValue.text
+                                                                : '';
+                                                            const singleSelectAnswerValue = answerValue && answerValue.type === 'single_select'
+                                                                ? answerValue.selected_option_id
+                                                                : '';
+                                                            const multiSelectAnswerValue = answerValue && answerValue.type === 'multi_select'
+                                                                ? answerValue.selected_option_ids
+                                                                : [];
+
+                                                            return (
+                                                                <article
+                                                                    key={`${question.question_id}_${questionIndex}`}
+                                                                    className={`rounded-lg border p-3 space-y-3 ${isLight ? 'border-slate-200' : 'border-white/10'}`}
+                                                                >
+                                                                    <div className="space-y-1">
+                                                                        <div className="flex items-center justify-between gap-3">
+                                                                            <p className={`text-sm font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                                                                {questionLabel}
+                                                                            </p>
+                                                                            <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                                                {question.type}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                                            {question.question_id}
+                                                                        </p>
+                                                                        <p className={`text-sm ${isLight ? 'text-slate-800' : 'text-gray-100'}`}>
+                                                                            {question.title}
+                                                                            {question.required && (
+                                                                                <span className={`${isLight ? 'text-rose-500' : 'text-rose-300'}`}> *</span>
+                                                                            )}
+                                                                        </p>
+                                                                    </div>
+
+                                                                    {isSubmittedSurveyRow ? (
+                                                                        <div>
+                                                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                                                {t('details.fields.answer')}
+                                                                            </p>
+                                                                            <p className={`rounded-md border px-2 py-1.5 text-sm whitespace-pre-wrap ${isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}>
+                                                                                {formatSurveyAnswerValue(question, answerValue)}
+                                                                            </p>
+                                                                        </div>
+                                                                    ) : question.type === 'text' ? (
+                                                                        <div>
+                                                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                                                {t('details.fields.answer')}
+                                                                            </p>
+                                                                            <textarea
+                                                                                value={textAnswerValue}
+                                                                                onChange={(event) => {
+                                                                                    const nextText = event.target.value;
+                                                                                    upsertRowSurveyAnswer(
+                                                                                        question.question_id,
+                                                                                        nextText.trim().length > 0
+                                                                                            ? {
+                                                                                                question_id: question.question_id,
+                                                                                                type: 'text',
+                                                                                                text: nextText,
+                                                                                            }
+                                                                                            : null
+                                                                                    );
+                                                                                }}
+                                                                                disabled={!isInlineAnswerEditable}
+                                                                                rows={3}
+                                                                                className={`w-full px-2 py-1.5 rounded-md border text-sm resize-y ${isLight ? 'border-slate-300 text-slate-900 bg-white' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                                            />
+                                                                        </div>
+                                                                    ) : question.type === 'single_select' ? (
+                                                                        <div>
+                                                                            <p className={`text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                                                {t('details.fields.answer')}
+                                                                            </p>
+                                                                            <select
+                                                                                value={singleSelectAnswerValue}
+                                                                                onChange={(event) => {
+                                                                                    const nextValue = event.target.value;
+                                                                                    upsertRowSurveyAnswer(
+                                                                                        question.question_id,
+                                                                                        nextValue.length > 0
+                                                                                            ? {
+                                                                                                question_id: question.question_id,
+                                                                                                type: 'single_select',
+                                                                                                selected_option_id: nextValue,
+                                                                                            }
+                                                                                            : null
+                                                                                    );
+                                                                                }}
+                                                                                disabled={!isInlineAnswerEditable}
+                                                                                className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900 bg-white' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                                                            >
+                                                                                <option value="">—</option>
+                                                                                {question.options.map((option) => (
+                                                                                    <option key={option.option_id} value={option.option_id}>
+                                                                                        {option.label}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="space-y-2">
+                                                                            <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                                                {t('details.fields.answer')}
+                                                                            </p>
+                                                                            {question.options.map((option) => {
+                                                                                const checked = multiSelectAnswerValue.includes(option.option_id);
+                                                                                return (
+                                                                                    <label
+                                                                                        key={option.option_id}
+                                                                                        className={`flex items-center gap-2 text-sm ${isLight ? 'text-slate-800' : 'text-gray-100'}`}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={checked}
+                                                                                            onChange={(event) => {
+                                                                                                const currentOptionIds = Array.isArray(multiSelectAnswerValue)
+                                                                                                    ? multiSelectAnswerValue
+                                                                                                    : [];
+                                                                                                const nextOptionIds = event.target.checked
+                                                                                                    ? [...currentOptionIds, option.option_id]
+                                                                                                    : currentOptionIds.filter((optionId) => optionId !== option.option_id);
+                                                                                                upsertRowSurveyAnswer(
+                                                                                                    question.question_id,
+                                                                                                    nextOptionIds.length > 0
+                                                                                                        ? {
+                                                                                                            question_id: question.question_id,
+                                                                                                            type: 'multi_select',
+                                                                                                            selected_option_ids: Array.from(new Set(nextOptionIds)),
+                                                                                                        }
+                                                                                                        : null
+                                                                                                );
+                                                                                            }}
+                                                                                            disabled={!isInlineAnswerEditable}
+                                                                                        />
+                                                                                        <span>{option.label}</span>
+                                                                                    </label>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </article>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </section>
+                                            ) : null}
                                         </div>
                                     </section>
                                 )}
