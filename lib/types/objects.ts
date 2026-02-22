@@ -775,6 +775,9 @@ export interface NotificationBatch {
     run_id: string | null;
     creator_account: string | null;
     total_count: number;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -783,12 +786,18 @@ export interface NotificationBatchCreate {
     name: string;
     channel?: NotificationBatchChannel;
     creator_account?: string;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
     notifications?: NotificationCreate[];
 }
 
 export interface NotificationBatchUpdate {
     name?: string;
     channel?: NotificationBatchChannel;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
 }
 
 export interface NotificationBatchActionRequest {
@@ -932,6 +941,9 @@ export interface SurveyBatch {
     status: SurveyBatchStatus;
     creator_account: string | null;
     total_count: number;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -939,11 +951,17 @@ export interface SurveyBatch {
 export interface SurveyBatchCreate {
     name: string;
     creator_account?: string;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
     surveys?: SurveyCreate[];
 }
 
 export interface SurveyBatchUpdate {
     name?: string;
+    image_type?: string | null;
+    image_id?: string | null;
+    image_base64?: string | null;
 }
 
 export interface SurveyBatchActionRequest {

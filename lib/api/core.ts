@@ -31,7 +31,12 @@ export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T
 
     if (!res.ok) {
         const error = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(error.detail || `API Error: ${res.status}`);
+        const message = typeof error?.message === 'string'
+            ? error.message
+            : typeof error?.detail === 'string'
+                ? error.detail
+                : null;
+        throw new Error(message || `API Error: ${res.status}`);
     }
 
     if (res.status === 204) {

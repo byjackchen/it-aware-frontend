@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { Loader2, Megaphone, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -71,6 +72,31 @@ function hasInvalidContentBlocks(blocks: NotificationContentBlock[]): boolean {
     });
 }
 
+function inferMimeTypeFromDataUrl(value: string | null): string | null {
+    if (!value) return null;
+    const matched = value.match(/^data:([^;,]+);base64,/i);
+    return matched?.[1] ?? null;
+}
+
+function toPureBase64(value: string | null): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (!trimmed.startsWith('data:')) return trimmed;
+
+    const commaIndex = trimmed.indexOf(',');
+    if (commaIndex < 0) return null;
+    const payload = trimmed.slice(commaIndex + 1).trim();
+    return payload || null;
+}
+
+function toImageSrc(imageBase64: string | null | undefined, imageType: string | null | undefined): string | null {
+    if (!imageBase64) return null;
+    if (imageBase64.startsWith('data:')) return imageBase64;
+    const normalizedType = imageType && imageType.startsWith('image/') ? imageType : 'image/png';
+    return `data:${normalizedType};base64,${imageBase64}`;
+}
+
 export function NotificationsModule() {
     const t = useTranslations('Campaign');
     const { theme } = useTheme();
@@ -93,6 +119,7 @@ export function NotificationsModule() {
     const [detailsSearch, setDetailsSearch] = useState('');
 
     const [notificationBatches, setNotificationBatches] = useState<NotificationBatch[]>([]);
+    const [selectedNotificationBatchDetail, setSelectedNotificationBatchDetail] = useState<NotificationBatch | null>(null);
     const [notificationsTotal, setNotificationsTotal] = useState<number>(0);
     const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
     const [isNotificationsLoadingMore, setIsNotificationsLoadingMore] = useState(false);
@@ -111,6 +138,10 @@ export function NotificationsModule() {
     const [isObjectEditing, setIsObjectEditing] = useState(false);
     const [objectName, setObjectName] = useState('');
     const [objectChannel, setObjectChannel] = useState<NotificationBatchChannel>('wecom_bot');
+    const [objectImageType, setObjectImageType] = useState<string | null>(null);
+    const [objectImageId, setObjectImageId] = useState<string | null>(null);
+    const [objectImageBase64, setObjectImageBase64] = useState<string | null>(null);
+    const [objectImageFilename, setObjectImageFilename] = useState<string | null>(null);
     const [objectError, setObjectError] = useState<string | null>(null);
 
     const [isRowEditorOpen, setIsRowEditorOpen] = useState(false);
@@ -141,6 +172,24 @@ export function NotificationsModule() {
         const qs = params.toString();
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, [pathname, router, searchParams]);
+
+    const fetchNotificationBatchDetail = useCallback(async (notificationBatchOid: string) => {
+        try {
+            const response = await fetch(`/api/campaigns/notification_batchs/${encodeURIComponent(notificationBatchOid)}`, {
+                cache: 'no-store',
+            });
+            if (!response.ok) {
+                throw new Error(t('errors.loadNotifications'));
+            }
+
+            const payload = (await response.json()) as NotificationBatch;
+            setSelectedNotificationBatchDetail(payload);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : t('errors.loadNotifications');
+            setDetailsError(message);
+            setSelectedNotificationBatchDetail(null);
+        }
+    }, [t]);
 
     const fetchNotificationsPage = useCallback(async (skip: number, replace: boolean) => {
         if (replace) {
@@ -294,38 +343,28 @@ export function NotificationsModule() {
 
     useEffect(() => {
         if (!selectedNotificationBatchOid) {
+            setSelectedNotificationBatchDetail(null);
             setDetails([]);
             setDetailsTotal(0);
             setHasMoreDetails(true);
             setSelectedNotificationOid(null);
             return;
         }
+        void fetchNotificationBatchDetail(selectedNotificationBatchOid);
         setHasMoreDetails(true);
         void fetchDetailsPage(selectedNotificationBatchOid, 0, true);
-    }, [fetchDetailsPage, selectedNotificationBatchOid]);
+    }, [fetchDetailsPage, fetchNotificationBatchDetail, selectedNotificationBatchOid]);
 
-    useEffect(() => {
-        const container = notificationsListRef.current;
-        if (!container) return;
-        if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
-        if (container.scrollHeight <= container.clientHeight + 1) {
-            void loadMoreNotifications();
-        }
-    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications, notificationBatches.length]);
-
-    useEffect(() => {
-        const container = notificationDetailsListRef.current;
-        if (!container) return;
-        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
-        if (container.scrollHeight <= container.clientHeight + 1) {
-            void loadMoreDetails();
-        }
-    }, [details.length, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
-
-    const selectedNotification = useMemo(
+    const selectedNotificationListItem = useMemo(
         () => notificationBatches.find((notification) => notification.oid === selectedNotificationBatchOid) ?? null,
         [notificationBatches, selectedNotificationBatchOid]
     );
+    const selectedNotification = useMemo(() => {
+        if (selectedNotificationBatchDetail && selectedNotificationBatchDetail.oid === selectedNotificationBatchOid) {
+            return selectedNotificationBatchDetail;
+        }
+        return selectedNotificationListItem;
+    }, [selectedNotificationBatchDetail, selectedNotificationBatchOid, selectedNotificationListItem]);
     const isBatchMetadataEditable = selectedNotification?.status === 'ready';
     const shouldAutoRefreshBatch = selectedNotification?.status === 'running';
 
@@ -333,6 +372,10 @@ export function NotificationsModule() {
         if (!selectedNotification) return;
         setObjectName(selectedNotification.name);
         setObjectChannel(selectedNotification.channel);
+        setObjectImageType(selectedNotification.image_type ?? null);
+        setObjectImageId(selectedNotification.image_id ?? null);
+        setObjectImageBase64(selectedNotification.image_base64 ?? null);
+        setObjectImageFilename(null);
         setObjectError(null);
         setIsObjectEditing(false);
     }, [selectedNotification]);
@@ -350,6 +393,7 @@ export function NotificationsModule() {
 
             void (async () => {
                 await reloadNotifications();
+                await fetchNotificationBatchDetail(selectedNotificationBatchOid);
                 await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
             })();
         }, 8_000);
@@ -357,7 +401,7 @@ export function NotificationsModule() {
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [fetchDetailsPage, reloadNotifications, selectedNotificationBatchOid, shouldAutoRefreshBatch]);
+    }, [fetchDetailsPage, fetchNotificationBatchDetail, reloadNotifications, selectedNotificationBatchOid, shouldAutoRefreshBatch]);
 
     const filteredNotifications = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -376,6 +420,11 @@ export function NotificationsModule() {
             || summarizeContentBlocks(item.content_blocks).toLowerCase().includes(query)
         ));
     }, [details, detailsSearch]);
+
+    const selectedNotificationImageSrc = useMemo(
+        () => toImageSrc(selectedNotification?.image_base64, selectedNotification?.image_type),
+        [selectedNotification?.image_base64, selectedNotification?.image_type]
+    );
 
     useEffect(() => {
         if (filteredDetails.length === 0) {
@@ -405,6 +454,56 @@ export function NotificationsModule() {
         }
     }, [hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
 
+    const clearObjectImage = useCallback(() => {
+        setObjectImageType(null);
+        setObjectImageId(null);
+        setObjectImageBase64(null);
+        setObjectImageFilename(null);
+    }, []);
+
+    const handleObjectChannelChange = useCallback((channel: NotificationBatchChannel) => {
+        setObjectChannel(channel);
+        if (channel === 'wecom_ops_bot') {
+            clearObjectImage();
+        }
+    }, [clearObjectImage]);
+
+    const handleObjectImageUpload = useCallback(async (file: File | null) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setObjectError('Only image files are supported.');
+            return;
+        }
+
+        try {
+            const imageDataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (typeof reader.result === 'string') {
+                        resolve(reader.result);
+                        return;
+                    }
+                    reject(new Error('Failed to read image file'));
+                };
+                reader.onerror = () => reject(new Error('Failed to read image file'));
+                reader.readAsDataURL(file);
+            });
+
+            const imageBase64 = toPureBase64(imageDataUrl);
+            if (!imageBase64) {
+                throw new Error('Failed to parse image payload');
+            }
+
+            setObjectImageBase64(imageBase64);
+            setObjectImageType(file.type || inferMimeTypeFromDataUrl(imageDataUrl));
+            setObjectImageId(null);
+            setObjectImageFilename(file.name);
+            setObjectError(null);
+        } catch (error) {
+            setObjectError(error instanceof Error ? error.message : 'Failed to read image file');
+        }
+    }, []);
+
     const handleTrigger = () => {
         if (!selectedNotificationBatchOid) return;
         startBatchActionTransition(async () => {
@@ -415,6 +514,7 @@ export function NotificationsModule() {
             }
 
             await reloadNotifications();
+            await fetchNotificationBatchDetail(selectedNotificationBatchOid);
             await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
         });
     };
@@ -429,6 +529,7 @@ export function NotificationsModule() {
             }
 
             await reloadNotifications();
+            await fetchNotificationBatchDetail(selectedNotificationBatchOid);
             await fetchDetailsPage(selectedNotificationBatchOid, 0, true);
         });
     };
@@ -482,11 +583,25 @@ export function NotificationsModule() {
             return;
         }
 
+        const isOpsBotChannel = objectChannel === 'wecom_ops_bot';
+        const normalizedImageBase64 = isOpsBotChannel
+            ? null
+            : toPureBase64(objectImageBase64);
+        const normalizedImageType = isOpsBotChannel
+            ? null
+            : (objectImageType?.trim() || inferMimeTypeFromDataUrl(objectImageBase64) || null);
+        const normalizedImageId = isOpsBotChannel
+            ? null
+            : (objectImageId?.trim() || null);
+
         setObjectError(null);
         startObjectSavingTransition(async () => {
             const result = await updateCampaignNotificationBatchAction(selectedNotification.oid, {
                 name: nextName,
                 channel: objectChannel,
+                image_type: normalizedImageType,
+                image_id: normalizedImageId,
+                image_base64: normalizedImageBase64,
             });
 
             if (!result.success) {
@@ -496,6 +611,7 @@ export function NotificationsModule() {
 
             setIsObjectEditing(false);
             await reloadNotifications();
+            await fetchNotificationBatchDetail(selectedNotification.oid);
             await fetchDetailsPage(selectedNotification.oid, 0, true);
         });
     };
@@ -707,6 +823,19 @@ export function NotificationsModule() {
                                         {t('list.loading')}
                                     </div>
                                 )}
+
+                                {!isNotificationsLoading && !notificationsError && hasMoreNotifications && (
+                                    <div className="p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => void loadMoreNotifications()}
+                                            disabled={isNotificationsLoadingMore}
+                                            className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                        >
+                                            Load more
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <PaneQuickScrollButtons containerRef={notificationsListRef} isLight={isLight} />
@@ -762,6 +891,10 @@ export function NotificationsModule() {
                                                         setObjectError(null);
                                                         setObjectName(selectedNotification.name);
                                                         setObjectChannel(selectedNotification.channel);
+                                                        setObjectImageType(selectedNotification.image_type ?? null);
+                                                        setObjectImageId(selectedNotification.image_id ?? null);
+                                                        setObjectImageBase64(selectedNotification.image_base64 ?? null);
+                                                        setObjectImageFilename(null);
                                                     }}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
@@ -809,7 +942,7 @@ export function NotificationsModule() {
                                                     <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('edit.fields.channel')}</label>
                                                     <select
                                                         value={objectChannel}
-                                                        onChange={(event) => setObjectChannel(event.target.value as NotificationBatchChannel)}
+                                                        onChange={(event) => handleObjectChannelChange(event.target.value as NotificationBatchChannel)}
                                                         disabled={isObjectSaving || !isBatchMetadataEditable}
                                                         className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                                     >
@@ -817,6 +950,49 @@ export function NotificationsModule() {
                                                         <option value="wecom_ops_bot">wecom_ops_bot</option>
                                                     </select>
                                                 </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>Image</p>
+                                                {objectChannel === 'wecom_ops_bot' ? (
+                                                    <p className={`text-xs ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
+                                                        wecom_ops_bot does not support image fields.
+                                                    </p>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <label className={`inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'}`}>
+                                                                <span>Upload image</span>
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    disabled={isObjectSaving || !isBatchMetadataEditable}
+                                                                    onChange={(event) => {
+                                                                        const file = event.target.files?.[0] ?? null;
+                                                                        void handleObjectImageUpload(file);
+                                                                        event.target.value = '';
+                                                                    }}
+                                                                    className="sr-only"
+                                                                />
+                                                            </label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={clearObjectImage}
+                                                                disabled={isObjectSaving || !isBatchMetadataEditable || (!objectImageBase64 && !objectImageId)}
+                                                                className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                            >
+                                                                Remove image
+                                                            </button>
+                                                        </div>
+                                                        <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                            {objectImageFilename
+                                                                ? `Selected file: ${objectImageFilename}`
+                                                                : objectImageId
+                                                                    ? `Current media id: ${objectImageId}`
+                                                                    : 'No image selected'}
+                                                        </p>
+                                                    </>
+                                                )}
                                             </div>
 
                                             {objectError && (
@@ -831,6 +1007,10 @@ export function NotificationsModule() {
                                                         setObjectError(null);
                                                         setObjectName(selectedNotification.name);
                                                         setObjectChannel(selectedNotification.channel);
+                                                        setObjectImageType(selectedNotification.image_type ?? null);
+                                                        setObjectImageId(selectedNotification.image_id ?? null);
+                                                        setObjectImageBase64(selectedNotification.image_base64 ?? null);
+                                                        setObjectImageFilename(null);
                                                     }}
                                                     disabled={isObjectSaving}
                                                     className={`px-3 py-1.5 rounded-md text-sm border ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/10 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
@@ -883,6 +1063,30 @@ export function NotificationsModule() {
                                                 <div>
                                                     <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
                                                     <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedNotification.updated_at)}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Image</p>
+                                                {selectedNotificationImageSrc ? (
+                                                    <Image
+                                                        src={selectedNotificationImageSrc}
+                                                        alt="Notification batch image"
+                                                        width={720}
+                                                        height={360}
+                                                        unoptimized
+                                                        className="h-auto max-h-44 w-auto rounded-md border border-white/10 object-contain"
+                                                    />
+                                                ) : (
+                                                    <p className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                                        {selectedNotification.image_id
+                                                            ? `Image uploaded with media id ${selectedNotification.image_id}`
+                                                            : 'No image configured'}
+                                                    </p>
+                                                )}
+                                                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                    <p>image_type: {selectedNotification.image_type || '—'}</p>
+                                                    <p>image_id: {selectedNotification.image_id || '—'}</p>
                                                 </div>
                                             </div>
                                         </>
@@ -1078,6 +1282,19 @@ export function NotificationsModule() {
                                             <div className={`p-3 text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'} inline-flex items-center gap-2`}>
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                 {t('details.loading')}
+                                            </div>
+                                        )}
+
+                                        {!isDetailsLoading && !detailsError && hasMoreDetails && (
+                                            <div className="p-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void loadMoreDetails()}
+                                                    disabled={isDetailsLoadingMore}
+                                                    className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                >
+                                                    Load more
+                                                </button>
                                             </div>
                                         )}
                                     </div>

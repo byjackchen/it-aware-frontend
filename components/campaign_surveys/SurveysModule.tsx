@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { ClipboardCheck, Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -61,6 +62,31 @@ function formatDateTime(value: string | null): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString();
+}
+
+function inferMimeTypeFromDataUrl(value: string | null): string | null {
+    if (!value) return null;
+    const matched = value.match(/^data:([^;,]+);base64,/i);
+    return matched?.[1] ?? null;
+}
+
+function toPureBase64(value: string | null): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (!trimmed.startsWith('data:')) return trimmed;
+
+    const commaIndex = trimmed.indexOf(',');
+    if (commaIndex < 0) return null;
+    const payload = trimmed.slice(commaIndex + 1).trim();
+    return payload || null;
+}
+
+function toImageSrc(imageBase64: string | null | undefined, imageType: string | null | undefined): string | null {
+    if (!imageBase64) return null;
+    if (imageBase64.startsWith('data:')) return imageBase64;
+    const normalizedType = imageType && imageType.startsWith('image/') ? imageType : 'image/png';
+    return `data:${normalizedType};base64,${imageBase64}`;
 }
 
 function toQuestionDrafts(surveyQuestions: SurveyQuestions): SurveyQuestionDraft[] {
@@ -187,6 +213,7 @@ export function SurveysModule() {
     const [detailsSearch, setDetailsSearch] = useState('');
 
     const [surveyBatches, setSurveyBatches] = useState<SurveyBatch[]>([]);
+    const [selectedSurveyBatchDetail, setSelectedSurveyBatchDetail] = useState<SurveyBatch | null>(null);
     const [surveysTotal, setSurveysTotal] = useState<number>(0);
     const [isSurveysLoading, setIsSurveysLoading] = useState(false);
     const [isSurveysLoadingMore, setIsSurveysLoadingMore] = useState(false);
@@ -204,6 +231,10 @@ export function SurveysModule() {
 
     const [isObjectEditing, setIsObjectEditing] = useState(false);
     const [objectName, setObjectName] = useState('');
+    const [objectImageType, setObjectImageType] = useState<string | null>(null);
+    const [objectImageId, setObjectImageId] = useState<string | null>(null);
+    const [objectImageBase64, setObjectImageBase64] = useState<string | null>(null);
+    const [objectImageFilename, setObjectImageFilename] = useState<string | null>(null);
     const [objectError, setObjectError] = useState<string | null>(null);
 
     const [isRowEditorOpen, setIsRowEditorOpen] = useState(false);
@@ -234,6 +265,24 @@ export function SurveysModule() {
         const qs = params.toString();
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, [pathname, router, searchParams]);
+
+    const fetchSurveyBatchDetail = useCallback(async (surveyBatchOid: string) => {
+        try {
+            const response = await fetch(`/api/campaigns/survey_batchs/${encodeURIComponent(surveyBatchOid)}`, {
+                cache: 'no-store',
+            });
+            if (!response.ok) {
+                throw new Error(t('errors.loadSurveys'));
+            }
+
+            const payload = (await response.json()) as SurveyBatch;
+            setSelectedSurveyBatchDetail(payload);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : t('errors.loadSurveys');
+            setDetailsError(message);
+            setSelectedSurveyBatchDetail(null);
+        }
+    }, [t]);
 
     const fetchSurveysPage = useCallback(async (skip: number, replace: boolean) => {
         if (replace) {
@@ -386,44 +435,38 @@ export function SurveysModule() {
 
     useEffect(() => {
         if (!selectedSurveyBatchOid) {
+            setSelectedSurveyBatchDetail(null);
             setDetails([]);
             setDetailsTotal(0);
             setHasMoreDetails(true);
             setSelectedSurveyOid(null);
             return;
         }
+        void fetchSurveyBatchDetail(selectedSurveyBatchOid);
         setHasMoreDetails(true);
         void fetchDetailsPage(selectedSurveyBatchOid, 0, true);
-    }, [fetchDetailsPage, selectedSurveyBatchOid]);
+    }, [fetchDetailsPage, fetchSurveyBatchDetail, selectedSurveyBatchOid]);
 
-    useEffect(() => {
-        const container = surveysListRef.current;
-        if (!container) return;
-        if (isSurveysLoading || isSurveysLoadingMore || !hasMoreSurveys) return;
-        if (container.scrollHeight <= container.clientHeight + 1) {
-            void loadMoreSurveys();
-        }
-    }, [hasMoreSurveys, isSurveysLoading, isSurveysLoadingMore, loadMoreSurveys, surveyBatches.length]);
-
-    useEffect(() => {
-        const container = surveyDetailsListRef.current;
-        if (!container) return;
-        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
-        if (container.scrollHeight <= container.clientHeight + 1) {
-            void loadMoreDetails();
-        }
-    }, [details.length, hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
-
-    const selectedSurveyBatch = useMemo(
+    const selectedSurveyBatchListItem = useMemo(
         () => surveyBatches.find((survey) => survey.oid === selectedSurveyBatchOid) ?? null,
         [surveyBatches, selectedSurveyBatchOid]
     );
+    const selectedSurveyBatch = useMemo(() => {
+        if (selectedSurveyBatchDetail && selectedSurveyBatchDetail.oid === selectedSurveyBatchOid) {
+            return selectedSurveyBatchDetail;
+        }
+        return selectedSurveyBatchListItem;
+    }, [selectedSurveyBatchDetail, selectedSurveyBatchListItem, selectedSurveyBatchOid]);
     const isBatchDraft = selectedSurveyBatch?.status === 'draft';
     const shouldAutoRefreshBatch = selectedSurveyBatch?.status === 'collecting';
 
     useEffect(() => {
         if (!selectedSurveyBatch) return;
         setObjectName(selectedSurveyBatch.name);
+        setObjectImageType(selectedSurveyBatch.image_type ?? null);
+        setObjectImageId(selectedSurveyBatch.image_id ?? null);
+        setObjectImageBase64(selectedSurveyBatch.image_base64 ?? null);
+        setObjectImageFilename(null);
         setObjectError(null);
         setIsObjectEditing(false);
     }, [selectedSurveyBatch]);
@@ -441,6 +484,7 @@ export function SurveysModule() {
 
             void (async () => {
                 await reloadSurveys();
+                await fetchSurveyBatchDetail(selectedSurveyBatchOid);
                 await fetchDetailsPage(selectedSurveyBatchOid, 0, true);
             })();
         }, 8_000);
@@ -448,7 +492,7 @@ export function SurveysModule() {
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [fetchDetailsPage, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
+    }, [fetchDetailsPage, fetchSurveyBatchDetail, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
 
     const filteredSurveys = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -467,6 +511,11 @@ export function SurveysModule() {
             || summarizeSurveyAnswer(item.survey_answer).toLowerCase().includes(query)
         ));
     }, [details, detailsSearch]);
+
+    const selectedSurveyImageSrc = useMemo(
+        () => toImageSrc(selectedSurveyBatch?.image_base64, selectedSurveyBatch?.image_type),
+        [selectedSurveyBatch?.image_base64, selectedSurveyBatch?.image_type]
+    );
 
     useEffect(() => {
         if (filteredDetails.length === 0) {
@@ -496,6 +545,49 @@ export function SurveysModule() {
         }
     }, [hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
 
+    const clearObjectImage = useCallback(() => {
+        setObjectImageType(null);
+        setObjectImageId(null);
+        setObjectImageBase64(null);
+        setObjectImageFilename(null);
+    }, []);
+
+    const handleObjectImageUpload = useCallback(async (file: File | null) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setObjectError('Only image files are supported.');
+            return;
+        }
+
+        try {
+            const imageDataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (typeof reader.result === 'string') {
+                        resolve(reader.result);
+                        return;
+                    }
+                    reject(new Error('Failed to read image file'));
+                };
+                reader.onerror = () => reject(new Error('Failed to read image file'));
+                reader.readAsDataURL(file);
+            });
+
+            const imageBase64 = toPureBase64(imageDataUrl);
+            if (!imageBase64) {
+                throw new Error('Failed to parse image payload');
+            }
+
+            setObjectImageBase64(imageBase64);
+            setObjectImageType(file.type || inferMimeTypeFromDataUrl(imageDataUrl));
+            setObjectImageId(null);
+            setObjectImageFilename(file.name);
+            setObjectError(null);
+        } catch (error) {
+            setObjectError(error instanceof Error ? error.message : 'Failed to read image file');
+        }
+    }, []);
+
     const handleSaveObject = () => {
         if (!selectedSurveyBatch) return;
         if (!isBatchDraft) {
@@ -509,10 +601,17 @@ export function SurveysModule() {
             return;
         }
 
+        const normalizedImageBase64 = toPureBase64(objectImageBase64);
+        const normalizedImageType = objectImageType?.trim() || inferMimeTypeFromDataUrl(objectImageBase64) || null;
+        const normalizedImageId = objectImageId?.trim() || null;
+
         setObjectError(null);
         startObjectSavingTransition(async () => {
             const result = await updateCampaignSurveyBatchAction(selectedSurveyBatch.oid, {
                 name: nextName,
+                image_type: normalizedImageType,
+                image_id: normalizedImageId,
+                image_base64: normalizedImageBase64,
             });
 
             if (!result.success) {
@@ -522,6 +621,7 @@ export function SurveysModule() {
 
             setIsObjectEditing(false);
             await reloadSurveys();
+            await fetchSurveyBatchDetail(selectedSurveyBatch.oid);
             await fetchDetailsPage(selectedSurveyBatch.oid, 0, true);
         });
     };
@@ -544,6 +644,7 @@ export function SurveysModule() {
             }
 
             await reloadSurveys();
+            await fetchSurveyBatchDetail(selectedSurveyBatch.oid);
             await fetchDetailsPage(selectedSurveyBatch.oid, 0, true);
         });
     };
@@ -898,6 +999,19 @@ export function SurveysModule() {
                                         {t('list.loading')}
                                     </div>
                                 )}
+
+                                {!isSurveysLoading && !surveysError && hasMoreSurveys && (
+                                    <div className="p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => void loadMoreSurveys()}
+                                            disabled={isSurveysLoadingMore}
+                                            className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                        >
+                                            Load more
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <PaneQuickScrollButtons containerRef={surveysListRef} isLight={isLight} />
@@ -986,6 +1100,10 @@ export function SurveysModule() {
                                                         setIsObjectEditing((current) => !current);
                                                         setObjectError(null);
                                                         setObjectName(selectedSurveyBatch.name);
+                                                        setObjectImageType(selectedSurveyBatch.image_type ?? null);
+                                                        setObjectImageId(selectedSurveyBatch.image_id ?? null);
+                                                        setObjectImageBase64(selectedSurveyBatch.image_base64 ?? null);
+                                                        setObjectImageFilename(null);
                                                     }}
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
                                                 >
@@ -1029,6 +1147,41 @@ export function SurveysModule() {
                                                 />
                                             </div>
 
+                                            <div className="space-y-2">
+                                                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>Image</p>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <label className={`inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'}`}>
+                                                        <span>Upload image</span>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            disabled={isObjectSaving}
+                                                            onChange={(event) => {
+                                                                const file = event.target.files?.[0] ?? null;
+                                                                void handleObjectImageUpload(file);
+                                                                event.target.value = '';
+                                                            }}
+                                                            className="sr-only"
+                                                        />
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={clearObjectImage}
+                                                        disabled={isObjectSaving || (!objectImageBase64 && !objectImageId)}
+                                                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                    >
+                                                        Remove image
+                                                    </button>
+                                                </div>
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                    {objectImageFilename
+                                                        ? `Selected file: ${objectImageFilename}`
+                                                        : objectImageId
+                                                            ? `Current media id: ${objectImageId}`
+                                                            : 'No image selected'}
+                                                </p>
+                                            </div>
+
                                             {objectError && (
                                                 <p className="text-xs text-rose-300">{objectError}</p>
                                             )}
@@ -1040,6 +1193,10 @@ export function SurveysModule() {
                                                         setIsObjectEditing(false);
                                                         setObjectError(null);
                                                         setObjectName(selectedSurveyBatch.name);
+                                                        setObjectImageType(selectedSurveyBatch.image_type ?? null);
+                                                        setObjectImageId(selectedSurveyBatch.image_id ?? null);
+                                                        setObjectImageBase64(selectedSurveyBatch.image_base64 ?? null);
+                                                        setObjectImageFilename(null);
                                                     }}
                                                     disabled={isObjectSaving}
                                                     className={`px-3 py-1.5 rounded-md text-sm border ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/10 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
@@ -1083,6 +1240,30 @@ export function SurveysModule() {
                                             <div className="text-xs">
                                                 <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.creator')}</p>
                                                 <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{selectedSurveyBatch.creator_account || '—'}</p>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Image</p>
+                                                {selectedSurveyImageSrc ? (
+                                                    <Image
+                                                        src={selectedSurveyImageSrc}
+                                                        alt="Survey batch image"
+                                                        width={720}
+                                                        height={360}
+                                                        unoptimized
+                                                        className="h-auto max-h-44 w-auto rounded-md border border-white/10 object-contain"
+                                                    />
+                                                ) : (
+                                                    <p className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                                        {selectedSurveyBatch.image_id
+                                                            ? `Image uploaded with media id ${selectedSurveyBatch.image_id}`
+                                                            : 'No image configured'}
+                                                    </p>
+                                                )}
+                                                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                    <p>image_type: {selectedSurveyBatch.image_type || '—'}</p>
+                                                    <p>image_id: {selectedSurveyBatch.image_id || '—'}</p>
+                                                </div>
                                             </div>
                                         </>
                                     )}
@@ -1455,6 +1636,19 @@ export function SurveysModule() {
                                             <div className={`p-3 text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'} inline-flex items-center gap-2`}>
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                 {t('details.loading')}
+                                            </div>
+                                        )}
+
+                                        {!isDetailsLoading && !detailsError && hasMoreDetails && (
+                                            <div className="p-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void loadMoreDetails()}
+                                                    disabled={isDetailsLoadingMore}
+                                                    className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
+                                                >
+                                                    Load more
+                                                </button>
                                             </div>
                                         )}
                                     </div>
