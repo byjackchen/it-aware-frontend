@@ -108,3 +108,25 @@ When frontend and backend contract appear mismatched:
   - files touched
   - validation evidence (`typecheck`, targeted lint, build, docker if run)
   - screenshots for UI changes where relevant
+
+## 12) Branch Sync Workflow (local -> development)
+When asked to sync local development branches for this repository, follow this exact flow unless the user explicitly overrides:
+1. Ensure working tree is clean (`git status --short`).
+2. Confirm branch mapping: source=`local`, target=`development`, remote=`origin`.
+3. Fetch latest refs (`git fetch origin --prune`).
+4. Update target branch and squash-merge source:
+   - `git checkout development`
+   - `git pull --ff-only origin development`
+   - `git merge --squash local`
+5. Create a meaningful commit message based on actual diff scope; do not use generic merge-only wording.
+6. If Docker validation/redeploy is requested, run exactly:
+   - `docker build -t it-aware-frontend:latest .`
+   - `docker stop it-aware-frontend && docker rm it-aware-frontend`
+   - `docker run -d -p 3007:3000 --network dev-net --env-file ./.env.docker --name it-aware-frontend it-aware-frontend:latest`
+   - `docker ps --filter name=it-aware-frontend`
+   - `docker logs --tail 20 it-aware-frontend`
+7. Push target branch (`git push origin development`).
+8. Merge target back into source and push:
+   - `git checkout local`
+   - `git merge development`
+   - `git push origin local`

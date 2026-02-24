@@ -38,7 +38,6 @@ interface NotificationChildListResponse {
 }
 
 const LIST_PAGE_SIZE = 300;
-const LIST_SCROLL_LOAD_THRESHOLD = 160;
 const DETAILS_PAGE_SIZE = 500;
 const DETAILS_SCROLL_LOAD_THRESHOLD = 160;
 
@@ -227,9 +226,12 @@ export function NotificationsModule() {
                 });
                 const next = [...base, ...additions];
                 const nextTotal = payload.total ?? next.length;
-                const nextHasMore = typeof payload.total === 'number'
-                    ? next.length < payload.total
-                    : pageItems.length >= LIST_PAGE_SIZE;
+                const noProgress = !replace && additions.length === 0;
+                const nextHasMore = noProgress
+                    ? false
+                    : typeof payload.total === 'number'
+                        ? next.length < payload.total
+                        : pageItems.length >= LIST_PAGE_SIZE;
 
                 setNotificationsTotal(nextTotal);
                 setHasMoreNotifications(nextHasMore);
@@ -439,27 +441,18 @@ export function NotificationsModule() {
     }, [filteredDetails, selectedNotificationOid]);
 
     useEffect(() => {
-        if (normalizedSearchQuery.length === 0) return;
         if (notificationsError) return;
         if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
+        if (notificationBatches.length === 0) return;
         void loadMoreNotifications();
     }, [
         hasMoreNotifications,
         isNotificationsLoading,
         isNotificationsLoadingMore,
         loadMoreNotifications,
-        normalizedSearchQuery,
+        notificationBatches.length,
         notificationsError,
     ]);
-
-    const handleNotificationsListScroll = useCallback(() => {
-        const container = notificationsListRef.current;
-        if (!container || isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
-        const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (remaining <= LIST_SCROLL_LOAD_THRESHOLD) {
-            void loadMoreNotifications();
-        }
-    }, [hasMoreNotifications, isNotificationsLoading, isNotificationsLoadingMore, loadMoreNotifications]);
 
     const handleNotificationDetailsListScroll = useCallback(() => {
         const container = notificationDetailsListRef.current;
@@ -790,7 +783,6 @@ export function NotificationsModule() {
                         <div className="flex flex-1 min-h-0">
                             <div
                                 ref={notificationsListRef}
-                                onScroll={handleNotificationsListScroll}
                                 className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                             >
                                 {isNotificationsLoading && filteredNotifications.length === 0 ? (
@@ -840,18 +832,6 @@ export function NotificationsModule() {
                                     </div>
                                 )}
 
-                                {!isNotificationsLoading && !notificationsError && hasMoreNotifications && normalizedSearchQuery.length === 0 && (
-                                    <div className="p-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => void loadMoreNotifications()}
-                                            disabled={isNotificationsLoadingMore}
-                                            className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
-                                        >
-                                            Load more
-                                        </button>
-                                    </div>
-                                )}
                             </div>
 
                             <PaneQuickScrollButtons containerRef={notificationsListRef} isLight={isLight} />

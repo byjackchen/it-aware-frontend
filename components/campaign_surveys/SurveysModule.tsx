@@ -53,7 +53,6 @@ interface SurveyChildListResponse {
 }
 
 const LIST_PAGE_SIZE = 300;
-const LIST_SCROLL_LOAD_THRESHOLD = 160;
 const DETAILS_PAGE_SIZE = 500;
 const DETAILS_SCROLL_LOAD_THRESHOLD = 160;
 
@@ -319,9 +318,12 @@ export function SurveysModule() {
                 });
                 const next = [...base, ...additions];
                 const nextTotal = payload.total ?? next.length;
-                const nextHasMore = typeof payload.total === 'number'
-                    ? next.length < payload.total
-                    : pageItems.length >= LIST_PAGE_SIZE;
+                const noProgress = !replace && additions.length === 0;
+                const nextHasMore = noProgress
+                    ? false
+                    : typeof payload.total === 'number'
+                        ? next.length < payload.total
+                        : pageItems.length >= LIST_PAGE_SIZE;
 
                 setSurveysTotal(nextTotal);
                 setHasMoreSurveys(nextHasMore);
@@ -530,27 +532,18 @@ export function SurveysModule() {
     }, [filteredDetails, selectedSurveyOid]);
 
     useEffect(() => {
-        if (normalizedSearchQuery.length === 0) return;
         if (surveysError) return;
         if (isSurveysLoading || isSurveysLoadingMore || !hasMoreSurveys) return;
+        if (surveyBatches.length === 0) return;
         void loadMoreSurveys();
     }, [
         hasMoreSurveys,
         isSurveysLoading,
         isSurveysLoadingMore,
         loadMoreSurveys,
-        normalizedSearchQuery,
+        surveyBatches.length,
         surveysError,
     ]);
-
-    const handleSurveysListScroll = useCallback(() => {
-        const container = surveysListRef.current;
-        if (!container || isSurveysLoading || isSurveysLoadingMore || !hasMoreSurveys) return;
-        const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (remaining <= LIST_SCROLL_LOAD_THRESHOLD) {
-            void loadMoreSurveys();
-        }
-    }, [hasMoreSurveys, isSurveysLoading, isSurveysLoadingMore, loadMoreSurveys]);
 
     const handleSurveyDetailsListScroll = useCallback(() => {
         const container = surveyDetailsListRef.current;
@@ -967,7 +960,6 @@ export function SurveysModule() {
                         <div className="flex flex-1 min-h-0">
                             <div
                                 ref={surveysListRef}
-                                onScroll={handleSurveysListScroll}
                                 className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                             >
                                 {isSurveysLoading && filteredSurveys.length === 0 ? (
@@ -1016,18 +1008,6 @@ export function SurveysModule() {
                                     </div>
                                 )}
 
-                                {!isSurveysLoading && !surveysError && hasMoreSurveys && normalizedSearchQuery.length === 0 && (
-                                    <div className="p-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => void loadMoreSurveys()}
-                                            disabled={isSurveysLoadingMore}
-                                            className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
-                                        >
-                                            Load more
-                                        </button>
-                                    </div>
-                                )}
                             </div>
 
                             <PaneQuickScrollButtons containerRef={surveysListRef} isLight={isLight} />
