@@ -54,7 +54,6 @@ interface SurveyChildListResponse {
 
 const LIST_PAGE_SIZE = 300;
 const DETAILS_PAGE_SIZE = 500;
-const DETAILS_SCROLL_LOAD_THRESHOLD = 160;
 
 function formatDateTime(value: string | null): string {
     if (!value) return '—';
@@ -393,9 +392,12 @@ export function SurveysModule() {
                 });
                 const next = [...base, ...additions];
                 const nextTotal = payload.total ?? next.length;
-                const nextHasMore = typeof payload.total === 'number'
-                    ? next.length < payload.total
-                    : pageItems.length >= DETAILS_PAGE_SIZE;
+                const noProgress = !replace && additions.length === 0;
+                const nextHasMore = noProgress
+                    ? false
+                    : typeof payload.total === 'number'
+                        ? next.length < payload.total
+                        : pageItems.length >= DETAILS_PAGE_SIZE;
 
                 setDetailsTotal(nextTotal);
                 setHasMoreDetails(nextHasMore);
@@ -487,14 +489,13 @@ export function SurveysModule() {
             void (async () => {
                 await reloadSurveys();
                 await fetchSurveyBatchDetail(selectedSurveyBatchOid);
-                await fetchDetailsPage(selectedSurveyBatchOid, 0, true);
             })();
         }, 8_000);
 
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [fetchDetailsPage, fetchSurveyBatchDetail, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
+    }, [fetchSurveyBatchDetail, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
 
     const normalizedSearchQuery = searchQuery.trim();
 
@@ -545,14 +546,21 @@ export function SurveysModule() {
         surveysError,
     ]);
 
-    const handleSurveyDetailsListScroll = useCallback(() => {
-        const container = surveyDetailsListRef.current;
-        if (!container || isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
-        const remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (remaining <= DETAILS_SCROLL_LOAD_THRESHOLD) {
-            void loadMoreDetails();
-        }
-    }, [hasMoreDetails, isDetailsLoading, isDetailsLoadingMore, loadMoreDetails]);
+    useEffect(() => {
+        if (!selectedSurveyBatchOid) return;
+        if (detailsError) return;
+        if (isDetailsLoading || isDetailsLoadingMore || !hasMoreDetails) return;
+        if (details.length === 0) return;
+        void loadMoreDetails();
+    }, [
+        details.length,
+        detailsError,
+        hasMoreDetails,
+        isDetailsLoading,
+        isDetailsLoadingMore,
+        loadMoreDetails,
+        selectedSurveyBatchOid,
+    ]);
 
     const clearObjectImage = useCallback(() => {
         setObjectImageType(null);
@@ -1584,7 +1592,6 @@ export function SurveysModule() {
                                 <div className="flex flex-1 min-h-0">
                                     <div
                                         ref={surveyDetailsListRef}
-                                        onScroll={handleSurveyDetailsListScroll}
                                         className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                                     >
                                         {isDetailsLoading && filteredDetails.length === 0 ? (
@@ -1635,18 +1642,6 @@ export function SurveysModule() {
                                             </div>
                                         )}
 
-                                        {!isDetailsLoading && !detailsError && hasMoreDetails && (
-                                            <div className="p-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => void loadMoreDetails()}
-                                                    disabled={isDetailsLoadingMore}
-                                                    className={`w-full rounded-md border px-3 py-1.5 text-xs ${isLight ? 'border-slate-300 text-slate-700 hover:bg-slate-100' : 'border-white/20 text-gray-200 hover:bg-white/10'} disabled:opacity-60`}
-                                                >
-                                                    Load more
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
 
                                     <PaneQuickScrollButtons containerRef={surveyDetailsListRef} isLight={isLight} />
