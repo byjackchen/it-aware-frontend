@@ -403,14 +403,16 @@ export function NotificationsModule() {
         };
     }, [fetchDetailsPage, fetchNotificationBatchDetail, reloadNotifications, selectedNotificationBatchOid, shouldAutoRefreshBatch]);
 
+    const normalizedSearchQuery = searchQuery.trim();
+
     const filteredNotifications = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
+        const query = normalizedSearchQuery.toLowerCase();
         if (!query) return notificationBatches;
         return notificationBatches.filter((item) => (
             item.name.toLowerCase().includes(query)
             || item.oid.toLowerCase().includes(query)
         ));
-    }, [notificationBatches, searchQuery]);
+    }, [notificationBatches, normalizedSearchQuery]);
 
     const filteredDetails = useMemo(() => {
         const query = detailsSearch.trim().toLowerCase();
@@ -435,6 +437,20 @@ export function NotificationsModule() {
             setSelectedNotificationOid(filteredDetails[0].oid);
         }
     }, [filteredDetails, selectedNotificationOid]);
+
+    useEffect(() => {
+        if (normalizedSearchQuery.length === 0) return;
+        if (notificationsError) return;
+        if (isNotificationsLoading || isNotificationsLoadingMore || !hasMoreNotifications) return;
+        void loadMoreNotifications();
+    }, [
+        hasMoreNotifications,
+        isNotificationsLoading,
+        isNotificationsLoadingMore,
+        loadMoreNotifications,
+        normalizedSearchQuery,
+        notificationsError,
+    ]);
 
     const handleNotificationsListScroll = useCallback(() => {
         const container = notificationsListRef.current;
@@ -824,7 +840,7 @@ export function NotificationsModule() {
                                     </div>
                                 )}
 
-                                {!isNotificationsLoading && !notificationsError && hasMoreNotifications && (
+                                {!isNotificationsLoading && !notificationsError && hasMoreNotifications && normalizedSearchQuery.length === 0 && (
                                     <div className="p-3">
                                         <button
                                             type="button"

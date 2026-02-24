@@ -81,7 +81,7 @@ Notes:
 When asked to repackage/restart frontend Docker, use commands from `specs/REPO.md` exactly:
 
 ```bash
-docker build --no-cache -t it-aware-frontend:latest .
+docker build -t it-aware-frontend:latest .
 docker stop it-aware-frontend && docker rm it-aware-frontend
 docker run -d -p 3007:3000 --network dev-net --env-file ./.env.docker --name it-aware-frontend it-aware-frontend:latest
 ```

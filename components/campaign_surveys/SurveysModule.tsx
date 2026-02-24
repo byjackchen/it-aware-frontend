@@ -494,14 +494,16 @@ export function SurveysModule() {
         };
     }, [fetchDetailsPage, fetchSurveyBatchDetail, reloadSurveys, selectedSurveyBatchOid, shouldAutoRefreshBatch]);
 
+    const normalizedSearchQuery = searchQuery.trim();
+
     const filteredSurveys = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
+        const query = normalizedSearchQuery.toLowerCase();
         if (!query) return surveyBatches;
         return surveyBatches.filter((item) => (
             item.name.toLowerCase().includes(query)
             || item.oid.toLowerCase().includes(query)
         ));
-    }, [surveyBatches, searchQuery]);
+    }, [surveyBatches, normalizedSearchQuery]);
 
     const filteredDetails = useMemo(() => {
         const query = detailsSearch.trim().toLowerCase();
@@ -526,6 +528,20 @@ export function SurveysModule() {
             setSelectedSurveyOid(filteredDetails[0].oid);
         }
     }, [filteredDetails, selectedSurveyOid]);
+
+    useEffect(() => {
+        if (normalizedSearchQuery.length === 0) return;
+        if (surveysError) return;
+        if (isSurveysLoading || isSurveysLoadingMore || !hasMoreSurveys) return;
+        void loadMoreSurveys();
+    }, [
+        hasMoreSurveys,
+        isSurveysLoading,
+        isSurveysLoadingMore,
+        loadMoreSurveys,
+        normalizedSearchQuery,
+        surveysError,
+    ]);
 
     const handleSurveysListScroll = useCallback(() => {
         const container = surveysListRef.current;
@@ -1000,7 +1016,7 @@ export function SurveysModule() {
                                     </div>
                                 )}
 
-                                {!isSurveysLoading && !surveysError && hasMoreSurveys && (
+                                {!isSurveysLoading && !surveysError && hasMoreSurveys && normalizedSearchQuery.length === 0 && (
                                     <div className="p-3">
                                         <button
                                             type="button"
