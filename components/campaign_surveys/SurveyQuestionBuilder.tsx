@@ -142,15 +142,15 @@ export function SurveyQuestionBuilder({
                                     <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
                                         {t('questionBuilder.fields.title')}
                                     </label>
-                                    <input
-                                        type="text"
+                                    <textarea
                                         value={question.title}
                                         onChange={(event) => updateQuestion(question.id, (current) => ({
                                             ...current,
                                             title: event.target.value,
                                         }))}
                                         disabled={disabled}
-                                        className={`w-full px-2 py-1.5 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                                        rows={3}
+                                        className={`w-full px-2 py-1.5 rounded-md border resize-y ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                                     />
                                 </div>
                             </div>

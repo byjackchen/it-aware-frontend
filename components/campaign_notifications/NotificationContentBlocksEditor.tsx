@@ -80,13 +80,13 @@ export function NotificationContentBlocksEditor({
                         </button>
                     </div>
 
-                    <input
-                        type="text"
+                    <textarea
                         value={block.text}
                         onChange={(event) => handleTextChange(index, event.target.value)}
                         disabled={disabled}
                         placeholder={t('content.blockText')}
-                        className="w-full px-3 py-2 rounded-md bg-slate-900/80 border border-white/10 text-sm text-white"
+                        rows={4}
+                        className="w-full px-3 py-2 rounded-md bg-slate-900/80 border border-white/10 text-sm text-white resize-y"
                     />
 
                     {block.type === 'link' && (

@@ -1465,7 +1465,7 @@ export function SurveysModule() {
                                                                         <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                                             {question.question_id}
                                                                         </p>
-                                                                        <p className={`text-sm ${isLight ? 'text-slate-800' : 'text-gray-100'}`}>
+                                                                        <p className={`text-sm whitespace-pre-wrap ${isLight ? 'text-slate-800' : 'text-gray-100'}`}>
                                                                             {question.title}
                                                                             {question.required && (
                                                                                 <span className={`${isLight ? 'text-rose-500' : 'text-rose-300'}`}> *</span>
@@ -1626,7 +1626,7 @@ export function SurveysModule() {
                                                             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                                 {t('details.fields.questions')}: {detail.survey_questions.questions.length}
                                                             </p>
-                                                            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                                            <p className={`text-xs whitespace-pre-wrap break-words ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                                 {t('details.fields.answer')}: {summarizeSurveyAnswer(detail.survey_answer)}
                                                             </p>
                                                         </button>

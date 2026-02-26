@@ -1266,7 +1266,7 @@ export function NotificationsModule() {
                                                                     {detail.status}
                                                                 </span>
                                                             </div>
-                                                            <p className={`text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
+                                                            <p className={`text-xs mt-1 whitespace-pre-wrap break-words ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
                                                                 {summarizeContentBlocks(detail.content_blocks)}
                                                             </p>
                                                             <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
