@@ -46,3 +46,6 @@ next-env.d.ts
 
 # local git worktrees
 .wt/
+
+# claude
+CLAUDE.md
