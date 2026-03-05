@@ -54,6 +54,13 @@ All endpoints require authentication.
 ### Survey Child (`campaigns.surveys`)
 - `oid`, `survey_batch_oid`, `receiver_stable_id`, `receiver_oid`, `survey_questions`, `survey_answer`, `status`, `submitted_at`, `created_at`, `updated_at`
 - `status`: `not_started | submitted | revoked | expired`
+- `receiver_oid`: NOT NULL — every survey must resolve to a known worker. When creating
+  or upserting surveys, if `receiver_oid` is not explicitly provided the server resolves
+  it from `receiver_stable_id` via worker lookup. If resolution fails, the endpoint
+  returns **422** with detail `Cannot resolve receiver_oid for stable_id: <id>`.
+- **Global Registry**: surveys are automatically synced to `registry.global_registry`
+  via a database trigger (`object_type='survey'`, `descriptor=receiver_stable_id`).
+  This enables discovery via registry search and participation in the edge graph.
 
 ## Object APIs
 
@@ -82,6 +89,15 @@ When action is `trigger`, backend behavior is:
    - on failure return immediate API error with detail and do **not** trigger DAG.
 3. Claim batch into running state.
 4. Trigger notification DAG asynchronously for row-level send execution.
+5. DAG row dispatch uses UTC due-time gating:
+   - send only rows with `status in ('created','failed')` where `scheduled_at` is `null` or `scheduled_at <= now_utc`.
+   - rows with future `scheduled_at` are deferred to later runs.
+6. Deferred rows are not mutated by that run:
+   - keep existing `status`.
+   - keep existing `updated_at`.
+7. Final batch status is derived from DB child status counts:
+   - if any `created` or `failed` rows remain, final status is `partially_completed`.
+   - final status is `completed` only when no `created`/`failed` rows remain (`cancelled` rows do not block completion).
 
 `wecom_ops_bot` does not support image send flow. If image fields are populated on
 an ops-bot batch, trigger request is rejected.

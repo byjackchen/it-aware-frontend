@@ -87,7 +87,11 @@
         "faqs": "常见问题",
         "campaign": "Campaign",
         "notificationBatches": "通知批次",
-        "surveyBatches": "问卷批次"
+        "surveyBatches": "问卷批次",
+        "insights": "洞察",
+        "notifications": "通知",
+        "surveys": "问卷",
+        "analyses": "分析"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",
@@ -341,6 +345,51 @@
             "inactive": "未激活",
             "count": "{filtered} / {total} 文章",
             "countPlural": "{filtered} / {total} 文章"
+        },
+        "notifications": {
+            "title": "通知",
+            "detail": "通知详情",
+            "empty": "未找到通知",
+            "selectBatch": "选择通知批次",
+            "receiver": "接收人",
+            "status": "状态",
+            "batch": "通知批次",
+            "channel": "渠道",
+            "content": "内容",
+            "scheduledAt": "计划发送时间",
+            "errorMessage": "错误信息"
+        },
+        "surveys": {
+            "title": "问卷",
+            "detail": "问卷详情",
+            "empty": "未找到问卷",
+            "selectBatch": "选择问卷批次",
+            "allBatches": "全部批次",
+            "receiver": "接收人",
+            "status": "状态",
+            "submittedAt": "提交时间",
+            "batch": "问卷批次",
+            "questions": "题目",
+            "answers": "回答",
+            "noAnswer": "未提交回答"
+        },
+        "analyses": {
+            "title": "分析",
+            "detail": "分析详情",
+            "new": "新建分析",
+            "empty": "未找到分析",
+            "deleteConfirm": "确定要删除此分析吗？",
+            "worker": "员工",
+            "sourceType": "来源类型",
+            "sourceOid": "来源 OID",
+            "keywords": "关键词",
+            "semantic": "情感倾向",
+            "intent": "意图",
+            "serviceCatalog": "服务目录",
+            "configurationItem": "配置项",
+            "positive": "正面",
+            "negative": "负面",
+            "noKeywords": "无关键词"
         }
     },
     "Knowledge": {

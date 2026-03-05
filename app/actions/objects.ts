@@ -34,6 +34,11 @@ import {
     deleteInquiry,
     deleteInteraction,
 } from '@/lib/api/objects';
+import {
+    createAnalysis,
+    updateAnalysis,
+    deleteAnalysis,
+} from '@/lib/api/insights';
 import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
@@ -1112,6 +1117,117 @@ export async function deleteInteractionAction(oid: string) {
         await deleteInteraction(oid);
         revalidatePath('/data/interactions');
         revalidatePath(`/data/interactions/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Analysis Actions
+// ============================================================================
+
+export async function createAnalysisAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createAnalysis';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const worker_oid = formData.get('worker_oid') as string;
+    const source_type = (formData.get('source_type') as string) || 'survey';
+    const source_oid = formData.get('source_oid') as string;
+    const keywordsStr = formData.get('keywords') as string | null;
+    const semantic = formData.get('semantic') as string | null;
+    const intent = formData.get('intent') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+
+    let keywords: string[] | undefined = undefined;
+    if (keywordsStr) {
+        try {
+            keywords = JSON.parse(keywordsStr);
+        } catch {
+            keywords = keywordsStr.split(',').map(k => k.trim()).filter(Boolean);
+        }
+    }
+
+    try {
+        await createAnalysis({
+            worker_oid,
+            source_type: source_type as 'survey',
+            source_oid,
+            keywords,
+            semantic: (semantic as 'positive' | 'negative') || undefined,
+            intent: (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion') || undefined,
+            service_catalog_oid: service_catalog_oid || undefined,
+            configuration_item_oid: configuration_item_oid || undefined,
+        });
+        revalidatePath('/data/analyses');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateAnalysisAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateAnalysis';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const keywordsStr = formData.get('keywords') as string | null;
+    const semantic = formData.get('semantic') as string | null;
+    const intent = formData.get('intent') as string | null;
+    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
+    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
+
+    let keywords: string[] | null | undefined = undefined;
+    if (keywordsStr !== null) {
+        if (keywordsStr.trim() === '') {
+            keywords = null;
+        } else {
+            try {
+                keywords = JSON.parse(keywordsStr);
+            } catch {
+                keywords = keywordsStr.split(',').map(k => k.trim()).filter(Boolean);
+            }
+        }
+    }
+
+    try {
+        await updateAnalysis(oid, {
+            keywords,
+            semantic: semantic === '' ? null : (semantic as 'positive' | 'negative' | null) ?? undefined,
+            intent: intent === '' ? null : (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion' | null) ?? undefined,
+            service_catalog_oid: service_catalog_oid === '' ? null : service_catalog_oid ?? undefined,
+            configuration_item_oid: configuration_item_oid === '' ? null : configuration_item_oid ?? undefined,
+        });
+        revalidatePath('/data/analyses');
+        revalidatePath(`/data/analyses/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteAnalysisAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteAnalysis';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteAnalysis(oid);
+        revalidatePath('/data/analyses');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {

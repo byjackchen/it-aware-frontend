@@ -12,6 +12,7 @@ const RESOURCE_PATHS = {
     requests: '/objects/activities/requests',
     inquiries: '/objects/activities/inquiries',
     interactions: '/objects/activities/interactions',
+    analysiss: '/objects/insights/analysiss',
     roles: '/auth/config/roles',
 } as const;
 

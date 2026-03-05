@@ -985,7 +985,7 @@ export interface Survey {
     oid: string;
     survey_batch_oid: string;
     receiver_stable_id: string;
-    receiver_oid: string | null;
+    receiver_oid: string;
     survey_questions: SurveyQuestions;
     survey_answer: SurveyAnswerPayload | null;
     status: SurveyStatus;
@@ -1039,4 +1039,64 @@ export interface CrossBatchSurveyListParams {
     survey_batch_oid?: string;
     skip?: number;
     limit?: number;
+}
+
+// ============================================================================
+// Analysis (Insights)
+// ============================================================================
+
+export type AnalysisSourceType = 'survey';
+
+export type AnalysisSemantic = 'positive' | 'negative' | null;
+
+export type AnalysisIntent = 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion' | null;
+
+export interface Analysis {
+    oid: string;
+    worker_oid: string;
+    source_type: AnalysisSourceType;
+    source_oid: string;
+    keywords: string[] | null;
+    semantic: AnalysisSemantic;
+    intent: AnalysisIntent;
+    service_catalog_oid: string | null;
+    configuration_item_oid: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AnalysisCreate {
+    worker_oid: string;
+    source_type: AnalysisSourceType;
+    source_oid: string;
+    keywords?: string[] | null;
+    semantic?: AnalysisSemantic;
+    intent?: AnalysisIntent;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
+}
+
+export interface AnalysisUpdate {
+    keywords?: string[] | null;
+    semantic?: AnalysisSemantic;
+    intent?: AnalysisIntent;
+    service_catalog_oid?: string | null;
+    configuration_item_oid?: string | null;
+}
+
+export interface AnalysisListParams {
+    worker_oid?: string;
+    source_type?: AnalysisSourceType;
+    source_oid?: string;
+    semantic?: 'positive' | 'negative';
+    intent?: 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion';
+    skip?: number;
+    limit?: number;
+}
+
+export interface AnalysisListResponse {
+    items: Analysis[];
+    total: number;
+    skip: number;
+    limit: number;
 }

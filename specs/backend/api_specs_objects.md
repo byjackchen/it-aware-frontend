@@ -21,7 +21,7 @@ The Objects module manages business entities that are not hierarchical but inter
 > **Activities (Incidents/Inquiries)** are defined in [api_specs_objects_activities.md](./api_specs_objects_activities.md). They now accept explicit `created_at`, `updated_at`, and `effective_at` (timezone-aware ISO8601) to reflect external source timestamps.
 
 > [!NOTE]
-> **Campaign Notifications** are defined in [api_specs_campaigns.md](./api_specs_campaigns.md).
+> **Campaign Notifications and Surveys** are defined in [api_specs_objects_campaigns.md](./api_specs_objects_campaigns.md).
 
 ---
 

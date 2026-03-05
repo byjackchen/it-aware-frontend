@@ -489,7 +489,9 @@ class InquiryMaterializeResponse(BaseModel):
 > **Materialize behavior**:
 > - Missing inquiry returns `404`.
 > - Inquiry access is checked by ABAC write scope (same access rule as inquiry update/delete).
-> - No assigned interactions returns `{status: "noop", changed: false, ...}`.
+> - No assigned interactions:
+>   - if state already `unresolved`, returns `{status: "noop", changed: false, ...}`
+>   - otherwise sets state to `unresolved` and returns `changed=true`.
 > - Repeated calls with unchanged assigned-interaction projection are idempotent (`changed=false`).
 > - When interactions exist, materialize attempts LLM generation for `topic/fact` and categorization fields (`service_catalog_oid/configuration_item_oid`).
 > - Inquiry base timestamps are derived from assigned interactions:
@@ -497,6 +499,9 @@ class InquiryMaterializeResponse(BaseModel):
 >   `effective_at=min(interaction.effective_at)`.
 > - If LLM output is invalid or unavailable, deterministic projection is used for `topic/fact` and `status` becomes `materialized_with_fallback`.
 > - If embedding backend is temporarily unavailable, materialize still updates raw `fact` text (best effort) and does not fail solely due to embedding connectivity.
+> - Digest/materialize path writes inquiry `state` as `resolved|unresolved`.
+> - Materialized `messages` are digest role-pair entries only: each item is `{"line": "<user>:<text>; <assistant>:<text>"}`.
+> - When `interaction.response_text` is empty, assistant text is derived from `interaction.response_raw` (for example `responses[].rendered_text`) before line formatting.
 
 ### Query Parameters (`GET /objects/activities/inquiries`)
 
@@ -650,6 +655,8 @@ class InteractionListResponse(BaseModel):
 > - `dry_run=false`: applies decisions directly to DB (including inquiry creation for `create`).
 > - Same `run_id + batch_id` replay is idempotent and returns `replayed_count`.
 > - Invalid or missing LLM decision items downgrade to `defer` with `parser_status="fallback"`.
+> - Prompt includes full button-key glossary reference from `data/chatbot/button_key_meanings.md`.
+> - Interaction context uses text fields (`content_text`, `response_text`) without raw payload blobs.
 
 ### Endpoints
 

@@ -16,8 +16,11 @@ import {
     ClipboardList,
     MessageCircle,
     MousePointerClick,
+    Bell,
     BellRing,
     ClipboardCheck,
+    FileSearch,
+    Sparkles,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -171,6 +174,43 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.INTERACTIONS_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'campaign',
+                items: [
+                    {
+                        href: '/data/notifications',
+                        labelKey: 'notifications',
+                        icon: Bell,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.NOTIFICATION_BATCHS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/surveys',
+                        labelKey: 'surveys',
+                        icon: FileSearch,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SURVEY_BATCHS_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'insights',
+                items: [
+                    {
+                        href: '/data/analyses',
+                        labelKey: 'analyses',
+                        icon: Sparkles,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.ANALYSISS_READ,
                         ]),
                     },
                 ],

@@ -87,7 +87,11 @@
         "faqs": "FAQs",
         "campaign": "Campaign",
         "notificationBatches": "Notification Batches",
-        "surveyBatches": "Survey Batches"
+        "surveyBatches": "Survey Batches",
+        "insights": "Insights",
+        "notifications": "Notifications",
+        "surveys": "Surveys",
+        "analyses": "Analyses"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware Assistant",
@@ -341,6 +345,51 @@
             "inactive": "Inactive",
             "count": "{filtered} of {total} article",
             "countPlural": "{filtered} of {total} articles"
+        },
+        "notifications": {
+            "title": "Notifications",
+            "detail": "Notification Details",
+            "empty": "No notifications found",
+            "selectBatch": "Select a notification batch",
+            "receiver": "Receiver",
+            "status": "Status",
+            "batch": "Notification Batch",
+            "channel": "Channel",
+            "content": "Content",
+            "scheduledAt": "Scheduled At",
+            "errorMessage": "Error Message"
+        },
+        "surveys": {
+            "title": "Surveys",
+            "detail": "Survey Details",
+            "empty": "No surveys found",
+            "selectBatch": "Select a survey batch",
+            "allBatches": "All Batches",
+            "receiver": "Receiver",
+            "status": "Status",
+            "submittedAt": "Submitted At",
+            "batch": "Survey Batch",
+            "questions": "Questions",
+            "answers": "Answers",
+            "noAnswer": "No answer submitted"
+        },
+        "analyses": {
+            "title": "Analyses",
+            "detail": "Analysis Details",
+            "new": "New Analysis",
+            "empty": "No analyses found",
+            "deleteConfirm": "Are you sure you want to delete this analysis?",
+            "worker": "Worker",
+            "sourceType": "Source Type",
+            "sourceOid": "Source OID",
+            "keywords": "Keywords",
+            "semantic": "Semantic",
+            "intent": "Intent",
+            "serviceCatalog": "Service Catalog",
+            "configurationItem": "Configuration Item",
+            "positive": "Positive",
+            "negative": "Negative",
+            "noKeywords": "No keywords"
         }
     },
     "Knowledge": {
