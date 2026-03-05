@@ -145,6 +145,7 @@ export function SurveysListPage() {
                 {/* Batch selector + Search */}
                 <div className="flex items-center gap-4 mb-4">
                     <select
+                        key={isLoadingBatches ? 'loading' : 'loaded'}
                         value={selectedBatchOid}
                         onChange={(e) => setSelectedBatchOid(e.target.value)}
                         disabled={isLoadingBatches}
