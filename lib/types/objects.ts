@@ -1056,7 +1056,10 @@ export interface Analysis {
     worker_oid: string;
     source_type: AnalysisSourceType;
     source_oid: string;
+    source_batch_oid: string | null;
+    topic: string;
     keywords: string[] | null;
+    fact: string | null;
     semantic: AnalysisSemantic;
     intent: AnalysisIntent;
     service_catalog_oid: string | null;
@@ -1069,7 +1072,10 @@ export interface AnalysisCreate {
     worker_oid: string;
     source_type: AnalysisSourceType;
     source_oid: string;
+    source_batch_oid?: string | null;
+    topic: string;
     keywords?: string[] | null;
+    fact?: string | null;
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
@@ -1078,6 +1084,7 @@ export interface AnalysisCreate {
 
 export interface AnalysisUpdate {
     keywords?: string[] | null;
+    fact?: string | null;
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
@@ -1088,6 +1095,8 @@ export interface AnalysisListParams {
     worker_oid?: string;
     source_type?: AnalysisSourceType;
     source_oid?: string;
+    source_batch_oid?: string;
+    topic?: string;
     semantic?: 'positive' | 'negative';
     intent?: 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion';
     skip?: number;

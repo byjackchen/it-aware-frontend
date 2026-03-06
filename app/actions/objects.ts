@@ -1139,7 +1139,10 @@ export async function createAnalysisAction(formData: FormData) {
     const worker_oid = formData.get('worker_oid') as string;
     const source_type = (formData.get('source_type') as string) || 'survey';
     const source_oid = formData.get('source_oid') as string;
+    const source_batch_oid = formData.get('source_batch_oid') as string | null;
+    const topic = formData.get('topic') as string;
     const keywordsStr = formData.get('keywords') as string | null;
+    const factStr = formData.get('fact') as string | null;
     const semantic = formData.get('semantic') as string | null;
     const intent = formData.get('intent') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -1159,7 +1162,10 @@ export async function createAnalysisAction(formData: FormData) {
             worker_oid,
             source_type: source_type as 'survey',
             source_oid,
+            source_batch_oid: source_batch_oid || undefined,
+            topic,
             keywords,
+            fact: factStr?.trim() || undefined,
             semantic: (semantic as 'positive' | 'negative') || undefined,
             intent: (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion') || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -1182,6 +1188,7 @@ export async function updateAnalysisAction(oid: string, formData: FormData) {
     logger.info(`Started`, { requestId, action });
 
     const keywordsStr = formData.get('keywords') as string | null;
+    const factStr = formData.get('fact') as string | null;
     const semantic = formData.get('semantic') as string | null;
     const intent = formData.get('intent') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -1203,6 +1210,7 @@ export async function updateAnalysisAction(oid: string, formData: FormData) {
     try {
         await updateAnalysis(oid, {
             keywords,
+            fact: factStr === null ? undefined : (factStr.trim() === '' ? null : factStr.trim()),
             semantic: semantic === '' ? null : (semantic as 'positive' | 'negative' | null) ?? undefined,
             intent: intent === '' ? null : (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion' | null) ?? undefined,
             service_catalog_oid: service_catalog_oid === '' ? null : service_catalog_oid ?? undefined,

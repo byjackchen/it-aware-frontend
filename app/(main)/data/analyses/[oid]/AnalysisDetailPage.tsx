@@ -13,6 +13,7 @@ import {
     Sparkles,
     User,
     Building2,
+    FileSearch,
     Pencil,
     Save,
     Trash2,
@@ -30,6 +31,8 @@ interface AnalysisDetailPageProps {
     edges: GlobalEdge[];
     workers: Worker[];
     serviceCatalogs: ServiceCatalog[];
+    sourceUrl: string | null;
+    batchMap: Record<string, string>;
 }
 
 const SEMANTIC_OPTIONS = ['', 'positive', 'negative'];
@@ -40,7 +43,15 @@ const SEMANTIC_COLORS: Record<string, { bg: string; text: string }> = {
     negative: { bg: 'bg-red-500/20', text: 'text-red-500' },
 };
 
-export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }: AnalysisDetailPageProps) {
+const INTENT_COLORS: Record<string, { bg: string; text: string }> = {
+    request: { bg: 'bg-blue-500/20', text: 'text-blue-500' },
+    bug: { bg: 'bg-red-500/20', text: 'text-red-500' },
+    complaint: { bg: 'bg-orange-500/20', text: 'text-orange-500' },
+    praise: { bg: 'bg-green-500/20', text: 'text-green-500' },
+    suggestion: { bg: 'bg-purple-500/20', text: 'text-purple-500' },
+};
+
+export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, sourceUrl, batchMap }: AnalysisDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
@@ -52,6 +63,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
 
     // Form State
     const [keywords, setKeywords] = useState(analysis.keywords?.join(', ') || '');
+    const [fact, setFact] = useState(analysis.fact || '');
     const [semantic, setSemantic] = useState(analysis.semantic || '');
     const [intent, setIntent] = useState(analysis.intent || '');
     const [serviceCatalogOid, setServiceCatalogOid] = useState(analysis.service_catalog_oid || '');
@@ -70,6 +82,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
         try {
             const formData = new FormData();
             formData.set('keywords', keywords.trim() ? JSON.stringify(keywords.split(',').map(k => k.trim()).filter(Boolean)) : '');
+            formData.set('fact', fact);
             formData.set('semantic', semantic);
             formData.set('intent', intent);
             formData.set('service_catalog_oid', serviceCatalogOid);
@@ -102,6 +115,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
 
     const handleCancel = () => {
         setKeywords(analysis.keywords?.join(', ') || '');
+        setFact(analysis.fact || '');
         setSemantic(analysis.semantic || '');
         setIntent(analysis.intent || '');
         setServiceCatalogOid(analysis.service_catalog_oid || '');
@@ -123,7 +137,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
                                 <Sparkles className="w-5 h-5" />
                             </div>
                             <div>
-                                <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('analyses.detail')}</h1>
+                                <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{analysis.topic}</h1>
                                 <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                     {analysis.source_type}
                                 </p>
@@ -137,11 +151,6 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
                                 <Pencil className="w-4 h-4" />
                                 <span>{t('common.edit')}</span>
                             </button>
-                        )}
-                        {!isEditing && semStyle && (
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium capitalize ${semStyle.bg} ${semStyle.text}`}>
-                                {analysis.semantic}
-                            </div>
                         )}
                     </div>
                 </div>
@@ -163,63 +172,93 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
                         </div>
                     </div>
 
-                    {/* Source */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.sourceType')}</label>
-                            <div className={`text-sm capitalize ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{analysis.source_type}</div>
-                        </div>
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.sourceOid')}</label>
-                            <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{analysis.source_oid}</div>
+                    {/* Source Object */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.sourceObject')}</label>
+                        <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                            <FileSearch className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                            {sourceUrl ? (
+                                <Link href={sourceUrl} className="underline underline-offset-4 capitalize">
+                                    {analysis.source_type}
+                                </Link>
+                            ) : (
+                                <span className="capitalize">{analysis.source_type} <span className="font-mono text-xs opacity-50">({analysis.source_oid})</span></span>
+                            )}
                         </div>
                     </div>
 
-                    {/* Keywords */}
+                    {/* Source Batch */}
+                    {analysis.source_batch_oid && (
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.sourceBatch')}</label>
+                            <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                {batchMap[analysis.source_batch_oid] || <span className="font-mono text-xs">{analysis.source_batch_oid}</span>}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Keywords, Semantic & Intent */}
                     <div>
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.keywords')}</label>
                         {isEditing ? (
-                            <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)}
-                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
-                                placeholder="keyword1, keyword2, ..." />
+                            <div className="space-y-3">
+                                <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    placeholder="keyword1, keyword2, ..." />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className={`block text-xs font-medium mb-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('analyses.semantic')}</label>
+                                        <select value={semantic} onChange={(e) => setSemantic(e.target.value)}
+                                            className={`w-full px-3 py-2 rounded-lg capitalize ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}>
+                                            {SEMANTIC_OPTIONS.map(opt => (<option key={opt} value={opt}>{opt || '\u2014'}</option>))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className={`block text-xs font-medium mb-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('analyses.intent')}</label>
+                                        <select value={intent} onChange={(e) => setIntent(e.target.value)}
+                                            className={`w-full px-3 py-2 rounded-lg capitalize ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}>
+                                            {INTENT_OPTIONS.map(opt => (<option key={opt} value={opt}>{opt || '\u2014'}</option>))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             <div className="flex flex-wrap gap-2">
+                                {analysis.semantic && (
+                                    <span className={`text-xs px-2.5 py-1 rounded-full capitalize font-medium ${SEMANTIC_COLORS[analysis.semantic]?.bg ?? ''} ${SEMANTIC_COLORS[analysis.semantic]?.text ?? ''}`}>
+                                        {t('analyses.semantic')}: {analysis.semantic}
+                                    </span>
+                                )}
+                                {analysis.intent && (
+                                    <span className={`text-xs px-2.5 py-1 rounded-full capitalize font-medium ${INTENT_COLORS[analysis.intent]?.bg ?? ''} ${INTENT_COLORS[analysis.intent]?.text ?? ''}`}>
+                                        {t('analyses.intent')}: {analysis.intent}
+                                    </span>
+                                )}
                                 {analysis.keywords?.length ? analysis.keywords.map((kw, i) => (
                                     <span key={i} className={`text-xs px-2.5 py-1 rounded-full ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>
                                         {kw}
                                     </span>
                                 )) : (
-                                    <span className={`italic text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('analyses.noKeywords')}</span>
+                                    !analysis.semantic && !analysis.intent && (
+                                        <span className={`italic text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('analyses.noKeywords')}</span>
+                                    )
                                 )}
                             </div>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {/* Semantic */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.semantic')}</label>
-                            {isEditing ? (
-                                <select value={semantic} onChange={(e) => setSemantic(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg capitalize ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}>
-                                    {SEMANTIC_OPTIONS.map(opt => (<option key={opt} value={opt}>{opt || '—'}</option>))}
-                                </select>
-                            ) : (
-                                <div className={`text-sm capitalize ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{analysis.semantic || '—'}</div>
-                            )}
-                        </div>
-                        {/* Intent */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.intent')}</label>
-                            {isEditing ? (
-                                <select value={intent} onChange={(e) => setIntent(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg capitalize ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}>
-                                    {INTENT_OPTIONS.map(opt => (<option key={opt} value={opt}>{opt || '—'}</option>))}
-                                </select>
-                            ) : (
-                                <div className={`text-sm capitalize ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{analysis.intent || '—'}</div>
-                            )}
-                        </div>
+                    {/* Fact */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.fact')}</label>
+                        {isEditing ? (
+                            <input type="text" value={fact} onChange={(e) => setFact(e.target.value)}
+                                className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                placeholder="Concise factual summary..." />
+                        ) : (
+                            <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                {analysis.fact || <span className="italic opacity-50">{'\u2014'}</span>}
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
@@ -298,7 +337,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs }
                     <ObjectGraph
                         oid={analysis.oid}
                         objectType="analysis"
-                        descriptor={analysis.keywords?.join(', ') || 'Analysis'}
+                        descriptor={analysis.topic}
                         edges={filteredEdges}
                         allEdges={edges}
                         onFilterChange={setEdgeFilter}

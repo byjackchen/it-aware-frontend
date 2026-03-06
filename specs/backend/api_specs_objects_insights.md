@@ -19,20 +19,24 @@ All endpoints require authentication.
 - `worker_oid` — BYTEA(16), FK to `objects.workers.oid`, NOT NULL
 - `source_type` — Text, NOT NULL. Constraint: `IN ('survey')`
 - `source_oid` — BYTEA(16), NOT NULL. Polymorphic reference to the source object
+- `source_batch_oid` — BYTEA(16), nullable. Reference to the source batch (e.g., survey batch OID)
+- `topic` — Text, NOT NULL. Short noun phrase identifying the analysis topic
 - `created_at` — DateTime(tz), server_default=now()
 - `updated_at` — DateTime(tz), server_default=now()
 - `keywords` — JSONB, nullable. List of keyword strings
+- `fact` — Text, nullable. Concise factual summary statement for the topic
 - `semantic` — Text, nullable. Constraint: `IN ('positive', 'negative')` or NULL
 - `intent` — Text, nullable. Constraint: `IN ('request', 'bug', 'complaint', 'praise', 'suggestion')` or NULL
 - `service_catalog_oid` — BYTEA(16), FK to `hierarchies.nodes.oid`, nullable
 - `configuration_item_oid` — BYTEA(16), FK to `hierarchies.nodes.oid`, nullable
 
 Constraints:
-- `UNIQUE(source_type, source_oid)` — prevents duplicate analysis per source
+- `UNIQUE(source_type, source_oid, topic)` — prevents duplicate analysis per source+topic
 
 Indexes:
 - `analysiss_worker_oid_idx` on `(worker_oid)`
-- `analysiss_source_idx` on `(source_type, source_oid)`
+- `analysiss_source_idx` on `(source_type, source_oid, topic)`
+- `analysiss_source_batch_oid_idx` on `(source_batch_oid)`
 - `analysiss_created_at_idx` on `(created_at DESC)`
 
 ## Object APIs
@@ -49,7 +53,7 @@ Indexes:
 
 ### POST `/objects/insights/analysiss`
 
-Create a new analysis. Returns 409 if an analysis already exists for the same `source_type + source_oid`.
+Create a new analysis. Returns 409 if an analysis already exists for the same `source_type + source_oid + topic`.
 
 Request body:
 ```json
@@ -57,9 +61,12 @@ Request body:
   "worker_oid": "<base64url OID>",
   "source_type": "survey",
   "source_oid": "<base64url OID>",
-  "keywords": ["keyword1", "keyword2"],
-  "semantic": "positive",
-  "intent": "suggestion",
+  "source_batch_oid": "<base64url OID or null>",
+  "topic": "VPN",
+  "keywords": ["VPN", "Connection"],
+  "fact": "VPN connection drops frequently during peak hours",
+  "semantic": "negative",
+  "intent": "bug",
   "service_catalog_oid": "<base64url OID or null>",
   "configuration_item_oid": "<base64url OID or null>"
 }
@@ -72,17 +79,20 @@ Response (201):
   "worker_oid": "<base64url OID>",
   "source_type": "survey",
   "source_oid": "<base64url OID>",
+  "source_batch_oid": "<base64url OID or null>",
+  "topic": "VPN",
   "created_at": "2026-03-04T12:00:00Z",
   "updated_at": "2026-03-04T12:00:00Z",
-  "keywords": ["keyword1", "keyword2"],
-  "semantic": "positive",
-  "intent": "suggestion",
+  "keywords": ["VPN", "Connection"],
+  "fact": "VPN connection drops frequently during peak hours",
+  "semantic": "negative",
+  "intent": "bug",
   "service_catalog_oid": "<base64url OID or null>",
   "configuration_item_oid": "<base64url OID or null>"
 }
 ```
 
-Error (409): duplicate `source_type + source_oid`.
+Error (409): duplicate `source_type + source_oid + topic`.
 
 ### GET `/objects/insights/analysiss`
 
@@ -92,6 +102,8 @@ Query parameters:
 - `worker_oid` (optional) — filter by worker OID
 - `source_type` (optional) — filter by source type (e.g., `survey`)
 - `source_oid` (optional) — filter by source OID
+- `source_batch_oid` (optional) — filter by source batch OID
+- `topic` (optional) — filter by topic
 - `semantic` (optional) — filter by semantic (`positive` or `negative`)
 - `intent` (optional) — filter by intent (`request`, `bug`, `complaint`, `praise`, `suggestion`)
 - `skip` (default 0, min 0)
@@ -116,12 +128,13 @@ Error (404): analysis not found.
 
 ### PUT `/objects/insights/analysiss/{analysis_oid}`
 
-Update analysis fields. Only provided fields are updated.
+Update analysis fields. Only provided fields are updated. `topic` is NOT updatable (part of composite key).
 
 Request body:
 ```json
 {
   "keywords": ["updated_keyword"],
+  "fact": "Updated factual summary",
   "semantic": "negative",
   "intent": "complaint",
   "service_catalog_oid": "<base64url OID>",
@@ -145,5 +158,5 @@ Error (404): analysis not found.
 | 200 | Success (GET/PUT) |
 | 204 | Deleted successfully |
 | 404 | Analysis not found |
-| 409 | Duplicate source_type + source_oid |
+| 409 | Duplicate source_type + source_oid + topic |
 | 422 | Validation error (invalid OID, invalid field value) |

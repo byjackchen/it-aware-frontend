@@ -30,6 +30,8 @@ export async function getAnalysesPage(params: AnalysisListParams = {}): Promise<
     setOptionalQueryParam(queryParams, 'worker_oid', params.worker_oid);
     setOptionalQueryParam(queryParams, 'source_type', params.source_type);
     setOptionalQueryParam(queryParams, 'source_oid', params.source_oid);
+    setOptionalQueryParam(queryParams, 'source_batch_oid', params.source_batch_oid);
+    setOptionalQueryParam(queryParams, 'topic', params.topic);
     setOptionalQueryParam(queryParams, 'semantic', params.semantic);
     setOptionalQueryParam(queryParams, 'intent', params.intent);
     if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
