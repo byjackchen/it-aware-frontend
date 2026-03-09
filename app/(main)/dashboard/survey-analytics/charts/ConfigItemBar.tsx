@@ -36,11 +36,13 @@ export function ConfigItemBar({ data, isLight }: ConfigItemBarProps) {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleMouseEnter = useCallback((_: any, index: number, e: React.MouseEvent) => {
+    const handleMouseEnter = useCallback((entry: any, _index: number, e: React.MouseEvent) => {
         if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-        setHoveredIndex(index);
+        const oid = entry?.oid ?? entry?.payload?.oid;
+        const idx = oid ? chartData.findIndex((d) => d.oid === oid) : _index;
+        setHoveredIndex(idx >= 0 ? idx : _index);
         setPopoverPos({ x: e.clientX + 16, y: e.clientY - 20 });
-    }, []);
+    }, [chartData]);
 
     const handleMouseLeave = useCallback(() => {
         hoverTimeout.current = setTimeout(() => {
