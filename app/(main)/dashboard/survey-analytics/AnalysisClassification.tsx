@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Loader2, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import type { AnalysisClassificationResponse } from '@/lib/types/survey-analytics';
@@ -25,7 +24,6 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export function AnalysisClassification({ batchOid, isLight }: AnalysisClassificationProps) {
-    const router = useRouter();
     const [activeTab, setActiveTab] = useState<TabKey>('service_catalog');
     const url = batchOid ? `/api/dashboard/survey-analytics/analysis-classification?batch_oid=${batchOid}` : null;
     const { data, isLoading, error } = useSurveyAnalytics<AnalysisClassificationResponse>(url);
@@ -63,7 +61,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div
                     className={`rounded-xl border p-4 cursor-pointer transition-colors ${isLight ? 'border-slate-200 bg-white hover:bg-slate-50' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                    onClick={() => router.push(`/data/analyses?source_batch_oid=${batchOid}`)}
+                    onClick={() => window.open(`/data/analyses?source_batch_oid=${batchOid}`, '_blank')}
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className={`w-4 h-4 ${isLight ? 'text-purple-500' : 'text-purple-400'}`} />
@@ -75,7 +73,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
                 </div>
                 <div
                     className={`rounded-xl border p-4 cursor-pointer transition-colors ${isLight ? 'border-slate-200 bg-white hover:bg-slate-50' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                    onClick={() => router.push(`/data/analyses?source_batch_oid=${batchOid}`)}
+                    onClick={() => window.open(`/data/analyses?source_batch_oid=${batchOid}`, '_blank')}
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-green-500" />
@@ -90,7 +88,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
                 </div>
                 <div
                     className={`rounded-xl border p-4 cursor-pointer transition-colors ${isLight ? 'border-slate-200 bg-white hover:bg-slate-50' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                    onClick={() => router.push(`/data/analyses?source_batch_oid=${batchOid}`)}
+                    onClick={() => window.open(`/data/analyses?source_batch_oid=${batchOid}`, '_blank')}
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <TrendingDown className="w-4 h-4 text-red-500" />

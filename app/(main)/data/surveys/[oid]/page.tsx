@@ -3,7 +3,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { getSurvey, getSurveyBatch } from '@/lib/api/campaigns';
+import { getSurvey, getSurveyBatch, getSurveyBatches } from '@/lib/api/campaigns';
 import { getWorkers } from '@/lib/api/objects';
 import { SurveyDetailPage } from './SurveyDetailPage';
 
@@ -12,18 +12,30 @@ interface PageProps {
     searchParams: Promise<{ batch?: string }>;
 }
 
+async function findBatchForSurvey(surveyOid: string): Promise<string | null> {
+    const { items: batches } = await getSurveyBatches({ limit: 100 });
+    for (const b of batches) {
+        try {
+            await getSurvey(b.oid, surveyOid);
+            return b.oid;
+        } catch {
+            continue;
+        }
+    }
+    return null;
+}
+
 export default async function SurveyPage({ params, searchParams }: PageProps) {
     const { oid } = await params;
     const { batch } = await searchParams;
 
-    if (!batch) {
-        notFound();
-    }
-
     try {
+        const batchOid = batch || await findBatchForSurvey(oid);
+        if (!batchOid) notFound();
+
         const [survey, surveyBatch, workers] = await Promise.all([
-            getSurvey(batch, oid),
-            getSurveyBatch(batch),
+            getSurvey(batchOid, oid),
+            getSurveyBatch(batchOid),
             getWorkers(),
         ]);
 

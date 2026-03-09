@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { IntentSummaryItem } from '@/lib/types/survey-analytics';
 import { DrillInPopover } from './DrillInPopover';
@@ -21,7 +20,6 @@ const INTENT_COLORS: Record<string, string> = {
 };
 
 export function IntentBreakdownBar({ data, isLight, batchOid }: IntentBreakdownBarProps) {
-    const router = useRouter();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
     const hoverTimeout = useRef<ReturnType<typeof setTimeout>>(null);
@@ -36,7 +34,7 @@ export function IntentBreakdownBar({ data, isLight, batchOid }: IntentBreakdownB
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleBarClick = (entry: any) => {
-        if (entry?.intent) router.push(`/data/analyses?source_batch_oid=${batchOid}`);
+        if (entry?.intent) window.open(`/data/analyses?source_batch_oid=${batchOid}`, '_blank');
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -32,16 +32,20 @@ interface TreemapContentProps {
     name: string;
     fill: string;
     isLight: boolean;
+    positiveCount: number;
+    negativeCount: number;
     onClick?: () => void;
     onMouseEnter?: (e: React.MouseEvent) => void;
     onMouseLeave?: () => void;
 }
 
-function CustomTreemapContent({ x, y, width, height, name, fill, isLight, onClick, onMouseEnter, onMouseLeave }: TreemapContentProps) {
+function CustomTreemapContent({ x, y, width, height, name, fill, isLight, positiveCount, negativeCount, onClick, onMouseEnter, onMouseLeave }: TreemapContentProps) {
     if (width < 30 || height < 20) return null;
 
-    const fontSize = Math.min(12, Math.max(9, Math.min(width / (name.length * 0.7), height / 2)));
+    const fontSize = Math.min(12, Math.max(9, Math.min(width / (name.length * 0.7), height / 3)));
     const showLabel = width > 40 && height > 20;
+    const showCounts = width > 60 && height > 40;
+    const countFontSize = Math.min(9, Math.max(7, fontSize - 2));
 
     return (
         <g onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} style={{ cursor: 'pointer' }}>
@@ -59,7 +63,7 @@ function CustomTreemapContent({ x, y, width, height, name, fill, isLight, onClic
             {showLabel && (
                 <text
                     x={x + width / 2}
-                    y={y + height / 2}
+                    y={y + (showCounts ? height / 2 - 6 : height / 2)}
                     textAnchor="middle"
                     dominantBaseline="central"
                     fill={isLight ? '#1e293b' : '#fff'}
@@ -67,6 +71,20 @@ function CustomTreemapContent({ x, y, width, height, name, fill, isLight, onClic
                     fontWeight={500}
                 >
                     {name.length > width / (fontSize * 0.6) ? name.slice(0, Math.floor(width / (fontSize * 0.6))) + '...' : name}
+                </text>
+            )}
+            {showCounts && (
+                <text
+                    x={x + width / 2}
+                    y={y + height - 8}
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.7)"
+                    fontSize={countFontSize}
+                    fontWeight={400}
+                >
+                    <tspan fill="#86efac">+{positiveCount}</tspan>
+                    <tspan>{' '}</tspan>
+                    <tspan fill="#fca5a5">-{negativeCount}</tspan>
                 </text>
             )}
         </g>
@@ -101,6 +119,7 @@ export function KeywordTreemap({ keywords, isLight }: KeywordTreemapProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const renderContent = (props: any) => {
         const { x, y, width, height, name, fill, index } = props;
+        const kw = treemapData[index];
         return (
             <CustomTreemapContent
                 x={x}
@@ -110,7 +129,8 @@ export function KeywordTreemap({ keywords, isLight }: KeywordTreemapProps) {
                 name={name}
                 fill={fill}
                 isLight={isLight}
-                onClick={undefined}
+                positiveCount={kw?.positive_count ?? 0}
+                negativeCount={kw?.negative_count ?? 0}
                 onMouseEnter={(e) => handleCellMouseEnter(index, e)}
                 onMouseLeave={handleCellMouseLeave}
             />

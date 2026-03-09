@@ -16,6 +16,7 @@ interface AnalysisItem {
     configuration_item_oid: string | null;
     topic: string;
     fact: string | null;
+    source_oid: string | null;
 }
 
 interface AnalysisPreviewData {
@@ -25,12 +26,13 @@ interface AnalysisPreviewData {
     intent: string | null;
     fact: string | null;
     worker_stable_id: string;
+    source_oid: string | null;
 }
 
 const MAX_PREVIEWS = 20;
 
 function toPreview(a: AnalysisItem, workerStableMap: Map<string, string>): AnalysisPreviewData {
-    return { oid: a.oid, topic: a.topic, semantic: a.semantic, intent: a.intent, fact: a.fact, worker_stable_id: workerStableMap.get(a.worker_oid) ?? '' };
+    return { oid: a.oid, topic: a.topic, semantic: a.semantic, intent: a.intent, fact: a.fact, worker_stable_id: workerStableMap.get(a.worker_oid) ?? '', source_oid: a.source_oid };
 }
 
 interface WorkerItem {

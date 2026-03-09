@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
 import type { ServiceCatalogBreakdown } from '@/lib/types/survey-analytics';
 import { DrillInPopover } from './DrillInPopover';
@@ -12,7 +11,6 @@ interface ServiceCatalogBarProps {
 }
 
 export function ServiceCatalogBar({ data, isLight }: ServiceCatalogBarProps) {
-    const router = useRouter();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
     const hoverTimeout = useRef<ReturnType<typeof setTimeout>>(null);
@@ -34,7 +32,7 @@ export function ServiceCatalogBar({ data, isLight }: ServiceCatalogBarProps) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleBarClick = (entry: any) => {
-        if (entry?.oid) router.push(`/data/service-catalogs/${entry.oid}`);
+        if (entry?.oid) window.open(`/data/service-catalogs/${entry.oid}`, '_blank');
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

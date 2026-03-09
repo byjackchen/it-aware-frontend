@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import type { SubmissionStatusCounts } from '@/lib/types/survey-analytics';
 
@@ -25,7 +24,6 @@ const LABELS: Record<string, string> = {
 };
 
 export function ResponseRateDonut({ statusCounts, isLight, batchOid }: ResponseRateDonutProps) {
-    const router = useRouter();
     const data = Object.entries(statusCounts)
         .filter(([key]) => key !== 'total')
         .filter(([, value]) => value > 0)
@@ -36,18 +34,18 @@ export function ResponseRateDonut({ statusCounts, isLight, batchOid }: ResponseR
         }));
 
     const handlePieClick = () => {
-        router.push(`/data/surveys`);
+        window.open('/data/surveys', '_blank');
     };
 
     return (
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={180}>
             <PieChart>
                 <Pie
                     data={data}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
+                    cy="45%"
+                    innerRadius={40}
+                    outerRadius={65}
                     paddingAngle={2}
                     dataKey="value"
                     cursor="pointer"

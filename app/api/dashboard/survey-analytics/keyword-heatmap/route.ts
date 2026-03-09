@@ -15,6 +15,7 @@ interface AnalysisItem {
     topic: string;
     intent: string | null;
     fact: string | null;
+    source_oid: string | null;
 }
 
 interface WorkerItem {
@@ -114,7 +115,7 @@ export async function GET(request: Request) {
             negative: number;
             neutral: number;
             oids: string[];
-            analyses: Array<{ oid: string; topic: string; semantic: string | null; intent: string | null; fact: string | null; worker_stable_id: string }>;
+            analyses: Array<{ oid: string; topic: string; semantic: string | null; intent: string | null; fact: string | null; worker_stable_id: string; source_oid: string | null }>;
         }>();
 
         for (const a of analyses) {
@@ -134,7 +135,7 @@ export async function GET(request: Request) {
                 else entry.neutral++;
                 if (entry.oids.length < 5) entry.oids.push(a.oid);
                 if (entry.analyses.length < MAX_PREVIEWS) {
-                    entry.analyses.push({ oid: a.oid, topic: a.topic, semantic: a.semantic, intent: a.intent, fact: a.fact, worker_stable_id: workerStableMap.get(a.worker_oid) ?? '' });
+                    entry.analyses.push({ oid: a.oid, topic: a.topic, semantic: a.semantic, intent: a.intent, fact: a.fact, worker_stable_id: workerStableMap.get(a.worker_oid) ?? '', source_oid: a.source_oid });
                 }
             }
         }

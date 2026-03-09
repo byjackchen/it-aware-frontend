@@ -45,6 +45,7 @@ export interface AnalysisPreview {
     intent: string | null;
     fact: string | null;
     worker_stable_id: string;
+    source_oid: string | null;
 }
 
 // ==================== Analysis Classification ====================

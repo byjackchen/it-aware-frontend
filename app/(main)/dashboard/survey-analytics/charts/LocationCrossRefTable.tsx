@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import type { LocationBreakdown } from '@/lib/types/survey-analytics';
 
 interface LocationCrossRefTableProps {
@@ -10,8 +9,6 @@ interface LocationCrossRefTableProps {
 }
 
 export function LocationCrossRefTable({ data, isLight, batchOid }: LocationCrossRefTableProps) {
-    const router = useRouter();
-
     if (data.length === 0) {
         return <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No location data available</p>;
     }
@@ -36,7 +33,7 @@ export function LocationCrossRefTable({ data, isLight, batchOid }: LocationCross
                                 ? 'border-slate-100 hover:bg-slate-50'
                                 : 'border-white/5 hover:bg-white/5'
                             }`}
-                            onClick={() => router.push(`/data/analyses?source_batch_oid=${batchOid}`)}
+                            onClick={() => window.open(`/data/analyses?source_batch_oid=${batchOid}`, '_blank')}
                         >
                             <td className={`py-2 px-3 font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                 {loc.location_name}
