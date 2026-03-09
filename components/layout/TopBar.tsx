@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -127,6 +127,12 @@ export function TopBar() {
           href: '/dashboard',
           label: t('rawDataOverview'),
           icon: Database,
+          permissions: requireAnyPermission([]),
+        },
+        {
+          href: '/dashboard/survey-analytics',
+          label: t('surveyAnalytics'),
+          icon: BarChart3,
           permissions: requireAnyPermission([]),
         },
       ],
