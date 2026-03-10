@@ -5,6 +5,50 @@ import { Treemap, ResponsiveContainer } from 'recharts';
 import type { KeywordItem, ServiceCatalogKeywordGroup } from '@/lib/types/survey-analytics';
 import { DrillInPopover } from './DrillInPopover';
 
+/** Simple squarified treemap layout: returns { x, y, w, h } in percentage (0–100) for each value. */
+function squarify(values: number[], x0: number, y0: number, w0: number, h0: number): Array<{ x: number; y: number; w: number; h: number }> {
+    const total = values.reduce((s, v) => s + v, 0);
+    if (total === 0 || values.length === 0) return values.map(() => ({ x: x0, y: y0, w: 0, h: 0 }));
+    if (values.length === 1) return [{ x: x0, y: y0, w: w0, h: h0 }];
+
+    // Split into two halves where the first half is as close to 50% as possible
+    let bestSplit = 1;
+    let bestDiff = Infinity;
+    let runningSum = 0;
+    const halfTotal = total / 2;
+    for (let i = 0; i < values.length - 1; i++) {
+        runningSum += values[i];
+        const diff = Math.abs(runningSum - halfTotal);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestSplit = i + 1;
+        }
+    }
+
+    const leftSum = values.slice(0, bestSplit).reduce((s, v) => s + v, 0);
+    const leftFraction = leftSum / total;
+
+    const leftValues = values.slice(0, bestSplit);
+    const rightValues = values.slice(bestSplit);
+
+    let leftRects: Array<{ x: number; y: number; w: number; h: number }>;
+    let rightRects: Array<{ x: number; y: number; w: number; h: number }>;
+
+    if (w0 >= h0) {
+        // Split horizontally
+        const leftW = w0 * leftFraction;
+        leftRects = squarify(leftValues, x0, y0, leftW, h0);
+        rightRects = squarify(rightValues, x0 + leftW, y0, w0 - leftW, h0);
+    } else {
+        // Split vertically
+        const leftH = h0 * leftFraction;
+        leftRects = squarify(leftValues, x0, y0, w0, leftH);
+        rightRects = squarify(rightValues, x0, y0 + leftH, w0, h0 - leftH);
+    }
+
+    return [...leftRects, ...rightRects];
+}
+
 interface KeywordTreemapProps {
     keywords: KeywordItem[];
     isLight: boolean;
@@ -212,28 +256,34 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
         );
     };
 
-    // Compute proportional flex sizes for grouped layout
-    const grandTotal = displayGroups.reduce((sum, g) => sum + g.totalCount, 0);
+    // Compute treemap layout for groups (squarified slice-and-dice)
+    const GROUPED_HEIGHT = 600;
+    const GAP = 4;
+
+    const groupRects = useMemo(() => {
+        if (!isGrouped || displayGroups.length === 0) return [];
+        return squarify(displayGroups.map(g => g.totalCount), 0, 0, 100, 100);
+    }, [isGrouped, displayGroups]);
 
     return (
         <div className="relative">
             {isGrouped ? (
-                <div className="flex flex-wrap gap-2" style={{ minHeight: 500 }}>
-                    {displayGroups.map((group) => {
-                        // Each group gets proportional width (min 200px)
-                        const fraction = grandTotal > 0 ? group.totalCount / grandTotal : 1 / displayGroups.length;
-                        const widthPercent = Math.max(15, fraction * 100);
+                <div className="relative w-full" style={{ height: GROUPED_HEIGHT }}>
+                    {displayGroups.map((group, i) => {
+                        const r = groupRects[i];
+                        if (!r) return null;
                         return (
                             <div
                                 key={group.name}
-                                className={`rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200' : 'border-white/10'}`}
+                                className={`absolute rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200' : 'border-white/10'}`}
                                 style={{
-                                    flex: `${widthPercent} 1 0%`,
-                                    minWidth: 180,
-                                    minHeight: 160,
+                                    left: `${r.x}%`,
+                                    top: `${r.y}%`,
+                                    width: `calc(${r.w}% - ${GAP}px)`,
+                                    height: `calc(${r.h}% - ${GAP}px)`,
                                 }}
                             >
-                                <div className={`px-2.5 py-1.5 text-xs font-semibold truncate shrink-0 ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/5 text-gray-400'}`} title={group.name}>
+                                <div className={`px-2.5 py-1 text-xs font-semibold truncate shrink-0 ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/5 text-gray-400'}`} title={group.name}>
                                     {group.name}
                                     <span className={`ml-1.5 font-normal ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                         ({group.totalCount})
