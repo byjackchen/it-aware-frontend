@@ -139,10 +139,10 @@ Survey batch action request example:
 | POST | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys` | Create one survey row | `objects:survey_batchs:write` |
 | POST | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys/batch-upsert` | Upsert survey rows by receiver | `objects:survey_batchs:write` |
 | GET | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys` | List survey rows | `objects:survey_batchs:read` |
-| GET | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys/{survey_oid}` | Get one survey row | `objects:survey_batchs:read` |
-| PUT | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys/{survey_oid}` | Update one survey row metadata only | `objects:survey_batchs:write` |
-| POST | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys/{survey_oid}/actions` | Survey row action (`submit`/`revoke`) | `objects:survey_batchs:write` |
-| DELETE | `/objects/campaigns/survey_batchs/{survey_batch_oid}/surveys/{survey_oid}` | Delete one survey row | `objects:survey_batchs:write` |
+| GET | `/objects/campaigns/surveys/{survey_oid}` | Get one survey row | `objects:survey_batchs:read` |
+| PUT | `/objects/campaigns/surveys/{survey_oid}` | Update one survey row metadata only | `objects:survey_batchs:write` |
+| POST | `/objects/campaigns/surveys/{survey_oid}/actions` | Survey row action (`submit`/`revoke`) | `objects:survey_batchs:write` |
+| DELETE | `/objects/campaigns/surveys/{survey_oid}` | Delete one survey row | `objects:survey_batchs:write` |
 
 Survey row action request examples:
 ```json

@@ -55,7 +55,7 @@ export function useTimelineGeometry({
         const axisEndX = axisStartX + densityAxisWidth;
         const overflow = 0;
 
-        const heatRowCount = includeInteractions ? 4 : 3;
+        const heatRowCount = (includeInteractions ? 4 : 3) + 2;
         const heatHeight = (heatRowCount * HEAT_ROW_HEIGHT) + ((heatRowCount - 1) * HEAT_ROW_GAP);
         const axisY = HEAT_TOP_Y + heatHeight + HEAT_AXIS_GAP;
         const tickLabelY = TIMELINE_TOP_PADDING + 10;

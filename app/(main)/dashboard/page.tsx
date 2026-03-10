@@ -1,5 +1,5 @@
-import { ObjectStatsDashboard } from './ObjectStatsDashboard';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-    return <ObjectStatsDashboard />;
+    redirect('/dashboard/data-overview');
 }

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+    Analysis,
+    AnalysisListResponse,
     Incident,
     IncidentListResponse,
     Inquiry,
@@ -10,6 +12,7 @@ import type {
     InteractionListResponse,
     Request,
     RequestListResponse,
+    Survey,
     Worker,
 } from '@/lib/types/objects';
 import type { PersonaActivityEvent, TimelineWindowState } from './types';
@@ -216,6 +219,47 @@ function toInteractionEvent(item: Interaction): PersonaActivityEvent {
     };
 }
 
+interface CrossBatchSurveyItem {
+    survey_oid: string;
+    survey_batch_oid: string;
+    survey_batch_name?: string;
+    survey_batch_status?: string;
+    receiver_stable_id: string;
+    receiver_oid: string;
+    survey_status: string;
+    survey_questions: Survey['survey_questions'];
+    survey_answer: Survey['survey_answer'];
+    submitted_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+function toSurveyEvent(item: CrossBatchSurveyItem): PersonaActivityEvent {
+    return {
+        id: `survey-${item.survey_oid}`,
+        oid: item.survey_oid,
+        type: 'survey',
+        title: item.survey_batch_name || item.survey_status || item.survey_oid,
+        subtitle: item.survey_status + (item.submitted_at ? ` · ${new Date(item.submitted_at).toLocaleDateString()}` : ''),
+        createdAt: item.submitted_at ?? item.created_at,
+        href: `/data/surveys/${item.survey_oid}`,
+        raw: item as unknown as Survey,
+    };
+}
+
+function toAnalysisEvent(item: Analysis): PersonaActivityEvent {
+    return {
+        id: `analysis-${item.oid}`,
+        oid: item.oid,
+        type: 'analysis',
+        title: item.topic || item.oid,
+        subtitle: [item.semantic, item.intent].filter(Boolean).join(' · '),
+        createdAt: item.effective_at ?? item.created_at,
+        href: `/data/analyses/${item.oid}`,
+        raw: item,
+    };
+}
+
 function buildEventsForWindow(cache: ActivitiesCache, range: TimeRange): WindowEventsComputation {
     const windowEvents = Array.from(cache.eventsById.values())
         .filter((event) => {
@@ -237,6 +281,18 @@ function buildEventsForWindow(cache: ActivitiesCache, range: TimeRange): WindowE
         boundedEvents,
         total: windowEvents.length,
     };
+}
+
+function buildCampaignUrl(resource: string, query: Record<string, string | number | undefined>): string {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+        if (value === undefined) return;
+        const normalized = String(value).trim();
+        if (normalized.length === 0) return;
+        params.set(key, normalized);
+    });
+
+    return `/api/campaigns/${resource}?${params.toString()}`;
 }
 
 async function fetchActivitiesForRange(
@@ -268,8 +324,20 @@ async function fetchActivitiesForRange(
         skip: 0,
         limit: PER_ENDPOINT_LIMIT,
     });
+    const surveysUrl = buildCampaignUrl('surveys', {
+        receiver_stable_id: worker.stable_id,
+        skip: 0,
+        limit: PER_ENDPOINT_LIMIT,
+    });
+    const analysesUrl = buildUrl('analysiss', {
+        worker_oid: worker.oid,
+        effective_at_from: createdAtFrom,
+        effective_at_to: createdAtTo,
+        skip: 0,
+        limit: PER_ENDPOINT_LIMIT,
+    });
 
-    const [incidents, requests, inquiries, interactions] = await Promise.all([
+    const [incidents, requests, inquiries, interactions, surveys, analyses] = await Promise.all([
         fetchListEnvelope<Incident>(incidentsUrl),
         fetchListEnvelope<Request>(requestsUrl),
         fetchListEnvelope<Inquiry>(inquiriesUrl),
@@ -286,13 +354,17 @@ async function fetchActivitiesForRange(
                 })
             )
             : Promise.resolve<InteractionListResponse['items']>([]),
-    ]) as [IncidentListResponse['items'], RequestListResponse['items'], InquiryListResponse['items'], InteractionListResponse['items']];
+        fetchListEnvelope<CrossBatchSurveyItem>(surveysUrl),
+        fetchListEnvelope<Analysis>(analysesUrl),
+    ]) as [IncidentListResponse['items'], RequestListResponse['items'], InquiryListResponse['items'], InteractionListResponse['items'], CrossBatchSurveyItem[], AnalysisListResponse['items']];
 
     return [
         ...incidents.map(toIncidentEvent),
         ...requests.map(toRequestEvent),
         ...inquiries.map(toInquiryEvent),
         ...interactions.map(toInteractionEvent),
+        ...surveys.map(toSurveyEvent),
+        ...analyses.map(toAnalysisEvent),
     ];
 }
 

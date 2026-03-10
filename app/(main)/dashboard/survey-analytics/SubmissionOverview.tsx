@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, Users, CheckCircle2, TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import type { SubmissionOverviewResponse } from '@/lib/types/survey-analytics';
 import { ResponseRateDonut } from './charts/ResponseRateDonut';
@@ -12,6 +13,7 @@ interface SubmissionOverviewProps {
 }
 
 export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProps) {
+    const t = useTranslations('SurveyAnalytics');
     const url = batchOid ? `/api/dashboard/survey-analytics/submission-overview?batch_oid=${batchOid}` : null;
     const { data, isLoading, error } = useSurveyAnalytics<SubmissionOverviewResponse>(url);
 
@@ -19,7 +21,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
         return (
             <div className={`rounded-xl border p-8 text-center ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                 <span className={`inline-flex items-center gap-2 text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading submission overview...
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('submission.loading')}
                 </span>
             </div>
         );
@@ -28,7 +30,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
     if (error || !data) {
         return (
             <div className={`rounded-xl border p-8 text-center ${isLight ? 'border-red-200 bg-red-50 text-red-700' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
-                <p className="text-sm">{error || 'Failed to load data'}</p>
+                <p className="text-sm">{error || t('submission.loadFailed')}</p>
             </div>
         );
     }
@@ -38,7 +40,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
     return (
         <section className="space-y-4">
             <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                Survey Submission Overview
+                {t('submission.title')}
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -51,7 +53,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
                         >
                             <div className="flex items-center gap-1.5 mb-1">
                                 <Users className={`w-3.5 h-3.5 ${isLight ? 'text-slate-500' : 'text-gray-500'}`} />
-                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Total Sent</p>
+                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('submission.totalSent')}</p>
                             </div>
                             <p className={`text-xl font-bold ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                 {status_counts.total.toLocaleString()}
@@ -63,7 +65,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
                         >
                             <div className="flex items-center gap-1.5 mb-1">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Submitted</p>
+                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('submission.submitted')}</p>
                             </div>
                             <p className="text-xl font-bold text-green-500">
                                 {status_counts.submitted.toLocaleString()}
@@ -75,7 +77,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
                         >
                             <div className="flex items-center gap-1.5 mb-1">
                                 <TrendingUp className={`w-3.5 h-3.5 ${isLight ? 'text-blue-500' : 'text-blue-400'}`} />
-                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Response Rate</p>
+                                <p className={`text-[10px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('submission.responseRate')}</p>
                             </div>
                             <p className={`text-xl font-bold ${isLight ? 'text-blue-600' : 'text-blue-400'}`}>
                                 {response_rate}%
@@ -88,7 +90,7 @@ export function SubmissionOverview({ batchOid, isLight }: SubmissionOverviewProp
                 {/* Submissions by Location */}
                 <div className={`rounded-xl border p-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <h3 className={`text-sm font-medium mb-3 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
-                        Submissions by Location
+                        {t('submission.submissionsByLocation')}
                     </h3>
                     <GeoDistributionBar data={geo_distribution} isLight={isLight} />
                 </div>

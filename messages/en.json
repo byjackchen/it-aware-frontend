@@ -2,7 +2,7 @@
     "TopBar": {
         "title": "Ohla IT-Aware",
         "dashboard": "Dashboard",
-        "rawDataOverview": "Raw Data Overview",
+        "dataOverview": "Data Overview",
         "surveyAnalytics": "Survey Analytics",
         "auth": "Auth",
         "data": "Data",
@@ -12,7 +12,7 @@
         "campaign": "Campaign"
     },
     "Dashboard": {
-        "title": "Data Objects Dashboard",
+        "title": "Data Overview",
         "subtitle": "Live high-level metrics across all data object resources.",
         "refresh": "Refresh",
         "loading": "Loading dashboard stats...",
@@ -26,7 +26,9 @@
         "groups": {
             "hierarchies": "Hierarchies",
             "objects": "Objects",
-            "activities": "Activities"
+            "activities": "Activities",
+            "campaigns": "Campaigns",
+            "insights": "Insights"
         },
         "resources": {
             "organizations": "Organizations",
@@ -37,7 +39,10 @@
             "incidents": "Incidents",
             "requests": "Requests",
             "inquiries": "Inquiries",
-            "interactions": "Interactions"
+            "interactions": "Interactions",
+            "surveys": "Survey Batches",
+            "notifications": "Notification Batches",
+            "analyses": "Analyses"
         },
         "metrics": {
             "total": "Total",
@@ -50,6 +55,77 @@
             "error": "Unavailable"
         },
         "comingSoon": "Dashboards coming soon"
+    },
+    "SurveyAnalytics": {
+        "title": "Survey Analytics",
+        "subtitle": "Insights from survey responses and AI-generated analyses",
+        "refreshAll": "Refresh all sections",
+        "selectBatch": "Select a survey batch to view analytics",
+        "loadingBatches": "Loading batches...",
+        "noBatches": "No survey batches found",
+        "recipients": "recipients",
+        "submission": {
+            "title": "Survey Submission Overview",
+            "loading": "Loading submission overview...",
+            "loadFailed": "Failed to load data",
+            "totalSent": "Total Sent",
+            "submitted": "Submitted",
+            "responseRate": "Response Rate",
+            "surveysSent": "surveys sent",
+            "responsesReceived": "responses received",
+            "responseRateLabel": "response rate",
+            "submissionsByLocation": "Submissions by Location",
+            "showAll": "Show all {count} locations",
+            "showLess": "Show less"
+        },
+        "classification": {
+            "title": "Analysis Classification",
+            "loading": "Loading analysis classification...",
+            "loadFailed": "Failed to load data",
+            "totalAnalyses": "Total Analyses",
+            "positive": "Positive",
+            "negative": "Negative",
+            "serviceCatalog": "Service Catalog",
+            "configurationItem": "Configuration Item",
+            "intent": "Intent",
+            "byLocation": "By Location",
+            "neutral": "Neutral"
+        },
+        "keywords": {
+            "title": "Keyword Heatmap",
+            "loading": "Loading keyword heatmap...",
+            "loadFailed": "Failed to load data",
+            "positive": "Positive",
+            "negative": "Negative",
+            "mixedNeutral": "Mixed/Neutral",
+            "sizeFrequency": "Size = frequency",
+            "groupBy": "Service Catalog Level",
+            "allKeywords": "All",
+            "ungrouped": "Uncategorized"
+        },
+        "location": {
+            "noData": "No location data available",
+            "location": "Location",
+            "total": "Total",
+            "topIssues": "Top Issues"
+        },
+        "popover": {
+            "total": "total",
+            "showing": "showing",
+            "openAnalysis": "Open analysis",
+            "openSurvey": "Open survey"
+        },
+        "donut": {
+            "submitted": "Submitted",
+            "notStarted": "Not Started",
+            "revoked": "Revoked",
+            "expired": "Expired"
+        },
+        "region": {
+            "apac": "APAC",
+            "emea": "EMEA",
+            "americas": "Americas"
+        }
     },
     "GlobalSearch": {
         "placeholder": "Search Data Objects...",
@@ -493,7 +569,9 @@
                 "incident": "Incidents",
                 "request": "Requests",
                 "inquiry": "Inquiries",
-                "interaction": "Interactions"
+                "interaction": "Interactions",
+                "survey": "Surveys",
+                "analysis": "Analyses"
             },
             "heatBar": "Heat bar",
             "dragHint": "Drag on the axis or heat bar to shift the time window",
@@ -506,7 +584,9 @@
                 "incident": "Incidents",
                 "request": "Requests",
                 "inquiry": "Inquiries",
-                "interaction": "Interactions"
+                "interaction": "Interactions",
+                "survey": "Surveys",
+                "analysis": "Analyses"
             }
         }
     },

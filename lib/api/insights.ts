@@ -34,6 +34,8 @@ export async function getAnalysesPage(params: AnalysisListParams = {}): Promise<
     setOptionalQueryParam(queryParams, 'topic', params.topic);
     setOptionalQueryParam(queryParams, 'semantic', params.semantic);
     setOptionalQueryParam(queryParams, 'intent', params.intent);
+    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
+    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
     if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
     if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
 

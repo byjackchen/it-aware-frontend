@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
     AlertCircle,
+    Bell,
+    Brain,
     Building2,
     ClipboardList,
     FileText,
@@ -14,6 +16,7 @@ import {
     MessageCircle,
     MousePointerClick,
     RefreshCw,
+    Send,
     Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -25,7 +28,7 @@ import type {
     DashboardResourceStats,
 } from '@/lib/types/dashboard';
 
-const GROUP_ORDER: DashboardResourceGroup[] = ['hierarchies', 'objects', 'activities'];
+const GROUP_ORDER: DashboardResourceGroup[] = ['hierarchies', 'objects', 'activities', 'campaigns', 'insights'];
 
 const RESOURCE_ICONS: Record<DashboardResourceKey, LucideIcon> = {
     organizations: Building2,
@@ -37,6 +40,9 @@ const RESOURCE_ICONS: Record<DashboardResourceKey, LucideIcon> = {
     requests: ClipboardList,
     inquiries: MessageCircle,
     interactions: MousePointerClick,
+    surveys: Send,
+    notifications: Bell,
+    analyses: Brain,
 };
 
 function formatCount(value: number | null): string {

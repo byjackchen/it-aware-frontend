@@ -746,7 +746,6 @@ export function SurveysModule() {
                     ...payload,
                 })
                 : await updateCampaignSurveyAction(
-                    selectedSurveyBatch.oid,
                     editingSurveyOid as string,
                     payload
                 );
@@ -795,7 +794,6 @@ export function SurveysModule() {
         setRowError(null);
         startRowSavingTransition(async () => {
             const result = await submitCampaignSurveyAction(
-                selectedSurveyBatch.oid,
                 editingSurveyOid,
                 surveyAnswerPayload
             );
@@ -825,7 +823,6 @@ export function SurveysModule() {
         setRowError(null);
         startRowSavingTransition(async () => {
             const result = await revokeCampaignSurveyAction(
-                selectedSurveyBatch.oid,
                 editingSurveyOid
             );
 
@@ -850,7 +847,6 @@ export function SurveysModule() {
         setRowError(null);
         startRowDeletingTransition(async () => {
             const result = await deleteCampaignSurveyAction(
-                selectedSurveyBatch.oid,
                 editingSurveyOid
             );
 

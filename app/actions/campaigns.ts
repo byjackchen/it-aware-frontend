@@ -694,7 +694,6 @@ export async function createCampaignSurveyAction(
 }
 
 export async function updateCampaignSurveyAction(
-    surveyBatchOid: string,
     surveyOid: string,
     survey: SurveyUpdate
 ): Promise<CampaignActionResult<Survey>> {
@@ -713,20 +712,19 @@ export async function updateCampaignSurveyAction(
     }
 
     try {
-        const updated = await updateSurvey(surveyBatchOid, surveyOid, survey);
+        const updated = await updateSurvey(surveyOid, survey);
         revalidatePath('/campaign/survey-batches');
         const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid });
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
         return { success: true, data: updated };
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
         return { success: false, error: formatError(error, 'Failed to update survey row') };
     }
 }
 
 export async function submitCampaignSurveyAction(
-    surveyBatchOid: string,
     surveyOid: string,
     surveyAnswer: SurveyAnswerPayload
 ): Promise<CampaignActionResult<Survey>> {
@@ -745,23 +743,22 @@ export async function submitCampaignSurveyAction(
     }
 
     try {
-        const updated = await postSurveyAction(surveyBatchOid, surveyOid, {
+        const updated = await postSurveyAction(surveyOid, {
             action: 'submit',
             survey_answer: surveyAnswer,
         });
         revalidatePath('/campaign/survey-batches');
         const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid, status: updated.status });
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, status: updated.status });
         return { success: true, data: updated };
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
         return { success: false, error: formatError(error, 'Failed to submit survey row') };
     }
 }
 
 export async function revokeCampaignSurveyAction(
-    surveyBatchOid: string,
     surveyOid: string
 ): Promise<CampaignActionResult<Survey>> {
     const requestId = logger.generateRequestId();
@@ -779,16 +776,16 @@ export async function revokeCampaignSurveyAction(
     }
 
     try {
-        const updated = await postSurveyAction(surveyBatchOid, surveyOid, {
+        const updated = await postSurveyAction(surveyOid, {
             action: 'revoke',
         });
         revalidatePath('/campaign/survey-batches');
         const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid, status: updated.status });
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, status: updated.status });
         return { success: true, data: updated };
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
         return { success: false, error: formatError(error, 'Failed to revoke survey row') };
     }
 }
@@ -830,7 +827,6 @@ export async function batchUpsertCampaignSurveysAction(
 }
 
 export async function deleteCampaignSurveyAction(
-    surveyBatchOid: string,
     surveyOid: string
 ): Promise<CampaignActionResult<null>> {
     const requestId = logger.generateRequestId();
@@ -848,14 +844,14 @@ export async function deleteCampaignSurveyAction(
     }
 
     try {
-        await deleteSurvey(surveyBatchOid, surveyOid);
+        await deleteSurvey(surveyOid);
         revalidatePath('/campaign/survey-batches');
         const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, surveyOid });
+        logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
         return { success: true, data: null };
     } catch (error) {
         const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyBatchOid, surveyOid });
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
         return { success: false, error: formatError(error, 'Failed to remove survey receiver') };
     }
 }

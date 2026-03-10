@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Filter, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SurveyBatchItem {
     oid: string;
@@ -17,6 +18,7 @@ interface BatchSelectorProps {
 }
 
 export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: BatchSelectorProps) {
+    const t = useTranslations('SurveyAnalytics');
     const [batches, setBatches] = useState<SurveyBatchItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -42,14 +44,14 @@ export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: Batc
         return (
             <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Loading batches...</span>
+                <span className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('loadingBatches')}</span>
             </div>
         );
     }
 
     if (batches.length === 0) {
         return (
-            <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No survey batches found</p>
+            <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('noBatches')}</p>
         );
     }
 
@@ -66,7 +68,7 @@ export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: Batc
             >
                 {batches.map((b) => (
                     <option key={b.oid} value={b.oid}>
-                        {b.name} ({b.status} · {b.total_count.toLocaleString()} recipients)
+                        {b.name} ({b.status} · {b.total_count.toLocaleString()} {t('recipients')})
                     </option>
                 ))}
             </select>

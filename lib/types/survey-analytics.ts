@@ -122,3 +122,17 @@ export interface KeywordHeatmapResponse {
     generated_at: string;
     keywords: KeywordItem[];
 }
+
+export interface ServiceCatalogKeywordGroup {
+    service_catalog_oid: string;
+    service_catalog_name: string;
+    total_count: number;
+    keywords: KeywordItem[];
+}
+
+export interface GroupedKeywordHeatmapResponse {
+    generated_at: string;
+    group_level: number;
+    groups: ServiceCatalogKeywordGroup[];
+    ungrouped_keywords: KeywordItem[];
+}

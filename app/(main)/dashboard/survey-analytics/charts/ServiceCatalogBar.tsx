@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
+import { useTranslations } from 'next-intl';
 import type { ServiceCatalogBreakdown } from '@/lib/types/survey-analytics';
 import { DrillInPopover } from './DrillInPopover';
 
@@ -11,6 +12,7 @@ interface ServiceCatalogBarProps {
 }
 
 export function ServiceCatalogBar({ data, isLight }: ServiceCatalogBarProps) {
+    const t = useTranslations('SurveyAnalytics');
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
     const hoverTimeout = useRef<ReturnType<typeof setTimeout>>(null);
@@ -67,9 +69,9 @@ export function ServiceCatalogBar({ data, isLight }: ServiceCatalogBarProps) {
                             <span style={{ color: isLight ? '#475569' : '#94a3b8', fontSize: '12px' }}>{value}</span>
                         )}
                     />
-                    <Bar dataKey="positive" stackId="a" fill="#22c55e" name="Positive" radius={[0, 0, 0, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-                    <Bar dataKey="negative" stackId="a" fill="#ef4444" name="Negative" radius={[0, 0, 0, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
-                    <Bar dataKey="neutral" stackId="a" fill="#94a3b8" name="Neutral" radius={[0, 4, 4, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                    <Bar dataKey="positive" stackId="a" fill="#22c55e" name={t('classification.positive')} radius={[0, 0, 0, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                    <Bar dataKey="negative" stackId="a" fill="#ef4444" name={t('classification.negative')} radius={[0, 0, 0, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+                    <Bar dataKey="neutral" stackId="a" fill="#94a3b8" name={t('classification.neutral')} radius={[0, 4, 4, 0]} cursor="pointer" onClick={handleBarClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
                 </BarChart>
             </ResponsiveContainer>
 

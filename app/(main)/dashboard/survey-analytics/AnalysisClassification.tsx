@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import type { AnalysisClassificationResponse } from '@/lib/types/survey-analytics';
 import { ServiceCatalogBar } from './charts/ServiceCatalogBar';
@@ -16,15 +17,16 @@ interface AnalysisClassificationProps {
 
 type TabKey = 'service_catalog' | 'config_item' | 'intent' | 'location';
 
-const TABS: { key: TabKey; label: string }[] = [
-    { key: 'service_catalog', label: 'Service Catalog' },
-    { key: 'config_item', label: 'Configuration Item' },
-    { key: 'intent', label: 'Intent' },
-    { key: 'location', label: 'By Location' },
-];
-
 export function AnalysisClassification({ batchOid, isLight }: AnalysisClassificationProps) {
+    const t = useTranslations('SurveyAnalytics');
     const [activeTab, setActiveTab] = useState<TabKey>('service_catalog');
+
+    const TABS: { key: TabKey; label: string }[] = [
+        { key: 'service_catalog', label: t('classification.serviceCatalog') },
+        { key: 'config_item', label: t('classification.configurationItem') },
+        { key: 'intent', label: t('classification.intent') },
+        { key: 'location', label: t('classification.byLocation') },
+    ];
     const url = batchOid ? `/api/dashboard/survey-analytics/analysis-classification?batch_oid=${batchOid}` : null;
     const { data, isLoading, error } = useSurveyAnalytics<AnalysisClassificationResponse>(url);
 
@@ -32,7 +34,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
         return (
             <div className={`rounded-xl border p-8 text-center ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                 <span className={`inline-flex items-center gap-2 text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading analysis classification...
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('classification.loading')}
                 </span>
             </div>
         );
@@ -41,7 +43,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
     if (error || !data) {
         return (
             <div className={`rounded-xl border p-8 text-center ${isLight ? 'border-red-200 bg-red-50 text-red-700' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
-                <p className="text-sm">{error || 'Failed to load data'}</p>
+                <p className="text-sm">{error || t('classification.loadFailed')}</p>
             </div>
         );
     }
@@ -54,7 +56,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
     return (
         <section className="space-y-4">
             <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                Analysis Classification
+                {t('classification.title')}
             </h2>
 
             {/* Summary Cards */}
@@ -65,7 +67,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className={`w-4 h-4 ${isLight ? 'text-purple-500' : 'text-purple-400'}`} />
-                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Total Analyses</p>
+                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('classification.totalAnalyses')}</p>
                     </div>
                     <p className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
                         {total_analyses.toLocaleString()}
@@ -77,7 +79,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-green-500" />
-                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Positive</p>
+                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('classification.positive')}</p>
                     </div>
                     <p className="text-2xl font-semibold text-green-500">
                         {positivePercent}%
@@ -92,7 +94,7 @@ export function AnalysisClassification({ batchOid, isLight }: AnalysisClassifica
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <TrendingDown className="w-4 h-4 text-red-500" />
-                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>Negative</p>
+                        <p className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('classification.negative')}</p>
                     </div>
                     <p className="text-2xl font-semibold text-red-500">
                         {negativePercent}%

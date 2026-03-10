@@ -49,11 +49,15 @@ export interface TimelineHeatBin {
     requestCount: number;
     inquiryCount: number;
     interactionCount: number;
+    surveyCount: number;
+    analysisCount: number;
     totalCount: number;
     incidentIntensity: number;
     requestIntensity: number;
     inquiryIntensity: number;
     interactionIntensity: number;
+    surveyIntensity: number;
+    analysisIntensity: number;
 }
 
 export interface TimelineHoverPayload {

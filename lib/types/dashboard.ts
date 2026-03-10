@@ -7,9 +7,12 @@ export type DashboardResourceKey =
     | 'incidents'
     | 'requests'
     | 'inquiries'
-    | 'interactions';
+    | 'interactions'
+    | 'surveys'
+    | 'notifications'
+    | 'analyses';
 
-export type DashboardResourceGroup = 'hierarchies' | 'objects' | 'activities';
+export type DashboardResourceGroup = 'hierarchies' | 'objects' | 'activities' | 'campaigns' | 'insights';
 
 export type DashboardResourceStatus = 'ok' | 'forbidden' | 'error';
 

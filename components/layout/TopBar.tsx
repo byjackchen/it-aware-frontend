@@ -118,14 +118,14 @@ export function TopBar() {
       ],
     },
     {
-      href: '/dashboard',
+      href: '/dashboard/data-overview',
       label: t('dashboard'),
       icon: LayoutDashboard,
       permissions: requireAnyPermission([]),
       children: [
         {
-          href: '/dashboard',
-          label: t('rawDataOverview'),
+          href: '/dashboard/data-overview',
+          label: t('dataOverview'),
           icon: Database,
           permissions: requireAnyPermission([]),
         },

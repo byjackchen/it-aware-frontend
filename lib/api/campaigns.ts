@@ -233,9 +233,9 @@ export async function getSurveys(
     );
 }
 
-export async function getSurvey(surveyBatchOid: string, surveyOid: string): Promise<Survey> {
+export async function getSurvey(surveyOid: string): Promise<Survey> {
     return fetchApi<Survey>(
-        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`
+        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}`
     );
 }
 
@@ -263,12 +263,11 @@ export async function batchUpsertSurveys(
 }
 
 export async function updateSurvey(
-    surveyBatchOid: string,
     surveyOid: string,
     data: SurveyUpdate
 ): Promise<Survey> {
     return fetchApi<Survey>(
-        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`,
+        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}`,
         {
             method: 'PUT',
             body: JSON.stringify(data),
@@ -276,9 +275,9 @@ export async function updateSurvey(
     );
 }
 
-export async function deleteSurvey(surveyBatchOid: string, surveyOid: string): Promise<void> {
+export async function deleteSurvey(surveyOid: string): Promise<void> {
     return fetchApi<void>(
-        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}`,
+        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}`,
         {
             method: 'DELETE',
         }
@@ -286,12 +285,11 @@ export async function deleteSurvey(surveyBatchOid: string, surveyOid: string): P
 }
 
 export async function postSurveyAction(
-    surveyBatchOid: string,
     surveyOid: string,
     payload: SurveyActionRequest
 ): Promise<Survey> {
     return fetchApi<Survey>(
-        `${SURVEY_BATCHS_BASE}/${encodeURIComponent(surveyBatchOid)}/surveys/${encodeURIComponent(surveyOid)}/actions`,
+        `${SURVEYS_BASE}/${encodeURIComponent(surveyOid)}/actions`,
         {
             method: 'POST',
             body: JSON.stringify(payload),

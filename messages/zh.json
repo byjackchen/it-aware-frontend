@@ -2,17 +2,17 @@
     "TopBar": {
         "title": "Ohla IT-Aware",
         "dashboard": "看板",
-        "rawDataOverview": "原始数据概览",
+        "dataOverview": "数据概览",
         "surveyAnalytics": "问卷分析",
         "auth": "权限",
         "data": "数据",
         "application": "应用",
         "knowledge": "知识库",
         "persona": "用户画像",
-        "campaign": "Campaign"
+        "campaign": "运营活动"
     },
     "Dashboard": {
-        "title": "数据对象看板",
+        "title": "数据概览",
         "subtitle": "跨所有数据对象资源的实时汇总指标。",
         "refresh": "刷新",
         "loading": "正在加载看板统计...",
@@ -26,7 +26,9 @@
         "groups": {
             "hierarchies": "层级",
             "objects": "对象",
-            "activities": "活动"
+            "activities": "活动",
+            "campaigns": "运营活动",
+            "insights": "洞察"
         },
         "resources": {
             "organizations": "组织",
@@ -36,8 +38,11 @@
             "articles": "文章",
             "incidents": "事件",
             "requests": "请求",
-            "inquiries": "咨询",
-            "interactions": "交互事件"
+            "inquiries": "问询",
+            "interactions": "交互事件",
+            "surveys": "问卷批次",
+            "notifications": "通知批次",
+            "analyses": "分析"
         },
         "metrics": {
             "total": "总数",
@@ -50,6 +55,77 @@
             "error": "不可用"
         },
         "comingSoon": "看板即将推出"
+    },
+    "SurveyAnalytics": {
+        "title": "问卷分析",
+        "subtitle": "基于问卷回复和 AI 生成分析的洞察",
+        "refreshAll": "刷新所有板块",
+        "selectBatch": "选择问卷批次以查看分析",
+        "loadingBatches": "正在加载批次...",
+        "noBatches": "未找到问卷批次",
+        "recipients": "位接收人",
+        "submission": {
+            "title": "问卷提交概览",
+            "loading": "正在加载提交概览...",
+            "loadFailed": "数据加载失败",
+            "totalSent": "已发送总数",
+            "submitted": "已提交",
+            "responseRate": "回复率",
+            "surveysSent": "份问卷已发送",
+            "responsesReceived": "份回复已收到",
+            "responseRateLabel": "回复率",
+            "submissionsByLocation": "按地区分布",
+            "showAll": "展开全部 {count} 个地区",
+            "showLess": "收起"
+        },
+        "classification": {
+            "title": "分析分类",
+            "loading": "正在加载分析分类...",
+            "loadFailed": "数据加载失败",
+            "totalAnalyses": "分析总数",
+            "positive": "正面",
+            "negative": "负面",
+            "serviceCatalog": "服务目录",
+            "configurationItem": "配置项",
+            "intent": "意图",
+            "byLocation": "按地区",
+            "neutral": "中性"
+        },
+        "keywords": {
+            "title": "关键词热力图",
+            "loading": "正在加载关键词热力图...",
+            "loadFailed": "数据加载失败",
+            "positive": "正面",
+            "negative": "负面",
+            "mixedNeutral": "混合/中性",
+            "sizeFrequency": "面积 = 频率",
+            "groupBy": "服务目录层级",
+            "allKeywords": "全部",
+            "ungrouped": "未分类"
+        },
+        "location": {
+            "noData": "暂无地区数据",
+            "location": "地区",
+            "total": "总数",
+            "topIssues": "主要问题"
+        },
+        "popover": {
+            "total": "总计",
+            "showing": "显示",
+            "openAnalysis": "打开分析",
+            "openSurvey": "打开问卷"
+        },
+        "donut": {
+            "submitted": "已提交",
+            "notStarted": "未开始",
+            "revoked": "已撤回",
+            "expired": "已过期"
+        },
+        "region": {
+            "apac": "亚太",
+            "emea": "欧非中东",
+            "americas": "美洲"
+        }
     },
     "GlobalSearch": {
         "placeholder": "搜索数据对象...",
@@ -83,10 +159,10 @@
         "activities": "活动",
         "incidents": "事件",
         "requests": "请求",
-        "inquiries": "咨询",
+        "inquiries": "问询",
         "interactions": "交互事件",
         "faqs": "常见问题",
-        "campaign": "Campaign",
+        "campaign": "运营活动",
         "notificationBatches": "通知批次",
         "surveyBatches": "问卷批次",
         "insights": "洞察",
@@ -492,8 +568,10 @@
             "lanes": {
                 "incident": "事件",
                 "request": "请求",
-                "inquiry": "咨询",
-                "interaction": "交互"
+                "inquiry": "问询",
+                "interaction": "交互",
+                "survey": "问卷",
+                "analysis": "分析"
             },
             "heatBar": "热力条",
             "dragHint": "在时间轴或热力条上拖拽可平移时间窗口",
@@ -505,15 +583,17 @@
                 "interval": "区间",
                 "incident": "事件",
                 "request": "请求",
-                "inquiry": "咨询",
-                "interaction": "交互"
+                "inquiry": "问询",
+                "interaction": "交互",
+                "survey": "问卷",
+                "analysis": "分析"
             }
         }
     },
     "Campaign": {
         "accessDenied": {
-            "title": "需要 Campaign 模块权限",
-            "description": "当前账号没有访问 Campaign 模块的权限。"
+            "title": "需要运营活动模块权限",
+            "description": "当前账号没有访问运营活动模块的权限。"
         },
         "errors": {
             "loadNotifications": "通知批次列表加载失败",
@@ -706,8 +786,8 @@
     },
     "CampaignSurvey": {
         "accessDenied": {
-            "title": "需要 Campaign Survey Batch 权限",
-            "description": "当前账号没有访问 Campaign 问卷批次的权限。"
+            "title": "需要运营活动问卷批次权限",
+            "description": "当前账号没有访问运营活动问卷批次的权限。"
         },
         "errors": {
             "loadSurveys": "问卷批次列表加载失败",

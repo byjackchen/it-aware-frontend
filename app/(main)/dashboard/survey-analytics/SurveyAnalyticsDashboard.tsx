@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { BatchSelector } from './BatchSelector';
 import { SubmissionOverview } from './SubmissionOverview';
@@ -11,6 +12,7 @@ import { KeywordHeatmap } from './KeywordHeatmap';
 export function SurveyAnalyticsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const t = useTranslations('SurveyAnalytics');
     const [selectedBatchOid, setSelectedBatchOid] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -29,10 +31,10 @@ export function SurveyAnalyticsDashboard() {
                         </div>
                         <div>
                             <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                                Survey Analytics
+                                {t('title')}
                             </h1>
                             <p className={`text-sm mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                Insights from survey responses and AI-generated analyses
+                                {t('subtitle')}
                             </p>
                         </div>
                     </div>
@@ -49,7 +51,7 @@ export function SurveyAnalyticsDashboard() {
                                 ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                                 : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
                             }`}
-                            title="Refresh all sections"
+                            title={t('refreshAll')}
                         >
                             <RefreshCw className="w-4 h-4" />
                         </button>
@@ -66,7 +68,7 @@ export function SurveyAnalyticsDashboard() {
                 ) : (
                     <div className={`rounded-xl border p-12 text-center ${isLight ? 'border-slate-200 bg-white text-slate-500' : 'border-white/10 bg-white/5 text-gray-400'}`}>
                         <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                        <p className="text-sm">Select a survey batch to view analytics</p>
+                        <p className="text-sm">{t('selectBatch')}</p>
                     </div>
                 )}
             </div>

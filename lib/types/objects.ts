@@ -1033,7 +1033,7 @@ export interface SurveyListResponse {
 }
 
 export interface CrossBatchSurveyListParams {
-    receiver_stable_id: string;
+    receiver_stable_id?: string;
     survey_status?: SurveyStatus;
     survey_batch_status?: SurveyBatchStatus;
     survey_batch_oid?: string;
@@ -1066,6 +1066,7 @@ export interface Analysis {
     configuration_item_oid: string | null;
     created_at: string;
     updated_at: string;
+    effective_at: string;
 }
 
 export interface AnalysisCreate {
@@ -1074,6 +1075,7 @@ export interface AnalysisCreate {
     source_oid: string;
     source_batch_oid?: string | null;
     topic: string;
+    effective_at?: string;
     keywords?: string[] | null;
     fact?: string | null;
     semantic?: AnalysisSemantic;
@@ -1099,6 +1101,8 @@ export interface AnalysisListParams {
     topic?: string;
     semantic?: 'positive' | 'negative';
     intent?: 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion';
+    effective_at_from?: string;
+    effective_at_to?: string;
     skip?: number;
     limit?: number;
 }

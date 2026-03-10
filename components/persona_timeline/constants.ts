@@ -57,11 +57,13 @@ export const INFINITE_SCROLL_EDGE_THRESHOLD_MIN = 120;
 export const INFINITE_SCROLL_WINDOW_SHIFT_RATIO = 0.5;
 export const INFINITE_SCROLL_RECENTER_RATIO = 0.4;
 
-export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'inquiry', 'interaction'];
+export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'inquiry', 'interaction', 'survey', 'analysis'];
 
 export const EVENT_COLORS: Record<PersonaActivityEventType, string> = {
     incident: '#ef4444',
     request: '#f97316',
     inquiry: '#a855f7',
     interaction: '#2563eb',
+    survey: '#10b981',
+    analysis: '#ec4899',
 };

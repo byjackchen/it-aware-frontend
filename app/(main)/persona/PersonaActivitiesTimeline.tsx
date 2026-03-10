@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -34,7 +33,6 @@ interface PersonaActivitiesTimelineProps {
 export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
     const t = useTranslations('Persona');
     const isLight = theme === 'light';
 
@@ -120,6 +118,8 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
             `${t('timeline.heatTooltip.request')}: ${bin.requestCount}`,
             `${t('timeline.heatTooltip.inquiry')}: ${bin.inquiryCount}`,
             `${t('timeline.heatTooltip.interaction')}: ${bin.interactionCount}`,
+            `${t('timeline.heatTooltip.survey')}: ${bin.surveyCount}`,
+            `${t('timeline.heatTooltip.analysis')}: ${bin.analysisCount}`,
         ].join('\n');
         updateHoverPosition(event.clientX, event.clientY, label);
     }, [t, timezone, updateHoverPosition]);
@@ -139,8 +139,8 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         if (dragPan.shouldSuppressClick()) {
             return;
         }
-        router.push(event.href);
-    }, [dragPan, router]);
+        window.open(event.href, '_blank', 'noopener');
+    }, [dragPan]);
 
     const setPresetWindow = useCallback((days: number) => {
         clearHover();

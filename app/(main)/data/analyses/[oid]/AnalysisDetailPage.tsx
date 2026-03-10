@@ -301,7 +301,11 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
                     </div>
 
                     {/* Timestamps */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Effective At</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatDateTime(analysis.effective_at, timezone)}</span>
+                        </div>
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
                             <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatDateTime(analysis.created_at, timezone)}</span>

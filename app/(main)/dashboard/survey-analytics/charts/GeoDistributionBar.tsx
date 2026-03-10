@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { GeoDistributionItem } from '@/lib/types/survey-analytics';
 
 interface GeoDistributionBarProps {
@@ -12,6 +13,7 @@ interface GeoDistributionBarProps {
 }
 
 export function GeoDistributionBar({ data, isLight, defaultVisible = 5 }: GeoDistributionBarProps) {
+    const t = useTranslations('SurveyAnalytics');
     const [expanded, setExpanded] = useState(false);
     const hasMore = data.length > defaultVisible;
     const visibleData = expanded ? data.slice(0, 20) : data.slice(0, defaultVisible);
@@ -32,9 +34,9 @@ export function GeoDistributionBar({ data, isLight, defaultVisible = 5 }: GeoDis
     };
 
     const REGION_COLORS: Record<string, { color: string; label: string }> = {
-        APAC: { color: '#3b82f6', label: 'APAC' },
-        EMEA: { color: '#8b5cf6', label: 'EMEA' },
-        Americas: { color: '#f59e0b', label: 'Americas' },
+        APAC: { color: '#3b82f6', label: t('region.apac') },
+        EMEA: { color: '#8b5cf6', label: t('region.emea') },
+        Americas: { color: '#f59e0b', label: t('region.americas') },
     };
 
     const activeRegions = [...new Set(data.map((d) => d.region))];
@@ -107,9 +109,9 @@ export function GeoDistributionBar({ data, isLight, defaultVisible = 5 }: GeoDis
                     }`}
                 >
                     {expanded ? (
-                        <>Show less <ChevronUp className="w-3.5 h-3.5" /></>
+                        <>{t('submission.showLess')} <ChevronUp className="w-3.5 h-3.5" /></>
                     ) : (
-                        <>Show all {data.length} locations <ChevronDown className="w-3.5 h-3.5" /></>
+                        <>{t('submission.showAll', { count: data.length })} <ChevronDown className="w-3.5 h-3.5" /></>
                     )}
                 </button>
             )}

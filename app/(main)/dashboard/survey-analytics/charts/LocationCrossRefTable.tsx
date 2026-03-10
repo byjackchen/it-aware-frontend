@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { LocationBreakdown } from '@/lib/types/survey-analytics';
 
 interface LocationCrossRefTableProps {
@@ -9,8 +10,10 @@ interface LocationCrossRefTableProps {
 }
 
 export function LocationCrossRefTable({ data, isLight, batchOid }: LocationCrossRefTableProps) {
+    const t = useTranslations('SurveyAnalytics');
+
     if (data.length === 0) {
-        return <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No location data available</p>;
+        return <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('location.noData')}</p>;
     }
 
     return (
@@ -18,11 +21,11 @@ export function LocationCrossRefTable({ data, isLight, batchOid }: LocationCross
             <table className="w-full text-sm">
                 <thead>
                     <tr className={`border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
-                        <th className={`text-left py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>Location</th>
-                        <th className={`text-right py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>Total</th>
+                        <th className={`text-left py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{t('location.location')}</th>
+                        <th className={`text-right py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{t('location.total')}</th>
                         <th className={`text-right py-2 px-3 font-medium text-green-500`}>+</th>
                         <th className={`text-right py-2 px-3 font-medium text-red-500`}>-</th>
-                        <th className={`text-left py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>Top Issues</th>
+                        <th className={`text-left py-2 px-3 font-medium ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{t('location.topIssues')}</th>
                     </tr>
                 </thead>
                 <tbody>

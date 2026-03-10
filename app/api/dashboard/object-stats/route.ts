@@ -84,6 +84,27 @@ const RESOURCE_CONFIGS: DashboardResourceConfig[] = [
         path: '/objects/activities/interactions',
         supportsIsActive: false,
     },
+    {
+        key: 'surveys',
+        href: '/data/surveys',
+        group: 'campaigns',
+        path: '/objects/campaigns/survey_batchs',
+        supportsIsActive: false,
+    },
+    {
+        key: 'notifications',
+        href: '/data/notifications',
+        group: 'campaigns',
+        path: '/objects/campaigns/notification_batchs',
+        supportsIsActive: false,
+    },
+    {
+        key: 'analyses',
+        href: '/data/analyses',
+        group: 'insights',
+        path: '/objects/insights/analysiss',
+        supportsIsActive: false,
+    },
 ];
 
 type CountResult =

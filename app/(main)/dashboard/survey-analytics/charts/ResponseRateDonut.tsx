@@ -1,6 +1,7 @@
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { useTranslations } from 'next-intl';
 import type { SubmissionStatusCounts } from '@/lib/types/survey-analytics';
 
 interface ResponseRateDonutProps {
@@ -16,14 +17,16 @@ const COLORS: Record<string, string> = {
     expired: '#ef4444',
 };
 
-const LABELS: Record<string, string> = {
-    submitted: 'Submitted',
-    not_started: 'Not Started',
-    revoked: 'Revoked',
-    expired: 'Expired',
-};
-
 export function ResponseRateDonut({ statusCounts, isLight, batchOid }: ResponseRateDonutProps) {
+    const t = useTranslations('SurveyAnalytics');
+
+    const LABELS: Record<string, string> = {
+        submitted: t('donut.submitted'),
+        not_started: t('donut.notStarted'),
+        revoked: t('donut.revoked'),
+        expired: t('donut.expired'),
+    };
+
     const data = Object.entries(statusCounts)
         .filter(([key]) => key !== 'total')
         .filter(([, value]) => value > 0)

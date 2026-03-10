@@ -23,6 +23,7 @@ All endpoints require authentication.
 - `topic` — Text, NOT NULL. Short noun phrase identifying the analysis topic
 - `created_at` — DateTime(tz), server_default=now()
 - `updated_at` — DateTime(tz), server_default=now()
+- `effective_at` — DateTime(tz), server_default=now(). Business timestamp representing when the source event occurred (e.g., survey `updated_at`)
 - `keywords` — JSONB, nullable. List of keyword strings
 - `fact` — Text, nullable. Concise factual summary statement for the topic
 - `semantic` — Text, nullable. Constraint: `IN ('positive', 'negative')` or NULL
@@ -38,6 +39,7 @@ Indexes:
 - `analysiss_source_idx` on `(source_type, source_oid, topic)`
 - `analysiss_source_batch_oid_idx` on `(source_batch_oid)`
 - `analysiss_created_at_idx` on `(created_at DESC)`
+- `analysiss_effective_at_idx` on `(effective_at DESC)`
 
 ## Object APIs
 
@@ -63,6 +65,7 @@ Request body:
   "source_oid": "<base64url OID>",
   "source_batch_oid": "<base64url OID or null>",
   "topic": "VPN",
+  "effective_at": "2026-03-04T12:00:00Z",
   "keywords": ["VPN", "Connection"],
   "fact": "VPN connection drops frequently during peak hours",
   "semantic": "negative",
@@ -83,6 +86,7 @@ Response (201):
   "topic": "VPN",
   "created_at": "2026-03-04T12:00:00Z",
   "updated_at": "2026-03-04T12:00:00Z",
+  "effective_at": "2026-03-04T12:00:00Z",
   "keywords": ["VPN", "Connection"],
   "fact": "VPN connection drops frequently during peak hours",
   "semantic": "negative",
@@ -106,6 +110,8 @@ Query parameters:
 - `topic` (optional) — filter by topic
 - `semantic` (optional) — filter by semantic (`positive` or `negative`)
 - `intent` (optional) — filter by intent (`request`, `bug`, `complaint`, `praise`, `suggestion`)
+- `effective_at_from` (optional) — lower bound for `effective_at`
+- `effective_at_to` (optional) — upper bound for `effective_at`
 - `skip` (default 0, min 0)
 - `limit` (default 100, min 1, max 1000)
 

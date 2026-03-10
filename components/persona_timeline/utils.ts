@@ -106,7 +106,7 @@ export function formatHeatInterval(startMs: number, endMs: number, timezone: str
 }
 
 export function truncateLabel(value: string, maxLength = 38): string {
-    const text = value.trim();
+    const text = (value ?? '').trim();
     if (text.length <= maxLength) return text;
     return `${text.slice(0, maxLength - 1)}…`;
 }
@@ -114,7 +114,7 @@ export function truncateLabel(value: string, maxLength = 38): string {
 export function buildEventLabel(event: PersonaActivityEvent): string {
     const isInteraction = event.type === 'interaction';
     const title = truncateLabel(event.title || event.oid, isInteraction ? 32 : 40);
-    const subtitle = event.subtitle.trim();
+    const subtitle = (event.subtitle ?? '').trim();
     if (!subtitle) return title;
     return `${title}\n${truncateLabel(subtitle, isInteraction ? 34 : 46)}`;
 }

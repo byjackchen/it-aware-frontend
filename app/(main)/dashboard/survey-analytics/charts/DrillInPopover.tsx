@@ -1,6 +1,7 @@
 'use client';
 
 import { FileText, ClipboardList } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { AnalysisPreview } from '@/lib/types/survey-analytics';
 
 interface DrillInPopoverProps {
@@ -19,6 +20,8 @@ const SEMANTIC_STYLES: Record<string, { bg: string; text: string }> = {
 };
 
 export function DrillInPopover({ title, analyses, totalCount, isLight, position, onMouseEnter, onMouseLeave }: DrillInPopoverProps) {
+    const t = useTranslations('SurveyAnalytics');
+
     return (
         <div
             onMouseEnter={onMouseEnter}
@@ -41,7 +44,7 @@ export function DrillInPopover({ title, analyses, totalCount, isLight, position,
                         {title}
                     </p>
                     <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                        {totalCount} total · showing {Math.min(analyses.length, 20)}
+                        {totalCount} {t('popover.total')} · {t('popover.showing')} {Math.min(analyses.length, 20)}
                     </p>
                 </div>
 
@@ -94,7 +97,7 @@ export function DrillInPopover({ title, analyses, totalCount, isLight, position,
                                                 ? 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
                                                 : 'text-gray-600 hover:text-blue-400 hover:bg-white/10'
                                             }`}
-                                            title="Open analysis"
+                                            title={t('popover.openAnalysis')}
                                         >
                                             <FileText className="w-3 h-3" />
                                         </button>
@@ -105,7 +108,7 @@ export function DrillInPopover({ title, analyses, totalCount, isLight, position,
                                                     ? 'text-slate-400 hover:text-green-600 hover:bg-green-50'
                                                     : 'text-gray-600 hover:text-green-400 hover:bg-white/10'
                                                 }`}
-                                                title="Open survey"
+                                                title={t('popover.openSurvey')}
                                             >
                                                 <ClipboardList className="w-3 h-3" />
                                             </button>

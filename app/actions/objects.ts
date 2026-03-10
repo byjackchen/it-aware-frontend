@@ -1141,6 +1141,7 @@ export async function createAnalysisAction(formData: FormData) {
     const source_oid = formData.get('source_oid') as string;
     const source_batch_oid = formData.get('source_batch_oid') as string | null;
     const topic = formData.get('topic') as string;
+    const effective_at = formData.get('effective_at') as string | null;
     const keywordsStr = formData.get('keywords') as string | null;
     const factStr = formData.get('fact') as string | null;
     const semantic = formData.get('semantic') as string | null;
@@ -1164,6 +1165,7 @@ export async function createAnalysisAction(formData: FormData) {
             source_oid,
             source_batch_oid: source_batch_oid || undefined,
             topic,
+            effective_at: effective_at || undefined,
             keywords,
             fact: factStr?.trim() || undefined,
             semantic: (semantic as 'positive' | 'negative') || undefined,
