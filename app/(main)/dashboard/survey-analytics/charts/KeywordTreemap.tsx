@@ -213,12 +213,12 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
         const result: Array<{ name: string; keywords: KeywordItem[]; totalCount: number }> = [];
         for (const g of groups!) {
             if (g.keywords.length > 0) {
-                result.push({ name: g.service_catalog_name, keywords: g.keywords.slice(0, 30), totalCount: g.total_count });
+                result.push({ name: g.service_catalog_name, keywords: g.keywords.slice(0, 50), totalCount: g.total_count });
             }
         }
         if (ungroupedKeywords?.length) {
             const totalCount = ungroupedKeywords.reduce((sum, kw) => sum + kw.total_count, 0);
-            result.push({ name: ungroupedLabel, keywords: ungroupedKeywords.slice(0, 30), totalCount });
+            result.push({ name: ungroupedLabel, keywords: ungroupedKeywords.slice(0, 50), totalCount });
         }
         return result;
     }, [isGrouped, groups, ungroupedKeywords, ungroupedLabel]);

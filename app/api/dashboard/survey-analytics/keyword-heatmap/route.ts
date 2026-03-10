@@ -268,7 +268,7 @@ export async function GET(request: Request) {
             .map(([ancestorOid, kwMap]) => {
                 const keywords = Array.from(kwMap.values())
                     .sort((a, b) => b.total - a.total)
-                    .slice(0, 30)
+                    .slice(0, 50)
                     .map(toKeywordItem);
                 const totalCount = Array.from(kwMap.values()).reduce((sum, e) => sum + e.total, 0);
                 return {
@@ -283,7 +283,7 @@ export async function GET(request: Request) {
 
         const ungroupedKeywords = Array.from(ungroupedKeywordMap.values())
             .sort((a, b) => b.total - a.total)
-            .slice(0, 30)
+            .slice(0, 50)
             .map(toKeywordItem);
 
         const payload: GroupedKeywordHeatmapResponse = {
