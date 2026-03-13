@@ -275,7 +275,7 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
                         return (
                             <div
                                 key={group.name}
-                                className={`absolute rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200' : 'border-white/10'}`}
+                                className={`absolute rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-[#0f172a]'}`}
                                 style={{
                                     left: `${r.x}%`,
                                     top: `${r.y}%`,
