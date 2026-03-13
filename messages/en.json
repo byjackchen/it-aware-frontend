@@ -99,7 +99,8 @@
             "negative": "Negative",
             "mixedNeutral": "Mixed/Neutral",
             "sizeFrequency": "Size = frequency",
-            "groupBy": "Service Catalog Level",
+            "groupBySC": "Service Catalog Level",
+            "groupByLocation": "Location Level",
             "allKeywords": "All",
             "ungrouped": "Uncategorized"
         },

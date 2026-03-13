@@ -123,16 +123,18 @@ export interface KeywordHeatmapResponse {
     keywords: KeywordItem[];
 }
 
-export interface ServiceCatalogKeywordGroup {
-    service_catalog_oid: string;
-    service_catalog_name: string;
+export interface KeywordGroup {
+    group_oid: string;
+    group_name: string;
     total_count: number;
     keywords: KeywordItem[];
+    sub_groups?: KeywordGroup[];
 }
 
 export interface GroupedKeywordHeatmapResponse {
     generated_at: string;
-    group_level: number;
-    groups: ServiceCatalogKeywordGroup[];
+    sc_level: number | null;
+    loc_level: number | null;
+    groups: KeywordGroup[];
     ungrouped_keywords: KeywordItem[];
 }

@@ -23,15 +23,22 @@ const LEVEL_OPTIONS: Array<{ value: GroupLevel; labelKey: 'allKeywords' | 'L1' |
 
 export function KeywordHeatmap({ batchOid, isLight }: KeywordHeatmapProps) {
     const t = useTranslations('SurveyAnalytics');
-    const [groupLevel, setGroupLevel] = useState<GroupLevel>(null);
+    const [scLevel, setScLevel] = useState<GroupLevel>(null);
+    const [locLevel, setLocLevel] = useState<GroupLevel>(null);
 
-    const url = batchOid
-        ? `/api/dashboard/survey-analytics/keyword-heatmap?batch_oid=${batchOid}${groupLevel !== null ? `&group_level=${groupLevel}` : ''}`
-        : null;
+    const hasGrouping = scLevel !== null || locLevel !== null;
+
+    let url: string | null = null;
+    if (batchOid) {
+        const params = new URLSearchParams({ batch_oid: batchOid });
+        if (scLevel !== null) params.set('sc_level', String(scLevel));
+        if (locLevel !== null) params.set('loc_level', String(locLevel));
+        url = `/api/dashboard/survey-analytics/keyword-heatmap?${params.toString()}`;
+    }
 
     const { data, isLoading, error } = useSurveyAnalytics<KeywordHeatmapResponse | GroupedKeywordHeatmapResponse>(url);
 
-    const isGrouped = groupLevel !== null && data && 'groups' in data;
+    const isGrouped = hasGrouping && data && 'groups' in data;
 
     if (isLoading) {
         return (
@@ -51,6 +58,32 @@ export function KeywordHeatmap({ batchOid, isLight }: KeywordHeatmapProps) {
         );
     }
 
+    const renderLevelButtons = (activeLevel: GroupLevel, onSelect: (level: GroupLevel) => void) => (
+        <div className={`inline-flex rounded-lg border text-xs ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+            {LEVEL_OPTIONS.map((opt) => {
+                const isActive = opt.value === activeLevel;
+                const label = opt.labelKey === 'allKeywords' ? t('keywords.allKeywords') : opt.labelKey;
+                return (
+                    <button
+                        key={opt.labelKey}
+                        onClick={() => onSelect(opt.value)}
+                        className={`px-2.5 py-1 transition-colors first:rounded-l-lg last:rounded-r-lg ${
+                            isActive
+                                ? isLight
+                                    ? 'bg-slate-800 text-white'
+                                    : 'bg-white text-slate-900'
+                                : isLight
+                                    ? 'text-slate-600 hover:bg-slate-100'
+                                    : 'text-gray-400 hover:bg-white/10'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -58,32 +91,18 @@ export function KeywordHeatmap({ batchOid, isLight }: KeywordHeatmapProps) {
                     {t('keywords.title')}
                 </h2>
 
-                <div className="flex items-center gap-2">
-                    <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                        {t('keywords.groupBy')}:
-                    </span>
-                    <div className={`inline-flex rounded-lg border text-xs ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
-                        {LEVEL_OPTIONS.map((opt) => {
-                            const isActive = opt.value === groupLevel;
-                            const label = opt.labelKey === 'allKeywords' ? t('keywords.allKeywords') : opt.labelKey;
-                            return (
-                                <button
-                                    key={opt.labelKey}
-                                    onClick={() => setGroupLevel(opt.value)}
-                                    className={`px-2.5 py-1 transition-colors first:rounded-l-lg last:rounded-r-lg ${
-                                        isActive
-                                            ? isLight
-                                                ? 'bg-slate-800 text-white'
-                                                : 'bg-white text-slate-900'
-                                            : isLight
-                                                ? 'text-slate-600 hover:bg-slate-100'
-                                                : 'text-gray-400 hover:bg-white/10'
-                                    }`}
-                                >
-                                    {label}
-                                </button>
-                            );
-                        })}
+                <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                        <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {t('keywords.groupBySC')}:
+                        </span>
+                        {renderLevelButtons(scLevel, setScLevel)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {t('keywords.groupByLocation')}:
+                        </span>
+                        {renderLevelButtons(locLevel, setLocLevel)}
                     </div>
                 </div>
             </div>

@@ -22,9 +22,16 @@ interface AnalysisItem {
 interface WorkerItem {
     oid: string;
     stable_id: string;
+    location_oid: string | null;
 }
 
 interface ServiceCatalogItem {
+    oid: string;
+    name: string;
+    path: string[];
+}
+
+interface LocationItem {
     oid: string;
     name: string;
     path: string[];
@@ -168,23 +175,27 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'batch_oid is required' }, { status: 400 });
     }
 
-    const groupLevelParam = searchParams.get('group_level');
-    const groupLevel = groupLevelParam ? parseInt(groupLevelParam, 10) : null;
-    if (groupLevel !== null && (isNaN(groupLevel) || groupLevel < 1 || groupLevel > 3)) {
-        return NextResponse.json({ error: 'group_level must be 1, 2, or 3' }, { status: 400 });
+    function parseLevelParam(name: string): number | null {
+        const raw = searchParams.get(name);
+        if (!raw) return null;
+        const n = parseInt(raw, 10);
+        if (isNaN(n) || n < 1 || n > 3) return -1; // sentinel for invalid
+        return n;
     }
 
+    const scLevel = parseLevelParam('sc_level');
+    const locLevel = parseLevelParam('loc_level');
+    if (scLevel === -1) return NextResponse.json({ error: 'sc_level must be 1, 2, or 3' }, { status: 400 });
+    if (locLevel === -1) return NextResponse.json({ error: 'loc_level must be 1, 2, or 3' }, { status: 400 });
+
+    const hasGrouping = scLevel !== null || locLevel !== null;
+
     try {
-        const fetchPromises: [Promise<AnalysisItem[]>, Promise<WorkerItem[]>, Promise<ServiceCatalogItem[]> | null] = [
+        const [analyses, workers, serviceCatalogs, locations] = await Promise.all([
             fetchAll<AnalysisItem>('/objects/insights/analysiss', cookieHeader, { source_batch_oid: batchOid }),
             fetchAll<WorkerItem>('/objects/workers', cookieHeader),
-            groupLevel !== null ? fetchAll<ServiceCatalogItem>('/objects/service-catalogs', cookieHeader) : null,
-        ];
-
-        const [analyses, workers, serviceCatalogs] = await Promise.all([
-            fetchPromises[0],
-            fetchPromises[1],
-            fetchPromises[2] ?? Promise.resolve([] as ServiceCatalogItem[]),
+            scLevel !== null ? fetchAll<ServiceCatalogItem>('/objects/service-catalogs', cookieHeader) : Promise.resolve([] as ServiceCatalogItem[]),
+            locLevel !== null ? fetchAll<LocationItem>('/objects/locations', cookieHeader) : Promise.resolve([] as LocationItem[]),
         ]);
 
         const workerStableMap = new Map<string, string>();
@@ -193,7 +204,7 @@ export async function GET(request: Request) {
         }
 
         // Flat response (no grouping)
-        if (groupLevel === null) {
+        if (!hasGrouping) {
             const keywordMap = new Map<string, KeywordEntry>();
             for (const a of analyses) {
                 if (!a.keywords) continue;
@@ -213,73 +224,148 @@ export async function GET(request: Request) {
             return NextResponse.json(payload);
         }
 
-        // Grouped response
+        // Build lookup maps as needed
         const scMap = new Map<string, ServiceCatalogItem>();
-        for (const sc of serviceCatalogs) {
-            scMap.set(sc.oid, sc);
+        for (const sc of serviceCatalogs) scMap.set(sc.oid, sc);
+
+        const locationMap = new Map<string, LocationItem>();
+        for (const loc of locations) locationMap.set(loc.oid, loc);
+
+        const workerLocationMap = new Map<string, string | null>();
+        if (locLevel !== null) {
+            for (const w of workers) workerLocationMap.set(w.oid, w.location_oid);
         }
 
-        // Map: ancestor OID -> keyword map
-        const groupKeywordMaps = new Map<string, Map<string, KeywordEntry>>();
+        // Resolve ancestor OID + name for a hierarchy item
+        function resolveAncestor(
+            itemOid: string | null,
+            lookupMap: Map<string, { oid: string; name: string; path: string[] }>,
+            level: number,
+        ): { oid: string; name: string } | null {
+            if (!itemOid) return null;
+            const item = lookupMap.get(itemOid);
+            if (!item) return null;
+            const ancestorOid = item.path[Math.min(level - 1, item.path.length - 1)];
+            const ancestor = lookupMap.get(ancestorOid);
+            return { oid: ancestorOid, name: ancestor?.name ?? ancestorOid };
+        }
+
         const ungroupedKeywordMap = new Map<string, KeywordEntry>();
 
-        // Track ancestor OID -> resolved name
-        const ancestorNames = new Map<string, string>();
-
-        for (const a of analyses) {
-            if (!a.keywords || a.keywords.length === 0) continue;
-
-            if (!a.service_catalog_oid) {
-                // Ungrouped
-                for (const kw of a.keywords) {
-                    addToKeywordMap(ungroupedKeywordMap, kw, a, workerStableMap);
-                }
-                continue;
-            }
-
-            const sc = scMap.get(a.service_catalog_oid);
-            if (!sc) {
-                // SC not found — treat as ungrouped
-                for (const kw of a.keywords) {
-                    addToKeywordMap(ungroupedKeywordMap, kw, a, workerStableMap);
-                }
-                continue;
-            }
-
-            // Resolve ancestor at requested level
-            const ancestorOid = sc.path[Math.min(groupLevel - 1, sc.path.length - 1)];
-            if (!ancestorNames.has(ancestorOid)) {
-                const ancestorSc = scMap.get(ancestorOid);
-                ancestorNames.set(ancestorOid, ancestorSc?.name ?? ancestorOid);
-            }
-
-            let kwMap = groupKeywordMaps.get(ancestorOid);
-            if (!kwMap) {
-                kwMap = new Map<string, KeywordEntry>();
-                groupKeywordMaps.set(ancestorOid, kwMap);
-            }
-            for (const kw of a.keywords) {
-                addToKeywordMap(kwMap, kw, a, workerStableMap);
-            }
+        // Helper: build flat groups from a keyword-maps collection
+        function buildFlatGroups(
+            groupKwMaps: Map<string, Map<string, KeywordEntry>>,
+            nameMap: Map<string, string>,
+            maxGroups: number,
+        ) {
+            return Array.from(groupKwMaps.entries())
+                .map(([key, kwMap]) => {
+                    const keywords = Array.from(kwMap.values())
+                        .sort((a, b) => b.total - a.total)
+                        .slice(0, 50)
+                        .map(toKeywordItem);
+                    const totalCount = Array.from(kwMap.values()).reduce((sum, e) => sum + e.total, 0);
+                    return { group_oid: key, group_name: nameMap.get(key) ?? key, total_count: totalCount, keywords };
+                })
+                .sort((a, b) => b.total_count - a.total_count)
+                .slice(0, maxGroups);
         }
 
-        // Build groups
-        const groups = Array.from(groupKeywordMaps.entries())
-            .map(([ancestorOid, kwMap]) => {
-                const keywords = Array.from(kwMap.values())
-                    .sort((a, b) => b.total - a.total)
-                    .slice(0, 50)
-                    .map(toKeywordItem);
-                const totalCount = Array.from(kwMap.values()).reduce((sum, e) => sum + e.total, 0);
-                return {
-                    service_catalog_oid: ancestorOid,
-                    service_catalog_name: ancestorNames.get(ancestorOid) ?? ancestorOid,
-                    total_count: totalCount,
-                    keywords,
-                };
-            })
-            .sort((a, b) => b.total_count - a.total_count)
-            .slice(0, 12);
+        let groups: Array<{
+            group_oid: string;
+            group_name: string;
+            total_count: number;
+            keywords: KeywordItem[];
+            sub_groups?: Array<{ group_oid: string; group_name: string; total_count: number; keywords: KeywordItem[] }>;
+        }>;
+
+        if (scLevel !== null && locLevel !== null) {
+            // Nested: Location (outer) → Service Catalog (inner) → Keywords
+            // locOid → scOid → keyword map
+            const nestedMaps = new Map<string, Map<string, Map<string, KeywordEntry>>>();
+            const locNames = new Map<string, string>();
+            const scNames = new Map<string, string>();
+
+            for (const a of analyses) {
+                if (!a.keywords || a.keywords.length === 0) continue;
+
+                const locOid = workerLocationMap.get(a.worker_oid) ?? null;
+                const locAncestor = resolveAncestor(locOid, locationMap, locLevel);
+                const scAncestor = resolveAncestor(a.service_catalog_oid, scMap, scLevel);
+
+                if (!locAncestor) {
+                    for (const kw of a.keywords) addToKeywordMap(ungroupedKeywordMap, kw, a, workerStableMap);
+                    continue;
+                }
+
+                if (!locNames.has(locAncestor.oid)) locNames.set(locAncestor.oid, locAncestor.name);
+
+                // If no SC ancestor, put keywords directly on the location (no sub-group key → use special key)
+                const scKey = scAncestor?.oid ?? '__no_sc__';
+                if (scAncestor && !scNames.has(scAncestor.oid)) scNames.set(scAncestor.oid, scAncestor.name);
+
+                let locMap = nestedMaps.get(locAncestor.oid);
+                if (!locMap) {
+                    locMap = new Map();
+                    nestedMaps.set(locAncestor.oid, locMap);
+                }
+
+                let kwMap = locMap.get(scKey);
+                if (!kwMap) {
+                    kwMap = new Map<string, KeywordEntry>();
+                    locMap.set(scKey, kwMap);
+                }
+                for (const kw of a.keywords) addToKeywordMap(kwMap, kw, a, workerStableMap);
+            }
+
+            // Build nested groups
+            groups = Array.from(nestedMaps.entries())
+                .map(([locOid, scMaps]) => {
+                    const subGroups = buildFlatGroups(scMaps, scNames, 12);
+                    const totalCount = subGroups.reduce((sum, sg) => sum + sg.total_count, 0);
+                    return {
+                        group_oid: locOid,
+                        group_name: locNames.get(locOid) ?? locOid,
+                        total_count: totalCount,
+                        keywords: [] as KeywordItem[],
+                        sub_groups: subGroups,
+                    };
+                })
+                .sort((a, b) => b.total_count - a.total_count)
+                .slice(0, 12);
+        } else {
+            // Single-dimension grouping
+            const groupKeywordMaps = new Map<string, Map<string, KeywordEntry>>();
+            const groupNames = new Map<string, string>();
+
+            for (const a of analyses) {
+                if (!a.keywords || a.keywords.length === 0) continue;
+
+                let ancestor: { oid: string; name: string } | null = null;
+                if (scLevel !== null) {
+                    ancestor = resolveAncestor(a.service_catalog_oid, scMap, scLevel);
+                } else if (locLevel !== null) {
+                    const locOid = workerLocationMap.get(a.worker_oid) ?? null;
+                    ancestor = resolveAncestor(locOid, locationMap, locLevel);
+                }
+
+                if (!ancestor) {
+                    for (const kw of a.keywords) addToKeywordMap(ungroupedKeywordMap, kw, a, workerStableMap);
+                    continue;
+                }
+
+                if (!groupNames.has(ancestor.oid)) groupNames.set(ancestor.oid, ancestor.name);
+
+                let kwMap = groupKeywordMaps.get(ancestor.oid);
+                if (!kwMap) {
+                    kwMap = new Map<string, KeywordEntry>();
+                    groupKeywordMaps.set(ancestor.oid, kwMap);
+                }
+                for (const kw of a.keywords) addToKeywordMap(kwMap, kw, a, workerStableMap);
+            }
+
+            groups = buildFlatGroups(groupKeywordMaps, groupNames, 20);
+        }
 
         const ungroupedKeywords = Array.from(ungroupedKeywordMap.values())
             .sort((a, b) => b.total - a.total)
@@ -288,7 +374,8 @@ export async function GET(request: Request) {
 
         const payload: GroupedKeywordHeatmapResponse = {
             generated_at: new Date().toISOString(),
-            group_level: groupLevel,
+            sc_level: scLevel,
+            loc_level: locLevel,
             groups,
             ungrouped_keywords: ungroupedKeywords,
         };

@@ -99,7 +99,8 @@
             "negative": "负面",
             "mixedNeutral": "混合/中性",
             "sizeFrequency": "面积 = 频率",
-            "groupBy": "服务目录层级",
+            "groupBySC": "服务目录层级",
+            "groupByLocation": "地区层级",
             "allKeywords": "全部",
             "ungrouped": "未分类"
         },

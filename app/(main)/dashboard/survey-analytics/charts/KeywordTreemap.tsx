@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useMemo } from 'react';
 import { Treemap, ResponsiveContainer } from 'recharts';
-import type { KeywordItem, ServiceCatalogKeywordGroup } from '@/lib/types/survey-analytics';
+import type { KeywordItem, KeywordGroup } from '@/lib/types/survey-analytics';
 import { DrillInPopover } from './DrillInPopover';
 
 /** Simple squarified treemap layout: returns { x, y, w, h } in percentage (0–100) for each value. */
@@ -52,7 +52,7 @@ function squarify(values: number[], x0: number, y0: number, w0: number, h0: numb
 interface KeywordTreemapProps {
     keywords: KeywordItem[];
     isLight: boolean;
-    groups?: ServiceCatalogKeywordGroup[];
+    groups?: KeywordGroup[];
     ungroupedKeywords?: KeywordItem[];
     ungroupedLabel?: string;
 }
@@ -87,7 +87,9 @@ interface TreemapContentProps {
 }
 
 function CustomTreemapContent({ x, y, width, height, name, fill, isLight, positiveCount, negativeCount, onClick, onMouseEnter, onMouseLeave }: TreemapContentProps) {
-    if (width < 30 || height < 20) return null;
+    if (width < 30 || height < 20) return (
+        <rect x={x} y={y} width={width} height={height} fill={isLight ? '#f8fafc' : '#0f172a'} stroke="none" />
+    );
 
     const fontSize = Math.min(12, Math.max(9, Math.min(width / (name.length * 0.7), height / 3)));
     const showLabel = width > 40 && height > 20;
@@ -188,6 +190,61 @@ function GroupTreemap({ groupName, keywords, isLight, onHover, onLeave }: {
     );
 }
 
+/** Renders SC sub-groups inside a location container using squarified layout. */
+function NestedSubGroups({ subGroups, isLight, onHover, onLeave }: {
+    subGroups: KeywordGroup[];
+    isLight: boolean;
+    onHover: (kw: KeywordItem, e: React.MouseEvent) => void;
+    onLeave: () => void;
+}) {
+    const rects = useMemo(
+        () => squarify(subGroups.map(sg => sg.total_count), 0, 0, 100, 100),
+        [subGroups],
+    );
+
+    const GAP = 3;
+
+    return (
+        <div className="relative w-full h-full">
+            {subGroups.map((sg, i) => {
+                const r = rects[i];
+                if (!r) return null;
+                return (
+                    <div
+                        key={sg.group_oid}
+                        className={`absolute rounded border overflow-hidden flex flex-col ${isLight ? 'border-slate-300 bg-white' : 'border-white/15 bg-[#1e293b]'}`}
+                        style={{
+                            left: `${r.x}%`,
+                            top: `${r.y}%`,
+                            width: `calc(${r.w}% - ${GAP}px)`,
+                            height: `calc(${r.h}% - ${GAP}px)`,
+                        }}
+                    >
+                        <div
+                            className={`px-1.5 py-0.5 text-[10px] font-medium truncate shrink-0 ${isLight ? 'bg-slate-50 text-slate-500' : 'bg-white/5 text-gray-500'}`}
+                            title={sg.group_name}
+                        >
+                            {sg.group_name}
+                            <span className={`ml-1 font-normal ${isLight ? 'text-slate-300' : 'text-gray-600'}`}>
+                                ({sg.total_count})
+                            </span>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <GroupTreemap
+                                groupName={sg.group_name}
+                                keywords={sg.keywords}
+                                isLight={isLight}
+                                onHover={onHover}
+                                onLeave={onLeave}
+                            />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, ungroupedLabel = 'Uncategorized' }: KeywordTreemapProps) {
     const [hoveredKw, setHoveredKw] = useState<KeywordItem | null>(null);
     const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
@@ -195,6 +252,7 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
     const isOverPopover = useRef(false);
 
     const isGrouped = !!groups && groups.length > 0;
+    const isNested = isGrouped && groups!.some(g => g.sub_groups && g.sub_groups.length > 0);
 
     // Flat treemap data
     const flatTreemapData = useMemo(() => {
@@ -210,15 +268,21 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
     // Build display groups list (groups + optional ungrouped)
     const displayGroups = useMemo(() => {
         if (!isGrouped) return [];
-        const result: Array<{ name: string; keywords: KeywordItem[]; totalCount: number }> = [];
+        const result: Array<{ name: string; oid: string; keywords: KeywordItem[]; totalCount: number; subGroups?: KeywordGroup[] }> = [];
         for (const g of groups!) {
-            if (g.keywords.length > 0) {
-                result.push({ name: g.service_catalog_name, keywords: g.keywords.slice(0, 50), totalCount: g.total_count });
+            if (g.keywords.length > 0 || (g.sub_groups && g.sub_groups.length > 0)) {
+                result.push({
+                    name: g.group_name,
+                    oid: g.group_oid,
+                    keywords: g.keywords.slice(0, 50),
+                    totalCount: g.total_count,
+                    subGroups: g.sub_groups,
+                });
             }
         }
         if (ungroupedKeywords?.length) {
             const totalCount = ungroupedKeywords.reduce((sum, kw) => sum + kw.total_count, 0);
-            result.push({ name: ungroupedLabel, keywords: ungroupedKeywords.slice(0, 50), totalCount });
+            result.push({ name: ungroupedLabel, oid: '__ungrouped__', keywords: ungroupedKeywords.slice(0, 50), totalCount });
         }
         return result;
     }, [isGrouped, groups, ungroupedKeywords, ungroupedLabel]);
@@ -257,7 +321,7 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
     };
 
     // Compute treemap layout for groups (squarified slice-and-dice)
-    const GROUPED_HEIGHT = 600;
+    const GROUPED_HEIGHT = isNested ? 900 : 750;
     const GAP = 4;
 
     const groupRects = useMemo(() => {
@@ -272,9 +336,10 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
                     {displayGroups.map((group, i) => {
                         const r = groupRects[i];
                         if (!r) return null;
+                        const hasSubGroups = group.subGroups && group.subGroups.length > 0;
                         return (
                             <div
-                                key={group.name}
+                                key={group.oid}
                                 className={`absolute rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-[#0f172a]'}`}
                                 style={{
                                     left: `${r.x}%`,
@@ -290,20 +355,29 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
                                     </span>
                                 </div>
                                 <div className="flex-1 min-h-0">
-                                    <GroupTreemap
-                                        groupName={group.name}
-                                        keywords={group.keywords}
-                                        isLight={isLight}
-                                        onHover={handleCellMouseEnter}
-                                        onLeave={handleCellMouseLeave}
-                                    />
+                                    {hasSubGroups ? (
+                                        <NestedSubGroups
+                                            subGroups={group.subGroups!}
+                                            isLight={isLight}
+                                            onHover={handleCellMouseEnter}
+                                            onLeave={handleCellMouseLeave}
+                                        />
+                                    ) : (
+                                        <GroupTreemap
+                                            groupName={group.name}
+                                            keywords={group.keywords}
+                                            isLight={isLight}
+                                            onHover={handleCellMouseEnter}
+                                            onLeave={handleCellMouseLeave}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
             ) : (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={550}>
                     <Treemap
                         data={flatTreemapData}
                         dataKey="size"

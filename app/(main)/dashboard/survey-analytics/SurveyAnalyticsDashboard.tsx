@@ -22,7 +22,7 @@ export function SurveyAnalyticsDashboard() {
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
