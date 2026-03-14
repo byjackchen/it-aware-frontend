@@ -98,7 +98,7 @@ class WorkerProfile(Base):
     worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid", ondelete="CASCADE"), primary_key=True)
     summary = Column(Text, nullable=True)
     summary_updated_at = Column(DateTime(timezone=True), nullable=True)
-    topics = Column(JSONB, nullable=True)  # JSON array of strings
+    topics = Column(JSONB, nullable=True)  # JSON array of {topic, need, status, notes} dicts
     topics_updated_at = Column(DateTime(timezone=True), nullable=True)
     tags = Column(JSONB, nullable=True)  # JSON array of strings
     tags_updated_at = Column(DateTime(timezone=True), nullable=True)
@@ -374,14 +374,14 @@ AI-processed per-worker profile outputs. This endpoint is separate from `WorkerR
 ```python
 class WorkerProfileUpsert(BaseModel):
     summary: Optional[str] = None
-    topics: Optional[List[str]] = None
+    topics: Optional[List[dict[str, Any]]] = None  # [{topic, need, status, notes}]
     tags: Optional[List[str]] = None
 
 class WorkerProfileResponse(BaseModel):
     worker_oid: str
     summary: Optional[str] = None
     summary_updated_at: Optional[datetime] = None
-    topics: Optional[List[str]] = None
+    topics: Optional[List[dict[str, Any]]] = None  # [{topic, need, status, notes}]
     topics_updated_at: Optional[datetime] = None
     tags: Optional[List[str]] = None
     tags_updated_at: Optional[datetime] = None
@@ -391,7 +391,8 @@ class WorkerProfileResponse(BaseModel):
 
 - At least one of `summary`/`topics`/`tags` must be provided in PUT payload.
 - `summary` may be `null` (clear); if string, must be non-empty after trimming.
-- `topics`/`tags` may be `null` (clear); list values must be non-empty trimmed strings and unique.
+- `topics` may be `null` (clear); each item must be a dict with `topic` (str), `need` (str), `status` ("resolved"|"unresolved"), optional `notes` (str|null); topic values must be unique.
+- `tags` may be `null` (clear); list values must be non-empty trimmed strings and unique.
 - Empty lists (`[]`) are rejected.
 
 #### Endpoints
@@ -422,7 +423,10 @@ class WorkerProfileResponse(BaseModel):
 ```json
 {
   "summary": "Senior platform engineer with strong incident triage performance.",
-  "topics": ["incident triage", "service reliability"],
+  "topics": [
+    {"topic": "incident triage", "need": "Faster triage turnaround for P1 incidents", "status": "unresolved", "notes": "3 open P1s in last 30 days"},
+    {"topic": "service reliability", "need": "Monitoring coverage for core services", "status": "resolved", "notes": null}
+  ],
   "tags": ["ai-generated", "internal"]
 }
 ```
@@ -434,7 +438,10 @@ class WorkerProfileResponse(BaseModel):
   "worker_oid": "01JFXYZWORKER1234567890",
   "summary": "Senior platform engineer with strong incident triage performance.",
   "summary_updated_at": "2026-02-17T03:13:21.123456Z",
-  "topics": ["incident triage", "service reliability"],
+  "topics": [
+    {"topic": "incident triage", "need": "Faster triage turnaround for P1 incidents", "status": "unresolved", "notes": "3 open P1s in last 30 days"},
+    {"topic": "service reliability", "need": "Monitoring coverage for core services", "status": "resolved", "notes": null}
+  ],
   "topics_updated_at": "2026-02-17T03:13:21.123456Z",
   "tags": ["ai-generated", "internal"],
   "tags_updated_at": "2026-02-17T03:13:21.123456Z"

@@ -171,11 +171,18 @@ export interface Worker {
     updated_at: string;
 }
 
+export interface WorkerProfileTopicItem {
+    topic: string;
+    need: string;
+    status: 'resolved' | 'unresolved';
+    notes: string | null;
+}
+
 export interface WorkerProfile {
     worker_oid: string;
     summary: string | null;
     summary_updated_at: string | null;
-    topics: string[] | null;
+    topics: WorkerProfileTopicItem[] | null;
     topics_updated_at: string | null;
     tags: string[] | null;
     tags_updated_at: string | null;
@@ -183,7 +190,7 @@ export interface WorkerProfile {
 
 export interface WorkerProfileUpsert {
     summary?: string | null;
-    topics?: string[] | null;
+    topics?: WorkerProfileTopicItem[] | null;
     tags?: string[] | null;
 }
 

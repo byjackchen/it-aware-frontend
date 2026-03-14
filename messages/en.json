@@ -380,7 +380,13 @@
                 "commaDelimited": "Comma-delimited",
                 "summaryUpdated": "Summary Updated",
                 "topicsUpdated": "Topics Updated",
-                "tagsUpdated": "Tags Updated"
+                "tagsUpdated": "Tags Updated",
+                "addTopic": "Add Topic",
+                "topicName": "Topic name",
+                "topicNeed": "Need / description",
+                "topicNotes": "Notes (optional)",
+                "topicResolved": "Resolved",
+                "topicUnresolved": "Unresolved"
             },
             "hardware": {
                 "title": "Hardware Assets",

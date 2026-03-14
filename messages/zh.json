@@ -380,7 +380,13 @@
                 "commaDelimited": "用逗号分隔",
                 "summaryUpdated": "摘要更新时间",
                 "topicsUpdated": "主题更新时间",
-                "tagsUpdated": "标签更新时间"
+                "tagsUpdated": "标签更新时间",
+                "addTopic": "添加主题",
+                "topicName": "主题名称",
+                "topicNeed": "需求 / 描述",
+                "topicNotes": "备注（可选）",
+                "topicResolved": "已解决",
+                "topicUnresolved": "未解决"
             },
             "hardware": {
                 "title": "硬件资产",

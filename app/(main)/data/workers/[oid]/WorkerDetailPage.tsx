@@ -35,7 +35,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
-import type { Worker, WorkerProfile, WorkerProfileUpsert, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
+import type { Worker, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
 import { updateWorkerAction, upsertWorkerProfileAction, deleteWorkerAction } from '@/app/actions/objects';
 
 interface WorkerDetailPageProps {
@@ -76,9 +76,20 @@ function areStringArraysEqual(a: string[] | null, b: string[] | null): boolean {
     return true;
 }
 
+function areTopicsEqual(a: WorkerProfileTopicItem[] | null, b: WorkerProfileTopicItem[] | null): boolean {
+    if (a === b) return true;
+    if (a === null || b === null) return false;
+    if (a.length !== b.length) return false;
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
 function formatCommaList(values: string[] | null): string {
     if (!values || values.length === 0) return '';
     return values.join(', ');
+}
+
+function emptyTopicItem(): WorkerProfileTopicItem {
+    return { topic: '', need: '', status: 'unresolved', notes: null };
 }
 
 export function WorkerDetailPage({ worker, workerProfile, edges, organizations, locations, hardwares }: WorkerDetailPageProps) {
@@ -114,7 +125,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const [isVip, setIsVip] = useState(worker.is_vip);
     const [vipType, setVipType] = useState(worker.vip_type || '');
     const [profileSummaryText, setProfileSummaryText] = useState(workerProfile?.summary || '');
-    const [profileTopicsText, setProfileTopicsText] = useState(formatCommaList(workerProfile?.topics || null));
+    const [profileTopicsDraft, setProfileTopicsDraft] = useState<WorkerProfileTopicItem[]>(workerProfile?.topics || []);
     const [profileTagsText, setProfileTagsText] = useState(formatCommaList(workerProfile?.tags || null));
 
     const [isActive, setIsActive] = useState(worker.is_active);
@@ -189,7 +200,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
 
     const resetProfileDraft = (nextProfile: WorkerProfile | null) => {
         setProfileSummaryText(nextProfile?.summary || '');
-        setProfileTopicsText(formatCommaList(nextProfile?.topics || null));
+        setProfileTopicsDraft(nextProfile?.topics || []);
         setProfileTagsText(formatCommaList(nextProfile?.tags || null));
     };
 
@@ -205,7 +216,13 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
 
         try {
             const normalizedSummary = normalizeSummary(profileSummaryText);
-            const normalizedTopics = parseCommaList(profileTopicsText);
+            const normalizedTopics = profileTopicsDraft.filter(t => t.topic.trim()).map(t => ({
+                ...t,
+                topic: t.topic.trim(),
+                need: t.need.trim(),
+                notes: t.notes?.trim() || null,
+            }));
+            const finalTopics = normalizedTopics.length > 0 ? normalizedTopics : null;
             const normalizedTags = parseCommaList(profileTagsText);
 
             const payload: WorkerProfileUpsert = {};
@@ -213,8 +230,8 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
             if (normalizedSummary !== (profile?.summary || null)) {
                 payload.summary = normalizedSummary;
             }
-            if (!areStringArraysEqual(normalizedTopics, profile?.topics || null)) {
-                payload.topics = normalizedTopics;
+            if (!areTopicsEqual(finalTopics, profile?.topics || null)) {
+                payload.topics = finalTopics;
             }
             if (!areStringArraysEqual(normalizedTags, profile?.tags || null)) {
                 payload.tags = normalizedTags;
@@ -615,29 +632,93 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
                                     <label className={labelClass}>{t('workers.profile.topics')}</label>
-                                    <input
-                                        type="text"
-                                        value={profileTopicsText}
-                                        onChange={(e) => setProfileTopicsText(e.target.value)}
-                                        className={inputClass}
-                                        placeholder={t('workers.profile.commaDelimited')}
-                                    />
-                                    <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setProfileTopicsDraft([...profileTopicsDraft, emptyTopicItem()])}
+                                        className={`text-xs px-2 py-1 rounded ${isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-white/10 text-gray-400 hover:bg-white/15'}`}
+                                    >
+                                        + {t('workers.profile.addTopic')}
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.tags')}</label>
-                                    <input
-                                        type="text"
-                                        value={profileTagsText}
-                                        onChange={(e) => setProfileTagsText(e.target.value)}
-                                        className={inputClass}
-                                        placeholder={t('workers.profile.commaDelimited')}
-                                    />
-                                    <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
-                                </div>
+                                {profileTopicsDraft.length === 0 ? (
+                                    <p className={`text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('workers.notSet')}</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {profileTopicsDraft.map((item, idx) => (
+                                            <div key={idx} className={`p-3 rounded-lg border space-y-2 ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={item.topic}
+                                                        onChange={(e) => {
+                                                            const next = [...profileTopicsDraft];
+                                                            next[idx] = { ...next[idx], topic: e.target.value };
+                                                            setProfileTopicsDraft(next);
+                                                        }}
+                                                        className={`${inputClass} flex-1`}
+                                                        placeholder={t('workers.profile.topicName')}
+                                                    />
+                                                    <select
+                                                        value={item.status}
+                                                        onChange={(e) => {
+                                                            const next = [...profileTopicsDraft];
+                                                            next[idx] = { ...next[idx], status: e.target.value as 'resolved' | 'unresolved' };
+                                                            setProfileTopicsDraft(next);
+                                                        }}
+                                                        className={`${inputClass} w-36`}
+                                                    >
+                                                        <option value="unresolved">{t('workers.profile.topicUnresolved')}</option>
+                                                        <option value="resolved">{t('workers.profile.topicResolved')}</option>
+                                                    </select>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setProfileTopicsDraft(profileTopicsDraft.filter((_, i) => i !== idx))}
+                                                        className="p-1 rounded hover:bg-red-500/10 text-red-400"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={item.need}
+                                                    onChange={(e) => {
+                                                        const next = [...profileTopicsDraft];
+                                                        next[idx] = { ...next[idx], need: e.target.value };
+                                                        setProfileTopicsDraft(next);
+                                                    }}
+                                                    className={inputClass}
+                                                    placeholder={t('workers.profile.topicNeed')}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={item.notes || ''}
+                                                    onChange={(e) => {
+                                                        const next = [...profileTopicsDraft];
+                                                        next[idx] = { ...next[idx], notes: e.target.value || null };
+                                                        setProfileTopicsDraft(next);
+                                                    }}
+                                                    className={inputClass}
+                                                    placeholder={t('workers.profile.topicNotes')}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>{t('workers.profile.tags')}</label>
+                                <input
+                                    type="text"
+                                    value={profileTagsText}
+                                    onChange={(e) => setProfileTagsText(e.target.value)}
+                                    className={inputClass}
+                                    placeholder={t('workers.profile.commaDelimited')}
+                                />
+                                <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
                             </div>
 
                             <div className="flex gap-3 pt-2">
@@ -667,45 +748,56 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.topics')}</label>
-                                    {profile.topics && profile.topics.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {profile.topics.map((topic, i) => (
-                                                <span
-                                                    key={`${topic}-${i}`}
-                                                    className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
-                                                >
-                                                    {topic}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className={displayClass}>
-                                            <span className={textClass}>{t('workers.notSet')}</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.tags')}</label>
-                                    {profile.tags && profile.tags.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {profile.tags.map((tag, i) => (
-                                                <span
-                                                    key={`${tag}-${i}`}
-                                                    className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className={displayClass}>
-                                            <span className={textClass}>{t('workers.notSet')}</span>
-                                        </div>
-                                    )}
-                                </div>
+                            <div>
+                                <label className={labelClass}>{t('workers.profile.topics')}</label>
+                                {profile.topics && profile.topics.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {profile.topics.map((item, i) => (
+                                            <div
+                                                key={`${item.topic}-${i}`}
+                                                className={`p-3 rounded-lg border ${isLight ? 'border-slate-100 bg-slate-50' : 'border-white/5 bg-white/5'}`}
+                                            >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.topic}</span>
+                                                    <span className={`text-xs px-1.5 py-0.5 rounded ${item.status === 'resolved'
+                                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                                                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                                                    }`}>
+                                                        {item.status === 'resolved' ? t('workers.profile.topicResolved') : t('workers.profile.topicUnresolved')}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{item.need}</p>
+                                                {item.notes && (
+                                                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{item.notes}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className={displayClass}>
+                                        <span className={textClass}>{t('workers.notSet')}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>{t('workers.profile.tags')}</label>
+                                {profile.tags && profile.tags.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile.tags.map((tag, i) => (
+                                            <span
+                                                key={`${tag}-${i}`}
+                                                className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className={displayClass}>
+                                        <span className={textClass}>{t('workers.notSet')}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-4">
