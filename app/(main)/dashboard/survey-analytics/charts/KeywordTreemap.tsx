@@ -245,6 +245,33 @@ function NestedSubGroups({ subGroups, isLight, onHover, onLeave }: {
     );
 }
 
+/** Color palette for location groups — known regions first, then a cycle of distinct hues. */
+const LOCATION_GROUP_COLORS: Array<{ border: string; borderDark: string; bg: string; bgDark: string; header: string; headerDark: string; text: string; textDark: string }> = [
+    // APAC – blue
+    { border: '#3b82f6', borderDark: '#60a5fa', bg: '#eff6ff', bgDark: '#1e3a5f', header: '#dbeafe', headerDark: '#1e3a5f', text: '#1d4ed8', textDark: '#93c5fd' },
+    // Americas – amber
+    { border: '#f59e0b', borderDark: '#fbbf24', bg: '#fffbeb', bgDark: '#422006', header: '#fef3c7', headerDark: '#422006', text: '#b45309', textDark: '#fcd34d' },
+    // EMEA – purple
+    { border: '#8b5cf6', borderDark: '#a78bfa', bg: '#f5f3ff', bgDark: '#2e1065', header: '#ede9fe', headerDark: '#2e1065', text: '#6d28d9', textDark: '#c4b5fd' },
+    // Extra palette entries for L2/L3 locations
+    { border: '#10b981', borderDark: '#34d399', bg: '#ecfdf5', bgDark: '#064e3b', header: '#d1fae5', headerDark: '#064e3b', text: '#047857', textDark: '#6ee7b7' },
+    { border: '#ef4444', borderDark: '#f87171', bg: '#fef2f2', bgDark: '#450a0a', header: '#fee2e2', headerDark: '#450a0a', text: '#b91c1c', textDark: '#fca5a5' },
+    { border: '#06b6d4', borderDark: '#22d3ee', bg: '#ecfeff', bgDark: '#083344', header: '#cffafe', headerDark: '#083344', text: '#0e7490', textDark: '#67e8f9' },
+    { border: '#ec4899', borderDark: '#f472b6', bg: '#fdf2f8', bgDark: '#500724', header: '#fce7f3', headerDark: '#500724', text: '#be185d', textDark: '#f9a8d4' },
+    { border: '#f97316', borderDark: '#fb923c', bg: '#fff7ed', bgDark: '#431407', header: '#ffedd5', headerDark: '#431407', text: '#c2410c', textDark: '#fdba74' },
+    { border: '#14b8a6', borderDark: '#2dd4bf', bg: '#f0fdfa', bgDark: '#042f2e', header: '#ccfbf1', headerDark: '#042f2e', text: '#0f766e', textDark: '#5eead4' },
+    { border: '#6366f1', borderDark: '#818cf8', bg: '#eef2ff', bgDark: '#1e1b4b', header: '#e0e7ff', headerDark: '#1e1b4b', text: '#4338ca', textDark: '#a5b4fc' },
+];
+
+/** Map well-known region names to fixed palette indices. */
+const KNOWN_REGION_INDEX: Record<string, number> = { APAC: 0, Americas: 1, EMEA: 2 };
+
+function getGroupColor(groupName: string, fallbackIndex: number) {
+    const knownIdx = KNOWN_REGION_INDEX[groupName];
+    const idx = knownIdx !== undefined ? knownIdx : 3 + (fallbackIndex % (LOCATION_GROUP_COLORS.length - 3));
+    return LOCATION_GROUP_COLORS[idx];
+}
+
 export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, ungroupedLabel = 'Uncategorized' }: KeywordTreemapProps) {
     const [hoveredKw, setHoveredKw] = useState<KeywordItem | null>(null);
     const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
@@ -337,20 +364,30 @@ export function KeywordTreemap({ keywords, isLight, groups, ungroupedKeywords, u
                         const r = groupRects[i];
                         if (!r) return null;
                         const hasSubGroups = group.subGroups && group.subGroups.length > 0;
+                        const gc = getGroupColor(group.name, i);
                         return (
                             <div
                                 key={group.oid}
-                                className={`absolute rounded-lg border overflow-hidden flex flex-col ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-[#0f172a]'}`}
+                                className="absolute rounded-lg border-2 overflow-hidden flex flex-col"
                                 style={{
                                     left: `${r.x}%`,
                                     top: `${r.y}%`,
                                     width: `calc(${r.w}% - ${GAP}px)`,
                                     height: `calc(${r.h}% - ${GAP}px)`,
+                                    borderColor: isLight ? gc.border : gc.borderDark,
+                                    backgroundColor: isLight ? gc.bg : gc.bgDark,
                                 }}
                             >
-                                <div className={`px-2.5 py-1 text-xs font-semibold truncate shrink-0 ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/5 text-gray-400'}`} title={group.name}>
+                                <div
+                                    className="px-2.5 py-1 text-xs font-semibold truncate shrink-0"
+                                    style={{
+                                        backgroundColor: isLight ? gc.header : gc.headerDark,
+                                        color: isLight ? gc.text : gc.textDark,
+                                    }}
+                                    title={group.name}
+                                >
                                     {group.name}
-                                    <span className={`ml-1.5 font-normal ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                    <span className="ml-1.5 font-normal" style={{ opacity: 0.6 }}>
                                         ({group.totalCount})
                                     </span>
                                 </div>
