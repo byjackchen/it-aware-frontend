@@ -43,6 +43,7 @@ Table: global_edges
 │ edge_fact     TEXT                               │
 │ edge_metadata JSONB                              │
 │ is_active     BOOLEAN    DEFAULT TRUE           │
+│ effective_at  TIMESTAMPTZ (nullable)            │
 │ created_at    TIMESTAMPTZ DEFAULT NOW()         │
 │ created_by    BYTEA(16)  FK (nullable)          │
 └─────────────────────────────────────────────────┘
@@ -61,6 +62,7 @@ class GlobalEdge(Base):
     edge_fact = Column(Text, nullable=True)
     edge_metadata = Column(JSONB, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    effective_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(BYTEA(16), ForeignKey("registry.global.oid"), nullable=True)
 ```
@@ -82,6 +84,10 @@ class GlobalEdge(Base):
 | `depends_on` | Dependency relationship | Any → Any |
 | `blocked_by` | Blocker relationship | Incident → Incident |
 | `duplicates` | Duplicate indication | Incident → Incident |
+| `recurring_issue` | Worker has >= 3 activities against catalog | Worker → ServiceCatalog |
+| `knowledge_relevant` | Article covers worker's pain catalog | Article → Worker |
+| `feedback_cluster` | Analyses share catalog+semantic+intent | Analysis → Analysis |
+| `topic_peer` | Workers share >= 2 profile topics | Worker → Worker |
 
 ### Custom Edge Types
 
@@ -117,6 +123,7 @@ class GlobalEdgeResponse(BaseModel):
     edge_fact: Optional[str] = None
     is_active: bool
     metadata: Optional[Dict[str, Any]] = None
+    effective_at: Optional[datetime] = None          # Derived from connected objects' dates
     created_at: datetime
     created_by: Optional[str] = None
     from_object: Optional[RegistryResponse] = None  # Included when include_objects=true
@@ -191,6 +198,7 @@ Creates a new directional edge between two objects.
     "priority": "high",
     "assigned_by": "manager"
   },
+  "effective_at": "2025-01-15T09:00:00Z",
   "created_at": "2025-01-15T10:30:00Z",
   "created_by": null,
   "from_object": {
@@ -238,10 +246,14 @@ Returns all predefined edge types.
   "depends_on",
   "duplicates",
   "escalated_to",
+  "feedback_cluster",
+  "knowledge_relevant",
   "located_at",
   "owned_by",
+  "recurring_issue",
   "related_to",
-  "reports_to"
+  "reports_to",
+  "topic_peer"
 ]
 ```
 
@@ -265,6 +277,8 @@ Lists all edges originating from a specific object.
 |-----------|------|---------|-------------|
 | `edge_type` | string | null | Filter by edge type |
 | `is_active` | boolean | null | Filter by active status |
+| `effective_at_from` | datetime | null | Filter edges with effective_at >= this (UTC ISO8601) |
+| `effective_at_to` | datetime | null | Filter edges with effective_at <= this (UTC ISO8601) |
 | `include_objects` | boolean | false | Include from/to object details |
 | `page` | integer | 1 | Page number (min: 1) |
 | `page_size` | integer | 20 | Items per page (min: 1, max: 100) |
@@ -337,6 +351,8 @@ Lists all edges pointing to a specific object.
 |-----------|------|---------|-------------|
 | `edge_type` | string | null | Filter by edge type |
 | `is_active` | boolean | null | Filter by active status |
+| `effective_at_from` | datetime | null | Filter edges with effective_at >= this (UTC ISO8601) |
+| `effective_at_to` | datetime | null | Filter edges with effective_at <= this (UTC ISO8601) |
 | `include_objects` | boolean | false | Include from/to object details |
 | `page` | integer | 1 | Page number (min: 1) |
 | `page_size` | integer | 20 | Items per page (min: 1, max: 100) |
@@ -359,6 +375,7 @@ GET /edges/to/01JFXYZWORKER123456AB?include_objects=true
       "edge_fact": "Primary assignee",
       "is_active": true,
       "metadata": null,
+      "effective_at": "2025-01-15T09:00:00Z",
       "created_at": "2025-01-15T10:30:00Z",
       "created_by": null,
       "from_object": {...},
@@ -371,6 +388,7 @@ GET /edges/to/01JFXYZWORKER123456AB?include_objects=true
       "edge_fact": null,
       "is_active": true,
       "metadata": null,
+      "effective_at": "2025-01-16T07:00:00Z",
       "created_at": "2025-01-16T08:00:00Z",
       "created_by": null,
       "from_object": {...},
@@ -403,6 +421,8 @@ Lists all edges connected to an object (either as source or target).
 |-----------|------|---------|-------------|
 | `edge_type` | string | null | Filter by edge type |
 | `is_active` | boolean | null | Filter by active status |
+| `effective_at_from` | datetime | null | Filter edges with effective_at >= this (UTC ISO8601) |
+| `effective_at_to` | datetime | null | Filter edges with effective_at <= this (UTC ISO8601) |
 | `include_objects` | boolean | false | Include from/to object details |
 | `page` | integer | 1 | Page number (min: 1) |
 | `page_size` | integer | 20 | Items per page (min: 1, max: 100) |
@@ -425,6 +445,7 @@ GET /edges/connected/01JFXYZWORKER123456AB?is_active=true
       "edge_fact": null,
       "is_active": true,
       "metadata": null,
+      "effective_at": "2025-01-15T09:00:00Z",
       "created_at": "2025-01-15T10:30:00Z",
       "created_by": null,
       "from_object": null,
@@ -437,6 +458,7 @@ GET /edges/connected/01JFXYZWORKER123456AB?is_active=true
       "edge_fact": "Direct report",
       "is_active": true,
       "metadata": null,
+      "effective_at": "2025-01-01T00:00:00Z",
       "created_at": "2025-01-01T00:00:00Z",
       "created_by": null,
       "from_object": null,
@@ -489,6 +511,7 @@ GET /edges/01JFXYZ123456789ABCDEF/01JFXYZWORKER123456AB/assigned_to?include_obje
   "metadata": {
     "priority": "high"
   },
+  "effective_at": "2025-01-15T09:00:00Z",
   "created_at": "2025-01-15T10:30:00Z",
   "created_by": null,
   "from_object": {
@@ -645,6 +668,6 @@ This means:
 
 ### Performance Considerations
 
-- Indexes exist on `from_oid`, `to_oid`, and `(is_active, edge_type)` for efficient queries
+- Indexes exist on `from_oid`, `to_oid`, `edge_type`, and `effective_at DESC` for efficient queries
 - Use pagination for large result sets
 - The `include_objects` parameter adds JOINs; use only when needed

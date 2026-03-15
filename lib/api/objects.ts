@@ -428,31 +428,43 @@ export async function getConnectedEdges(
     oid: string,
     edgeType?: string,
     isActive?: boolean,
-    includeObjects = true
+    includeObjects = true,
+    effectiveAtFrom?: string,
+    effectiveAtTo?: string
 ): Promise<GlobalEdgeListResponse> {
     const params = new URLSearchParams({ page_size: '100', include_objects: String(includeObjects) });
     if (edgeType) params.set('edge_type', edgeType);
     if (isActive !== undefined) params.set('is_active', String(isActive));
+    if (effectiveAtFrom) params.set('effective_at_from', effectiveAtFrom);
+    if (effectiveAtTo) params.set('effective_at_to', effectiveAtTo);
     return fetchApi<GlobalEdgeListResponse>(`${EDGES_BASE}/connected/${encodeURIComponent(oid)}?${params.toString()}`);
 }
 
 export async function getEdgesFrom(
     oid: string,
     edgeType?: string,
-    includeObjects = true
+    includeObjects = true,
+    effectiveAtFrom?: string,
+    effectiveAtTo?: string
 ): Promise<GlobalEdgeListResponse> {
     const params = new URLSearchParams({ page_size: '100', include_objects: String(includeObjects) });
     if (edgeType) params.set('edge_type', edgeType);
+    if (effectiveAtFrom) params.set('effective_at_from', effectiveAtFrom);
+    if (effectiveAtTo) params.set('effective_at_to', effectiveAtTo);
     return fetchApi<GlobalEdgeListResponse>(`${EDGES_BASE}/from/${encodeURIComponent(oid)}?${params.toString()}`);
 }
 
 export async function getEdgesTo(
     oid: string,
     edgeType?: string,
-    includeObjects = true
+    includeObjects = true,
+    effectiveAtFrom?: string,
+    effectiveAtTo?: string
 ): Promise<GlobalEdgeListResponse> {
     const params = new URLSearchParams({ page_size: '100', include_objects: String(includeObjects) });
     if (edgeType) params.set('edge_type', edgeType);
+    if (effectiveAtFrom) params.set('effective_at_from', effectiveAtFrom);
+    if (effectiveAtTo) params.set('effective_at_to', effectiveAtTo);
     return fetchApi<GlobalEdgeListResponse>(`${EDGES_BASE}/to/${encodeURIComponent(oid)}?${params.toString()}`);
 }
 

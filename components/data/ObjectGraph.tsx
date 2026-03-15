@@ -1,316 +1,176 @@
 'use client';
 
 /**
- * Graph visualization component for object relationships using React Flow.
- * Displays connected edges for any object, with theme-aware styling.
+ * Graph visualization component for object relationships using custom SVG rendering.
+ * Displays connected edges for any object, with theme-aware styling and effective_at filtering.
  */
 
-import { useMemo, useCallback } from 'react';
-import {
-    ReactFlow,
-    Node,
-    Edge,
-    Background,
-    Controls,
-    MiniMap,
-    useNodesState,
-    useEdgesState,
-    MarkerType,
-    Position,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { GlobalEdge } from '@/lib/types/objects';
+import type { EffectiveAtRange, GraphHoverPayload, NodePosition, EdgePath } from '@/components/object_graph/types';
+import { useGraphEdges } from '@/components/object_graph/useGraphEdges';
+import { useGraphGeometry } from '@/components/object_graph/useGraphGeometry';
+import { GraphCanvas } from '@/components/object_graph/GraphCanvas';
+import { GraphControls } from '@/components/object_graph/GraphControls';
+import { GraphEmptyState, GraphLoadingState, GraphErrorState } from '@/components/object_graph/GraphStates';
+import { MIN_CANVAS_HEIGHT } from '@/components/object_graph/constants';
+import { formatRangeDate } from '@/components/object_graph/utils';
 
 interface ObjectGraphProps {
     oid: string;
     objectType: string;
     descriptor: string;
     edges: GlobalEdge[];
-    allEdges?: GlobalEdge[];  // For calculating available filter types (unfiltered)
+    allEdges?: GlobalEdge[];
     onFilterChange?: (objectType: string | null) => void;
     selectedFilter?: string | null;
-}
-
-// Color mapping for object types
-const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-    organization: { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
-    location: { bg: '#10b981', border: '#059669', text: '#ffffff' },
-    worker: { bg: '#8b5cf6', border: '#7c3aed', text: '#ffffff' },
-    article: { bg: '#14b8a6', border: '#0d9488', text: '#ffffff' },
-    incident: { bg: '#ef4444', border: '#dc2626', text: '#ffffff' },
-    request: { bg: '#f97316', border: '#ea580c', text: '#ffffff' },
-    inquiry: { bg: '#a855f7', border: '#9333ea', text: '#ffffff' },
-    interaction: { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff' },
-    default: { bg: '#6b7280', border: '#4b5563', text: '#ffffff' },
-};
-
-// Get navigation path for object type
-function getObjectPath(objectType: string, oid: string): string {
-    switch (objectType) {
-        case 'organization':
-            return `/data/organizations/${oid}`;
-        case 'location':
-            return `/data/locations/${oid}`;
-        case 'worker':
-            return `/data/workers/${oid}`;
-        case 'article':
-            return `/data/articles/${oid}`;
-        case 'incident':
-            return `/data/incidents/${oid}`;
-        case 'request':
-            return `/data/requests/${oid}`;
-        case 'inquiry':
-            return `/data/inquiries/${oid}`;
-        case 'interaction':
-            return `/data/interactions/${oid}`;
-        default:
-            return '#';
-    }
 }
 
 export function ObjectGraph({
     oid,
     objectType,
     descriptor,
-    edges,
-    allEdges,
+    edges: initialEdgesProp,
+    allEdges: allEdgesProp,
     onFilterChange,
-    selectedFilter,
+    selectedFilter: externalSelectedFilter,
 }: ObjectGraphProps) {
     const { theme } = useTheme();
-    const router = useRouter();
     const isLight = theme === 'light';
 
-    // Use allEdges for calculating available types if provided, otherwise fall back to edges
-    const edgesForTypeCalculation = allEdges ?? edges;
+    // Internal filter state (used when no external filter is provided)
+    const [internalFilter, setInternalFilter] = useState<string | null>(null);
+    const selectedFilter = externalSelectedFilter ?? internalFilter;
+    const handleFilterChange = onFilterChange ?? setInternalFilter;
 
-    // Build nodes and edges for React Flow
-    const { initialNodes, initialEdges, linkedObjectTypes } = useMemo(() => {
-        const nodeMap = new Map<string, Node>();
-        const flowEdges: Edge[] = [];
-        const types = new Set<string>();
+    // Effective at range state
+    const [effectiveAtRange, setEffectiveAtRange] = useState<EffectiveAtRange | null>(null);
 
-        // First, calculate all available linked object types from unfiltered edges
-        edgesForTypeCalculation.forEach((edge) => {
-            const connectedObject = edge.from_oid === oid ? edge.to_object : edge.from_object;
-            if (connectedObject) {
-                types.add(connectedObject.object_type);
-            }
-        });
+    // Container ref for ResizeObserver
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [containerSize, setContainerSize] = useState({ width: 0, height: MIN_CANVAS_HEIGHT });
 
-        // Central node
-        const colors = TYPE_COLORS[objectType] || TYPE_COLORS.default;
-        nodeMap.set(oid, {
-            id: oid,
-            position: { x: 300, y: 200 },
-            data: {
-                label: descriptor,
-                objectType,
-                isCentral: true,
-            },
-            style: {
-                background: colors.bg,
-                border: `2px solid ${colors.border}`,
-                color: colors.text,
-                borderRadius: '9999px',
-                padding: '10px 20px',
-                fontWeight: 600,
-                fontSize: '13px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            },
-            sourcePosition: Position.Right,
-            targetPosition: Position.Left,
-        });
+    // Hover state
+    const [hover, setHover] = useState<GraphHoverPayload | null>(null);
 
-        // Process edges and create connected nodes
-        edges.forEach((edge, index) => {
-            const connectedObject = edge.from_oid === oid ? edge.to_object : edge.from_object;
+    // Observe container size
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
 
-            const isOutgoing = edge.from_oid === oid;
-            const connectedOid = isOutgoing ? edge.to_oid : edge.from_oid;
-
-            if (connectedObject && !nodeMap.has(connectedOid)) {
-                const nodeColors = TYPE_COLORS[connectedObject.object_type] || TYPE_COLORS.default;
-                const angle = (index * 2 * Math.PI) / edges.length;
-                const radius = 180;
-
-                nodeMap.set(connectedOid, {
-                    id: connectedOid,
-                    position: {
-                        x: 300 + radius * Math.cos(angle),
-                        y: 200 + radius * Math.sin(angle),
-                    },
-                    data: {
-                        label: connectedObject.descriptor,
-                        objectType: connectedObject.object_type,
-                        oid: connectedOid,
-                    },
-                    style: {
-                        background: isLight ? '#ffffff' : '#1f2937',
-                        border: `2px solid ${nodeColors.bg}`,
-                        color: isLight ? '#374151' : '#e5e7eb',
-                        borderRadius: '9999px',
-                        padding: '8px 18px',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                    },
-                    sourcePosition: Position.Right,
-                    targetPosition: Position.Left,
-                });
-            }
-
-            // Create edge
-            flowEdges.push({
-                id: `${edge.from_oid}-${edge.to_oid}-${edge.edge_type}`,
-                source: edge.from_oid,
-                target: edge.to_oid,
-                label: edge.edge_type.replace(/_/g, ' '),
-                labelStyle: {
-                    fill: isLight ? '#6b7280' : '#9ca3af',
-                    fontSize: 10,
-                },
-                labelBgStyle: {
-                    fill: isLight ? '#ffffff' : '#1f2937',
-                    fillOpacity: 0.8,
-                },
-                style: {
-                    stroke: isLight ? '#9ca3af' : '#4b5563',
-                    strokeWidth: 1.5,
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    width: 15,
-                    height: 15,
-                    color: isLight ? '#9ca3af' : '#4b5563',
-                },
-                animated: edge.is_active,
+        const update = () => {
+            setContainerSize({
+                width: el.clientWidth,
+                height: Math.max(MIN_CANVAS_HEIGHT, el.clientHeight),
             });
-        });
-
-        return {
-            initialNodes: Array.from(nodeMap.values()),
-            initialEdges: flowEdges,
-            linkedObjectTypes: Array.from(types).sort(),
         };
-    }, [oid, objectType, descriptor, edges, edgesForTypeCalculation, isLight]);
+        update();
 
-    const [nodes, , onNodesChange] = useNodesState(initialNodes);
-    const [flowEdges, , onEdgesChange] = useEdgesState(initialEdges);
+        const observer = new ResizeObserver(update);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
 
-    const onNodeClick = useCallback(
-        (_: React.MouseEvent, node: Node) => {
-            if (!node.data.isCentral && node.data.objectType) {
-                router.push(getObjectPath(node.data.objectType, node.id));
-            }
-        },
-        [router]
-    );
+    // Edge management with effective_at filtering
+    const {
+        edges,
+        allEdges,
+        linkedObjectTypes,
+        isLoading,
+        error,
+        effectiveAtBounds,
+    } = useGraphEdges({
+        oid,
+        initialEdges: allEdgesProp ?? initialEdgesProp,
+        effectiveAtRange,
+        selectedFilter,
+    });
 
-    if (edges.length === 0) {
-        return (
-            <div className={`
-        flex flex-col items-center justify-center py-12
-        ${isLight ? 'text-slate-500' : 'text-gray-500'}
-      `}>
-                <p className="text-sm">No relationships found</p>
-            </div>
-        );
+    // Compute graph geometry
+    const geometry = useGraphGeometry({
+        centralOid: oid,
+        centralObjectType: objectType,
+        centralDescriptor: descriptor,
+        edges,
+        containerWidth: containerSize.width,
+        containerHeight: containerSize.height,
+    });
+
+    // Hover handlers
+    const updateHover = useCallback((clientX: number, clientY: number, label: string) => {
+        const el = containerRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        setHover({
+            x: clientX - rect.left + 14,
+            y: clientY - rect.top - 20,
+            label,
+        });
+    }, []);
+
+    const handleNodeHover = useCallback((e: React.MouseEvent, node: NodePosition) => {
+        const label = `${node.node.objectType}: ${node.node.descriptor}`;
+        updateHover(e.clientX, e.clientY, label);
+    }, [updateHover]);
+
+    const handleEdgeHover = useCallback((e: React.MouseEvent, edge: EdgePath) => {
+        const parts = [edge.edgeData.edgeType.replace(/_/g, ' ')];
+        if (edge.edgeData.effectiveAt) {
+            parts.push(`effective: ${formatRangeDate(new Date(edge.edgeData.effectiveAt))}`);
+        }
+        if (!edge.edgeData.isActive) {
+            parts.push('(inactive)');
+        }
+        updateHover(e.clientX, e.clientY, parts.join('\n'));
+    }, [updateHover]);
+
+    const clearHover = useCallback(() => setHover(null), []);
+
+    // Only show bare empty state when there are no initial edges and no active filter
+    const hasNoEdgesAtAll = !isLoading && edges.length === 0 && !error && !effectiveAtRange && !selectedFilter;
+    if (hasNoEdgesAtAll) {
+        return <GraphEmptyState isLight={isLight} />;
     }
+
+    const showEmpty = !isLoading && edges.length === 0 && !error;
 
     return (
         <div className="space-y-3">
-            {/* Object Type Filter */}
-            {onFilterChange && linkedObjectTypes.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                        Filter:
-                    </span>
-                    <button
-                        onClick={() => onFilterChange(null)}
-                        className={`
-              px-2 py-1 text-xs rounded-md transition-colors
-              ${selectedFilter === null
-                                ? 'bg-blue-500 text-white'
-                                : isLight
-                                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                            }
-            `}
-                    >
-                        All
-                    </button>
-                    {linkedObjectTypes.map((objType) => {
-                        const colors = TYPE_COLORS[objType] || TYPE_COLORS.default;
-                        return (
-                            <button
-                                key={objType}
-                                onClick={() => onFilterChange(objType)}
-                                className={`
-                  px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1.5
-                  ${selectedFilter === objType
-                                        ? 'text-white'
-                                        : isLight
-                                            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                                    }
-                `}
-                                style={selectedFilter === objType ? { backgroundColor: colors.bg } : undefined}
-                            >
-                                <span
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: colors.bg }}
-                                />
-                                {objType}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+            <GraphControls
+                linkedObjectTypes={linkedObjectTypes}
+                selectedFilter={selectedFilter}
+                onFilterChange={handleFilterChange}
+                effectiveAtBounds={effectiveAtBounds}
+                effectiveAtRange={effectiveAtRange}
+                onEffectiveAtRangeChange={setEffectiveAtRange}
+                isLight={isLight}
+            />
 
-            {/* Graph Container */}
             <div
+                ref={containerRef}
                 className={`
-          w-full h-[400px] rounded-xl overflow-hidden border
-          ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-gray-900/50'}
-        `}
+                    w-full rounded-xl overflow-hidden border relative
+                    ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-gray-900/50'}
+                `}
+                style={{ minHeight: `${MIN_CANVAS_HEIGHT}px` }}
             >
-                <ReactFlow
-                    nodes={nodes}
-                    edges={flowEdges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onNodeClick={onNodeClick}
-                    fitView
-                    attributionPosition="bottom-left"
-                    proOptions={{ hideAttribution: true }}
-                >
-                    <Background
-                        color={isLight ? '#e2e8f0' : '#374151'}
-                        gap={16}
-                        size={1}
+                {isLoading ? (
+                    <GraphLoadingState isLight={isLight} />
+                ) : error ? (
+                    <GraphErrorState isLight={isLight} message={error} />
+                ) : showEmpty ? (
+                    <GraphEmptyState isLight={isLight} />
+                ) : (
+                    <GraphCanvas
+                        geometry={geometry}
+                        isLight={isLight}
+                        hover={hover}
+                        onNodeHover={handleNodeHover}
+                        onEdgeHover={handleEdgeHover}
+                        onClearHover={clearHover}
                     />
-                    <Controls
-                        style={{
-                            background: isLight ? '#ffffff' : '#1f2937',
-                            border: isLight ? '1px solid #e2e8f0' : '1px solid #374151',
-                            borderRadius: '8px',
-                        }}
-                    />
-                    <MiniMap
-                        nodeColor={(node) => {
-                            const colors = TYPE_COLORS[node.data?.objectType] || TYPE_COLORS.default;
-                            return colors.bg;
-                        }}
-                        style={{
-                            background: isLight ? '#f8fafc' : '#111827',
-                            border: isLight ? '1px solid #e2e8f0' : '1px solid #374151',
-                            borderRadius: '8px',
-                        }}
-                        maskColor={isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'}
-                    />
-                </ReactFlow>
+                )}
             </div>
         </div>
     );

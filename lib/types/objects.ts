@@ -325,6 +325,7 @@ export interface GlobalEdge {
     edge_type: string;
     edge_fact: string | null;
     is_active: boolean;
+    effective_at: string | null;
     metadata: Record<string, unknown> | null;
     created_at: string;
     created_by: string | null;
