@@ -164,6 +164,7 @@ export interface Worker {
     org_oid: string;
     location_oid: string | null;
     manager_oid: string | null;
+    hire_date: string | null;
     is_vip: boolean;
     vip_type: string | null;
     is_active: boolean;
@@ -248,6 +249,7 @@ export interface WorkerCreate {
     org_oid: string;
     location_oid?: string | null;
     manager_oid?: string | null;
+    hire_date?: string | null;
     is_vip?: boolean;
     vip_type?: string | null;
     is_active?: boolean;
@@ -270,6 +272,7 @@ export interface WorkerUpdate {
     org_oid?: string;
     location_oid?: string | null;
     manager_oid?: string | null;
+    hire_date?: string | null;
     is_vip?: boolean;
     vip_type?: string | null;
     is_active?: boolean;

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { CalendarClock, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { formatDateTime } from '@/lib/utils/datetime';
+import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import { ObjectGraph } from '@/components/data';
 import type { GlobalEdge, Location, Organization, Worker, WorkerProfile } from '@/lib/types/objects';
 import { PersonaOrgWorkerSidebar } from './PersonaOrgWorkerSidebar';
@@ -115,6 +115,10 @@ export function PersonaProfilePage({
                                     <div>
                                         <div className={labelClass}>{t('fields.vipStatus')}</div>
                                         <div className={valueClass}>{vipText}{currentWorker.vip_type ? ` · ${currentWorker.vip_type}` : ''}</div>
+                                    </div>
+                                    <div>
+                                        <div className={labelClass}>{tData('workers.hireDate')}</div>
+                                        <div className={valueClass}>{currentWorker.hire_date ? formatDate(currentWorker.hire_date, timezone) : t('status.notSet')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.status')}</div>

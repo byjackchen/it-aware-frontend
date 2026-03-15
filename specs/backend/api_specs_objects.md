@@ -50,6 +50,8 @@ class Worker(Base):
     stable_id = Column(Text, unique=True, nullable=False)  # Stable sync identifier (wecom_id)
     fullname = Column(Text, nullable=False)  # Worker's full name
     email = Column(Text, unique=True, nullable=True)
+    worker_type = Column(Text, nullable=True)  # Regular, Intern, Partner, etc.
+    hire_date = Column(DateTime(timezone=True), nullable=True)  # UTC datetime from ERP onboardingdate
     gender = Column(Text, nullable=True)
 
     # Job fields (parsed from position_title)
@@ -135,6 +137,7 @@ class WorkerCreate(BaseModel):
     stable_id: str = Field(..., max_length=255)
     fullname: str = Field(..., min_length=1, max_length=255)
     email: Optional[EmailStr] = None
+    hire_date: Optional[datetime] = None  # UTC datetime from ERP onboardingdate
     gender: Optional[str] = None
 
     # Job fields (parsed from position_title)
@@ -157,6 +160,7 @@ class WorkerUpdate(BaseModel):
     stable_id: Optional[str] = None
     fullname: Optional[str] = None
     email: Optional[EmailStr] = None
+    hire_date: Optional[datetime] = None
     gender: Optional[str] = None
 
     # Job fields (parsed from position_title)
@@ -180,6 +184,7 @@ class WorkerResponse(BaseModel):
     stable_id: str
     fullname: str
     email: Optional[str] = None
+    hire_date: Optional[datetime] = None
     gender: Optional[str] = None
 
     # Job fields (parsed from position_title)

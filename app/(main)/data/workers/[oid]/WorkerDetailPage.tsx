@@ -558,7 +558,14 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                     </div>
 
                     {/* Timestamps */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className={labelClass}>{t('workers.hireDate')}</label>
+                            <div className={displayClass}>
+                                <Calendar className={iconClass} />
+                                <span className={textClass}>{worker.hire_date ? formatDate(worker.hire_date, timezone) : t('workers.notSet')}</span>
+                            </div>
+                        </div>
                         <div>
                             <label className={labelClass}>{t('common.created')}</label>
                             <div className={displayClass}>

@@ -356,6 +356,7 @@
             "location": "地点",
             "manager": "主管",
             "gender": "性别",
+            "hireDate": "入职日期",
             "jobCategory": "职能类别",
             "jobSubcategory": "职能子类",
             "jobProfessionalLevel": "职级",
