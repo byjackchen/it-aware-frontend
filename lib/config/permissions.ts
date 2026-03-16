@@ -44,6 +44,8 @@ export const PERMISSIONS = {
     SURVEY_BATCHS_WRITE: 'objects:survey_batchs:write',
     ANALYSISS_READ: 'objects:analysiss:read',
     ANALYSISS_WRITE: 'objects:analysiss:write',
+    SCENARIOS_READ: 'objects:scenarios:read',
+    SCENARIOS_WRITE: 'objects:scenarios:write',
   },
 } as const;
 

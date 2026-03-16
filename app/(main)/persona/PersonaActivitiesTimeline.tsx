@@ -7,6 +7,7 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import type { Worker } from '@/lib/types/objects';
 import type { TimelineWindowState } from './types';
 import { usePersonaActivities } from './usePersonaActivities';
+import { usePersonaScenarios } from './usePersonaScenarios';
 import { TimelineControls } from '@/components/persona_timeline/TimelineControls';
 import { TimelineLegend } from '@/components/persona_timeline/TimelineLegend';
 import { TimelineCanvas } from '@/components/persona_timeline/TimelineCanvas';
@@ -24,7 +25,7 @@ import { useTimelineGeometry } from '@/components/persona_timeline/useTimelineGe
 import { useTimelineHeatBins } from '@/components/persona_timeline/useTimelineHeatBins';
 import { useTimelineDragPan } from '@/components/persona_timeline/useTimelineDragPan';
 import { buildWindow, clampWindowDays, formatExactTimestamp, formatHeatInterval } from '@/components/persona_timeline/utils';
-import type { TimelineHeatBin, TimelineHoverPayload } from '@/components/persona_timeline/types';
+import type { TimelineHeatBin, TimelineHoverPayload, TimelineScenarioBox } from '@/components/persona_timeline/types';
 
 interface PersonaActivitiesTimelineProps {
     worker: Worker;
@@ -54,6 +55,8 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         reload,
     } = usePersonaActivities(worker, windowState, showInteractions);
 
+    const { scenarios } = usePersonaScenarios(worker);
+
     useEffect(() => {
         const element = viewportRef.current;
         if (!element) return;
@@ -74,12 +77,13 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         };
     }, []);
 
-    const { geometry, renderedEvents } = useTimelineGeometry({
+    const { geometry, renderedEvents, scenarioBoxes } = useTimelineGeometry({
         events,
         windowState,
         viewportWidth,
         timezone,
         includeInteractions: showInteractions,
+        scenarios,
     });
 
     const { bins: heatBins, visibleTypes } = useTimelineHeatBins({
@@ -141,6 +145,21 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         }
         window.open(event.href, '_blank', 'noopener');
     }, [dragPan]);
+
+    const handleScenarioClick = useCallback((box: TimelineScenarioBox) => {
+        if (dragPan.shouldSuppressClick()) {
+            return;
+        }
+        window.open(box.href, '_blank', 'noopener');
+    }, [dragPan]);
+
+    const handleScenarioHover = useCallback((event: React.MouseEvent, box: TimelineScenarioBox) => {
+        const label = t('timeline.scenarioTooltip', {
+            type: box.scenarioType,
+            date: formatExactTimestamp(box.effectiveAt, timezone),
+        });
+        updateHoverPosition(event.clientX, event.clientY, label);
+    }, [t, timezone, updateHoverPosition]);
 
     const setPresetWindow = useCallback((days: number) => {
         clearHover();
@@ -255,6 +274,9 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
                             onEventHover={handleEventHover}
                             onHeatHover={handleHeatHover}
                             onClearHover={clearHover}
+                            scenarioBoxes={scenarioBoxes}
+                            onScenarioClick={handleScenarioClick}
+                            onScenarioHover={handleScenarioHover}
                         />
 
                         {windowEvents.length === 0 && (

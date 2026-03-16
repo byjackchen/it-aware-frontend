@@ -57,6 +57,13 @@ export const INFINITE_SCROLL_EDGE_THRESHOLD_MIN = 120;
 export const INFINITE_SCROLL_WINDOW_SHIFT_RATIO = 0.5;
 export const INFINITE_SCROLL_RECENTER_RATIO = 0.4;
 
+export const SCENARIO_BOX_HEIGHT = 28;
+export const SCENARIO_BOX_MIN_WIDTH = 120;
+export const SCENARIO_TOP_Y = 6;
+export const SCENARIO_AXIS_GAP = 8;
+export const SCENARIO_COLOR = '#06b6d4';
+export const SCENARIO_LINK_DASH = '4 3';
+
 export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'inquiry', 'interaction', 'survey', 'analysis'];
 
 export const EVENT_COLORS: Record<PersonaActivityEventType, string> = {

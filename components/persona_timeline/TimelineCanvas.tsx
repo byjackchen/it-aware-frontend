@@ -6,10 +6,12 @@ import {
     EVENT_COLORS,
     HOVER_TOOLTIP_MAX_WIDTH,
     MARKER_RADIUS,
+    SCENARIO_COLOR,
+    SCENARIO_LINK_DASH,
     TICK_HEIGHT,
     TICK_LABEL_WIDTH,
 } from './constants';
-import type { TimelineGeometry, TimelineHeatBin, TimelineHoverPayload, TimelineRenderedEvent } from './types';
+import type { TimelineGeometry, TimelineHeatBin, TimelineHoverPayload, TimelineRenderedEvent, TimelineScenarioBox } from './types';
 import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/persona/types';
 import { formatExactTimestamp, formatHeatInterval, formatTickDate, hexToRgba } from './utils';
 
@@ -27,6 +29,9 @@ interface TimelineCanvasProps {
     onEventHover: (event: React.MouseEvent, item: PersonaActivityEvent) => void;
     onHeatHover: (event: React.MouseEvent, bin: TimelineHeatBin) => void;
     onClearHover: () => void;
+    scenarioBoxes?: TimelineScenarioBox[];
+    onScenarioClick?: (box: TimelineScenarioBox) => void;
+    onScenarioHover?: (event: React.MouseEvent, box: TimelineScenarioBox) => void;
 }
 
 function getHeatIntensity(bin: TimelineHeatBin, type: PersonaActivityEventType): number {
@@ -94,6 +99,9 @@ export function TimelineCanvas({
     onEventHover,
     onHeatHover,
     onClearHover,
+    scenarioBoxes,
+    onScenarioClick,
+    onScenarioHover,
 }: TimelineCanvasProps) {
     const heatBinWidth = heatBins.length > 0 ? (geometry.axisWidth / heatBins.length) : geometry.axisWidth;
 
@@ -131,6 +139,98 @@ export function TimelineCanvas({
                 >
                     {t('timeline.rangeEnd')}
                 </text>
+
+                {/* Scenario bezier links to activities */}
+                {scenarioBoxes && scenarioBoxes.map((box) => {
+                    // Build a map of rendered event oids for quick lookup
+                    return box.linkedActivityIds.map((activityOid) => {
+                        const matchedEvent = renderedEvents.find((re) => re.event.oid === activityOid);
+                        if (!matchedEvent) return null;
+
+                        const sx = box.x;
+                        const sy = box.y + box.height;
+                        const tx = matchedEvent.markerX;
+                        const ty = matchedEvent.markerY;
+                        const midY = (sy + ty) / 2;
+                        const cpOffset = Math.min(40, Math.abs(tx - sx) * 0.3);
+
+                        return (
+                            <path
+                                key={`scenario-link-${box.scenarioOid}-${activityOid}`}
+                                d={`M ${sx} ${sy} Q ${sx + cpOffset} ${midY}, ${tx} ${ty}`}
+                                stroke={SCENARIO_COLOR}
+                                strokeDasharray={SCENARIO_LINK_DASH}
+                                strokeOpacity={0.35}
+                                strokeWidth={1.5}
+                                fill="none"
+                            />
+                        );
+                    });
+                })}
+
+                {/* Scenario boxes */}
+                {scenarioBoxes && scenarioBoxes.map((box) => {
+                    const boxLeft = box.x - (box.width / 2);
+                    return (
+                        <g key={`scenario-box-${box.scenarioOid}`}>
+                            {/* Vertical dashed connector to axis */}
+                            <line
+                                x1={box.x}
+                                x2={box.x}
+                                y1={box.y + box.height}
+                                y2={geometry.axisY}
+                                stroke={SCENARIO_COLOR}
+                                strokeDasharray="3 3"
+                                strokeOpacity={0.4}
+                                strokeWidth={0.75}
+                            />
+                            {/* Box */}
+                            <rect
+                                x={boxLeft}
+                                y={box.y}
+                                width={box.width}
+                                height={box.height}
+                                rx={6}
+                                fill={isLight ? '#ecfeff' : 'rgba(6, 182, 212, 0.1)'}
+                                stroke={SCENARIO_COLOR}
+                                strokeWidth={1}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => onScenarioClick?.(box)}
+                                onMouseEnter={(e) => onScenarioHover?.(e, box)}
+                                onMouseMove={(e) => onScenarioHover?.(e, box)}
+                                onMouseLeave={onClearHover}
+                            />
+                            {/* Label */}
+                            <foreignObject
+                                x={boxLeft}
+                                y={box.y}
+                                width={box.width}
+                                height={box.height}
+                                style={{ pointerEvents: 'none' }}
+                            >
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        color: SCENARIO_COLOR,
+                                        textTransform: 'capitalize',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        padding: '0 8px',
+                                    }}
+                                >
+                                    {box.label}
+                                </div>
+                            </foreignObject>
+                        </g>
+                    );
+                })}
 
                 {visibleHeatTypes.map((type, rowIndex) => {
                     const y = geometry.heatTopY + (rowIndex * (geometry.heatRowHeight + geometry.heatRowGap));

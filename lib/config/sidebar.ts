@@ -21,6 +21,7 @@ import {
     ClipboardCheck,
     FileSearch,
     Sparkles,
+    Route,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -174,6 +175,20 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.INTERACTIONS_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'journeys',
+                items: [
+                    {
+                        href: '/data/scenarios',
+                        labelKey: 'scenarios',
+                        icon: Route,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SCENARIOS_READ,
                         ]),
                     },
                 ],

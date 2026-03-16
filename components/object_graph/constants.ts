@@ -16,6 +16,14 @@ export const MIN_CANVAS_HEIGHT = 400;
 export const HOVER_TOOLTIP_MAX_WIDTH = 320;
 export const PARALLEL_EDGE_OFFSET = 30;
 
+// Force-directed layout
+export const FORCE_ITERATIONS = 60;
+export const FORCE_REPULSION = 8000;
+export const FORCE_SPRING_LENGTH = 160;
+export const FORCE_SPRING_STRENGTH = 0.03;
+export const FORCE_DAMPING = 0.85;
+export const FORCE_CENTER_PULL = 0.01;
+
 // Slider
 export const SLIDER_HEIGHT = 32;
 export const SLIDER_HANDLE_RADIUS = 8;
@@ -35,5 +43,6 @@ export const TYPE_COLORS: Record<string, { bg: string; border: string }> = {
     survey: { bg: '#10b981', border: '#059669' },
     analysis: { bg: '#ec4899', border: '#db2777' },
     notification: { bg: '#f59e0b', border: '#d97706' },
+    scenario: { bg: '#06b6d4', border: '#0891b2' },
     default: { bg: '#6b7280', border: '#4b5563' },
 };

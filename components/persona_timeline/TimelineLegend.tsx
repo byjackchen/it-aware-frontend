@@ -1,7 +1,7 @@
 'use client';
 
 import type { PersonaActivityEventType } from '@/app/(main)/persona/types';
-import { EVENT_COLORS, TIMELINE_TYPES } from './constants';
+import { EVENT_COLORS, SCENARIO_COLOR, TIMELINE_TYPES } from './constants';
 
 interface TimelineLegendProps {
     isLight: boolean;
@@ -33,6 +33,15 @@ export function TimelineLegend({ isLight, showInteractions, t }: TimelineLegendP
                     </span>
                 );
             })}
+            <span
+                className={`inline-flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}
+            >
+                <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: SCENARIO_COLOR }}
+                />
+                {t('timeline.lanes.scenario')}
+            </span>
         </div>
     );
 }

@@ -13,12 +13,17 @@ import {
     HEAT_ROW_HEIGHT,
     HEAT_TOP_Y,
     MIN_CANVAS_HEIGHT,
+    SCENARIO_AXIS_GAP,
+    SCENARIO_BOX_HEIGHT,
+    SCENARIO_BOX_MIN_WIDTH,
+    SCENARIO_TOP_Y,
     TICK_COUNT,
     TIMELINE_GUARD_X,
     TIMELINE_TOP_PADDING,
 } from './constants';
-import type { TimelineGeometry, TimelineRenderedEvent } from './types';
+import type { TimelineGeometry, TimelineRenderedEvent, TimelineScenarioBox } from './types';
 import type { PersonaActivityEvent, TimelineWindowState } from '@/app/(main)/persona/types';
+import type { ScenarioWithEdges } from '@/app/(main)/persona/usePersonaScenarios';
 import { buildEventLabel, clamp, formatTickDate, getEventBoxSize, parseTimestamp, toRangeRatio } from './utils';
 
 interface UseTimelineGeometryParams {
@@ -27,11 +32,13 @@ interface UseTimelineGeometryParams {
     viewportWidth: number;
     timezone: string;
     includeInteractions: boolean;
+    scenarios?: ScenarioWithEdges[];
 }
 
 interface UseTimelineGeometryResult {
     geometry: TimelineGeometry;
     renderedEvents: TimelineRenderedEvent[];
+    scenarioBoxes: TimelineScenarioBox[];
 }
 
 export function useTimelineGeometry({
@@ -40,6 +47,7 @@ export function useTimelineGeometry({
     viewportWidth,
     timezone,
     includeInteractions,
+    scenarios,
 }: UseTimelineGeometryParams): UseTimelineGeometryResult {
     return useMemo(() => {
         const startMs = windowState.start.getTime();
@@ -55,10 +63,22 @@ export function useTimelineGeometry({
         const axisEndX = axisStartX + densityAxisWidth;
         const overflow = 0;
 
+        // Determine if any scenario falls within the visible window
+        const visibleScenarios = (scenarios || []).filter((s) => {
+            const ts = parseTimestamp(s.effective_at);
+            return ts >= startMs && ts <= endMs;
+        });
+        const scenarioRowHeight = visibleScenarios.length > 0
+            ? SCENARIO_BOX_HEIGHT + SCENARIO_AXIS_GAP
+            : 0;
+
+        // Shift vertical positions down by scenarioRowHeight
+        const adjustedHeatTopY = HEAT_TOP_Y + scenarioRowHeight;
+
         const heatRowCount = (includeInteractions ? 4 : 3) + 2;
         const heatHeight = (heatRowCount * HEAT_ROW_HEIGHT) + ((heatRowCount - 1) * HEAT_ROW_GAP);
-        const axisY = HEAT_TOP_Y + heatHeight + HEAT_AXIS_GAP;
-        const tickLabelY = TIMELINE_TOP_PADDING + 10;
+        const axisY = adjustedHeatTopY + heatHeight + HEAT_AXIS_GAP;
+        const tickLabelY = TIMELINE_TOP_PADDING + scenarioRowHeight + 10;
 
         const ticks = Array.from({ length: TICK_COUNT }, (_, index) => {
             const ratio = index / (TICK_COUNT - 1);
@@ -70,6 +90,35 @@ export function useTimelineGeometry({
                 x,
                 date,
                 label: formatTickDate(date, timezone, windowState.durationDays),
+            };
+        });
+
+        // Compute scenario boxes
+        const scenarioBoxes: TimelineScenarioBox[] = visibleScenarios.map((scenario) => {
+            const ts = parseTimestamp(scenario.effective_at);
+            const ratio = toRangeRatio(ts, startMs, endMs);
+            const x = axisStartX + (ratio * densityAxisWidth);
+            const label = scenario.scenario_type;
+            const width = Math.max(SCENARIO_BOX_MIN_WIDTH, label.length * 9 + 24);
+
+            // Find linked activity IDs by matching edges
+            const linkedActivityIds: string[] = [];
+            for (const edge of scenario.connectedEdges) {
+                const otherOid = edge.from_oid === scenario.oid ? edge.to_oid : edge.from_oid;
+                linkedActivityIds.push(otherOid);
+            }
+
+            return {
+                scenarioOid: scenario.oid,
+                scenarioType: scenario.scenario_type,
+                effectiveAt: scenario.effective_at,
+                x,
+                y: SCENARIO_TOP_Y,
+                width,
+                height: SCENARIO_BOX_HEIGHT,
+                label,
+                href: `/data/scenarios/${scenario.oid}`,
+                linkedActivityIds,
             };
         });
 
@@ -148,19 +197,21 @@ export function useTimelineGeometry({
             canvasWidth,
             canvasHeight,
             axisY,
-            heatTopY: HEAT_TOP_Y,
+            heatTopY: adjustedHeatTopY,
             heatHeight,
             heatRowHeight: HEAT_ROW_HEIGHT,
             heatRowGap: HEAT_ROW_GAP,
             tickLabelY,
-            dragRegionY: HEAT_TOP_Y - 10,
-            dragRegionHeight: (axisY - (HEAT_TOP_Y - 10)) + 16,
+            dragRegionY: adjustedHeatTopY - 10,
+            dragRegionHeight: (axisY - (adjustedHeatTopY - 10)) + 16,
             ticks,
+            scenarioRowHeight,
         };
 
         return {
             geometry,
             renderedEvents,
+            scenarioBoxes,
         };
-    }, [events, includeInteractions, timezone, viewportWidth, windowState.durationDays, windowState.end, windowState.start]);
+    }, [events, includeInteractions, scenarios, timezone, viewportWidth, windowState.durationDays, windowState.end, windowState.start]);
 }

@@ -39,6 +39,11 @@ import {
     updateAnalysis,
     deleteAnalysis,
 } from '@/lib/api/insights';
+import {
+    createScenario,
+    updateScenario,
+    deleteScenario,
+} from '@/lib/api/scenarios';
 import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
@@ -1238,6 +1243,99 @@ export async function deleteAnalysisAction(oid: string) {
     try {
         await deleteAnalysis(oid);
         revalidatePath('/data/analyses');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Scenario Actions
+// ============================================================================
+
+export async function createScenarioAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createScenario';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const worker_oid = formData.get('worker_oid') as string;
+    const scenario_type = (formData.get('scenario_type') as string) || 'onboarding';
+    const effective_at = formData.get('effective_at') as string;
+    const scenario_profile_str = formData.get('scenario_profile') as string | null;
+
+    let scenario_profile: import('@/lib/types/objects').ScenarioProfile | undefined = undefined;
+    if (scenario_profile_str) {
+        try {
+            scenario_profile = JSON.parse(scenario_profile_str);
+        } catch {
+            throw new Error('Invalid scenario_profile JSON format');
+        }
+    }
+
+    try {
+        await createScenario({
+            worker_oid,
+            scenario_type,
+            effective_at,
+            scenario_profile,
+        });
+        revalidatePath('/data/scenarios');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateScenarioAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateScenario';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    const scenario_type = formData.get('scenario_type') as string | null;
+    const scenario_profile_str = formData.get('scenario_profile') as string | null;
+
+    let scenario_profile: import('@/lib/types/objects').ScenarioProfile | undefined = undefined;
+    if (scenario_profile_str) {
+        try {
+            scenario_profile = JSON.parse(scenario_profile_str);
+        } catch {
+            throw new Error('Invalid scenario_profile JSON format');
+        }
+    }
+
+    try {
+        await updateScenario(oid, {
+            scenario_type: scenario_type || undefined,
+            scenario_profile,
+        });
+        revalidatePath('/data/scenarios');
+        revalidatePath(`/data/scenarios/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteScenarioAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteScenario';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        await deleteScenario(oid);
+        revalidatePath('/data/scenarios');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {

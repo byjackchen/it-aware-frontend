@@ -169,7 +169,9 @@
         "insights": "洞察",
         "notifications": "通知",
         "surveys": "问卷",
-        "analyses": "分析"
+        "analyses": "分析",
+        "journeys": "旅程",
+        "scenarios": "场景"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",
@@ -458,6 +460,21 @@
             "answers": "回答",
             "noAnswer": "未提交回答"
         },
+        "scenarios": {
+            "title": "场景",
+            "detail": "场景详情",
+            "empty": "未找到场景",
+            "deleteConfirm": "确定要删除此场景吗？",
+            "scenarioType": "场景类型",
+            "worker": "员工",
+            "effectiveAt": "生效时间",
+            "description": "描述",
+            "notes": "备注",
+            "keyTopics": "关键主题",
+            "noDescription": "无描述",
+            "noNotes": "无备注",
+            "noKeyTopics": "无关键主题"
+        },
         "analyses": {
             "title": "分析",
             "detail": "分析详情",
@@ -579,8 +596,10 @@
                 "inquiry": "问询",
                 "interaction": "交互",
                 "survey": "问卷",
-                "analysis": "分析"
+                "analysis": "分析",
+                "scenario": "场景"
             },
+            "scenarioTooltip": "场景：{type}，生效时间 {date}",
             "heatBar": "热力条",
             "dragHint": "在时间轴或热力条上拖拽可平移时间窗口",
             "rangeStart": "区间起点",

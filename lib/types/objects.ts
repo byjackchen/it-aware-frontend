@@ -1124,3 +1124,51 @@ export interface AnalysisListResponse {
     skip: number;
     limit: number;
 }
+
+// ============================================================================
+// Scenario Types (Journeys)
+// ============================================================================
+
+export interface ScenarioProfile {
+    description?: string | null;
+    notes?: string | null;
+    key_topics?: string[] | null;
+}
+
+export interface Scenario {
+    oid: string;
+    worker_oid: string;
+    scenario_type: 'onboarding';
+    scenario_profile: ScenarioProfile | null;
+    effective_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ScenarioCreate {
+    worker_oid: string;
+    scenario_type: string;
+    effective_at: string;
+    scenario_profile?: ScenarioProfile;
+}
+
+export interface ScenarioUpdate {
+    scenario_type?: string;
+    scenario_profile?: ScenarioProfile;
+}
+
+export interface ScenarioListParams {
+    worker_oid?: string;
+    scenario_type?: string;
+    effective_at_from?: string;
+    effective_at_to?: string;
+    skip?: number;
+    limit?: number;
+}
+
+export interface ScenarioListResponse {
+    items: Scenario[];
+    total: number;
+    skip: number;
+    limit: number;
+}

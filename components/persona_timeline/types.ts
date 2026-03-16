@@ -7,6 +7,19 @@ export interface TimelineTick {
     label: string;
 }
 
+export interface TimelineScenarioBox {
+    scenarioOid: string;
+    scenarioType: string;
+    effectiveAt: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    label: string;
+    href: string;
+    linkedActivityIds: string[];
+}
+
 export interface TimelineGeometry {
     axisStartX: number;
     axisEndX: number;
@@ -25,6 +38,7 @@ export interface TimelineGeometry {
     dragRegionY: number;
     dragRegionHeight: number;
     ticks: TimelineTick[];
+    scenarioRowHeight: number;
 }
 
 export interface TimelineRenderedEvent {
