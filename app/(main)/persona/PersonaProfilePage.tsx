@@ -55,13 +55,13 @@ export function PersonaProfilePage({
     const vipText = currentWorker.is_vip ? t('status.vip') : t('status.notVip');
 
     return (
-        <div className="h-[calc(100vh-4rem)]">
+        <div className="h-[calc(100vh-4rem)]" suppressHydrationWarning>
             <div className="h-full flex">
                 <aside className="w-[340px] h-full overflow-hidden">
                     <PersonaOrgWorkerSidebar currentWorker={currentWorker} />
                 </aside>
 
-                <main className={`flex-1 h-full overflow-y-auto ${isLight ? 'bg-slate-50' : 'bg-slate-950'}`}>
+                <main className={`flex-1 h-full overflow-y-auto ${isLight ? 'bg-slate-50' : 'bg-slate-950'}`} suppressHydrationWarning>
                     <div className="w-full px-6 py-6 space-y-6">
                         <section className={cardClass}>
                             <div className="flex items-center gap-4">

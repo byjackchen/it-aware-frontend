@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
@@ -39,6 +40,28 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={initialTheme} suppressHydrationWarning>
+      <head>
+        <Script id="fix-removeChild" strategy="beforeInteractive">{`
+          if (typeof Node !== 'undefined') {
+            var oc = Node.prototype.removeChild;
+            Node.prototype.removeChild = function(c) {
+              if (c.parentNode !== this) {
+                if (console) console.warn('removeChild: node not a child', c);
+                return c;
+              }
+              return oc.call(this, c);
+            };
+            var oi = Node.prototype.insertBefore;
+            Node.prototype.insertBefore = function(n, r) {
+              if (r && r.parentNode !== this) {
+                if (console) console.warn('insertBefore: ref not a child', r);
+                return n;
+              }
+              return oi.call(this, n, r);
+            };
+          }
+        `}</Script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased gradient-bg-animated theme-${initialTheme}`}
         suppressHydrationWarning
