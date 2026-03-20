@@ -2,15 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, RefreshCw, Search, Loader2, Filter } from 'lucide-react';
+import { Sparkles, RefreshCw, Search, Loader2, Filter, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { downloadXlsx } from '@/lib/utils/export-xlsx';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
-import type { Analysis, AnalysisListResponse, ServiceCatalog } from '@/lib/types/objects';
+import type { Analysis, AnalysisListResponse, ServiceCatalog, Worker } from '@/lib/types/objects';
 
 const PAGE_SIZE = 1000;
 
 interface ServiceCatalogListResponse {
     items: ServiceCatalog[];
+    total: number;
+}
+
+interface WorkerListResponse {
+    items: Worker[];
     total: number;
 }
 
@@ -49,6 +55,7 @@ export function AnalysesListPage() {
     const [error, setError] = useState<string | null>(null);
     const [scMap, setScMap] = useState<Record<string, string>>({});
     const [batchMap, setBatchMap] = useState<Record<string, string>>({});
+    const [workerMap, setWorkerMap] = useState<Record<string, string>>({});
     const [batches, setBatches] = useState<SurveyBatchItem[]>([]);
     const [filterBatchOid, setFilterBatchOid] = useState('');
 
@@ -79,8 +86,27 @@ export function AnalysesListPage() {
                 setBatchMap(map);
             } catch { /* ignore */ }
         }
+        async function fetchWorkers() {
+            try {
+                const map: Record<string, string> = {};
+                let skip = 0;
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    const res = await fetch(`/api/objects/workers?limit=${PAGE_SIZE}&skip=${skip}`);
+                    if (!res.ok) break;
+                    const data: WorkerListResponse = await res.json();
+                    for (const w of data.items || []) {
+                        map[w.oid] = w.stable_id;
+                    }
+                    if (Object.keys(map).length >= data.total || (data.items?.length ?? 0) < PAGE_SIZE) break;
+                    skip += PAGE_SIZE;
+                }
+                setWorkerMap(map);
+            } catch { /* ignore */ }
+        }
         void fetchServiceCatalogs();
         void fetchBatches();
+        void fetchWorkers();
     }, []);
 
     const fetchAllAnalyses = useCallback(async () => {
@@ -136,6 +162,29 @@ export function AnalysesListPage() {
         });
     }, [analyses, searchQuery]);
 
+    const handleExportExcel = useCallback(() => {
+        const headers = [
+            'Receiver Stable ID', 'Topic', 'Fact', 'Keywords', 'Semantic', 'Intent',
+            'Source Batch', 'Service Catalog', 'Configuration Item',
+            'Created At', 'Updated At', 'Effective At',
+        ];
+        const rows = filteredAnalyses.map((a) => [
+            (a.worker_oid && workerMap[a.worker_oid]) || a.worker_oid || '',
+            a.topic,
+            a.fact ?? '',
+            a.keywords?.join(', ') ?? '',
+            a.semantic ?? '',
+            a.intent ?? '',
+            (a.source_batch_oid && batchMap[a.source_batch_oid]) || a.source_batch_oid || '',
+            (a.service_catalog_oid && scMap[a.service_catalog_oid]) || a.service_catalog_oid || '',
+            (a.configuration_item_oid && scMap[a.configuration_item_oid]) || a.configuration_item_oid || '',
+            a.created_at,
+            a.updated_at,
+            a.effective_at,
+        ]);
+        downloadXlsx('Analyses', headers, rows, 'analyses_export.xlsx');
+    }, [filteredAnalyses, batchMap, scMap, workerMap]);
+
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
             <QuickScrollRail />
@@ -155,6 +204,9 @@ export function AnalysesListPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <button onClick={handleExportExcel} disabled={filteredAnalyses.length === 0} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30`} title="Export to Excel">
+                            <Download className="w-5 h-5" />
+                        </button>
                         <button onClick={() => void fetchAllAnalyses()} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
                             <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
                         </button>

@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileSearch, RefreshCw, Search, Loader2 } from 'lucide-react';
+import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { downloadXlsx } from '@/lib/utils/export-xlsx';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import type { SurveyBatch, Survey, SurveyBatchListResponse, SurveyListResponse } from '@/lib/types/objects';
 
@@ -116,6 +117,58 @@ export function SurveysListPage() {
         if (selectedBatchOid) void fetchAllSurveys(selectedBatchOid);
     };
 
+    const handleExportExcel = useCallback(() => {
+        if (filteredSurveys.length === 0) return;
+
+        // Collect unique questions from the first survey (all surveys in a batch share the same questions)
+        const questions = filteredSurveys[0]?.survey_questions?.questions ?? [];
+
+        const headers = [
+            'Receiver Stable ID', 'Status', 'Submitted At', 'Created At', 'Updated At',
+            ...questions.map((q) => q.title),
+        ];
+
+        const rows = filteredSurveys.map((survey) => {
+            const answers = survey.survey_answer?.answers ?? [];
+            const answerCells = questions.map((question) => {
+                const answer = answers.find((a) => a.question_id === question.question_id);
+                if (!answer) return '';
+                if (answer.type === 'single_select') {
+                    if (question.type === 'single_select' || question.type === 'multi_select') {
+                        const opt = question.options.find((o) => o.option_id === answer.selected_option_id);
+                        return opt?.label ?? answer.selected_option_id;
+                    }
+                    return answer.selected_option_id;
+                }
+                if (answer.type === 'multi_select') {
+                    if (question.type === 'single_select' || question.type === 'multi_select') {
+                        return answer.selected_option_ids
+                            .map((id) => {
+                                const opt = question.options.find((o) => o.option_id === id);
+                                return opt?.label ?? id;
+                            })
+                            .join(', ');
+                    }
+                    return answer.selected_option_ids.join(', ');
+                }
+                if (answer.type === 'text') return answer.text;
+                return '';
+            });
+
+            return [
+                survey.receiver_stable_id,
+                survey.status,
+                survey.submitted_at ?? '',
+                survey.created_at,
+                survey.updated_at,
+                ...answerCells,
+            ];
+        });
+
+        const batchName = selectedBatch?.name?.replace(/[^a-zA-Z0-9_-]/g, '_') ?? 'batch';
+        downloadXlsx('Surveys', headers, rows, `surveys_${batchName}_export.xlsx`);
+    }, [filteredSurveys, selectedBatch]);
+
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
             <QuickScrollRail />
@@ -136,6 +189,9 @@ export function SurveysListPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <button onClick={handleExportExcel} disabled={filteredSurveys.length === 0} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30`} title="Export to Excel">
+                            <Download className="w-5 h-5" />
+                        </button>
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
                             <RefreshCw className={`w-5 h-5 ${isLoadingSurveys ? 'animate-spin' : ''}`} />
                         </button>
