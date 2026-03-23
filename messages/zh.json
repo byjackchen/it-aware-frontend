@@ -615,6 +615,7 @@
             "bestPractices": "最佳实践",
             "sla": "SLA 建议",
             "features": "特征画像",
+            "labelFeatures": "标签",
             "basedOn": "基于 {count} 名相似员工",
             "description": "描述",
             "noCluster": "该员工暂无群组分配",

@@ -297,17 +297,16 @@ export function PersonaProfilePage({
                             )}
                         </section>
 
-                        {workerCluster && workerCluster.cluster_label !== -1 && (
-                            <ClusterProfileCard
-                                workerCluster={workerCluster}
-                                clusterSummary={clusterSummary}
-                                isLight={isLight}
-                                cardClass={cardClass}
-                                sectionTitleClass={sectionTitleClass}
-                                labelClass={labelClass}
-                                valueClass={valueClass}
-                            />
-                        )}
+                        <ClusterProfileCard
+                            currentWorker={currentWorker}
+                            workerCluster={workerCluster}
+                            clusterSummary={clusterSummary}
+                            isLight={isLight}
+                            cardClass={cardClass}
+                            sectionTitleClass={sectionTitleClass}
+                            labelClass={labelClass}
+                            valueClass={valueClass}
+                        />
 
                         <section className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">

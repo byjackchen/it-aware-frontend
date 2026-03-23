@@ -1198,9 +1198,10 @@ export interface WorkerCluster {
     outlier_score: number;
     cluster_name: string | null;
     cluster_profile: ClusterProfile | null;
-    feature_vector: Record<string, number> | null;
+    behavior_features: Record<string, number> | null;
+    label_features: Record<string, number> | null;
     pca_3d: [number, number, number] | null;
-    scaler_params: Record<string, ScalerParam> | null;
+    behavior_scales: Record<string, ScalerParam> | null;
     run_id: string;
     computed_at: string;
 }

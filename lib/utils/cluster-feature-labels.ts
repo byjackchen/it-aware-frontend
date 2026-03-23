@@ -1,11 +1,11 @@
 /**
- * Display labels for the 30 worker-cluster feature keys.
- * Used by radar charts on persona page and cluster detail page.
+ * Display labels for worker-cluster feature keys.
+ * Behavior features (28) drive the clustering and are shown on radar charts.
+ * Label features (is_vip, is_new_hire) are stored separately as overlay.
  */
 export const FEATURE_LABELS: Record<string, { en: string; zh: string }> = {
+    // Behavior features (28)
     tenure_months: { en: 'Tenure (months)', zh: '司龄（月）' },
-    is_new_hire: { en: 'New Hire', zh: '新员工' },
-    is_vip: { en: 'VIP', zh: 'VIP' },
     location_region: { en: 'Region', zh: '地区' },
     org_depth: { en: 'Org Depth', zh: '组织层级' },
     incident_count: { en: 'Incident Count', zh: '工单数' },
@@ -33,4 +33,7 @@ export const FEATURE_LABELS: Record<string, { en: string; zh: string }> = {
     profile_topic_count: { en: 'Profile Topics', zh: '画像主题数' },
     profile_tag_count: { en: 'Profile Tags', zh: '画像标签数' },
     off_hours_ratio: { en: 'Off-Hours %', zh: '非工时占比' },
+    // Label features (excluded from clustering, stored as overlay)
+    is_vip: { en: 'VIP', zh: 'VIP' },
+    is_new_hire: { en: 'New Hire', zh: '新员工' },
 };

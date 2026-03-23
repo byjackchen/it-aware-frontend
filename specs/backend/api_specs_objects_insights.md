@@ -169,9 +169,10 @@ Error (404): analysis not found.
 - `outlier_score` — Float, NOT NULL. GLOSH outlier score (higher = more outlier-like)
 - `cluster_name` — Text, nullable. LLM-generated cluster name (e.g. "VIP高管型")
 - `cluster_profile` — JSONB, nullable. Structured profile: `{name, description, key_behaviors[], pain_points[], best_practices[], sla_recommendation}`
-- `feature_vector` — JSONB, nullable. Raw 30-feature values as `{feature_name: float}`
-- `pca_3d` — JSONB, nullable. 3D PCA coordinates as `[x, y, z]` for visualization
-- `scaler_params` — JSONB, nullable. StandardScaler parameters per feature: `{feature_name: {mean: float, scale: float}}`. Used for real-time scoring: `z = (raw - mean) / scale`
+- `behavior_features` — JSONB, nullable. 28 behavioral feature values as `{feature_name: float}`. These features drive the clustering.
+- `label_features` — JSONB, nullable. Label features excluded from clustering but stored as overlay: `{is_vip: 0/1, is_new_hire: 0/1}`
+- `pca_3d` — JSONB, nullable. 3D PCA coordinates as `[x, y, z]` for visualization (derived from behavior features only)
+- `behavior_scales` — JSONB, nullable. StandardScaler parameters per behavior feature: `{feature_name: {mean: float, scale: float}}`. Used for real-time scoring: `z = (raw - mean) / scale`
 - `run_id` — Text, NOT NULL. Pipeline run identifier (e.g. `cluster_20260323T021250Z`)
 - `computed_at` — DateTime(tz), NOT NULL. When this clustering was computed
 - `created_at` — DateTime(tz), server_default=now()
@@ -186,6 +187,7 @@ Notes:
 - Table is populated by the `analyze-worker-clusters` Airflow DAG (monthly schedule)
 - Each run replaces all assignments via upsert (ON CONFLICT worker_oid DO UPDATE)
 - No registry sync trigger (cluster data is analytics, not an entity)
+- **Behavior vs Label separation**: `is_vip` and `is_new_hire` are label features — computed and stored but excluded from StandardScaler/PCA/HDBSCAN. Only behavior features (28) drive clustering. Labels are available as overlay for post-hoc analysis.
 
 ## Worker Cluster APIs
 
@@ -248,17 +250,21 @@ Response (200):
       "outlier_score": 0.02,
       "cluster_name": "VIP高管型",
       "cluster_profile": { ... },
-      "feature_vector": {
+      "behavior_features": {
         "tenure_months": 48.5,
-        "is_vip": 1.0,
         "incident_count": 3.0,
+        "inquiry_resolved_ratio": 0.85,
         ...
       },
+      "label_features": {
+        "is_vip": 1.0,
+        "is_new_hire": 0.0
+      },
       "pca_3d": [1.23, -0.45, 0.78],
-      "scaler_params": {
+      "behavior_scales": {
         "tenure_months": {"mean": 33.12, "scale": 25.44},
-        "is_vip": {"mean": 0.018, "scale": 0.132},
-        "incident_count": {"mean": 3.45, "scale": 6.21}
+        "incident_count": {"mean": 3.45, "scale": 6.21},
+        "inquiry_resolved_ratio": {"mean": 0.72, "scale": 0.38}
       },
       "run_id": "cluster_20260323T021250Z",
       "computed_at": "2026-03-23T02:12:50Z"
@@ -289,9 +295,8 @@ Request body:
 {
   "run_id": "cluster_20260323T021250Z",
   "computed_at": "2026-03-23T02:12:50Z",
-  "scaler_params": {
+  "behavior_scales": {
     "tenure_months": {"mean": 33.12, "scale": 25.44},
-    "is_vip": {"mean": 0.018, "scale": 0.132},
     "incident_count": {"mean": 3.45, "scale": 6.21}
   },
   "assignments": [
@@ -300,9 +305,10 @@ Request body:
       "cluster_label": 0,
       "cluster_probability": 0.95,
       "outlier_score": 0.02,
-      "cluster_name": "VIP高管型",
+      "cluster_name": "高频咨询型",
       "cluster_profile": { ... },
-      "feature_vector": { ... },
+      "behavior_features": { ... },
+      "label_features": {"is_vip": 1.0, "is_new_hire": 0.0},
       "pca_3d": [1.23, -0.45, 0.78]
     }
   ]
@@ -312,7 +318,7 @@ Request body:
 Validation:
 - `run_id`: required, min_length=1
 - `computed_at`: required, ISO8601 datetime
-- `scaler_params`: optional, `{feature_name: {mean: float, scale: float}}` — same value applied to all assignments in the batch
+- `behavior_scales`: optional, `{feature_name: {mean: float, scale: float}}` — StandardScaler params for behavior features only, same value applied to all assignments in the batch
 - `worker_oid`: required, valid base64url OID
 - `cluster_probability`: 0.0 ≤ value ≤ 1.0
 - `outlier_score`: ≥ 0.0

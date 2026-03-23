@@ -615,6 +615,7 @@
             "bestPractices": "Best Practices",
             "sla": "SLA Recommendation",
             "features": "Feature Profile",
+            "labelFeatures": "Labels",
             "basedOn": "Based on {count} similar workers",
             "description": "Description",
             "noCluster": "No cluster assignment available",

@@ -42,11 +42,22 @@ interface WorkerCluster {
     outlier_score: number;        // higher = more outlier-like
     cluster_name: string | null;  // LLM-generated name, e.g. "VIP高管型"
     cluster_profile: ClusterProfile | null;
-    feature_vector: Record<string, number> | null;  // 30 raw feature values
-    pca_3d: [number, number, number] | null;        // 3D coordinates for scatter plot
+    behavior_features: Record<string, number> | null;  // 28 behavioral features (drive clustering)
+    label_features: Record<string, number> | null;     // {is_vip: 0/1, is_new_hire: 0/1} (overlay, not used in clustering)
+    pca_3d: [number, number, number] | null;           // 3D coordinates (from behavior features only)
+    behavior_scales: Record<string, {mean: number, scale: number}> | null;  // StandardScaler per behavior feature
     run_id: string;
     computed_at: string;          // ISO8601
 }
+```
+
+**Computing Z-scores from `behavior_features` + `behavior_scales`:**
+```typescript
+// z_score = (raw_value - mean) / scale
+const zScore = (behaviorFeatures[name] - behaviorScales[name].mean) / behaviorScales[name].scale;
+```
+
+**Label features** (`is_vip`, `is_new_hire`) are identity attributes excluded from clustering to prevent them from dominating the cluster structure. They are stored separately as overlay data for display (e.g. "this behavioral cluster contains 5 VIPs").
 
 interface ClusterProfile {
     name: string;                 // e.g. "新人高频求助型"
@@ -171,8 +182,10 @@ export interface WorkerCluster {
     outlier_score: number;
     cluster_name: string | null;
     cluster_profile: ClusterProfile | null;
-    feature_vector: Record<string, number> | null;
+    behavior_features: Record<string, number> | null;
+    label_features: Record<string, number> | null;
     pca_3d: [number, number, number] | null;
+    behavior_scales: Record<string, {mean: number; scale: number}> | null;
     run_id: string;
     computed_at: string;
 }

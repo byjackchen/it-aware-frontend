@@ -131,14 +131,14 @@ export function ClusterDetailPage({
         }
     }, [assignments.length, totalAssignments, loadMore]);
 
-    // Compute average feature vector and get shared scaler_params for z-score radar
-    const { avgFeatureVector, scalerParams } = useMemo(() => {
-        const withVectors = assignments.filter((a) => a.feature_vector);
-        if (withVectors.length === 0) return { avgFeatureVector: null, scalerParams: null };
+    // Compute average behavior features and get shared behavior_scales for z-score radar
+    const { avgBehaviorFeatures, behaviorScales } = useMemo(() => {
+        const withFeatures = assignments.filter((a) => a.behavior_features);
+        if (withFeatures.length === 0) return { avgBehaviorFeatures: null, behaviorScales: null };
         const sums: Record<string, number> = {};
         const counts: Record<string, number> = {};
-        for (const a of withVectors) {
-            for (const [k, v] of Object.entries(a.feature_vector!)) {
+        for (const a of withFeatures) {
+            for (const [k, v] of Object.entries(a.behavior_features!)) {
                 sums[k] = (sums[k] || 0) + v;
                 counts[k] = (counts[k] || 0) + 1;
             }
@@ -147,16 +147,16 @@ export function ClusterDetailPage({
         for (const k of Object.keys(sums)) {
             avg[k] = sums[k] / counts[k];
         }
-        // Use scaler_params from first assignment (shared across all workers in a run)
-        const sp = withVectors[0]?.scaler_params ?? null;
-        return { avgFeatureVector: avg, scalerParams: sp };
+        // Use behavior_scales from first assignment (shared across all workers in a run)
+        const bs = withFeatures[0]?.behavior_scales ?? null;
+        return { avgBehaviorFeatures: avg, behaviorScales: bs };
     }, [assignments]);
 
     const radarData = useMemo(() => {
-        if (!avgFeatureVector) return [];
+        if (!avgBehaviorFeatures) return [];
 
-        const entries = Object.entries(avgFeatureVector).map(([key, raw]) => {
-            const param = scalerParams?.[key];
+        const entries = Object.entries(avgBehaviorFeatures).map(([key, raw]) => {
+            const param = behaviorScales?.[key];
             const z = param && param.scale > 0 ? (raw - param.mean) / param.scale : 0;
             return { key, raw, z, absZ: Math.abs(z) };
         });
@@ -171,7 +171,7 @@ export function ClusterDetailPage({
                 rawValue: raw,
             };
         });
-    }, [avgFeatureVector, scalerParams, locale]);
+    }, [avgBehaviorFeatures, behaviorScales, locale]);
 
     return (
         <div className="h-[calc(100vh-4rem)] overflow-y-auto p-4">
