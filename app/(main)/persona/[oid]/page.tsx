@@ -6,6 +6,7 @@ import {
     getWorker,
     getWorkerProfile,
 } from '@/lib/api/objects';
+import { getWorkerCluster, getClusterSummary } from '@/lib/api/clusters';
 import { PersonaProfilePage } from '../PersonaProfilePage';
 
 interface PersonaWorkerPageProps {
@@ -20,11 +21,13 @@ export default async function PersonaWorkerPage({ params }: PersonaWorkerPagePro
         notFound();
     }
 
-    const [workerProfile, organization, location, edgesResponse] = await Promise.all([
+    const [workerProfile, organization, location, edgesResponse, workerCluster, clusterSummary] = await Promise.all([
         getWorkerProfile(worker.oid).catch(() => null),
         getOrganization(worker.org_oid).catch(() => null),
         worker.location_oid ? getLocation(worker.location_oid).catch(() => null) : Promise.resolve(null),
         getConnectedEdges(worker.oid).catch(() => ({ items: [], total: 0, page: 1, page_size: 100 })),
+        getWorkerCluster(worker.oid).catch(() => null),
+        getClusterSummary().catch(() => null),
     ]);
 
     return (
@@ -34,6 +37,8 @@ export default async function PersonaWorkerPage({ params }: PersonaWorkerPagePro
             organization={organization}
             location={location}
             edges={edgesResponse.items}
+            workerCluster={workerCluster}
+            clusterSummary={clusterSummary}
         />
     );
 }

@@ -1172,3 +1172,60 @@ export interface ScenarioListResponse {
     skip: number;
     limit: number;
 }
+
+// ============================================================================
+// Worker Cluster Types
+// ============================================================================
+
+export interface ClusterProfile {
+    name: string;
+    description: string;
+    key_behaviors: string[];
+    pain_points: string[];
+    best_practices: string[];
+    sla_recommendation: string;
+}
+
+export interface WorkerCluster {
+    worker_oid: string;
+    cluster_label: number;
+    cluster_probability: number;
+    outlier_score: number;
+    cluster_name: string | null;
+    cluster_profile: ClusterProfile | null;
+    feature_vector: Record<string, number> | null;
+    pca_3d: [number, number, number] | null;
+    run_id: string;
+    computed_at: string;
+}
+
+export interface WorkerClusterListParams {
+    skip?: number;
+    limit?: number;
+    cluster_label?: number;
+    run_id?: string;
+}
+
+export interface WorkerClusterListResponse {
+    items: WorkerCluster[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface ClusterInfo {
+    cluster_label: number;
+    cluster_name: string | null;
+    size: number;
+    percentage: number;
+    cluster_profile: ClusterProfile | null;
+}
+
+export interface ClusterSummaryResponse {
+    run_id: string | null;
+    computed_at: string | null;
+    total_workers: number;
+    n_clusters: number;
+    noise_count: number;
+    clusters: ClusterInfo[];
+}

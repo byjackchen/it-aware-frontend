@@ -21,6 +21,7 @@ import {
     ClipboardCheck,
     FileSearch,
     Sparkles,
+    Network,
     Route,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
@@ -226,6 +227,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.ANALYSISS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/clusters',
+                        labelKey: 'clusters',
+                        icon: Network,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.WORKER_CLUSTERS_READ,
                         ]),
                     },
                 ],

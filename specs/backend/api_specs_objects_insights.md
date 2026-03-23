@@ -1,9 +1,10 @@
 # Insights Module API Specifications
 
 ## Overview
-Insights domain stores LLM-derived analysis results from source objects (e.g., surveys).
+Insights domain stores LLM-derived analysis results and ML-computed worker clustering.
 
 - Analysis table: `insights.analysiss`
+- Worker Clusters table: `insights.worker_clusters`
 
 ## Security Model
 All endpoints require authentication.
@@ -11,6 +12,7 @@ All endpoints require authentication.
 | Resource | Read Permission | Write Permission |
 |----------|-----------------|------------------|
 | Analysis | `objects:analysiss:read` | `objects:analysiss:write` |
+| Worker Clusters | `objects:worker_clusters:read` | `objects:worker_clusters:write` |
 
 ## Data Models
 
@@ -156,13 +158,171 @@ Error (404): analysis not found.
 Response (204): no content.
 Error (404): analysis not found.
 
+---
+
+## Data Models (continued)
+
+### Worker Cluster (`insights.worker_clusters`)
+- `worker_oid` — BYTEA(16), primary key, FK to `objects.workers.oid` ON DELETE CASCADE
+- `cluster_label` — Integer, NOT NULL. -1 = noise/outlier, 0+ = cluster assignment
+- `cluster_probability` — Float, NOT NULL. HDBSCAN membership probability [0.0, 1.0]
+- `outlier_score` — Float, NOT NULL. GLOSH outlier score (higher = more outlier-like)
+- `cluster_name` — Text, nullable. LLM-generated cluster name (e.g. "VIP高管型")
+- `cluster_profile` — JSONB, nullable. Structured profile: `{name, description, key_behaviors[], pain_points[], best_practices[], sla_recommendation}`
+- `feature_vector` — JSONB, nullable. Raw 30-feature values as `{feature_name: float}`
+- `pca_3d` — JSONB, nullable. 3D PCA coordinates as `[x, y, z]` for visualization
+- `run_id` — Text, NOT NULL. Pipeline run identifier (e.g. `cluster_20260323T021250Z`)
+- `computed_at` — DateTime(tz), NOT NULL. When this clustering was computed
+- `created_at` — DateTime(tz), server_default=now()
+- `updated_at` — DateTime(tz), server_default=now()
+
+Indexes:
+- `worker_clusters_cluster_label_idx` on `(cluster_label)`
+- `worker_clusters_run_id_idx` on `(run_id)`
+- `worker_clusters_computed_at_idx` on `(computed_at DESC)`
+
+Notes:
+- Table is populated by the `cluster-workers` Airflow DAG (monthly schedule)
+- Each run replaces all assignments via upsert (ON CONFLICT worker_oid DO UPDATE)
+- No registry sync trigger (cluster data is analytics, not an entity)
+
+## Worker Cluster APIs
+
+| Method | Path | Description | Permission |
+|--------|------|-------------|------------|
+| GET | `/objects/insights/worker-clusters/summary` | Aggregate cluster summary | `objects:worker_clusters:read` |
+| GET | `/objects/insights/worker-clusters` | List worker clusters (paginated) | `objects:worker_clusters:read` |
+| GET | `/objects/insights/worker-clusters/{worker_oid}` | Get single worker's cluster | `objects:worker_clusters:read` |
+| POST | `/objects/insights/worker-clusters/bulk` | Bulk upsert cluster assignments | `objects:worker_clusters:write` |
+
+### GET `/objects/insights/worker-clusters/summary`
+
+Aggregate cluster-level summary. No per-worker data returned.
+
+Response (200):
+```json
+{
+  "run_id": "cluster_20260323T021250Z",
+  "computed_at": "2026-03-23T02:12:50Z",
+  "total_workers": 2211,
+  "n_clusters": 3,
+  "noise_count": 143,
+  "clusters": [
+    {
+      "cluster_label": 0,
+      "cluster_name": "VIP高管型",
+      "size": 32,
+      "percentage": 1.4,
+      "cluster_profile": {
+        "name": "VIP高管型",
+        "description": "高级管理层用户...",
+        "key_behaviors": ["提单量低但优先级高", "..."],
+        "pain_points": ["响应时间期望严格", "..."],
+        "best_practices": ["专属快速通道", "..."],
+        "sla_recommendation": "1小时内首次响应"
+      }
+    }
+  ]
+}
+```
+
+### GET `/objects/insights/worker-clusters`
+
+List worker cluster assignments with pagination and optional filters.
+
+Query parameters:
+- `skip` (default 0, min 0)
+- `limit` (default 100, min 1, max 1000)
+- `cluster_label` (optional) — filter by cluster label (integer, -1 for noise)
+- `run_id` (optional) — filter by pipeline run ID
+
+Response (200):
+```json
+{
+  "items": [
+    {
+      "worker_oid": "<base64url OID>",
+      "cluster_label": 0,
+      "cluster_probability": 0.95,
+      "outlier_score": 0.02,
+      "cluster_name": "VIP高管型",
+      "cluster_profile": { ... },
+      "feature_vector": {
+        "tenure_months": 48.5,
+        "is_vip": 1.0,
+        "incident_count": 3.0,
+        ...
+      },
+      "pca_3d": [1.23, -0.45, 0.78],
+      "run_id": "cluster_20260323T021250Z",
+      "computed_at": "2026-03-23T02:12:50Z"
+    }
+  ],
+  "total": 2211,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+Ordering: `cluster_label ASC, worker_oid ASC`.
+
+### GET `/objects/insights/worker-clusters/{worker_oid}`
+
+Get a single worker's cluster assignment.
+
+Response (200): single `WorkerClusterResponse` object (same shape as list item).
+Error (404): worker cluster not found.
+Error (422): invalid worker_oid format.
+
+### POST `/objects/insights/worker-clusters/bulk`
+
+Bulk upsert cluster assignments. Used by the clustering Airflow DAG.
+
+Request body:
+```json
+{
+  "run_id": "cluster_20260323T021250Z",
+  "computed_at": "2026-03-23T02:12:50Z",
+  "assignments": [
+    {
+      "worker_oid": "<base64url OID>",
+      "cluster_label": 0,
+      "cluster_probability": 0.95,
+      "outlier_score": 0.02,
+      "cluster_name": "VIP高管型",
+      "cluster_profile": { ... },
+      "feature_vector": { ... },
+      "pca_3d": [1.23, -0.45, 0.78]
+    }
+  ]
+}
+```
+
+Validation:
+- `run_id`: required, min_length=1
+- `computed_at`: required, ISO8601 datetime
+- `worker_oid`: required, valid base64url OID
+- `cluster_probability`: 0.0 ≤ value ≤ 1.0
+- `outlier_score`: ≥ 0.0
+- Extra fields are forbidden
+
+Response (200):
+```json
+{
+  "upserted": 2211,
+  "run_id": "cluster_20260323T021250Z"
+}
+```
+
+Behavior: Uses `INSERT ... ON CONFLICT (worker_oid) DO UPDATE` for each assignment. Updates all fields including `updated_at`.
+
 ## Error Codes
 
 | Code | Condition |
 |------|-----------|
-| 201 | Created successfully |
-| 200 | Success (GET/PUT) |
+| 200 | Success (GET/PUT/POST bulk) |
+| 201 | Created successfully (POST analysis) |
 | 204 | Deleted successfully |
-| 404 | Analysis not found |
-| 409 | Duplicate source_type + source_oid + topic |
+| 404 | Resource not found |
+| 409 | Duplicate source_type + source_oid + topic (analysis) |
 | 422 | Validation error (invalid OID, invalid field value) |

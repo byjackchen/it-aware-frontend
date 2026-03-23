@@ -46,6 +46,8 @@ export const PERMISSIONS = {
     ANALYSISS_WRITE: 'objects:analysiss:write',
     SCENARIOS_READ: 'objects:scenarios:read',
     SCENARIOS_WRITE: 'objects:scenarios:write',
+    WORKER_CLUSTERS_READ: 'objects:worker_clusters:read',
+    WORKER_CLUSTERS_WRITE: 'objects:worker_clusters:write',
   },
 } as const;
 
