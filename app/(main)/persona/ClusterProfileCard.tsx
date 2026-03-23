@@ -50,23 +50,28 @@ export function ClusterProfileCard({
 
     const radarData = useMemo(() => {
         if (!workerCluster.feature_vector) return [];
-        return Object.entries(workerCluster.feature_vector)
-            .map(([key, value]) => ({ key, absValue: Math.abs(value), value }))
-            .sort((a, b) => b.absValue - a.absValue)
-            .slice(0, 10)
-            .map(({ key, value }) => {
-                const label = FEATURE_LABELS[key];
-                return {
-                    feature: label ? (locale === 'zh' ? label.zh : label.en) : key,
-                    value,
-                };
-            });
-    }, [workerCluster.feature_vector, locale]);
+        const fv = workerCluster.feature_vector;
+        const sp = workerCluster.scaler_params;
 
-    const radarMax = useMemo(() => {
-        if (radarData.length === 0) return 5;
-        return Math.max(...radarData.map((d) => Math.abs(d.value))) * 1.3;
-    }, [radarData]);
+        // Compute z-scores using scaler_params: z = (raw - mean) / scale
+        const entries = Object.entries(fv).map(([key, raw]) => {
+            const param = sp?.[key];
+            const z = param && param.scale > 0 ? (raw - param.mean) / param.scale : 0;
+            return { key, raw, z, absZ: Math.abs(z) };
+        });
+
+        // Pick top 10 features by absolute z-score deviation
+        const top = entries.sort((a, b) => b.absZ - a.absZ).slice(0, 10);
+
+        return top.map(({ key, raw, absZ }) => {
+            const fl = FEATURE_LABELS[key];
+            return {
+                feature: fl ? (locale === 'zh' ? fl.zh : fl.en) : key,
+                normalized: absZ,
+                rawValue: raw,
+            };
+        });
+    }, [workerCluster.feature_vector, workerCluster.scaler_params, locale]);
 
     return (
         <section className={cardClass}>
@@ -93,7 +98,7 @@ export function ClusterProfileCard({
                         <div>
                             <div className={labelClass}>{t('cluster.behaviors')}</div>
                             <ul className="space-y-1 mt-1">
-                                {profile.key_behaviors.map((b, i) => (
+                                {(profile.key_behaviors ?? []).map((b, i) => (
                                     <li
                                         key={i}
                                         className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}
@@ -109,7 +114,7 @@ export function ClusterProfileCard({
                         <div>
                             <div className={labelClass}>{t('cluster.painPoints')}</div>
                             <ul className="space-y-1 mt-1">
-                                {profile.pain_points.map((p, i) => (
+                                {(profile.pain_points ?? []).map((p, i) => (
                                     <li
                                         key={i}
                                         className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}
@@ -125,7 +130,7 @@ export function ClusterProfileCard({
                         <div>
                             <div className={labelClass}>{t('cluster.bestPractices')}</div>
                             <ul className="space-y-1 mt-1">
-                                {profile.best_practices.map((bp, i) => (
+                                {(profile.best_practices ?? []).map((bp, i) => (
                                     <li
                                         key={i}
                                         className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}
@@ -175,13 +180,13 @@ export function ClusterProfileCard({
                                         tick={{ fill: isLight ? '#64748b' : '#94a3b8', fontSize: 10 }}
                                     />
                                     <PolarRadiusAxis
-                                        domain={[0, radarMax]}
+                                        domain={[0, Math.ceil(Math.max(...radarData.map((d) => d.normalized), 1))]}
                                         tick={{ fill: isLight ? '#94a3b8' : '#64748b', fontSize: 9 }}
                                         axisLine={false}
                                     />
                                     <Radar
-                                        name="Feature Value"
-                                        dataKey="value"
+                                        name="Z-Score"
+                                        dataKey="normalized"
                                         stroke="#6366f1"
                                         fill="#6366f1"
                                         fillOpacity={0.15}
@@ -195,6 +200,13 @@ export function ClusterProfileCard({
                                             borderRadius: '8px',
                                             color: isLight ? '#1e293b' : '#f1f5f9',
                                             fontSize: 12,
+                                        }}
+                                        formatter={(_val, _name, props) => {
+                                            const p = props as { payload?: { rawValue?: number; normalized?: number } };
+                                            const raw = p.payload?.rawValue;
+                                            const z = p.payload?.normalized;
+                                            const label = raw !== undefined ? `${raw.toFixed(2)} (${z !== undefined ? z.toFixed(1) : '—'}σ)` : '—';
+                                            return [label, 'Value'];
                                         }}
                                     />
                                 </RadarChart>

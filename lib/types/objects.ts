@@ -1180,10 +1180,15 @@ export interface ScenarioListResponse {
 export interface ClusterProfile {
     name: string;
     description: string;
-    key_behaviors: string[];
-    pain_points: string[];
-    best_practices: string[];
-    sla_recommendation: string;
+    key_behaviors: string[] | null;
+    pain_points: string[] | null;
+    best_practices: string[] | null;
+    sla_recommendation: string | null;
+}
+
+export interface ScalerParam {
+    mean: number;
+    scale: number;
 }
 
 export interface WorkerCluster {
@@ -1195,6 +1200,7 @@ export interface WorkerCluster {
     cluster_profile: ClusterProfile | null;
     feature_vector: Record<string, number> | null;
     pca_3d: [number, number, number] | null;
+    scaler_params: Record<string, ScalerParam> | null;
     run_id: string;
     computed_at: string;
 }

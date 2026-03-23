@@ -171,6 +171,7 @@ Error (404): analysis not found.
 - `cluster_profile` — JSONB, nullable. Structured profile: `{name, description, key_behaviors[], pain_points[], best_practices[], sla_recommendation}`
 - `feature_vector` — JSONB, nullable. Raw 30-feature values as `{feature_name: float}`
 - `pca_3d` — JSONB, nullable. 3D PCA coordinates as `[x, y, z]` for visualization
+- `scaler_params` — JSONB, nullable. StandardScaler parameters per feature: `{feature_name: {mean: float, scale: float}}`. Used for real-time scoring: `z = (raw - mean) / scale`
 - `run_id` — Text, NOT NULL. Pipeline run identifier (e.g. `cluster_20260323T021250Z`)
 - `computed_at` — DateTime(tz), NOT NULL. When this clustering was computed
 - `created_at` — DateTime(tz), server_default=now()
@@ -182,7 +183,7 @@ Indexes:
 - `worker_clusters_computed_at_idx` on `(computed_at DESC)`
 
 Notes:
-- Table is populated by the `cluster-workers` Airflow DAG (monthly schedule)
+- Table is populated by the `analyze-worker-clusters` Airflow DAG (monthly schedule)
 - Each run replaces all assignments via upsert (ON CONFLICT worker_oid DO UPDATE)
 - No registry sync trigger (cluster data is analytics, not an entity)
 
@@ -254,6 +255,11 @@ Response (200):
         ...
       },
       "pca_3d": [1.23, -0.45, 0.78],
+      "scaler_params": {
+        "tenure_months": {"mean": 33.12, "scale": 25.44},
+        "is_vip": {"mean": 0.018, "scale": 0.132},
+        "incident_count": {"mean": 3.45, "scale": 6.21}
+      },
       "run_id": "cluster_20260323T021250Z",
       "computed_at": "2026-03-23T02:12:50Z"
     }
@@ -283,6 +289,11 @@ Request body:
 {
   "run_id": "cluster_20260323T021250Z",
   "computed_at": "2026-03-23T02:12:50Z",
+  "scaler_params": {
+    "tenure_months": {"mean": 33.12, "scale": 25.44},
+    "is_vip": {"mean": 0.018, "scale": 0.132},
+    "incident_count": {"mean": 3.45, "scale": 6.21}
+  },
   "assignments": [
     {
       "worker_oid": "<base64url OID>",
@@ -301,6 +312,7 @@ Request body:
 Validation:
 - `run_id`: required, min_length=1
 - `computed_at`: required, ISO8601 datetime
+- `scaler_params`: optional, `{feature_name: {mean: float, scale: float}}` — same value applied to all assignments in the batch
 - `worker_oid`: required, valid base64url OID
 - `cluster_probability`: 0.0 ≤ value ≤ 1.0
 - `outlier_score`: ≥ 0.0

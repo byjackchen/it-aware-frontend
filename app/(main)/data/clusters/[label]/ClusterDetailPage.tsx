@@ -131,10 +131,10 @@ export function ClusterDetailPage({
         }
     }, [assignments.length, totalAssignments, loadMore]);
 
-    // Compute average feature vector for radar chart
-    const avgFeatureVector = useMemo(() => {
+    // Compute average feature vector and get shared scaler_params for z-score radar
+    const { avgFeatureVector, scalerParams } = useMemo(() => {
         const withVectors = assignments.filter((a) => a.feature_vector);
-        if (withVectors.length === 0) return null;
+        if (withVectors.length === 0) return { avgFeatureVector: null, scalerParams: null };
         const sums: Record<string, number> = {};
         const counts: Record<string, number> = {};
         for (const a of withVectors) {
@@ -147,28 +147,31 @@ export function ClusterDetailPage({
         for (const k of Object.keys(sums)) {
             avg[k] = sums[k] / counts[k];
         }
-        return avg;
+        // Use scaler_params from first assignment (shared across all workers in a run)
+        const sp = withVectors[0]?.scaler_params ?? null;
+        return { avgFeatureVector: avg, scalerParams: sp };
     }, [assignments]);
 
     const radarData = useMemo(() => {
         if (!avgFeatureVector) return [];
-        return Object.entries(avgFeatureVector)
-            .map(([key, value]) => ({ key, absValue: Math.abs(value), value }))
-            .sort((a, b) => b.absValue - a.absValue)
-            .slice(0, 10)
-            .map(({ key, value }) => {
-                const label = FEATURE_LABELS[key];
-                return {
-                    feature: label ? (locale === 'zh' ? label.zh : label.en) : key,
-                    value,
-                };
-            });
-    }, [avgFeatureVector, locale]);
 
-    const radarMax = useMemo(() => {
-        if (radarData.length === 0) return 5;
-        return Math.max(...radarData.map((d) => Math.abs(d.value))) * 1.3;
-    }, [radarData]);
+        const entries = Object.entries(avgFeatureVector).map(([key, raw]) => {
+            const param = scalerParams?.[key];
+            const z = param && param.scale > 0 ? (raw - param.mean) / param.scale : 0;
+            return { key, raw, z, absZ: Math.abs(z) };
+        });
+
+        const top = entries.sort((a, b) => b.absZ - a.absZ).slice(0, 10);
+
+        return top.map(({ key, raw, absZ }) => {
+            const fl = FEATURE_LABELS[key];
+            return {
+                feature: fl ? (locale === 'zh' ? fl.zh : fl.en) : key,
+                normalized: absZ,
+                rawValue: raw,
+            };
+        });
+    }, [avgFeatureVector, scalerParams, locale]);
 
     return (
         <div className="h-[calc(100vh-4rem)] overflow-y-auto p-4">
@@ -211,7 +214,7 @@ export function ClusterDetailPage({
                                 <div>
                                     <div className={labelClass}>{tPersona('behaviors')}</div>
                                     <ul className="space-y-1 mt-1">
-                                        {profile.key_behaviors.map((b, i) => (
+                                        {(profile.key_behaviors ?? []).map((b, i) => (
                                             <li key={i} className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
                                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
                                                 {b}
@@ -223,7 +226,7 @@ export function ClusterDetailPage({
                                 <div>
                                     <div className={labelClass}>{tPersona('painPoints')}</div>
                                     <ul className="space-y-1 mt-1">
-                                        {profile.pain_points.map((p, i) => (
+                                        {(profile.pain_points ?? []).map((p, i) => (
                                             <li key={i} className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
                                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                                                 {p}
@@ -235,7 +238,7 @@ export function ClusterDetailPage({
                                 <div>
                                     <div className={labelClass}>{tPersona('bestPractices')}</div>
                                     <ul className="space-y-1 mt-1">
-                                        {profile.best_practices.map((bp, i) => (
+                                        {(profile.best_practices ?? []).map((bp, i) => (
                                             <li key={i} className={`text-sm flex items-start gap-2 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
                                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                                                 {bp}
@@ -265,13 +268,13 @@ export function ClusterDetailPage({
                                                 tick={{ fill: isLight ? '#64748b' : '#94a3b8', fontSize: 10 }}
                                             />
                                             <PolarRadiusAxis
-                                                domain={[0, radarMax]}
+                                                domain={[0, Math.ceil(Math.max(...radarData.map((d) => d.normalized), 1))]}
                                                 tick={{ fill: isLight ? '#94a3b8' : '#64748b', fontSize: 9 }}
                                                 axisLine={false}
                                             />
                                             <Radar
-                                                name="Feature Value"
-                                                dataKey="value"
+                                                name="Z-Score"
+                                                dataKey="normalized"
                                                 stroke="#6366f1"
                                                 fill="#6366f1"
                                                 fillOpacity={0.15}
@@ -283,6 +286,13 @@ export function ClusterDetailPage({
                                                     borderRadius: '8px',
                                                     color: isLight ? '#1e293b' : '#f1f5f9',
                                                     fontSize: 12,
+                                                }}
+                                                formatter={(_val, _name, props) => {
+                                                    const p = props as { payload?: { rawValue?: number; normalized?: number } };
+                                                    const raw = p.payload?.rawValue;
+                                                    const z = p.payload?.normalized;
+                                                    const label = raw !== undefined ? `${raw.toFixed(2)} (${z !== undefined ? z.toFixed(1) : '—'}σ)` : '—';
+                                                    return [label, 'Value'];
                                                 }}
                                             />
                                         </RadarChart>
