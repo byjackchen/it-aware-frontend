@@ -8,10 +8,11 @@ The Objects module manages business entities that are not hierarchical but inter
 
 ```
 /objects/
-├── /workers                - Worker (employee) management
-│   ├── /{worker_oid}/profile   - AI-processed profile data
-│   └── /{worker_oid}/hardwares - Hardware assigned to workers
-└── /worker-hierarchy-roles - Role assignments at hierarchy nodes
+├── /workers                         - Worker (employee) management
+│   ├── /profile?worker_oid=...      - AI-processed profile data
+│   ├── /hardwares?worker_oid=...    - Hardware assigned to workers
+│   └── /detail?oid=...              - Single worker operations
+└── /worker-hierarchy-roles          - Role assignments at hierarchy nodes
 ```
 
 > [!NOTE]
@@ -217,12 +218,18 @@ class WorkerListResponse(BaseModel):
 |--------|------|-------------|------------|
 | POST | `/objects/workers` | Create worker | `objects:workers:edit` |
 | GET | `/objects/workers` | List workers | `objects:workers:read` |
-| GET | `/objects/workers/{oid}` | Get worker | `objects:workers:read` |
-| PUT | `/objects/workers/{oid}` | Update worker | `objects:workers:edit` |
-| DELETE | `/objects/workers/{oid}` | Delete worker | `objects:workers:edit` |
+| GET | `/objects/workers/detail?oid={oid}` | Get worker | `objects:workers:read` |
+| PUT | `/objects/workers/detail?oid={oid}` | Update worker | `objects:workers:edit` |
+| DELETE | `/objects/workers/detail?oid={oid}` | Delete worker | `objects:workers:edit` |
 
 > [!NOTE]
 > Deleting a worker cascades to `account_worker`, `worker_hierarchy_role`, and `worker_profiles`.
+
+#### Query Parameters (Detail)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `oid` | string | Yes | Worker OID (22-char base64url ULID) |
 
 ### Error Responses
 
@@ -332,11 +339,24 @@ class WorkerHardwareResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
-| GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
-| GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
-| PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
-| DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
+| POST | `/objects/workers/hardwares?worker_oid={worker_oid}` | Create hardware | `objects:workers:edit` |
+| GET | `/objects/workers/hardwares?worker_oid={worker_oid}` | List hardware | `objects:workers:read` |
+| GET | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Get hardware | `objects:workers:read` |
+| PUT | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Update hardware | `objects:workers:edit` |
+| DELETE | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Delete hardware | `objects:workers:edit` |
+
+#### Query Parameters (Hardwares)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
+
+#### Query Parameters (Hardware Detail)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
+| `hardware_oid` | string | Yes | Hardware OID (22-char base64url ULID) |
 
 > [!NOTE]
 > Deleting a worker cascades to all associated hardware records.
@@ -404,8 +424,14 @@ class WorkerProfileResponse(BaseModel):
 
 | Method | Path | Description | Permission |
 |--------|------|-------------|------------|
-| GET | `/objects/workers/{worker_oid}/profile` | Get worker profile | `objects:workers:read` |
-| PUT | `/objects/workers/{worker_oid}/profile` | Create/update worker profile | `objects:workers:edit` |
+| GET | `/objects/workers/profile?worker_oid={worker_oid}` | Get worker profile | `objects:workers:read` |
+| PUT | `/objects/workers/profile?worker_oid={worker_oid}` | Create/update worker profile | `objects:workers:edit` |
+
+#### Query Parameters (Profile)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
 
 #### Behavior Notes
 
@@ -500,22 +526,22 @@ class WorkerHierarchyRoleResponse(BaseModel):
 | **Workers** |||||
 | 1 | POST | `/objects/workers` | Create worker | `objects:workers:edit` |
 | 2 | GET | `/objects/workers` | List workers | `objects:workers:read` |
-| 3 | GET | `/objects/workers/{oid}` | Get worker | `objects:workers:read` |
-| 4 | PUT | `/objects/workers/{oid}` | Update worker | `objects:workers:edit` |
-| 5 | DELETE | `/objects/workers/{oid}` | Delete worker | `objects:workers:edit` |
+| 3 | GET | `/objects/workers/detail?oid={oid}` | Get worker | `objects:workers:read` |
+| 4 | PUT | `/objects/workers/detail?oid={oid}` | Update worker | `objects:workers:edit` |
+| 5 | DELETE | `/objects/workers/detail?oid={oid}` | Delete worker | `objects:workers:edit` |
 | **Worker Profiles** |||||
-| 6 | GET | `/objects/workers/{worker_oid}/profile` | Get worker profile | `objects:workers:read` |
-| 7 | PUT | `/objects/workers/{worker_oid}/profile` | Create/update worker profile | `objects:workers:edit` |
+| 6 | GET | `/objects/workers/profile?worker_oid={worker_oid}` | Get worker profile | `objects:workers:read` |
+| 7 | PUT | `/objects/workers/profile?worker_oid={worker_oid}` | Create/update worker profile | `objects:workers:edit` |
 | **Worker-Hierarchy-Roles** |||||
 | 8 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
 | 9 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
 | 10 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
 | **Worker Hardwares** |||||
-| 11 | POST | `/objects/workers/{worker_oid}/hardwares` | Create hardware | `objects:workers:edit` |
-| 12 | GET | `/objects/workers/{worker_oid}/hardwares` | List hardware | `objects:workers:read` |
-| 13 | GET | `/objects/workers/{worker_oid}/hardwares/{oid}` | Get hardware | `objects:workers:read` |
-| 14 | PUT | `/objects/workers/{worker_oid}/hardwares/{oid}` | Update hardware | `objects:workers:edit` |
-| 15 | DELETE | `/objects/workers/{worker_oid}/hardwares/{oid}` | Delete hardware | `objects:workers:edit` |
+| 11 | POST | `/objects/workers/hardwares?worker_oid={worker_oid}` | Create hardware | `objects:workers:edit` |
+| 12 | GET | `/objects/workers/hardwares?worker_oid={worker_oid}` | List hardware | `objects:workers:read` |
+| 13 | GET | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Get hardware | `objects:workers:read` |
+| 14 | PUT | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Update hardware | `objects:workers:edit` |
+| 15 | DELETE | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Delete hardware | `objects:workers:edit` |
 
 ---
 

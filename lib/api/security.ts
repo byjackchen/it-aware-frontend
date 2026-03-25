@@ -293,5 +293,5 @@ export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
 }
 
 export async function getWorker(oid: string): Promise<Worker> {
-  return fetchApi<Worker>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`);
+  return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`);
 }

@@ -74,8 +74,11 @@ export function LoadingSpinner({
  * Centers content in the available space.
  */
 export function PageLoading({ text }: { text?: string }) {
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
     return (
-        <div className="flex items-center justify-center min-h-[50vh]">
+        <div className={`absolute inset-0 flex items-center justify-center ${isLight ? 'bg-slate-50' : 'bg-[#0a0a14]'}`}>
             <LoadingSpinner size="lg" text={text} />
         </div>
     );

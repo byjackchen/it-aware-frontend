@@ -302,12 +302,12 @@ export async function getWorkersPage(params: ActivePagedListParams = {}): Promis
 }
 
 export async function getWorker(oid: string): Promise<Worker> {
-    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`);
+    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`);
 }
 
 export async function getWorkerProfile(workerOid: string): Promise<WorkerProfile | null> {
     try {
-        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/profile`);
+        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?worker_oid=${encodeURIComponent(workerOid)}`);
     } catch (error) {
         if (error instanceof Error) {
             const message = error.message.toLowerCase();
@@ -332,20 +332,20 @@ export async function createWorker(data: WorkerCreate): Promise<Worker> {
 }
 
 export async function updateWorker(oid: string, data: WorkerUpdate): Promise<Worker> {
-    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`, {
+    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
 export async function deleteWorker(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/workers/${encodeURIComponent(oid)}`, {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`, {
         method: 'DELETE',
     });
 }
 
 export async function upsertWorkerProfile(workerOid: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
-    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/profile`, {
+    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?worker_oid=${encodeURIComponent(workerOid)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
@@ -360,11 +360,11 @@ export async function getWorkerHardwares(workerOid: string, includeInactive: boo
     if (includeInactive) params.append('is_active', 'false');
     else params.append('is_active', 'true');
 
-    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares?${params.toString()}`);
+    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/hardwares?worker_oid=${encodeURIComponent(workerOid)}&${params.toString()}`);
 }
 
 export async function createWorkerHardware(workerOid: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares`, {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares?worker_oid=${encodeURIComponent(workerOid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -372,7 +372,7 @@ export async function createWorkerHardware(workerOid: string, data: WorkerHardwa
 }
 
 export async function updateWorkerHardware(workerOid: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares/detail?worker_oid=${encodeURIComponent(workerOid)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -380,7 +380,7 @@ export async function updateWorkerHardware(workerOid: string, hardwareOid: strin
 }
 
 export async function deleteWorkerHardware(workerOid: string, hardwareOid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/workers/${encodeURIComponent(workerOid)}/hardwares/${encodeURIComponent(hardwareOid)}`, {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/hardwares/detail?worker_oid=${encodeURIComponent(workerOid)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'DELETE',
     });
 }
