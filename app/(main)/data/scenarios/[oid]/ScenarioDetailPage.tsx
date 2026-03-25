@@ -47,7 +47,8 @@ export function ScenarioDetailPage({ scenario, edges, workers }: ScenarioDetailP
         scenario.scenario_profile?.key_topics?.join(', ') || ''
     );
 
-    const workerName = workers.find((w) => w.oid === scenario.worker_oid)?.fullname || scenario.worker_oid;
+    const scenarioWorker = workers.find((w) => w.oid === scenario.worker_oid);
+    const workerName = scenarioWorker?.fullname || scenario.worker_oid;
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === scenario.oid ? e.to_object : e.from_object;
@@ -159,7 +160,7 @@ export function ScenarioDetailPage({ scenario, edges, workers }: ScenarioDetailP
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('scenarios.worker')}</label>
                             <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                <Link href={`/data/workers/${scenario.worker_oid}`} className="underline underline-offset-4">
+                                <Link href={`/data/workers/${scenarioWorker?.stable_id || scenario.worker_oid}`} className="underline underline-offset-4">
                                     {workerName}
                                 </Link>
                             </div>

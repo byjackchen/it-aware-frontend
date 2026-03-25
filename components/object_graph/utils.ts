@@ -14,11 +14,11 @@ export function getTypeColor(objectType: string): { bg: string; border: string }
     return TYPE_COLORS[objectType] ?? TYPE_COLORS.default;
 }
 
-export function getObjectPath(objectType: string, oid: string): string {
+export function getObjectPath(objectType: string, oid: string, stableId?: string): string {
     switch (objectType) {
         case 'organization': return `/data/organizations/${oid}`;
         case 'location': return `/data/locations/${oid}`;
-        case 'worker': return `/data/workers/${oid}`;
+        case 'worker': return `/data/workers/${stableId || oid}`;
         case 'article': return `/data/articles/${oid}`;
         case 'incident': return `/data/incidents/${oid}`;
         case 'request': return `/data/requests/${oid}`;

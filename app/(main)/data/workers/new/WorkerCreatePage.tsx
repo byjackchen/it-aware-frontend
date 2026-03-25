@@ -99,7 +99,7 @@ export function WorkerCreatePage() {
             formData.set('is_active', 'true');
 
             const result = await createWorkerAction(formData);
-            router.push(`/data/workers/${result.oid}`);
+            router.push(`/data/workers/${result.stable_id}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create worker');
         } finally {

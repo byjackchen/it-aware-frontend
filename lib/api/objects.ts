@@ -287,6 +287,21 @@ export async function deleteServiceCatalog(oid: string): Promise<void> {
 // Worker APIs
 // ============================================================================
 
+/** OIDs are 22-char base64url-encoded ULIDs (only [A-Za-z0-9_-]). */
+const OID_RE = /^[A-Za-z0-9_-]{22}$/;
+
+/** Build `oid=<v>` or `stable_id=<v>` based on the identifier format. */
+function workerIdParam(id: string): string {
+    const key = OID_RE.test(id) ? 'oid' : 'stable_id';
+    return `${key}=${encodeURIComponent(id)}`;
+}
+
+/** Build `worker_oid=<v>` or `stable_id=<v>` based on the identifier format. */
+function workerOidParam(id: string): string {
+    const key = OID_RE.test(id) ? 'worker_oid' : 'stable_id';
+    return `${key}=${encodeURIComponent(id)}`;
+}
+
 export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
     let baseUrl = `${OBJECTS_BASE}/workers`;
     if (isActive !== undefined) {
@@ -301,13 +316,13 @@ export async function getWorkersPage(params: ActivePagedListParams = {}): Promis
     return ensureListEnvelope<Worker>(response, url).items;
 }
 
-export async function getWorker(oid: string): Promise<Worker> {
-    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`);
+export async function getWorker(id: string): Promise<Worker> {
+    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?${workerIdParam(id)}`);
 }
 
-export async function getWorkerProfile(workerOid: string): Promise<WorkerProfile | null> {
+export async function getWorkerProfile(workerOidOrStableId: string): Promise<WorkerProfile | null> {
     try {
-        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?worker_oid=${encodeURIComponent(workerOid)}`);
+        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`);
     } catch (error) {
         if (error instanceof Error) {
             const message = error.message.toLowerCase();
@@ -331,21 +346,21 @@ export async function createWorker(data: WorkerCreate): Promise<Worker> {
     });
 }
 
-export async function updateWorker(oid: string, data: WorkerUpdate): Promise<Worker> {
-    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`, {
+export async function updateWorker(id: string, data: WorkerUpdate): Promise<Worker> {
+    return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?${workerIdParam(id)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteWorker(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`, {
+export async function deleteWorker(id: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/detail?${workerIdParam(id)}`, {
         method: 'DELETE',
     });
 }
 
-export async function upsertWorkerProfile(workerOid: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
-    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?worker_oid=${encodeURIComponent(workerOid)}`, {
+export async function upsertWorkerProfile(workerOidOrStableId: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
+    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     });
@@ -355,32 +370,32 @@ export async function upsertWorkerProfile(workerOid: string, data: WorkerProfile
 // Worker Hardware APIs
 // ============================================================================
 
-export async function getWorkerHardwares(workerOid: string, includeInactive: boolean = false): Promise<WorkerHardware[]> {
+export async function getWorkerHardwares(workerOidOrStableId: string, includeInactive: boolean = false): Promise<WorkerHardware[]> {
     const params = new URLSearchParams();
     if (includeInactive) params.append('is_active', 'false');
     else params.append('is_active', 'true');
 
-    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/hardwares?worker_oid=${encodeURIComponent(workerOid)}&${params.toString()}`);
+    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/hardwares?${workerOidParam(workerOidOrStableId)}&${params.toString()}`);
 }
 
-export async function createWorkerHardware(workerOid: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares?worker_oid=${encodeURIComponent(workerOid)}`, {
+export async function createWorkerHardware(workerOidOrStableId: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares?${workerOidParam(workerOidOrStableId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
 
-export async function updateWorkerHardware(workerOid: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares/detail?worker_oid=${encodeURIComponent(workerOid)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
+export async function updateWorkerHardware(workerOidOrStableId: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
+    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares/detail?${workerOidParam(workerOidOrStableId)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteWorkerHardware(workerOid: string, hardwareOid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/workers/hardwares/detail?worker_oid=${encodeURIComponent(workerOid)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
+export async function deleteWorkerHardware(workerOidOrStableId: string, hardwareOid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/workers/hardwares/detail?${workerOidParam(workerOidOrStableId)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'DELETE',
     });
 }

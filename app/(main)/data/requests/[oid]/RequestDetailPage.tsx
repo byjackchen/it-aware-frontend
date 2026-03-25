@@ -339,7 +339,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                             <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                             <span className="text-sm capitalize">{actorRoleLabel}:</span>
                             {creator ? (
-                                <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
+                                <Link href={`/data/workers/${creator.stable_id}`} className="underline underline-offset-4">
                                     {creatorStableId}
                                 </Link>
                             ) : (

@@ -11,15 +11,26 @@ interface PageProps {
 }
 
 export default async function WorkerPage({ params }: PageProps) {
-    const { oid } = await params;
-    const [worker, edgesResponse, organizations, locations, hardwares] = await (async () => {
+    const { oid: id } = await params;
+
+    // Resolve worker first (id may be an OID or stable_id)
+    let worker: Awaited<ReturnType<typeof getWorker>>;
+    try {
+        worker = await getWorker(id);
+    } catch {
+        notFound();
+    }
+
+    // Use resolved OID for APIs that require it (edges) and for consistency
+    const workerOid = worker.oid;
+
+    const [edgesResponse, organizations, locations, hardwares] = await (async () => {
         try {
             return await Promise.all([
-                getWorker(oid),
-                getConnectedEdges(oid),
+                getConnectedEdges(workerOid),
                 getOrganizations(),
                 getLocations(),
-                getWorkerHardwares(oid),
+                getWorkerHardwares(workerOid),
             ]);
         } catch {
             notFound();
@@ -27,7 +38,7 @@ export default async function WorkerPage({ params }: PageProps) {
     })();
     let workerProfile = null;
     try {
-        workerProfile = await getWorkerProfile(oid);
+        workerProfile = await getWorkerProfile(workerOid);
     } catch (error) {
         if (typeof error === 'object' && error !== null && 'digest' in error) {
             const digest = (error as { digest?: unknown }).digest;
@@ -35,7 +46,7 @@ export default async function WorkerPage({ params }: PageProps) {
                 throw error;
             }
         }
-        console.warn(`Failed to fetch worker profile for oid=${oid}; rendering without profile`, error);
+        console.warn(`Failed to fetch worker profile for oid=${workerOid}; rendering without profile`, error);
     }
 
     return (

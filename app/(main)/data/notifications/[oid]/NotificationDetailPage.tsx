@@ -123,7 +123,7 @@ export function NotificationDetailPage({ notification, notificationBatch, worker
                         <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                             <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                             {receiver ? (
-                                <Link href={`/data/workers/${receiver.oid}`} className="underline underline-offset-4">
+                                <Link href={`/data/workers/${receiver.stable_id}`} className="underline underline-offset-4">
                                     {receiver.fullname} ({notification.receiver_stable_id})
                                 </Link>
                             ) : (

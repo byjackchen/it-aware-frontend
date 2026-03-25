@@ -14,19 +14,21 @@ interface PersonaWorkerPageProps {
 }
 
 export default async function PersonaWorkerPage({ params }: PersonaWorkerPageProps) {
-    const { oid } = await params;
+    const { oid: id } = await params;
 
-    const worker = await getWorker(oid).catch(() => null);
+    // id may be an OID or stable_id
+    const worker = await getWorker(id).catch(() => null);
     if (!worker) {
         notFound();
     }
 
+    const workerOid = worker.oid;
     const [workerProfile, organization, location, edgesResponse, workerCluster, clusterSummary] = await Promise.all([
-        getWorkerProfile(worker.oid).catch(() => null),
+        getWorkerProfile(workerOid).catch(() => null),
         getOrganization(worker.org_oid).catch(() => null),
         worker.location_oid ? getLocation(worker.location_oid).catch(() => null) : Promise.resolve(null),
-        getConnectedEdges(worker.oid).catch(() => ({ items: [], total: 0, page: 1, page_size: 100 })),
-        getWorkerCluster(worker.oid).catch(() => null),
+        getConnectedEdges(workerOid).catch(() => ({ items: [], total: 0, page: 1, page_size: 100 })),
+        getWorkerCluster(workerOid).catch(() => null),
         getClusterSummary().catch(() => null),
     ]);
 

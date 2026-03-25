@@ -227,9 +227,12 @@ class WorkerListResponse(BaseModel):
 
 #### Query Parameters (Detail)
 
+All detail/profile/hardware endpoints accept **either** `oid`/`worker_oid` **or** `stable_id` to identify the worker. Providing both or neither returns `422`.
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `oid` | string | Yes | Worker OID (22-char base64url ULID) |
+| `oid` | string | One of `oid` or `stable_id` | Worker OID (22-char base64url ULID) |
+| `stable_id` | string | One of `oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
 
 ### Error Responses
 
@@ -239,6 +242,8 @@ class WorkerListResponse(BaseModel):
 | 404 | Manager not found | `{"detail": "Manager not found"}` |
 | 409 | Worker ID exists | `{"detail": "Worker ID already exists"}` |
 | 409 | Email exists | `{"detail": "Email already in use"}` |
+| 422 | Both oid and stable_id provided | `{"detail": "Provide either oid or stable_id, not both"}` |
+| 422 | Neither oid nor stable_id provided | `{"detail": "Provide either oid or stable_id"}` |
 
 ### Query Parameters (List)
 
@@ -349,13 +354,15 @@ class WorkerHardwareResponse(BaseModel):
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
+| `worker_oid` | string | One of `worker_oid` or `stable_id` | Worker OID (22-char base64url ULID) |
+| `stable_id` | string | One of `worker_oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
 
 #### Query Parameters (Hardware Detail)
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
+| `worker_oid` | string | One of `worker_oid` or `stable_id` | Worker OID (22-char base64url ULID) |
+| `stable_id` | string | One of `worker_oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
 | `hardware_oid` | string | Yes | Hardware OID (22-char base64url ULID) |
 
 > [!NOTE]
@@ -431,7 +438,8 @@ class WorkerProfileResponse(BaseModel):
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `worker_oid` | string | Yes | Worker OID (22-char base64url ULID) |
+| `worker_oid` | string | One of `worker_oid` or `stable_id` | Worker OID (22-char base64url ULID) |
+| `stable_id` | string | One of `worker_oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
 
 #### Behavior Notes
 

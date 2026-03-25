@@ -292,6 +292,10 @@ export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
   return ensureListEnvelope<Worker>(response, url).items;
 }
 
-export async function getWorker(oid: string): Promise<Worker> {
-  return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?oid=${encodeURIComponent(oid)}`);
+/** OIDs are 22-char base64url-encoded ULIDs. */
+const OID_RE = /^[A-Za-z0-9_-]{22}$/;
+
+export async function getWorker(id: string): Promise<Worker> {
+  const key = OID_RE.test(id) ? 'oid' : 'stable_id';
+  return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?${key}=${encodeURIComponent(id)}`);
 }

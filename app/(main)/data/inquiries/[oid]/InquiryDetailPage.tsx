@@ -275,7 +275,7 @@ export function InquiryDetailPage({ inquiry, edges, workers, serviceCatalogs }: 
                                 <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                                     <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     {creator ? (
-                                        <Link href={`/data/workers/${creator.oid}`} className="underline underline-offset-4">
+                                        <Link href={`/data/workers/${creator.stable_id}`} className="underline underline-offset-4">
                                             {creatorStableId}
                                         </Link>
                                     ) : (

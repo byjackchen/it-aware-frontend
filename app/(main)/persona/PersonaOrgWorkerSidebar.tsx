@@ -245,7 +245,7 @@ function OrgTreeNode({
                             return (
                                 <button
                                     key={worker.oid}
-                                    onClick={() => onSelectWorker(worker.oid)}
+                                    onClick={() => onSelectWorker(worker.stable_id)}
                                     className={`
                                         w-full flex items-start gap-2 py-1.5 rounded-md text-left transition-colors
                                         ${isCurrent

@@ -170,7 +170,7 @@ export function WorkersListPage() {
                             {filteredWorkers.map((worker) => (
                                 <button
                                     key={worker.oid}
-                                    onClick={() => router.push(`/data/workers/${worker.oid}`)}
+                                    onClick={() => router.push(`/data/workers/${worker.stable_id}`)}
                                     className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
                                 >
                                     <div className="flex items-center gap-3">
