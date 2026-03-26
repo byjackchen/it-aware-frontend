@@ -14,7 +14,7 @@ import { createRequestAction } from '@/app/actions/objects';
 
 const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
-const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'closed'];
+const STATE_OPTIONS = ['Pending', 'Open', 'Work in Progress', 'Closed Complete', 'Closed Incomplete', 'Closed Skipped'];
 
 export function RequestCreatePage() {
     const { theme } = useTheme();
@@ -25,7 +25,7 @@ export function RequestCreatePage() {
 
     const [title, setTitle] = useState('');
     const [actorOid, setActorOid] = useState('');
-    const [state, setState] = useState('new');
+    const [state, setState] = useState('Open');
 
     const [stableId, setStableId] = useState('');
     const [actorRole, setActorRole] = useState('requester');
@@ -189,7 +189,7 @@ export function RequestCreatePage() {
                                 required
                             >
                                 {STATE_OPTIONS.map((option) => (
-                                    <option key={option} value={option}>{option.replace(/_/g, ' ')}</option>
+                                    <option key={option} value={option}>{option}</option>
                                 ))}
                             </select>
                         </div>

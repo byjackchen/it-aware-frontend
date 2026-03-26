@@ -35,7 +35,7 @@ interface IncidentDetailPageProps {
 
 const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
-const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'closed'];
+const STATE_OPTIONS = ['New', 'In Progress', 'On Hold', 'Resolved', 'Closed', 'Canceled'];
 
 export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs }: IncidentDetailPageProps) {
     const { theme } = useTheme();
@@ -197,7 +197,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                             </button>
                         )}
                         {!isEditing && (
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium capitalize ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>
                                 {incident.state}
                             </div>
                         )}
@@ -329,15 +329,15 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 <select
                                     value={state}
                                     onChange={(e) => setState(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg capitalization ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
                                 >
                                     {STATE_OPTIONS.map(opt => (
-                                        <option key={opt} value={opt}>{opt.replace(/_/g, ' ')}</option>
+                                        <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
                             ) : (
                                 <div className={`flex items-center gap-1.5 text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                    <span className="capitalize">{incident.state}</span>
+                                    <span>{incident.state}</span>
                                 </div>
                             )}
                         </div>

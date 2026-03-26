@@ -190,10 +190,10 @@ export function InquiryDetailPage({ inquiry, edges, workers, serviceCatalogs }: 
                                 <select
                                     value={state}
                                     onChange={(e) => setState(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg capitalization ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
                                 >
                                     {STATE_OPTIONS.map(opt => (
-                                        <option key={opt} value={opt}>{opt.replace(/_/g, ' ')}</option>
+                                        <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
                             ) : (

@@ -34,7 +34,7 @@ interface RequestDetailPageProps {
 
 const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
-const STATE_OPTIONS = ['new', 'open', 'in_progress', 'pending', 'resolved', 'closed'];
+const STATE_OPTIONS = ['Pending', 'Open', 'Work in Progress', 'Closed Complete', 'Closed Incomplete', 'Closed Skipped'];
 
 export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: RequestDetailPageProps) {
     const { theme } = useTheme();
@@ -194,7 +194,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                             </button>
                         )}
                         {!isEditing && (
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium capitalize ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>
                                 {request.state}
                             </div>
                         )}
@@ -319,15 +319,15 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                                 <select
                                     value={state}
                                     onChange={(e) => setState(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg capitalization ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
                                 >
                                     {STATE_OPTIONS.map(opt => (
-                                        <option key={opt} value={opt}>{opt.replace(/_/g, ' ')}</option>
+                                        <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
                             ) : (
                                 <div className={`flex items-center gap-1.5 text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                    <span className="capitalize">{request.state}</span>
+                                    <span>{request.state}</span>
                                 </div>
                             )}
                         </div>

@@ -227,7 +227,7 @@ class IncidentListResponse(BaseModel):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `state` | string | null | Exact state filter |
+| `state` | string | null | Exact state filter. Values: `New`, `In Progress`, `On Hold`, `Resolved`, `Closed`, `Canceled` |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
@@ -349,7 +349,7 @@ class RequestListResponse(BaseModel):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `state` | string | null | Exact state filter |
+| `state` | string | null | Exact state filter. Values: `Pending`, `Open`, `Work in Progress`, `Closed Complete`, `Closed Incomplete`, `Closed Skipped` |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
