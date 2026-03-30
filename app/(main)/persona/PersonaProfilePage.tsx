@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { CalendarClock, Network, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { usePermissions } from '@/lib/contexts/user-context';
+import { PERMISSIONS } from '@/lib/config/permissions';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import { ObjectGraph } from '@/components/data';
 import type { GlobalEdge, Location, Organization, Worker, WorkerProfile, WorkerCluster, ClusterSummaryResponse } from '@/lib/types/objects';
@@ -40,6 +42,8 @@ export function PersonaProfilePage({
     const { timezone } = useTimezone();
     const t = useTranslations('Persona');
     const tData = useTranslations('Data');
+    const { hasPermission } = usePermissions();
+    const canReadSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_READ_SENSITIVE);
     const isLight = theme === 'light';
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
@@ -76,7 +80,7 @@ export function PersonaProfilePage({
                                 <div className="min-w-0">
                                     <h1 className={`text-2xl font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{currentWorker.fullname}</h1>
                                     <p className={`text-sm truncate ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                                        {currentWorker.job_title || currentWorker.job_band || t('status.notSet')}
+                                        {canReadSensitive ? (currentWorker.job_title || currentWorker.job_band || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}
                                     </p>
                                     <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                                         {currentWorker.stable_id}
@@ -173,27 +177,27 @@ export function PersonaProfilePage({
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobCategory')}</div>
-                                        <div className={valueClass}>{currentWorker.job_category || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_category || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobSubcategory')}</div>
-                                        <div className={valueClass}>{currentWorker.job_subcategory || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_subcategory || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobProfessionalLevel')}</div>
-                                        <div className={valueClass}>{currentWorker.job_professional_level || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_professional_level || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobManagementLevel')}</div>
-                                        <div className={valueClass}>{currentWorker.job_management_level || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_management_level || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobBand')}</div>
-                                        <div className={valueClass}>{currentWorker.job_band || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_band || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('workers.jobTitle')}</div>
-                                        <div className={valueClass}>{currentWorker.job_title || t('status.notSet')}</div>
+                                        <div className={valueClass}>{canReadSensitive ? (currentWorker.job_title || t('status.notSet')) : tData('workers.sensitiveFieldHidden')}</div>
                                     </div>
                                     <div>
                                         <div className={labelClass}>{tData('common.created')}</div>

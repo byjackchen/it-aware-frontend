@@ -14,6 +14,17 @@ All endpoints require authentication.
 | Analysis | `objects:analysiss:read` | `objects:analysiss:write` |
 | Worker Clusters | `objects:worker_clusters:read` | `objects:worker_clusters:write` |
 
+### ABAC Filtering
+
+Both Analysis and Worker Cluster read endpoints use **ABAC row-level filtering** anchored on the worker's organization hierarchy:
+
+- **Anchor**: `WORKER_ORG` — resolves `worker_oid` → `Worker.org_oid` → organization hierarchy node
+- **Unconstrained** users see all records
+- **Self-scoped** users see only records where `worker_oid` matches their linked worker
+- **Role-based** users see records for workers within their assigned organization hierarchy
+
+Write endpoints (POST create, POST bulk) do not apply ABAC filtering — permission checks only. GET/PUT/DELETE on individual records return `403` if the record exists but the requester lacks scope access.
+
 ## Data Models
 
 ### Analysis (`insights.analysiss`)
@@ -171,7 +182,7 @@ Error (404): analysis not found.
 - `cluster_profile` — JSONB, nullable. Structured profile: `{name, description, key_behaviors[], pain_points[], best_practices[], sla_recommendation}`
 - `behavior_features` — JSONB, nullable. 28 behavioral feature values as `{feature_name: float}`. These features drive the clustering.
 - `label_features` — JSONB, nullable. Label features excluded from clustering but stored as overlay: `{is_vip: 0/1, is_new_hire: 0/1}`
-- `pca_3d` — JSONB, nullable. 3D PCA coordinates as `[x, y, z]` for visualization (derived from behavior features only)
+- `viz_coords` — JSONB, nullable. 2D UMAP coordinates as `[x, y]` for visualization (derived from behavior features via PCA → UMAP)
 - `behavior_scales` — JSONB, nullable. StandardScaler parameters per behavior feature: `{feature_name: {mean: float, scale: float}}`. Used for real-time scoring: `z = (raw - mean) / scale`
 - `run_id` — Text, NOT NULL. Pipeline run identifier (e.g. `cluster_20260323T021250Z`)
 - `computed_at` — DateTime(tz), NOT NULL. When this clustering was computed
@@ -187,7 +198,8 @@ Notes:
 - Table is populated by the `analyze-worker-clusters` Airflow DAG (monthly schedule)
 - Each run replaces all assignments via upsert (ON CONFLICT worker_oid DO UPDATE)
 - No registry sync trigger (cluster data is analytics, not an entity)
-- **Behavior vs Label separation**: `is_vip` and `is_new_hire` are label features — computed and stored but excluded from StandardScaler/PCA/HDBSCAN. Only behavior features (28) drive clustering. Labels are available as overlay for post-hoc analysis.
+- **Behavior vs Label separation**: `is_vip` and `is_new_hire` are label features — computed and stored but excluded from StandardScaler/PCA/UMAP/HDBSCAN. Only behavior features (28) drive clustering. Labels are available as overlay for post-hoc analysis.
+- **Pipeline**: StandardScaler → PCA (95% variance) → UMAP (10D for clustering, 2D for visualization) → HDBSCAN
 
 ## Worker Cluster APIs
 
@@ -260,7 +272,7 @@ Response (200):
         "is_vip": 1.0,
         "is_new_hire": 0.0
       },
-      "pca_3d": [1.23, -0.45, 0.78],
+      "viz_coords": [1.23, -0.45],
       "behavior_scales": {
         "tenure_months": {"mean": 33.12, "scale": 25.44},
         "incident_count": {"mean": 3.45, "scale": 6.21},
@@ -309,7 +321,7 @@ Request body:
       "cluster_profile": { ... },
       "behavior_features": { ... },
       "label_features": {"is_vip": 1.0, "is_new_hire": 0.0},
-      "pca_3d": [1.23, -0.45, 0.78]
+      "viz_coords": [1.23, -0.45]
     }
   ]
 }
@@ -341,6 +353,7 @@ Behavior: Uses `INSERT ... ON CONFLICT (worker_oid) DO UPDATE` for each assignme
 | 200 | Success (GET/PUT/POST bulk) |
 | 201 | Created successfully (POST analysis) |
 | 204 | Deleted successfully |
+| 403 | ABAC access denied (record exists but outside requester's scope) |
 | 404 | Resource not found |
 | 409 | Duplicate source_type + source_oid + topic (analysis) |
 | 422 | Validation error (invalid OID, invalid field value) |

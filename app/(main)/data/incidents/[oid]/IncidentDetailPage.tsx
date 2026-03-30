@@ -126,7 +126,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
             router.refresh();
         } catch (error) {
             console.error('Failed to update incident:', error);
-            alert('Failed to update incident');
+            alert(error instanceof Error ? error.message : 'Failed to update incident');
         } finally {
             setIsPending(false);
         }
@@ -140,7 +140,7 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
             router.push('/data/incidents');
         } catch (error) {
             console.error('Failed to delete incident:', error);
-            alert('Failed to delete incident');
+            alert(error instanceof Error ? error.message : 'Failed to delete incident');
         } finally {
             setIsPending(false);
         }

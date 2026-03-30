@@ -93,7 +93,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
             router.refresh();
         } catch (error) {
             console.error('Failed to update analysis:', error);
-            alert('Failed to update analysis');
+            alert(error instanceof Error ? error.message : 'Failed to update analysis');
         } finally {
             setIsPending(false);
         }
@@ -107,7 +107,7 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
             router.push('/data/analyses');
         } catch (error) {
             console.error('Failed to delete analysis:', error);
-            alert('Failed to delete analysis');
+            alert(error instanceof Error ? error.message : 'Failed to delete analysis');
         } finally {
             setIsPending(false);
         }

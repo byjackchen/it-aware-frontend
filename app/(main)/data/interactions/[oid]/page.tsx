@@ -2,7 +2,8 @@
  * Interaction detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getInteraction } from '@/lib/api/objects';
 import type { Interaction } from '@/lib/types/objects';
 import { InteractionDetailPage } from './InteractionDetailPage';
@@ -17,7 +18,10 @@ export default async function InteractionPage({ params }: PageProps) {
     let interaction: Interaction;
     try {
         interaction = await getInteraction(oid);
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
         notFound();
     }
 

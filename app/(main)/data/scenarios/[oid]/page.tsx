@@ -2,7 +2,8 @@
  * Scenario detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getConnectedEdges, getWorkers } from '@/lib/api/objects';
 import { getScenario } from '@/lib/api/scenarios';
 import { ScenarioDetailPage } from './ScenarioDetailPage';
@@ -28,7 +29,10 @@ export default async function ScenarioPage({ params }: PageProps) {
                 workers={workers}
             />
         );
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
         notFound();
     }
 }

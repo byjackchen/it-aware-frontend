@@ -2,7 +2,8 @@
  * Worker detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getWorker, getWorkerProfile, getConnectedEdges, getOrganizations, getLocations, getWorkerHardwares } from '@/lib/api/objects';
 import { WorkerDetailPage } from './WorkerDetailPage';
 
@@ -17,7 +18,10 @@ export default async function WorkerPage({ params }: PageProps) {
     let worker: Awaited<ReturnType<typeof getWorker>>;
     try {
         worker = await getWorker(id);
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
         notFound();
     }
 
@@ -32,7 +36,10 @@ export default async function WorkerPage({ params }: PageProps) {
                 getLocations(),
                 getWorkerHardwares(workerOid),
             ]);
-        } catch {
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 403) {
+                redirect('/access-denied');
+            }
             notFound();
         }
     })();

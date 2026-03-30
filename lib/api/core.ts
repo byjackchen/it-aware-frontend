@@ -5,6 +5,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 
 export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
     const cookieStore = await cookies();
@@ -36,7 +37,7 @@ export async function fetchApi<T>(url: string, options?: RequestInit): Promise<T
             : typeof error?.detail === 'string'
                 ? error.detail
                 : null;
-        throw new Error(message || `API Error: ${res.status}`);
+        throw new ApiError(message || `API Error: ${res.status}`, res.status);
     }
 
     if (res.status === 204) {

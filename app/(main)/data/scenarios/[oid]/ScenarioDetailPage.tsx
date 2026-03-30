@@ -75,7 +75,7 @@ export function ScenarioDetailPage({ scenario, edges, workers }: ScenarioDetailP
             router.refresh();
         } catch (error) {
             console.error('Failed to update scenario:', error);
-            alert('Failed to update scenario');
+            alert(error instanceof Error ? error.message : 'Failed to update scenario');
         } finally {
             setIsPending(false);
         }
@@ -89,7 +89,7 @@ export function ScenarioDetailPage({ scenario, edges, workers }: ScenarioDetailP
             router.push('/data/scenarios');
         } catch (error) {
             console.error('Failed to delete scenario:', error);
-            alert('Failed to delete scenario');
+            alert(error instanceof Error ? error.message : 'Failed to delete scenario');
         } finally {
             setIsPending(false);
         }

@@ -370,6 +370,8 @@
             "active": "Active",
             "inactive": "Inactive",
             "notSet": "Not set",
+            "sensitiveFieldHidden": "Restricted",
+            "sensitiveFieldNoEdit": "You do not have permission to edit sensitive job fields.",
             "count": "{filtered} of {total} worker",
             "countPlural": "{filtered} of {total} workers",
             "required": "Required",
@@ -1074,5 +1076,11 @@
                 "partialWrite": "Saved partially for survey batch {surveyBatchOid}: {processed} of {total} surveys were written. {error}"
             }
         }
+    },
+    "AccessDenied": {
+        "title": "Access Denied",
+        "message": "You don't have permission to access this resource. It may be outside your organizational scope.",
+        "goBack": "Go Back",
+        "goHome": "Go Home"
     }
 }

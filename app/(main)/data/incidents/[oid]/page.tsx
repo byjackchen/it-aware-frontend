@@ -2,7 +2,8 @@
  * Incident detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getIncident, getConnectedEdges, getOrganizations, getWorkers, getServiceCatalogs } from '@/lib/api/objects';
 import { IncidentDetailPage } from './IncidentDetailPage';
 
@@ -31,7 +32,10 @@ export default async function IncidentPage({ params }: PageProps) {
                 serviceCatalogs={serviceCatalogs}
             />
         );
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
         notFound();
     }
 }

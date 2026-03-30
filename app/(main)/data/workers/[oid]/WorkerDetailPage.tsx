@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { usePermissions } from '@/lib/contexts/user-context';
+import { PERMISSIONS } from '@/lib/config/permissions';
 import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import type { Worker, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location, WorkerHardware } from '@/lib/types/objects';
@@ -97,6 +99,9 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const { timezone } = useTimezone();
     const router = useRouter();
     const t = useTranslations('Data');
+    const { hasPermission } = usePermissions();
+    const canReadSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_READ_SENSITIVE);
+    const canEditSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_EDIT_SENSITIVE);
     const isLight = theme === 'light';
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
@@ -104,6 +109,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isProfilePending, setIsProfilePending] = useState(false);
     const [profileError, setProfileError] = useState<string | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     // Name field
     const [fullname, setFullname] = useState(worker.fullname);
@@ -143,6 +149,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
 
     const handleSave = async () => {
         setIsPending(true);
+        setSaveError(null);
         try {
             const formData = new FormData();
             formData.set('fullname', fullname);
@@ -163,6 +170,9 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
             await updateWorkerAction(worker.oid, formData);
             setIsEditing(false);
             router.refresh();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to save changes';
+            setSaveError(message);
         } finally {
             setIsPending(false);
         }
@@ -174,12 +184,16 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
         try {
             await deleteWorkerAction(worker.oid);
             router.push('/data/workers');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete worker';
+            alert(message);
         } finally {
             setIsPending(false);
         }
     };
 
     const handleCancel = () => {
+        setSaveError(null);
         setFullname(worker.fullname);
         setEmail(worker.email || '');
         setWorkerId(worker.worker_id || '');
@@ -460,12 +474,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Category */}
                         <div>
                             <label className={labelClass}>{t('workers.jobCategory')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobCategory} onChange={(e) => setJobCategory(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.job_category || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_category || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -473,12 +487,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Subcategory */}
                         <div>
                             <label className={labelClass}>{t('workers.jobSubcategory')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobSubcategory} onChange={(e) => setJobSubcategory(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.job_subcategory || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_subcategory || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -488,12 +502,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Professional Level */}
                         <div>
                             <label className={labelClass}>{t('workers.jobProfessionalLevel')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobProfessionalLevel} onChange={(e) => setJobProfessionalLevel(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.job_professional_level || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_professional_level || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -501,12 +515,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Management Level */}
                         <div>
                             <label className={labelClass}>{t('workers.jobManagementLevel')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobManagementLevel} onChange={(e) => setJobManagementLevel(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Users className={iconClass} />
-                                    <span className={textClass}>{worker.job_management_level || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_management_level || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -514,12 +528,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Band */}
                         <div>
                             <label className={labelClass}>{t('workers.jobBand')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobBand} onChange={(e) => setJobBand(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.job_band || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_band || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -527,12 +541,12 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                         {/* Job Title */}
                         <div>
                             <label className={labelClass}>{t('workers.jobTitle')}</label>
-                            {isEditing ? (
+                            {isEditing && canEditSensitive ? (
                                 <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Optional" className={inputClass} />
                             ) : (
                                 <div className={displayClass}>
                                     <Briefcase className={iconClass} />
-                                    <span className={textClass}>{worker.job_title || t('workers.notSet')}</span>
+                                    <span className={textClass}>{canReadSensitive ? (worker.job_title || t('workers.notSet')) : t('workers.sensitiveFieldHidden')}</span>
                                 </div>
                             )}
                         </div>
@@ -581,6 +595,13 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                             </div>
                         </div>
                     </div>
+
+                    {/* Save Error */}
+                    {saveError && (
+                        <div className={`p-3 rounded-lg text-sm ${isLight ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>
+                            {saveError}
+                        </div>
+                    )}
 
                     {/* Actions */}
                     {isEditing ? (

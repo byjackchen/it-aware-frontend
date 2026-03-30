@@ -2,7 +2,8 @@
  * Request detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getRequest, getConnectedEdges, getWorkers, getServiceCatalogs } from '@/lib/api/objects';
 import { RequestDetailPage } from './RequestDetailPage';
 
@@ -17,7 +18,12 @@ export default async function RequestPage({ params }: PageProps) {
         getConnectedEdges(oid),
         getWorkers(),
         getServiceCatalogs(),
-    ]).catch(() => notFound());
+    ]).catch((error) => {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
+        notFound();
+    });
 
     return (
         <RequestDetailPage

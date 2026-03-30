@@ -33,7 +33,33 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 | Resource | Read Permission | Edit Permission |
 |----------|-----------------|-----------------|
 | Workers | `objects:workers:read` | `objects:workers:edit` |
+| Workers (sensitive fields) | `objects:workers:read_sensitive` | `objects:workers:edit_sensitive` |
 | Worker-Hierarchy-Roles | `objects:worker_hierarchy_roles:read` | `objects:worker_hierarchy_roles:edit` |
+
+### Worker Sensitive Field Permissions
+
+Worker endpoints are **not** ABAC-filtered (all workers are visible to anyone with `objects:workers:read`). However, certain job-related fields are **sensitive** and require additional permissions:
+
+| Permission | Controls |
+|---|---|
+| `objects:workers:read_sensitive` | View the 6 job fields below (without this, they return `null`) |
+| `objects:workers:edit_sensitive` | Create/update the 6 job fields below (without this, attempts return `403`) |
+
+**Sensitive fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `job_category` | Text | 2-letter function code |
+| `job_subcategory` | Text | Second segment after `/` |
+| `job_professional_level` | Text | Numeric level 5-15 (OLD system) |
+| `job_management_level` | Text | L-patterns (OLD system) |
+| `job_band` | Text | Seniority band (NEW system) |
+| `job_title` | Text | Role description |
+
+**Behavior:**
+- **Read:** If the requester lacks `read_sensitive`, all 6 fields are returned as `null` in `WorkerResponse`.
+- **Create/Update:** If the requester lacks `edit_sensitive` and the request body includes any sensitive field, the endpoint returns `403` with detail listing the attempted fields.
+- **Non-sensitive fields** (`gender`, `hire_date`, `is_vip`, `vip_type`, `email`, etc.) are always visible and editable with base `read`/`edit` permissions.
 
 ---
 
@@ -238,6 +264,7 @@ All detail/profile/hardware endpoints accept **either** `oid`/`worker_oid` **or*
 
 | Status | Condition | Response |
 |--------|-----------|----------|
+| 403 | Missing `edit_sensitive` when setting job fields | `{"detail": "Missing permission to edit sensitive fields: ['job_band', ...]"}` |
 | 404 | Organization not found | `{"detail": "Organization not found"}` |
 | 404 | Manager not found | `{"detail": "Manager not found"}` |
 | 409 | Worker ID exists | `{"detail": "Worker ID already exists"}` |

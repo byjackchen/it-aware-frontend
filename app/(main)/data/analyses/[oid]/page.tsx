@@ -2,7 +2,8 @@
  * Analysis detail page - Server Component.
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { ApiError } from '@/lib/api/errors';
 import { getAnalysis } from '@/lib/api/insights';
 import { getConnectedEdges, getWorkers, getServiceCatalogs } from '@/lib/api/objects';
 import { getSurveyBatches } from '@/lib/api/campaigns';
@@ -46,7 +47,10 @@ export default async function AnalysisPage({ params }: PageProps) {
                 batchMap={batchMap}
             />
         );
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 403) {
+            redirect('/access-denied');
+        }
         notFound();
     }
 }

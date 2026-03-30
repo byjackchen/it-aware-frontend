@@ -30,7 +30,10 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 | Inquiries | `objects:inquiries:read` | `objects:inquiries:write` |
 | Interactions | `objects:interactions:read` | `objects:interactions:write` |
 
-**Note:** `incident`, `request`, and `inquiry` endpoints use ABAC (anchored on actor worker org). `interaction` endpoints currently enforce permission checks without per-row ABAC filtering.
+**ABAC:** All activity endpoints use ABAC row-level filtering anchored on the actor's worker organization:
+- `incident`, `request`, `inquiry`: anchored via `Activity.actor_oid` → `Worker.org_oid` (WORKER_ORG)
+- `interaction`: anchored via `Interaction.actor_oid` → `Worker.org_oid` (WORKER_ORG). Interactions with `actor_oid = NULL` (unresolved actor) are only visible to unconstrained users.
+- Batch write endpoints (`batch-upsert`, `batch-assign`, `batch-decide-assignment`) are typically called by system accounts with unconstrained scope.
 
 ---
 
@@ -227,7 +230,7 @@ class IncidentListResponse(BaseModel):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `state` | string | null | Exact state filter. Values: `New`, `In Progress`, `On Hold`, `Resolved`, `Closed`, `Canceled` |
+| `state` | string | null | Exact state filter |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
@@ -349,7 +352,7 @@ class RequestListResponse(BaseModel):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `state` | string | null | Exact state filter. Values: `Pending`, `Open`, `Work in Progress`, `Closed Complete`, `Closed Incomplete`, `Closed Skipped` |
+| `state` | string | null | Exact state filter |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
@@ -542,7 +545,7 @@ class InteractionBatchUpsertRequest(BaseModel):
 class InteractionUpsertItem(BaseModel):
     stable_id: str
     source_system: str
-    actor_stable_id: str
+    actor_stable_id: str  # resolved to actor_oid at ingest time via Worker.stable_id
     action_type: str  # preserve raw source action type
     content_text: Optional[str] = None
     content_raw: Optional[Dict[str, Any]] = None
@@ -669,7 +672,7 @@ class InteractionListResponse(BaseModel):
 | GET | `/objects/activities/interactions/{interaction_oid}` | Get single interaction | `objects:interactions:read` |
 | DELETE | `/objects/activities/interactions/{interaction_oid}` | Delete single interaction | `objects:interactions:write` |
 
-> **Access scope note**: unlike incidents/inquiries, interaction list/get APIs are not ABAC-filtered per actor hierarchy today.
+> **ABAC note**: Interaction list/get/delete APIs are ABAC-filtered via `actor_oid` → `Worker.org_oid` (WORKER_ORG anchor). The `actor_oid` column is resolved from `actor_stable_id` → `Worker.stable_id` at ingest time. Interactions with `actor_oid = NULL` are only visible to unconstrained users. Returns `403` if the interaction exists but the requester lacks scope access.
 
 ### Query Parameters (`GET /objects/activities/interactions`)
 
@@ -692,8 +695,7 @@ class InteractionListResponse(BaseModel):
 | `sort_by` | `created_at`/`ingested_at`/`updated_at` | `created_at` | Sort field |
 | `order` | `asc`/`desc` | `desc` | Sort direction |
 
-`actor_oid` is not a filter on interaction list because interactions currently store `actor_stable_id` (not `actor_oid`) in `activities.interactions`.
-Use `GET /objects/activities/interactions/{interaction_oid}` for exact OID lookup.
+Interactions now store both `actor_stable_id` (text, from source system) and `actor_oid` (BYTEA(16), FK to `objects.workers.oid`, nullable). The `actor_oid` is resolved from `actor_stable_id` → `Worker.stable_id` during `batch-upsert`. ABAC filtering uses `actor_oid` to anchor to the actor's organization hierarchy.
 
 List response now returns `InteractionListResponse` with:
 - `items`: current page records
@@ -706,6 +708,7 @@ Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for st
 
 | Status | Condition | Example |
 |--------|-----------|---------|
+| 403 | ABAC access denied (interaction exists but outside scope) | `{"detail": "Access denied to this interaction"}` |
 | 404 | Interaction not found / missing stable ids | `{"detail":{"message":"Interactions not found","code":"not_found","missing_stable_ids":[...]}}` |
 | 404 | Missing inquiry target/candidate | `{"detail":{"message":"Target inquiry not found","code":"not_found","missing_inquiry_oids":[...]}}` |
 | 422 | Invalid OID format or payload validation | `{"detail":{"message":"Validation error","code":"validation_error","errors":[...]}}` |
@@ -720,6 +723,7 @@ Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for st
 - Check: only `assigned`/`null` are valid assignment states, and `assignment_status='assigned'` requires non-null `assigned_inquiry_oid`
 - Indexes:
   - `(actor_stable_id, created_at DESC)`
+  - `(actor_oid)` — for ABAC joins
   - `(assignment_status, created_at DESC)`
   - `(assigned_inquiry_oid, created_at DESC)`
 

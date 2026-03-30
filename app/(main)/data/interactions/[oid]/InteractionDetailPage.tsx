@@ -57,7 +57,7 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
             router.push('/data/interactions');
         } catch (error) {
             console.error('Failed to delete interaction:', error);
-            alert('Failed to delete interaction');
+            alert(error instanceof Error ? error.message : 'Failed to delete interaction');
         } finally {
             setIsPending(false);
         }

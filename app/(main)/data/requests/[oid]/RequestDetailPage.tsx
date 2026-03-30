@@ -124,7 +124,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
             router.refresh();
         } catch (error) {
             console.error('Failed to update request:', error);
-            alert('Failed to update request');
+            alert(error instanceof Error ? error.message : 'Failed to update request');
         } finally {
             setIsPending(false);
         }
@@ -138,7 +138,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
             router.push('/data/requests');
         } catch (error) {
             console.error('Failed to delete request:', error);
-            alert('Failed to delete request');
+            alert(error instanceof Error ? error.message : 'Failed to delete request');
         } finally {
             setIsPending(false);
         }

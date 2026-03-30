@@ -12,6 +12,17 @@ All endpoints require authentication.
 |----------|-----------------|------------------|
 | Scenario | `objects:scenarios:read` | `objects:scenarios:write` |
 
+### ABAC Filtering
+
+Scenario read endpoints use **ABAC row-level filtering** anchored on the worker's organization hierarchy:
+
+- **Anchor**: `WORKER_ORG` — resolves `worker_oid` → `Worker.org_oid` → organization hierarchy node
+- **Unconstrained** users see all scenarios
+- **Self-scoped** users see only scenarios for their own linked worker
+- **Role-based** users see scenarios for workers within their assigned organization hierarchy
+
+POST create does not apply ABAC filtering. GET/PUT/DELETE on individual records return `403` if the record exists but the requester lacks scope access.
+
 ## Data Models
 
 ### Scenario (`journeys.scenarios`)
@@ -154,9 +165,10 @@ Error (404): scenario not found.
 
 | Code | Condition |
 |------|-----------|
-| 201 | Created successfully |
 | 200 | Success (GET/PUT) |
+| 201 | Created successfully |
 | 204 | Deleted successfully |
+| 403 | ABAC access denied (record exists but outside requester's scope) |
 | 404 | Scenario not found |
 | 409 | Duplicate worker_oid + scenario_type + effective_at |
 | 422 | Validation error (invalid OID, invalid field value) |

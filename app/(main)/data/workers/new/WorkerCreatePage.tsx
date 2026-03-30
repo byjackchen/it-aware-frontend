@@ -9,9 +9,11 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, User, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { usePermissions } from '@/lib/contexts/user-context';
 import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
 import type { Organization, Location, Worker } from '@/lib/types/objects';
 import { createWorkerAction } from '@/app/actions/objects';
+import { PERMISSIONS } from '@/lib/config/permissions';
 
 export function WorkerCreatePage() {
     const { theme } = useTheme();
@@ -20,6 +22,8 @@ export function WorkerCreatePage() {
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { hasPermission } = usePermissions();
+    const canEditSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_EDIT_SENSITIVE);
 
     // Required fields
     const [stableId, setStableId] = useState('');
@@ -297,6 +301,8 @@ export function WorkerCreatePage() {
                                     value={jobCategory}
                                     onChange={(e) => setJobCategory(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                             <div>
@@ -306,6 +312,8 @@ export function WorkerCreatePage() {
                                     value={jobSubcategory}
                                     onChange={(e) => setJobSubcategory(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                         </div>
@@ -318,6 +326,8 @@ export function WorkerCreatePage() {
                                     value={jobProfessionalLevel}
                                     onChange={(e) => setJobProfessionalLevel(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                             <div>
@@ -327,6 +337,8 @@ export function WorkerCreatePage() {
                                     value={jobManagementLevel}
                                     onChange={(e) => setJobManagementLevel(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                             <div>
@@ -336,6 +348,8 @@ export function WorkerCreatePage() {
                                     value={jobBand}
                                     onChange={(e) => setJobBand(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                             <div>
@@ -345,6 +359,8 @@ export function WorkerCreatePage() {
                                     value={jobTitle}
                                     onChange={(e) => setJobTitle(e.target.value)}
                                     className={inputClass}
+                                    disabled={!canEditSensitive}
+                                    placeholder={!canEditSensitive ? t('workers.sensitiveFieldHidden') : ''}
                                 />
                             </div>
                         </div>
