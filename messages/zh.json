@@ -127,6 +127,21 @@
             "apac": "亚太",
             "emea": "欧非中东",
             "americas": "美洲"
+        },
+        "negativeFeedback": {
+            "title": "负面反馈聚焦",
+            "loading": "正在加载负面反馈分析...",
+            "serviceCatalog": "服务目录",
+            "configItem": "配置项",
+            "allLocations": "全部地区",
+            "count": "数量",
+            "negativeRate": "负面比例",
+            "typicalIssues": "典型问题",
+            "viewMore": "查看更多 ({count})",
+            "collapse": "收起",
+            "noNegative": "未发现负面反馈",
+            "issue": "条问题",
+            "issues": "条问题"
         }
     },
     "GlobalSearch": {

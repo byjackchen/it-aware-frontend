@@ -127,6 +127,21 @@
             "apac": "APAC",
             "emea": "EMEA",
             "americas": "Americas"
+        },
+        "negativeFeedback": {
+            "title": "Negative Feedback Focus",
+            "loading": "Loading negative feedback analysis...",
+            "serviceCatalog": "Service Catalog",
+            "configItem": "Configuration Item",
+            "allLocations": "All Locations",
+            "count": "Count",
+            "negativeRate": "negative rate",
+            "typicalIssues": "Typical Issues",
+            "viewMore": "View More ({count})",
+            "collapse": "Collapse",
+            "noNegative": "No negative feedback found",
+            "issue": "issue",
+            "issues": "issues"
         }
     },
     "GlobalSearch": {

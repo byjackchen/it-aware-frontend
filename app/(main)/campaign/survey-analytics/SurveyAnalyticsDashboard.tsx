@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { BatchSelector } from './BatchSelector';
 import { SubmissionOverview } from './SubmissionOverview';
 import { AnalysisClassification } from './AnalysisClassification';
+import { NegativeFeedbackSection } from './NegativeFeedbackSection';
 import { KeywordHeatmap } from './KeywordHeatmap';
 
 export function SurveyAnalyticsDashboard() {
@@ -63,6 +64,7 @@ export function SurveyAnalyticsDashboard() {
                     <div key={refreshKey} className="space-y-8">
                         <SubmissionOverview batchOid={selectedBatchOid} isLight={isLight} />
                         <AnalysisClassification batchOid={selectedBatchOid} isLight={isLight} />
+                        <NegativeFeedbackSection batchOid={selectedBatchOid} isLight={isLight} />
                         <KeywordHeatmap batchOid={selectedBatchOid} isLight={isLight} />
                     </div>
                 ) : (
