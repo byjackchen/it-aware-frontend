@@ -622,6 +622,8 @@ class ArticleUpdate(BaseModel):
     source_url: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
+    embedding_ids: Optional[List[str]] = None
+    embedded_at: Optional[datetime] = None
 
 class ArticleResponse(BaseModel):
     oid: str
@@ -629,6 +631,8 @@ class ArticleResponse(BaseModel):
     service_catalog_id: str
     effective_version_number: int
     is_active: bool
+    embedding_ids: Optional[List[str]]
+    embedded_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
     latest_version: ArticleVersionResponse

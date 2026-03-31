@@ -231,6 +231,28 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                         </div>
                     </div>
 
+                    {/* Embedding Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">{t('embeddingIds')}</span>
+                            {article.embedding_ids && article.embedding_ids.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                    {article.embedding_ids.map((id) => (
+                                        <span key={id} className={`font-mono text-xs px-2 py-0.5 rounded select-all ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}>{id}</span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <span className={`text-sm italic opacity-50 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('noEmbedding')}</span>
+                            )}
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">{t('embeddedAt')}</span>
+                            <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                {article.embedded_at ? formatDateTime(article.embedded_at, timezone) : '—'}
+                            </span>
+                        </div>
+                    </div>
+
                     {/* Content */}
                     <div>
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('content')}</label>

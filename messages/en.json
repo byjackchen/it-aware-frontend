@@ -439,7 +439,10 @@
             "active": "Active",
             "inactive": "Inactive",
             "count": "{filtered} of {total} article",
-            "countPlural": "{filtered} of {total} articles"
+            "countPlural": "{filtered} of {total} articles",
+            "embeddingIds": "Embedding IDs",
+            "embeddedAt": "Embedded At",
+            "noEmbedding": "Not embedded"
         },
         "notifications": {
             "title": "Notifications",

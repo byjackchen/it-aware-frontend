@@ -437,7 +437,10 @@
             "active": "活跃",
             "inactive": "未激活",
             "count": "{filtered} / {total} 文章",
-            "countPlural": "{filtered} / {total} 文章"
+            "countPlural": "{filtered} / {total} 文章",
+            "embeddingIds": "嵌入 ID",
+            "embeddedAt": "嵌入时间",
+            "noEmbedding": "未嵌入"
         },
         "notifications": {
             "title": "通知",

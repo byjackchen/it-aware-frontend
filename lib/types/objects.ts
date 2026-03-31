@@ -404,6 +404,8 @@ export interface Article {
     service_catalog_id: string;
     effective_version_number: number;
     is_active: boolean;
+    embedding_ids: string[] | null;
+    embedded_at: string | null;
     created_at: string;
     updated_at: string;
     latest_version: ArticleVersion;
@@ -429,6 +431,8 @@ export interface ArticleUpdate {
     source_url?: string | null;
     metadata?: Record<string, unknown> | null;
     is_active?: boolean;
+    embedding_ids?: string[] | null;
+    embedded_at?: string | null;
 }
 
 // ============================================================================
