@@ -269,6 +269,19 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
+            {
+                labelKey: 'analytics',
+                items: [
+                    {
+                        href: '/campaign/survey-analytics',
+                        labelKey: 'surveyAnalytics',
+                        icon: BarChart3,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
+                        ]),
+                    },
+                ],
+            },
         ],
     },
     '/dashboard': {
@@ -281,8 +294,12 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.UI.NAVIGATION_DATA,
                 ]),
             },
+        ],
+    },
+    '/ssc-cockpit': {
+        items: [
             {
-                href: '/dashboard/ssc',
+                href: '/ssc-cockpit/dashboard',
                 labelKey: 'sscDashboard',
                 icon: LayoutDashboard,
                 permissions: requireAllPermissions([

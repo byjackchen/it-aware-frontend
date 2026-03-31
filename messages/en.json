@@ -9,7 +9,8 @@
         "application": "Applications",
         "knowledge": "Knowledge",
         "persona": "Persona",
-        "campaign": "Campaign"
+        "campaign": "Campaign",
+        "sscCockpit": "SSC Cockpit"
     },
     "Dashboard": {
         "title": "Data Overview",
@@ -174,6 +175,8 @@
         "journeys": "Journeys",
         "scenarios": "Scenarios",
         "sscDashboard": "SSC Dashboard",
+        "surveyAnalytics": "Survey Analytics",
+        "analytics": "Analytics",
         "dataOverview": "Data Overview"
     },
     "Chatbot": {

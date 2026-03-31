@@ -9,7 +9,8 @@
         "application": "应用",
         "knowledge": "知识库",
         "persona": "用户画像",
-        "campaign": "运营活动"
+        "campaign": "运营活动",
+        "sscCockpit": "SSC 驾驶舱"
     },
     "Dashboard": {
         "title": "数据概览",
@@ -174,6 +175,8 @@
         "journeys": "旅程",
         "scenarios": "场景",
         "sscDashboard": "SSC 仪表盘",
+        "surveyAnalytics": "问卷分析",
+        "analytics": "分析",
         "dataOverview": "数据总览"
     },
     "Chatbot": {

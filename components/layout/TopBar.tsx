@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -115,6 +115,14 @@ export function TopBar() {
             PERMISSIONS.UI.NAVIGATION_CAMPAIGN
           ]),
         },
+        {
+          href: '/ssc-cockpit',
+          label: t('sscCockpit'),
+          icon: Headset,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_DATA,
+          ]),
+        },
       ],
     },
     {
@@ -122,20 +130,6 @@ export function TopBar() {
       label: t('dashboard'),
       icon: LayoutDashboard,
       permissions: requireAnyPermission([]),
-      children: [
-        {
-          href: '/dashboard/data-overview',
-          label: t('dataOverview'),
-          icon: Database,
-          permissions: requireAnyPermission([]),
-        },
-        {
-          href: '/dashboard/survey-analytics',
-          label: t('surveyAnalytics'),
-          icon: BarChart3,
-          permissions: requireAnyPermission([]),
-        },
-      ],
     },
   ];
 
