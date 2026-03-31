@@ -172,7 +172,9 @@
         "analyses": "分析",
         "clusters": "群组",
         "journeys": "旅程",
-        "scenarios": "场景"
+        "scenarios": "场景",
+        "sscDashboard": "SSC 仪表盘",
+        "dataOverview": "数据总览"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware 助手",

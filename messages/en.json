@@ -172,7 +172,9 @@
         "analyses": "Analyses",
         "clusters": "Clusters",
         "journeys": "Journeys",
-        "scenarios": "Scenarios"
+        "scenarios": "Scenarios",
+        "sscDashboard": "SSC Dashboard",
+        "dataOverview": "Data Overview"
     },
     "Chatbot": {
         "title": "Ohla IT-Aware Assistant",

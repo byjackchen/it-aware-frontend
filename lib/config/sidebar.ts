@@ -23,6 +23,8 @@ import {
     Sparkles,
     Network,
     Route,
+    LayoutDashboard,
+    BarChart3,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -266,6 +268,28 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                 ],
+            },
+        ],
+    },
+    '/dashboard': {
+        items: [
+            {
+                href: '/dashboard/data-overview',
+                labelKey: 'dataOverview',
+                icon: BarChart3,
+                permissions: requireAnyPermission([
+                    PERMISSIONS.UI.NAVIGATION_DATA,
+                ]),
+            },
+            {
+                href: '/dashboard/ssc',
+                labelKey: 'sscDashboard',
+                icon: LayoutDashboard,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_DATA,
+                    PERMISSIONS.OBJECTS.INTERACTIONS_READ,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
             },
         ],
     },
