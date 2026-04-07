@@ -796,3 +796,6 @@ export async function deleteInteraction(oid: string): Promise<void> {
         method: 'DELETE',
     });
 }
+
+// Review APIs have been moved to @/lib/api/exports (client-safe module).
+// Import updateInteractionReview / updateIncidentReview from there.

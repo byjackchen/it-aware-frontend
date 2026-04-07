@@ -170,6 +170,11 @@ export interface Worker {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+
+    // SSC dashboard — denormalized hierarchy context (populated by Worker list endpoint)
+    region_name?: string | null;
+    country_name?: string | null;
+    department_name?: string | null;
 }
 
 export interface WorkerProfileTopicItem {
@@ -436,6 +441,23 @@ export interface ArticleUpdate {
 }
 
 // ============================================================================
+// SSC Dashboard — Review Codes
+// ============================================================================
+
+export const REVIEW_CODES = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS'] as const;
+export type ReviewCode = typeof REVIEW_CODES[number];
+
+export const REVIEW_CODE_LABELS: Record<ReviewCode, { en: string; zh: string }> = {
+    ACCT: { en: 'Accurate', zh: '内容清晰准确' },
+    IMP:  { en: 'Improve',  zh: '需优化改进' },
+    ERR:  { en: 'Error',    zh: '错误需修正' },
+    NEW:  { en: 'New',      zh: '新增问题' },
+    QNC:  { en: 'Unclear',  zh: '问题不清' },
+    CUST: { en: 'Custom',   zh: '客制化问题' },
+    OOS:  { en: 'OOS',      zh: '不在支援范围内' },
+};
+
+// ============================================================================
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
@@ -466,6 +488,25 @@ export interface Incident {
     created_at: string;
     updated_at: string;
     effective_at: string;
+
+    // SSC dashboard — human review
+    review_summary?: string | null;
+    review_needs_optimization?: boolean | null;
+    review_optimization_notes?: string | null;
+    review_completed_at?: string | null;
+    review_completed_by_oid?: string | null;
+
+    // SSC dashboard — multi-link arrays
+    // NULL = "DAG hasn't computed yet"
+    // []   = "DAG computed, no relevant matches"
+    // [oid, ...] = "DAG computed with results"
+    // The Pre-FAQ button must distinguish null/[] from non-empty for the disabled state.
+    pre_ticket_interaction_oids?: string[] | null;
+    related_kb_article_oids?: string[] | null;
+
+    // SSC dashboard — CSAT
+    csat_score?: number | null;
+    csat_text?: string | null;
 }
 
 export interface Request {
@@ -720,6 +761,19 @@ export interface Interaction {
     created_at: string;
     ingested_at: string;
     updated_at: string;
+
+    // SSC dashboard — AI-derived (populated by digest_interactions DAG; nullable until then)
+    ai_ci?: string | null;
+    ai_code?: ReviewCode | null;
+    helpful_score?: number | null;
+
+    // SSC dashboard — human review (edited via PATCH /review)
+    review_ci?: string | null;
+    review_code?: ReviewCode | null;
+    review_needs_optimization?: boolean | null;
+    review_optimization_notes?: string | null;
+    review_completed_at?: string | null;
+    review_completed_by_oid?: string | null;
 }
 
 export interface InteractionListParams {
@@ -1239,4 +1293,15 @@ export interface ClusterSummaryResponse {
     n_clusters: number;
     noise_count: number;
     clusters: ClusterInfo[];
+}
+
+// ============================================================================
+// SSC Dashboard — Worker Context (enriched map for F3)
+// ============================================================================
+
+export interface WorkerContext {
+    stable_id: string;
+    region: string | null;
+    country: string | null;
+    department: string | null;
 }

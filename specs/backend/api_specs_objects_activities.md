@@ -69,7 +69,14 @@ class Activity(Base):
 ```python
 class Incident(Base):
     __tablename__ = "incidents"
-    __table_args__ = {"schema": "activities"}
+    __table_args__ = (
+        CheckConstraint(
+            "csat_score IS NULL OR csat_score BETWEEN 1 AND 5",
+            name="incidents_csat_score_check",
+        ),
+        # GIN indexes on the SSC dashboard array columns + partial index on review flag
+        {"schema": "activities"},
+    )
 
     oid = Column(BYTEA(16), ForeignKey("activities.bases.oid", ondelete="CASCADE"), primary_key=True)
     stable_id = Column(Text, unique=True, nullable=False)
@@ -79,12 +86,28 @@ class Incident(Base):
     state = Column(Text, nullable=False)
     priority = Column(Text, nullable=True)
     urgency = Column(Text, nullable=True)
-    
+
     assigned_to_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
     service_catalog_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     assigned_group = Column(Text, nullable=True)
     configuration_item_oid = Column(BYTEA(16), ForeignKey("hierarchies.nodes.oid"), nullable=True)
     chat_transcripts = Column(JSONB, nullable=True)
+
+    # SSC dashboard — human review overrides (AI summary stays on bases.fact, no new column)
+    review_summary = Column(Text, nullable=True)
+    review_needs_optimization = Column(Boolean, nullable=True)
+    review_optimization_notes = Column(Text, nullable=True)
+    review_completed_at = Column(DateTime(timezone=True), nullable=True)
+    review_completed_by_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid"), nullable=True)
+
+    # SSC dashboard — multi-link arrays populated by digest_incidents DAG.
+    # NULL = not yet computed; [] = computed but no relevant matches; [oid, ...] = computed with results.
+    pre_ticket_interaction_oids = Column(ARRAY(BYTEA(16)), nullable=True)
+    related_kb_article_oids = Column(ARRAY(BYTEA(16)), nullable=True)
+
+    # SSC dashboard — CSAT (sourced from external survey pipeline; currently always NULL until wired up)
+    csat_score = Column(SmallInteger, nullable=True)
+    csat_text = Column(Text, nullable=True)
 ```
 
 ### Request
@@ -173,6 +196,15 @@ class IncidentUpdate(BaseModel):
     updated_at: Optional[datetime] = None
     effective_at: Optional[datetime] = None
 
+    # SSC dashboard — review fields (review_completed_* set only via PATCH /review)
+    review_summary: Optional[str] = None
+    review_needs_optimization: Optional[bool] = None
+    review_optimization_notes: Optional[str] = None
+    pre_ticket_interaction_oids: Optional[List[str]] = None
+    related_kb_article_oids: Optional[List[str]] = None
+    csat_score: Optional[int] = None
+    csat_text: Optional[str] = None
+
 class IncidentResponse(BaseModel):
     oid: str
     stable_id: str
@@ -183,7 +215,7 @@ class IncidentResponse(BaseModel):
     priority: Optional[str]
     urgency: Optional[str]
     channel: Optional[str]
-    
+
     # Relationships
     actor_oid: str
     actor_role: str
@@ -196,7 +228,23 @@ class IncidentResponse(BaseModel):
     configuration_item_oid: Optional[str]
     assigned_group: Optional[str]
     chat_transcripts: Optional[Dict[str, Any]]
-    
+
+    # SSC dashboard — review (AI summary stays on the inherited `fact` field)
+    review_summary: Optional[str] = None
+    review_needs_optimization: Optional[bool] = None
+    review_optimization_notes: Optional[str] = None
+    review_completed_at: Optional[datetime] = None
+    review_completed_by_oid: Optional[str] = None  # raw OID; resolve display name via workerMap
+
+    # SSC dashboard — multi-link arrays. NULL = not yet computed by digest_incidents;
+    # [] = computed with no matches; [oid, ...] = computed with results.
+    pre_ticket_interaction_oids: Optional[List[str]] = None
+    related_kb_article_oids: Optional[List[str]] = None
+
+    # SSC dashboard — CSAT
+    csat_score: Optional[int] = None
+    csat_text: Optional[str] = None
+
     created_at: datetime
     updated_at: datetime
     effective_at: datetime
@@ -206,6 +254,29 @@ class IncidentListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+class IncidentReviewUpdate(BaseModel):
+    """Partial update for SSC dashboard human review fields.
+
+    Distinct from IncidentUpdate: this schema (a) carries `mark_completed`
+    semantics that flip review_completed_at + review_completed_by_oid as a unit,
+    and (b) requires at least one field to be set.
+    """
+
+    review_summary: Optional[str] = None
+    review_needs_optimization: Optional[bool] = None
+    review_optimization_notes: Optional[str] = None
+    csat_score: Optional[int] = None  # validated 1..5
+    csat_text: Optional[str] = None
+    pre_ticket_interaction_oids: Optional[List[str]] = None  # OID strings, deduped + format-checked
+    related_kb_article_oids: Optional[List[str]] = None
+    mark_completed: Optional[bool] = None
+    # mark_completed semantics:
+    #   true   → set review_completed_at = now(), review_completed_by_oid = current worker
+    #   false  → clear both fields
+    #   None   → leave both fields untouched
+    # NOTE: mark_completed=true requires the caller to be a worker-linked account.
+    # Service tokens are rejected with HTTP 400.
 ```
 
 > **Timestamp behavior**: `created_at`, `updated_at`, and `effective_at` should be timezone-aware ISO8601 (e.g., `2026-02-02T12:34:56Z`). Naive timestamps are assumed to be UTC and are normalized to UTC. If omitted, defaults are used on create and existing values are preserved on update.
@@ -218,6 +289,7 @@ class IncidentListResponse(BaseModel):
 | GET | `/objects/activities/incidents` | List incidents (ABAC) | `objects:incidents:read` |
 | GET | `/objects/activities/incidents/{oid}` | Get incident (ABAC) | `objects:incidents:read` |
 | PUT | `/objects/activities/incidents/{oid}` | Update incident | `objects:incidents:write` |
+| PATCH | `/objects/activities/incidents/{oid}/review` | Update SSC dashboard human-review fields (incl. `mark_completed`) | `objects:incidents:write` |
 | DELETE | `/objects/activities/incidents/{oid}` | Delete incident | `objects:incidents:write` |
 
 > **Note on Registry Sync**: Registry descriptors are managed internally; `fact` updates trigger embedding refreshes.
@@ -225,6 +297,17 @@ class IncidentListResponse(BaseModel):
 > **List response shape**: `GET /objects/activities/incidents` returns `IncidentListResponse` (not a bare array), so callers can read `total` before loading all pages.
 >
 > **Pagination stability**: default ordering is `created_at DESC`, with secondary tie-breaker `oid DESC` to keep `skip/limit` deterministic.
+>
+> **`PATCH /{oid}/review` semantics** (SSC dashboard):
+> - Body is `IncidentReviewUpdate`. At least one field must be set.
+> - All fields are partial — only fields present in the JSON body are written.
+> - `mark_completed=true` sets `review_completed_at = now()` and `review_completed_by_oid = current user's worker_oid`. Requires a worker-linked account; service tokens are rejected with `400`.
+> - `mark_completed=false` clears both fields.
+> - Omitting `mark_completed` (or sending `null`) leaves the completion state untouched.
+> - `csat_score` is validated `1..5`; out-of-range values return `422`.
+> - `pre_ticket_interaction_oids` / `related_kb_article_oids` accept OID-string arrays which are deduped and format-validated; pass `[]` to explicitly clear, omit the field to leave untouched.
+> - Returns the full `IncidentResponse` after the update.
+> - ABAC: enforced via `bases.actor_oid → Worker.org_oid` (WORKER_ORG anchor). Returns `403` if the incident exists but the requester lacks scope, `404` if it doesn't exist.
 
 ### Query Parameters (`GET /objects/activities/incidents`)
 
@@ -240,6 +323,8 @@ class IncidentListResponse(BaseModel):
 | `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
 | `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
 | `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `needs_optimization` | boolean | null | SSC dashboard: `true` → only incidents flagged `review_needs_optimization=true`; `false` → only incidents flagged `false`; `null` → no filter (includes both flagged and unset rows) |
+| `completed` | boolean | null | SSC dashboard: `true` → only reviews where `review_completed_at IS NOT NULL`; `false` → only reviews where `review_completed_at IS NULL` |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
 
@@ -551,6 +636,7 @@ class InteractionUpsertItem(BaseModel):
     content_raw: Optional[Dict[str, Any]] = None
     response_text: Optional[str] = None
     response_raw: Optional[Dict[str, Any]] = None
+    helpful_score: Optional[int] = None  # SSC dashboard: -1/0/1 (clamped via ge=-1, le=1)
     created_at: datetime
     effective_at: Optional[datetime] = None  # defaults to created_at when omitted
     ingested_at: Optional[datetime] = None
@@ -636,10 +722,27 @@ class InteractionResponse(BaseModel):
     assigned_inquiry_oid: Optional[str]
     assignment_updated_at: Optional[datetime]
     assignment_log: Optional[Dict[str, Any]]
+
+    # SSC dashboard — AI-derived (populated by digest_interactions DAG)
+    ai_ci: Optional[str] = None  # free-text concern indicator
+    ai_code: Optional[ReviewCode] = None  # ACCT/IMP/ERR/NEW/QNC/CUST/OOS
+    helpful_score: Optional[int] = None  # -1/0/1, sourced from chatbot is_helpful
+
+    # SSC dashboard — human review overrides
+    review_ci: Optional[str] = None
+    review_code: Optional[ReviewCode] = None
+    review_needs_optimization: Optional[bool] = None
+    review_optimization_notes: Optional[str] = None
+    review_completed_at: Optional[datetime] = None
+    review_completed_by_oid: Optional[str] = None  # raw OID; resolve display name via workerMap
+
     created_at: datetime
     effective_at: datetime
     ingested_at: datetime
     updated_at: datetime
+
+# Type alias used by ai_code / review_code / InteractionReviewUpdate.review_code:
+ReviewCode = Literal["ACCT", "IMP", "ERR", "NEW", "QNC", "CUST", "OOS"]
 
 class InteractionListResponse(BaseModel):
     items: List[InteractionResponse]
@@ -648,6 +751,34 @@ class InteractionListResponse(BaseModel):
     limit: int
     sort_by: Literal["created_at", "ingested_at", "updated_at"]
     order: Literal["asc", "desc"]
+
+class InteractionUpdate(BaseModel):
+    """General partial update for AI-derived interaction fields.
+
+    Used by the `digest_interactions` Airflow DAG to PATCH `ai_ci` / `ai_code`,
+    and by the sync pipeline for `helpful_score`. NOT for human review fields —
+    those go through InteractionReviewUpdate which carries `mark_completed`.
+    At least one field must be set, or the request returns 422.
+    """
+
+    ai_ci: Optional[str] = None
+    ai_code: Optional[ReviewCode] = None
+    helpful_score: Optional[int] = None  # ge=-1, le=1
+
+class InteractionReviewUpdate(BaseModel):
+    """Partial update for SSC dashboard human review fields."""
+
+    review_ci: Optional[str] = None
+    review_code: Optional[ReviewCode] = None
+    review_needs_optimization: Optional[bool] = None
+    review_optimization_notes: Optional[str] = None
+    mark_completed: Optional[bool] = None
+    # mark_completed semantics:
+    #   true   → set review_completed_at = now(), review_completed_by_oid = current worker
+    #   false  → clear both fields
+    #   None   → leave both fields untouched
+    # NOTE: mark_completed=true requires the caller to be a worker-linked account.
+    # Service tokens are rejected with HTTP 400.
 ```
 
 > **Timestamp behavior**: request datetimes are normalized to UTC. Naive timestamps are treated as UTC.
@@ -670,7 +801,27 @@ class InteractionListResponse(BaseModel):
 | POST | `/objects/activities/interactions/batch-decide-assignment` | LLM batch decide + optional write-through assignment | `objects:interactions:write` |
 | GET | `/objects/activities/interactions` | List interactions with filters | `objects:interactions:read` |
 | GET | `/objects/activities/interactions/{interaction_oid}` | Get single interaction | `objects:interactions:read` |
+| PATCH | `/objects/activities/interactions/{interaction_oid}` | General partial update for AI-derived fields (`ai_ci` / `ai_code` / `helpful_score`). Used by `digest_interactions` DAG and sync pipeline. | `objects:interactions:write` |
+| PATCH | `/objects/activities/interactions/{interaction_oid}/review` | Update SSC dashboard human-review fields (incl. `mark_completed`) | `objects:interactions:write` |
 | DELETE | `/objects/activities/interactions/{interaction_oid}` | Delete single interaction | `objects:interactions:write` |
+
+> **`PATCH /{interaction_oid}` semantics** (general AI-derived update):
+> - Body is `InteractionUpdate`. At least one field must be set or returns `422`.
+> - Only fields present in the JSON body are written. Fields valid: `ai_ci`, `ai_code`, `helpful_score`.
+> - `ai_code` must be one of: `ACCT`, `IMP`, `ERR`, `NEW`, `QNC`, `CUST`, `OOS`.
+> - `helpful_score` is clamped to `-1`, `0`, or `1`.
+> - ABAC: same WORKER_ORG anchor as the rest of the interaction surface.
+> - Does NOT touch any `review_*` fields. For human review, use the `/review` endpoint below.
+>
+> **`PATCH /{interaction_oid}/review` semantics** (SSC dashboard):
+> - Body is `InteractionReviewUpdate`. At least one field must be set.
+> - Only fields present in the JSON body are written.
+> - `review_code` is constrained to the same `ReviewCode` enum as `ai_code`.
+> - `mark_completed=true` sets `review_completed_at = now()` and `review_completed_by_oid = current user's worker_oid`. Requires a worker-linked account; service tokens are rejected with `400`.
+> - `mark_completed=false` clears both fields.
+> - Omitting `mark_completed` (or sending `null`) leaves the completion state untouched.
+> - Returns the full `InteractionResponse` after the update.
+> - ABAC: same WORKER_ORG anchor. Returns `403` if the interaction exists but the requester lacks scope.
 
 > **ABAC note**: Interaction list/get/delete APIs are ABAC-filtered via `actor_oid` → `Worker.org_oid` (WORKER_ORG anchor). The `actor_oid` column is resolved from `actor_stable_id` → `Worker.stable_id` at ingest time. Interactions with `actor_oid = NULL` are only visible to unconstrained users. Returns `403` if the interaction exists but the requester lacks scope access.
 
@@ -690,6 +841,8 @@ class InteractionListResponse(BaseModel):
 | `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound |
 | `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound |
 | `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound |
+| `needs_optimization` | boolean | null | SSC dashboard: `true` → only interactions flagged `review_needs_optimization=true`; `false` → only interactions flagged `false`; `null` → no filter |
+| `completed` | boolean | null | SSC dashboard: `true` → only reviews where `review_completed_at IS NOT NULL`; `false` → only `IS NULL` |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
 | `sort_by` | `created_at`/`ingested_at`/`updated_at` | `created_at` | Sort field |
@@ -721,11 +874,23 @@ Default order is `created_at DESC`, with secondary tie-breaker `oid DESC` for st
 - Unique: `stable_id`
 - `action_type` is raw source text (not enum-constrained)
 - Check: only `assigned`/`null` are valid assignment states, and `assignment_status='assigned'` requires non-null `assigned_inquiry_oid`
+- Check (SSC dashboard):
+  - `ai_code IN ('ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS')` (or NULL)
+  - `review_code IN ('ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS')` (or NULL)
+  - `helpful_score BETWEEN -1 AND 1` (or NULL)
 - Indexes:
   - `(actor_stable_id, created_at DESC)`
   - `(actor_oid)` — for ABAC joins
   - `(assignment_status, created_at DESC)`
   - `(assigned_inquiry_oid, created_at DESC)`
+  - Partial: `(review_needs_optimization)` WHERE `review_needs_optimization IS TRUE` — speeds up SSC dashboard "needs optimization" filter
+
+Incidents (SSC dashboard additions):
+- Check: `csat_score BETWEEN 1 AND 5` (or NULL)
+- Indexes:
+  - GIN: `pre_ticket_interaction_oids` — for `@>` / `&&` array containment lookups
+  - GIN: `related_kb_article_oids`
+  - Partial: `(review_needs_optimization)` WHERE `review_needs_optimization IS TRUE`
 
 ## API 5: Activities Embed Search (`/objects/activities/embed_search`)
 
@@ -765,3 +930,53 @@ class EmbedSearchResponse(BaseModel):
 **Notes**
 - Search results are ordered by the embedding search ranking.
 - Each result is filtered by ABAC rules for its object type (`incident` / `request` / `inquiry`).
+
+---
+
+## Appendix: SSC Dashboard fields cross-reference
+
+The SSC dashboard added several columns and three PATCH endpoints across `incidents` and `interactions`. This appendix ties everything together so frontend integrators can find the surface in one place.
+
+### Incident additions
+
+| Column | Type | Populated by | Purpose |
+|---|---|---|---|
+| `bases.fact` (existing) | text | `digest_incidents` DAG | LLM-generated summary; AI summary lives here, **not** on a new column |
+| `review_summary` | text | human via `PATCH /review` | Reviewer override of `bases.fact` |
+| `review_needs_optimization` | boolean | human via `PATCH /review` | Triage flag for the dashboard |
+| `review_optimization_notes` | text | human via `PATCH /review` | Free-text reviewer notes |
+| `review_completed_at` | timestamptz | `mark_completed` flag | Set/cleared as a unit with `review_completed_by_oid` |
+| `review_completed_by_oid` | bytea(16) FK workers | `mark_completed` flag | Worker who marked review complete; service tokens cannot set this |
+| `pre_ticket_interaction_oids` | bytea(16)[] | `digest_incidents` DAG | Interactions in the 1h window before the ticket — `[]` if none, NULL if not yet computed |
+| `related_kb_article_oids` | bytea(16)[] | `digest_incidents` DAG | Hyaide-embedding matches against active KB articles — `[]` if no matches above `RELATED_KB_MIN_CONFIDENCE` |
+| `csat_score` | smallint (1..5) | external CSAT pipeline (not yet wired) | Currently always NULL — see catch-up plan |
+| `csat_text` | text | external CSAT pipeline (not yet wired) | Currently always NULL |
+
+### Interaction additions
+
+| Column | Type | Populated by | Purpose |
+|---|---|---|---|
+| `ai_ci` | text | `digest_interactions` DAG | LLM-classified concern indicator (free text) |
+| `ai_code` | text (enum) | `digest_interactions` DAG | LLM-classified category: `ACCT`/`IMP`/`ERR`/`NEW`/`QNC`/`CUST`/`OOS` |
+| `helpful_score` | smallint (-1..1) | `sync_chatbot_interactions` DAG | Extracted from `content_raw.record.is_helpful` |
+| `review_ci` | text | human via `PATCH /review` | Reviewer override of `ai_ci` |
+| `review_code` | text (enum) | human via `PATCH /review` | Reviewer override of `ai_code` (same enum) |
+| `review_needs_optimization` | boolean | human via `PATCH /review` | Triage flag for the dashboard |
+| `review_optimization_notes` | text | human via `PATCH /review` | Free-text reviewer notes |
+| `review_completed_at` | timestamptz | `mark_completed` flag | Set/cleared as a unit with `review_completed_by_oid` |
+| `review_completed_by_oid` | bytea(16) FK workers | `mark_completed` flag | Same constraint as incidents |
+
+### PATCH endpoint summary
+
+| Endpoint | Body | Permission | Used by |
+|---|---|---|---|
+| `PATCH /objects/activities/incidents/{oid}/review` | `IncidentReviewUpdate` | `objects:incidents:write` | Frontend SSC dashboard |
+| `PATCH /objects/activities/interactions/{interaction_oid}` | `InteractionUpdate` | `objects:interactions:write` | `digest_interactions` DAG (sets `ai_ci`/`ai_code`); sync pipeline (sets `helpful_score`) |
+| `PATCH /objects/activities/interactions/{interaction_oid}/review` | `InteractionReviewUpdate` | `objects:interactions:write` | Frontend SSC dashboard |
+
+### Frontend display notes
+
+- `review_completed_by_oid` is returned as a raw OID string. Display names are resolved client-side via the `workerMap` pattern (B9), not by eager-loading on the backend.
+- `pre_ticket_interaction_oids` and `related_kb_article_oids` carry three states the UI must distinguish: `null` (not yet computed by digest DAG), `[]` (computed, no matches), `[oid, ...]` (computed with results). Show "pending" for null, "none" for `[]`, the actual links for `[oid, ...]`.
+- `csat_score` / `csat_text` will currently be NULL across the board. Display "CSAT data not yet available" until the OHLA email-survey ingestion pipeline is built.
+- The `needs_optimization` and `completed` query filters on both list endpoints are tri-state: omit them entirely (no filter) vs `false` (only flagged/incomplete) vs `true` (only flagged/complete).

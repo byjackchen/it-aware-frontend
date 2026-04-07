@@ -7,10 +7,10 @@ import { SSCFilterBar } from '@/components/ssc/SSCFilterBar';
 import { InteractionsPanel } from '@/components/ssc/InteractionsPanel';
 import { IncidentsPanel } from '@/components/ssc/IncidentsPanel';
 import { AlignmentStatusBar } from '@/components/ssc/AlignmentStatusBar';
-import type { Incident, Interaction } from '@/lib/types/objects';
+import type { WorkerContext, Incident, Interaction } from '@/lib/types/objects';
 
 interface SSCDashboardPageProps {
-    initialWorkerMap: Record<string, string>;
+    initialWorkerMap: Record<string, WorkerContext>;
     initialCatalogMap: Record<string, string>;
 }
 
@@ -42,9 +42,11 @@ function findClosestInteraction(
     windowStartTs: number,
     workerStableId?: string | null,
 ): string | null {
-    // Linear scan for worker-filtered search (interactions are sorted asc by created_at)
+    // InteractionsPanel queries with order: 'desc', so index 0 is newest, length-1 is oldest.
+    // Walk from newest → oldest. Skip items still ahead of the target; break once we
+    // pass below the window start. The first qualifying row is the closest one ≤ target.
     let bestOid: string | null = null;
-    for (let i = interactions.length - 1; i >= 0; i--) {
+    for (let i = 0; i < interactions.length; i++) {
         const ts = new Date(interactions[i].created_at).getTime();
         if (ts > targetTs) continue;
         if (ts < windowStartTs) break;
@@ -84,6 +86,17 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
 
     // Track interactions loaded by InteractionsPanel for alignment search
     const [interactionsRef, setInteractionsRef] = useState<Interaction[]>([]);
+
+    // Focused interaction OIDs — driven by the Pre-FAQ button in IncidentsPanel
+    const [focusedInteractionOids, setFocusedInteractionOids] = useState<Set<string> | null>(null);
+
+    const handleFocusInteractions = useCallback((oids: string[]) => {
+        setFocusedInteractionOids(new Set(oids));
+        // Clear browse-time alignment state so the highlight is unambiguous
+        setAlignedIncidentOid(null);
+        setHighlightWindow(null);
+        setAlignedRowOid(null);
+    }, []);
 
     // When interactions reload after alignment, find closest interaction and scroll
     useEffect(() => {
@@ -129,7 +142,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
         }
 
         // Resolve incident worker oid → stable_id for filtering interactions
-        const incidentWorkerStableId = workerMap[incident.actor_oid] ?? null;
+        const incidentWorkerStableId = workerMap[incident.actor_oid]?.stable_id ?? null;
 
         // Narrow interactions panel to the 30-min window so it fetches the right data
         const windowStartDate = new Date(windowStart).toISOString().slice(0, 10);
@@ -201,6 +214,8 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                         highlightWorkerStableId={alignedWorkerStableId}
                         alignedRowOid={alignedRowOid}
                         onItemsChange={setInteractionsRef}
+                        workerMap={workerMap}
+                        focusedInteractionOids={focusedInteractionOids}
                     />
                 </div>
 
@@ -214,6 +229,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                         onAlign={handleAlign}
                         workerMap={workerMap}
                         catalogMap={catalogMap}
+                        onFocusInteractions={handleFocusInteractions}
                     />
                 </div>
             </div>

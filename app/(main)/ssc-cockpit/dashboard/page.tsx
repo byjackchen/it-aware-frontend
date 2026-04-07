@@ -1,15 +1,23 @@
 import { getWorkers, getServiceCatalogs } from '@/lib/api/objects';
+import type { WorkerContext } from '@/lib/types/objects';
 import { SSCDashboardPage } from './SSCDashboardPage';
 
 export default async function SSCDashboardRoute() {
     // Fetch lookup data server-side (has auth cookies, auto-paginates)
-    let workerMap: Record<string, string> = {};
-    let catalogMap: Record<string, string> = {};
+    const workerMap: Record<string, WorkerContext> = {};
+    const catalogMap: Record<string, string> = {};
 
     try {
         const workers = await getWorkers();
         console.log(`[SSC] Loaded ${workers.length} workers for lookup`);
-        for (const w of workers) workerMap[w.oid] = w.stable_id;
+        for (const w of workers) {
+            workerMap[w.oid] = {
+                stable_id: w.stable_id,
+                region: w.region_name ?? null,
+                country: w.country_name ?? null,
+                department: w.department_name ?? null,
+            };
+        }
     } catch (e) {
         console.error('[SSC] Workers lookup failed:', e instanceof Error ? e.message : e);
     }

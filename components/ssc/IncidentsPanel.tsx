@@ -1,12 +1,14 @@
 'use client';
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { AlertCircle, Loader2, Crosshair } from 'lucide-react';
+import { AlertCircle, Loader2, Download } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
-import type { Incident, IncidentListResponse } from '@/lib/types/objects';
+import { IncidentRow, INCIDENT_GRID_COLS } from '@/components/ssc/IncidentRow';
+import type { Incident, IncidentListResponse, WorkerContext } from '@/lib/types/objects';
 
 interface IncidentsPanelProps {
     dateFrom: string;
@@ -14,21 +16,9 @@ interface IncidentsPanelProps {
     workerFilter?: string;
     alignedIncidentOid: string | null;
     onAlign: (incident: Incident) => void;
-    workerMap: Record<string, string>;
+    workerMap: Record<string, WorkerContext>;
     catalogMap: Record<string, string>;
-}
-
-function formatShortTime(dateStr: string, timezone: string): string {
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: timezone,
-    });
+    onFocusInteractions: (interactionOids: string[]) => void;
 }
 
 export function IncidentsPanel({
@@ -39,10 +29,12 @@ export function IncidentsPanel({
     onAlign,
     workerMap,
     catalogMap,
+    onFocusInteractions,
 }: IncidentsPanelProps) {
     const { theme } = useTheme();
-    const { timezone } = useTimezone();
     const isLight = theme === 'light';
+    const t = useTranslations('SSCDashboard');
+    const [isDownloading, setIsDownloading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
     const [remotePage, setRemotePage] = useState<{ page: number; items: Incident[] } | null>(null);
@@ -73,7 +65,7 @@ export function IncidentsPanel({
         if (!workerFilter) return incidents;
         const q = workerFilter.toLowerCase();
         return incidents.filter((inc) => {
-            const stableId = workerMap[inc.actor_oid];
+            const stableId = workerMap[inc.actor_oid]?.stable_id;
             return stableId?.toLowerCase().includes(q);
         });
     }, [incidents, workerFilter, workerMap]);
@@ -128,8 +120,36 @@ export function IncidentsPanel({
 
     useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [pageSize, workerFilter]);
 
+    // Overlay map for optimistic inline-edit updates
+    const [overlay, setOverlay] = useState<Map<string, Incident>>(new Map());
+
+    const handleRowChange = useCallback((updated: Incident) => {
+        setOverlay(m => {
+            const next = new Map(m);
+            next.set(updated.oid, updated);
+            return next;
+        });
+    }, []);
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        try {
+            await downloadDashboardXlsx(
+                'incidents',
+                {
+                    created_at_from: dateFrom,
+                    created_at_to: dateTo,
+                },
+                `ssc_ticket_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
+            );
+        } catch (e) {
+            alert(e instanceof Error ? e.message : 'Download failed');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     const columnHeaderClass = `text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-500'}`;
-    const cellClass = `text-xs truncate ${isLight ? 'text-slate-700' : 'text-gray-300'}`;
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -143,24 +163,48 @@ export function IncidentsPanel({
                         Incidents
                     </span>
                 </div>
-                <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                    {(totalIncidents ?? incidents.length).toLocaleString()} records
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                        {(totalIncidents ?? incidents.length).toLocaleString()} records
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => void handleDownload()}
+                        disabled={isDownloading}
+                        title={t('buttons.downloadXlsx')}
+                        className={`px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors ${
+                            isLight
+                                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50'
+                                : 'bg-white/10 text-gray-200 hover:bg-white/20 disabled:opacity-50'
+                        }`}
+                    >
+                        {isDownloading ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                            <Download className="w-3 h-3" />
+                        )}
+                        {t('buttons.downloadXlsx')}
+                    </button>
+                </div>
             </div>
 
             {/* Column Headers */}
-            <div className={`grid grid-cols-[50px_100px_1fr_60px_70px_90px_80px_70px_90px] gap-1 px-3 py-1.5 border-b ${
+            <div className={`grid ${INCIDENT_GRID_COLS} gap-1 px-3 py-1.5 border-b ${
                 isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-white/3 border-white/10'
             }`}>
                 <div className={columnHeaderClass}></div>
-                <div className={columnHeaderClass}>Ticket ID</div>
-                <div className={columnHeaderClass}>Summary</div>
-                <div className={columnHeaderClass}>State</div>
-                <div className={columnHeaderClass}>Channel</div>
-                <div className={columnHeaderClass}>Category</div>
-                <div className={columnHeaderClass}>Worker</div>
-                <div className={columnHeaderClass}>KB ID</div>
-                <div className={columnHeaderClass}>Time</div>
+                <div className={columnHeaderClass}>{t('headers.time')}</div>
+                <div className={columnHeaderClass}>{t('headers.ticketId')}</div>
+                <div className={columnHeaderClass}>{t('headers.summary')}</div>
+                <div className={columnHeaderClass}>{t('headers.category')}</div>
+                <div className={columnHeaderClass}>{t('headers.user')}</div>
+                <div className={columnHeaderClass}>{t('headers.preFaq')}</div>
+                <div className={columnHeaderClass}>{t('headers.kb')}</div>
+                <div className={columnHeaderClass}>{t('headers.csatScore')}</div>
+                <div className={columnHeaderClass}>{t('headers.csatText')}</div>
+                <div className={columnHeaderClass}>{t('headers.needsOptimization')}</div>
+                <div className={columnHeaderClass}>{t('headers.optimizationNotes')}</div>
+                <div className={columnHeaderClass}>{t('headers.completed')}</div>
             </div>
 
             {/* Scrollable Rows */}
@@ -179,63 +223,18 @@ export function IncidentsPanel({
                     </div>
                 ) : (
                     displayedIncidents.map((incident) => {
-                        const isAligned = incident.oid === alignedIncidentOid;
-
+                        const effective = overlay.get(incident.oid) ?? incident;
                         return (
-                            <div
-                                key={incident.oid}
-                                className={`grid grid-cols-[50px_100px_1fr_60px_70px_90px_80px_70px_90px] gap-1 px-3 py-2 border-b ${
-                                    isLight ? 'border-slate-100' : 'border-white/5'
-                                } ${isAligned ? (isLight ? 'bg-blue-50' : 'bg-blue-500/10') : ''}`}
-                            >
-                                <div>
-                                    <button
-                                        onClick={() => onAlign(incident)}
-                                        className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                                            isAligned
-                                                ? 'bg-blue-500 text-white'
-                                                : isLight
-                                                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                                    : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                                        }`}
-                                        title="Align interactions timeline"
-                                    >
-                                        <Crosshair className="w-3 h-3 inline mr-0.5" />
-                                        <span>对齐</span>
-                                    </button>
-                                </div>
-                                <div className={`text-xs font-mono ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
-                                    <a
-                                        href={`/data/incidents/${incident.oid}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`hover:underline ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`}
-                                    >
-                                        {incident.stable_id ?? '—'}
-                                    </a>
-                                </div>
-                                <div className={cellClass} title={incident.title}>
-                                    {incident.title}
-                                </div>
-                                <div className={cellClass}>
-                                    {incident.state ?? '—'}
-                                </div>
-                                <div className={cellClass}>
-                                    {incident.channel ?? '—'}
-                                </div>
-                                <div className={cellClass} title={incident.service_catalog_oid ?? ''}>
-                                    {(incident.service_catalog_oid && catalogMap[incident.service_catalog_oid]) || '—'}
-                                </div>
-                                <div className={`text-xs truncate font-medium ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} title={incident.actor_oid}>
-                                    {workerMap[incident.actor_oid] || incident.actor_oid}
-                                </div>
-                                <div className={cellClass}>
-                                    {String((incident.chat_transcripts as Record<string, unknown>)?.related_kb_id ?? '—')}
-                                </div>
-                                <div className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                    {formatShortTime(incident.effective_at, timezone)}
-                                </div>
-                            </div>
+                            <IncidentRow
+                                key={effective.oid}
+                                incident={effective}
+                                worker={workerMap[effective.actor_oid]}
+                                catalogName={catalogMap[effective.service_catalog_oid ?? '']}
+                                isAligned={effective.oid === alignedIncidentOid}
+                                onAlign={() => onAlign(effective)}
+                                onFocusInteractions={onFocusInteractions}
+                                onChange={handleRowChange}
+                            />
                         );
                     })
                 )}
