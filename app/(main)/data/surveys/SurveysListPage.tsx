@@ -252,6 +252,13 @@ export function SurveysListPage() {
                     </div>
                 </div>
 
+                {/* Worker geo data failure banner — export still works, but Country/Region cells will be empty */}
+                {workersError && (
+                    <div className={`mb-4 px-3 py-2 rounded-lg text-xs ${isLight ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                        Country/Region unavailable — worker geo data failed to load. Export will still run with empty geo columns.
+                    </div>
+                )}
+
                 {/* Loading progress */}
                 {isLoadingSurveys && surveys.length > 0 && (
                     <div className={`mb-4 text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
