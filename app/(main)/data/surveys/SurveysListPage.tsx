@@ -6,6 +6,7 @@ import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
+import { useAllActiveWorkers } from '@/components/campaign_surveys/useAllActiveWorkers';
 import type { SurveyBatch, Survey, SurveyBatchListResponse, SurveyListResponse } from '@/lib/types/objects';
 
 const PAGE_SIZE = 1000;
@@ -31,6 +32,11 @@ export function SurveysListPage() {
     const [isLoadingBatches, setIsLoadingBatches] = useState(true);
     const [isLoadingSurveys, setIsLoadingSurveys] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Workers — fetched on mount in parallel with batches/surveys; provides denormalized
+    // country_name/region_name for the export. is_active=true is intentional: departed
+    // workers fall through to empty geo cells in the export, which is acceptable.
+    const { workers, error: workersError } = useAllActiveWorkers();
 
     // Fetch batches on mount
     useEffect(() => {
@@ -110,6 +116,20 @@ export function SurveysListPage() {
         const q = searchQuery.toLowerCase();
         return surveys.filter((s) => s.receiver_stable_id.toLowerCase().includes(q));
     }, [surveys, searchQuery]);
+
+    // Map worker_oid → denormalized country/region from the Worker list endpoint.
+    // Used by handleExportExcel to enrich exported rows. Either field can be null
+    // when the backend has not resolved geo for that worker.
+    const workerGeoMap = useMemo(() => {
+        const map = new Map<string, { country: string | null; region: string | null }>();
+        for (const w of workers) {
+            map.set(w.oid, {
+                country: w.country_name ?? null,
+                region: w.region_name ?? null,
+            });
+        }
+        return map;
+    }, [workers]);
 
     const selectedBatch = batches.find(b => b.oid === selectedBatchOid);
 
