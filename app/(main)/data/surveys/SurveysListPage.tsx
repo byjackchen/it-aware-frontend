@@ -144,7 +144,7 @@ export function SurveysListPage() {
         const questions = filteredSurveys[0]?.survey_questions?.questions ?? [];
 
         const headers = [
-            'Receiver Stable ID', 'Status', 'Submitted At', 'Created At', 'Updated At',
+            'Receiver Stable ID', 'Country', 'Region', 'Status', 'Submitted At', 'Created At', 'Updated At',
             ...questions.map((q) => q.title),
         ];
 
@@ -175,8 +175,11 @@ export function SurveysListPage() {
                 return '';
             });
 
+            const geo = workerGeoMap.get(survey.receiver_oid);
             return [
                 survey.receiver_stable_id,
+                geo?.country ?? '',
+                geo?.region ?? '',
                 survey.status,
                 survey.submitted_at ?? '',
                 survey.created_at,
@@ -187,7 +190,7 @@ export function SurveysListPage() {
 
         const batchName = selectedBatch?.name?.replace(/[^a-zA-Z0-9_-]/g, '_') ?? 'batch';
         downloadXlsx('Surveys', headers, rows, `surveys_${batchName}_export.xlsx`);
-    }, [filteredSurveys, selectedBatch]);
+    }, [filteredSurveys, selectedBatch, workerGeoMap]);
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
