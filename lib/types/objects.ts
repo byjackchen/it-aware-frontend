@@ -200,41 +200,191 @@ export interface WorkerProfileUpsert {
     tags?: string[] | null;
 }
 
-export interface WorkerHardware {
+// ============================================================================
+// Hardware Types (standalone — synced from ERP BPMS)
+// ============================================================================
+
+export interface Hardware {
     oid: string;
-    worker_oid: string;
-    hardware_type: string;
-    tracking_id: string | null;
-    serial_number: string | null;
-    model: string | null;
-    assignment_date: string;
-    renew_eligible_date: string | null;
-    notes: string | null;
+    serial_number: string;
+    worker_oid: string | null;
+
+    // Identity
+    asset_tag: string | null;
+    asset_number: string | null;
+
+    // Model
+    model_category: string | null;
+    model_display_name: string | null;
+    model_name: string | null;
+    main_category: string | null;
+    asset_function: string | null;
+    asset_owner: string | null;
+
+    // Assignment
+    assigned_to_username: string | null;
+    assigned_to_display_name: string | null;
+    employment_type: string | null;
+    employment_start_date: string | null;
+    assigned_date: string | null;
+    first_assigned_date: string | null;
+
+    // Location / Org
+    company: string | null;
+    business_group: string | null;
+    department: string | null;
+    location: string | null;
+    office_id: string | null;
+    region_code: string | null;
+    region: string | null;
+    office_region: string | null;
+    stock_room: string | null;
+
+    // Cost (Decimal as string)
+    cost: string | null;
+    cost_center: string | null;
+    procured_cost_center: string | null;
+    residual_value: string | null;
+    residual_date: string | null;
+    budget_by_oit: boolean | null;
+    cost_by_oit: boolean | null;
+
+    // Status
+    asset_status: string | null;
+    substatus: string | null;
+    retired_date: string | null;
+    scheduled_retirement: string | null;
+
+    // Verification
+    verification_status: string | null;
+    verified_date: string | null;
+    verified_by: string | null;
+
+    // Provenance
+    erp_created_by: string | null;
+    erp_created_date: string | null;
+    erp_updated_date: string | null;
+    owned_by: string | null;
+
     is_active: boolean;
     created_at: string;
     updated_at: string;
 }
 
-export interface WorkerHardwareCreate {
-    hardware_type: string;
-    tracking_id?: string;
-    serial_number?: string;
-    model?: string;
-    assignment_date: string;
-    renew_eligible_date?: string;
-    notes?: string;
+export interface HardwareCreate {
+    serial_number: string;
+    worker_oid?: string | null;
+    asset_tag?: string | null;
+    asset_number?: string | null;
+    model_category?: string | null;
+    model_display_name?: string | null;
+    model_name?: string | null;
+    main_category?: string | null;
+    asset_function?: string | null;
+    asset_owner?: string | null;
+    assigned_to_username?: string | null;
+    assigned_to_display_name?: string | null;
+    employment_type?: string | null;
+    employment_start_date?: string | null;
+    assigned_date?: string | null;
+    first_assigned_date?: string | null;
+    company?: string | null;
+    business_group?: string | null;
+    department?: string | null;
+    location?: string | null;
+    office_id?: string | null;
+    region_code?: string | null;
+    region?: string | null;
+    office_region?: string | null;
+    stock_room?: string | null;
+    cost?: string | null;
+    cost_center?: string | null;
+    procured_cost_center?: string | null;
+    residual_value?: string | null;
+    residual_date?: string | null;
+    budget_by_oit?: boolean | null;
+    cost_by_oit?: boolean | null;
+    asset_status?: string | null;
+    substatus?: string | null;
+    retired_date?: string | null;
+    scheduled_retirement?: string | null;
+    verification_status?: string | null;
+    verified_date?: string | null;
+    verified_by?: string | null;
+    erp_created_by?: string | null;
+    erp_created_date?: string | null;
+    erp_updated_date?: string | null;
+    owned_by?: string | null;
     is_active?: boolean;
 }
 
-export interface WorkerHardwareUpdate {
-    hardware_type?: string;
-    tracking_id?: string;
-    serial_number?: string;
-    model?: string;
-    assignment_date?: string;
-    renew_eligible_date?: string;
-    notes?: string;
+export interface HardwareUpdate {
+    worker_oid?: string | null;
+    asset_tag?: string | null;
+    asset_number?: string | null;
+    model_category?: string | null;
+    model_display_name?: string | null;
+    model_name?: string | null;
+    main_category?: string | null;
+    asset_function?: string | null;
+    asset_owner?: string | null;
+    assigned_to_username?: string | null;
+    assigned_to_display_name?: string | null;
+    employment_type?: string | null;
+    employment_start_date?: string | null;
+    assigned_date?: string | null;
+    first_assigned_date?: string | null;
+    company?: string | null;
+    business_group?: string | null;
+    department?: string | null;
+    location?: string | null;
+    office_id?: string | null;
+    region_code?: string | null;
+    region?: string | null;
+    office_region?: string | null;
+    stock_room?: string | null;
+    cost?: string | null;
+    cost_center?: string | null;
+    procured_cost_center?: string | null;
+    residual_value?: string | null;
+    residual_date?: string | null;
+    budget_by_oit?: boolean | null;
+    cost_by_oit?: boolean | null;
+    asset_status?: string | null;
+    substatus?: string | null;
+    retired_date?: string | null;
+    scheduled_retirement?: string | null;
+    verification_status?: string | null;
+    verified_date?: string | null;
+    verified_by?: string | null;
+    erp_created_by?: string | null;
+    erp_created_date?: string | null;
+    erp_updated_date?: string | null;
+    owned_by?: string | null;
     is_active?: boolean;
+}
+
+export interface HardwareListResponse {
+    items: Hardware[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface HardwareListParams {
+    skip?: number;
+    limit?: number;
+    worker_oid?: string;
+    assigned_to_username?: string;
+    serial_number?: string;
+    asset_tag?: string;
+    model_category?: string;
+    main_category?: string;
+    asset_status?: string;
+    office_id?: string;
+    region?: string;
+    is_active?: boolean;
+    unassigned?: boolean;
 }
 
 export interface WorkerCreate {

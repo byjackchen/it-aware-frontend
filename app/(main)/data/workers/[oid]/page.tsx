@@ -4,7 +4,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
-import { getWorker, getWorkerProfile, getConnectedEdges, getOrganizations, getLocations, getWorkerHardwares } from '@/lib/api/objects';
+import { getWorker, getWorkerProfile, getConnectedEdges, getOrganizations, getLocations } from '@/lib/api/objects';
 import { WorkerDetailPage } from './WorkerDetailPage';
 
 interface PageProps {
@@ -28,13 +28,12 @@ export default async function WorkerPage({ params }: PageProps) {
     // Use resolved OID for APIs that require it (edges) and for consistency
     const workerOid = worker.oid;
 
-    const [edgesResponse, organizations, locations, hardwares] = await (async () => {
+    const [edgesResponse, organizations, locations] = await (async () => {
         try {
             return await Promise.all([
                 getConnectedEdges(workerOid),
                 getOrganizations(),
                 getLocations(),
-                getWorkerHardwares(workerOid),
             ]);
         } catch (error) {
             if (error instanceof ApiError && error.status === 403) {
@@ -62,7 +61,6 @@ export default async function WorkerPage({ params }: PageProps) {
             edges={edgesResponse.items}
             organizations={organizations}
             locations={locations}
-            hardwares={hardwares}
             workerProfile={workerProfile}
         />
     );

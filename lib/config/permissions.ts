@@ -28,6 +28,7 @@ export const PERMISSIONS = {
     WORKERS_EDIT: 'objects:workers:edit',
     WORKERS_READ_SENSITIVE: 'objects:workers:read_sensitive',
     WORKERS_EDIT_SENSITIVE: 'objects:workers:edit_sensitive',
+    HARDWARES_READ: 'objects:hardwares:read',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
     WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
     ARTICLES_READ: 'objects:articles:read',

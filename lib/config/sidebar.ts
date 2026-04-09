@@ -9,6 +9,7 @@ import {
     User,
     Users,
     FileText,
+    HardDrive,
     Building2,
     MapPin,
     Layers,
@@ -128,6 +129,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.WORKERS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/hardwares',
+                        labelKey: 'hardwares',
+                        icon: HardDrive,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.HARDWARES_READ,
                         ]),
                     },
                     {

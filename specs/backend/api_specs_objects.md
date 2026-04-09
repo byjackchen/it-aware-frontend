@@ -10,9 +10,13 @@ The Objects module manages business entities that are not hierarchical but inter
 /objects/
 ├── /workers                         - Worker (employee) management
 │   ├── /profile?worker_oid=...      - AI-processed profile data
-│   ├── /hardwares?worker_oid=...    - Hardware assigned to workers
 │   └── /detail?oid=...              - Single worker operations
-└── /worker-hierarchy-roles          - Role assignments at hierarchy nodes
+├── /worker-hierarchy-roles          - Role assignments at hierarchy nodes
+└── /hardwares                       - Standalone IT asset management (ERP BPMS)
+    ├── /detail?hardware_oid=...     - Single hardware operations
+    ├── /bulk_upsert                 - Batch insert/update by serial_number
+    ├── /prune                       - Hard-delete missing rows
+    └── /reconcile_assignees         - Backfill worker_oid from username
 ```
 
 > [!NOTE]
@@ -35,6 +39,7 @@ All endpoints require authentication. Permissions follow the `{domain}:{resource
 | Workers | `objects:workers:read` | `objects:workers:edit` |
 | Workers (sensitive fields) | `objects:workers:read_sensitive` | `objects:workers:edit_sensitive` |
 | Worker-Hierarchy-Roles | `objects:worker_hierarchy_roles:read` | `objects:worker_hierarchy_roles:edit` |
+| Hardwares | `objects:hardwares:read` | `objects:hardwares:write` |
 
 ### Worker Sensitive Field Permissions
 
@@ -131,27 +136,6 @@ class WorkerProfile(Base):
     topics_updated_at = Column(DateTime(timezone=True), nullable=True)
     tags = Column(JSONB, nullable=True)  # JSON array of strings
     tags_updated_at = Column(DateTime(timezone=True), nullable=True)
-```
-
-### WorkerHardware
-
-```python
-class WorkerHardware(Base):
-    __tablename__ = "worker_hardwares"
-    __table_args__ = {"schema": "objects"}
-
-    oid = Column(BYTEA(16), primary_key=True)
-    worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid", ondelete="CASCADE"), nullable=False)
-    hardware_type = Column(Text, nullable=False)  # e.g., "Laptop", "Monitor"
-    tracking_id = Column(Text, nullable=True, unique=True)  # ServiceNow display_name
-    serial_number = Column(Text, nullable=True, unique=True)
-    model = Column(Text, nullable=True)  # e.g., "MacBook Pro 16"
-    assignment_date = Column(DateTime(timezone=True), nullable=False)
-    renew_eligible_date = Column(DateTime(timezone=True), nullable=True)
-    notes = Column(Text, nullable=True)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now())
 ```
 
 ## API 1: Workers (`/objects/workers`)
@@ -253,7 +237,7 @@ class WorkerListResponse(BaseModel):
 
 #### Query Parameters (Detail)
 
-All detail/profile/hardware endpoints accept **either** `oid`/`worker_oid` **or** `stable_id` to identify the worker. Providing both or neither returns `422`.
+All detail/profile endpoints accept **either** `oid`/`worker_oid` **or** `stable_id` to identify the worker. Providing both or neither returns `422`.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -323,104 +307,276 @@ All detail/profile/hardware endpoints accept **either** `oid`/`worker_oid` **or*
 }
 ```
 
-### Nested Resource: Worker Hardwares
+---
 
-Hardware assets (laptops, monitors, etc.) assigned to workers.
+## API 3: Hardwares (`/objects/hardwares`)
 
-#### Schemas
+Standalone IT asset records synced from ERP BPMS. Hardware is **not** a worker subtable — it has its own lifecycle and can exist without an assigned worker (stockroom items, APs, retired devices).
+
+### Model — `objects.hardwares`
 
 ```python
-class WorkerHardwareCreate(BaseModel):
-    hardware_type: str = Field(..., min_length=1, max_length=100)
-    tracking_id: Optional[str] = Field(None, max_length=255)
-    serial_number: Optional[str] = Field(None, max_length=255)
-    model: Optional[str] = Field(None, max_length=255)
-    assignment_date: datetime
-    renew_eligible_date: Optional[datetime] = None
-    notes: Optional[str] = None
+class Hardware(Base):
+    __tablename__ = "hardwares"
+    __table_args__ = {"schema": "objects"}
+
+    oid = Column(BYTEA(16), primary_key=True)
+    serial_number = Column(Text, nullable=False, unique=True)  # Business key — immutable
+    worker_oid = Column(BYTEA(16), ForeignKey("objects.workers.oid", ondelete="SET NULL"), nullable=True)
+
+    # Identity
+    asset_tag = Column(Text, nullable=True)
+    asset_number = Column(Text, nullable=True)
+
+    # Model
+    model_category = Column(Text, nullable=True)       # "Laptop", "AP", "Monitor", etc.
+    model_display_name = Column(Text, nullable=True)
+    model_name = Column(Text, nullable=True)
+    main_category = Column(Text, nullable=True)
+    asset_function = Column(Text, nullable=True)
+    asset_owner = Column(Text, nullable=True)
+
+    # Assignment
+    assigned_to_username = Column(Text, nullable=True)
+    assigned_to_display_name = Column(Text, nullable=True)
+    employment_type = Column(Text, nullable=True)
+    employment_start_date = Column(DateTime(timezone=True), nullable=True)
+    assigned_date = Column(DateTime(timezone=True), nullable=True)
+    first_assigned_date = Column(DateTime(timezone=True), nullable=True)
+
+    # Location / Org
+    company = Column(Text, nullable=True)
+    business_group = Column(Text, nullable=True)
+    department = Column(Text, nullable=True)
+    location = Column(Text, nullable=True)
+    office_id = Column(Text, nullable=True)
+    region_code = Column(Text, nullable=True)
+    region = Column(Text, nullable=True)
+    office_region = Column(Text, nullable=True)
+    stock_room = Column(Text, nullable=True)
+
+    # Cost
+    cost = Column(Numeric, nullable=True)
+    cost_center = Column(Text, nullable=True)
+    procured_cost_center = Column(Text, nullable=True)
+    residual_value = Column(Numeric, nullable=True)
+    residual_date = Column(DateTime(timezone=True), nullable=True)
+    budget_by_oit = Column(Boolean, nullable=True)
+    cost_by_oit = Column(Boolean, nullable=True)
+
+    # Status
+    asset_status = Column(Text, nullable=True)         # "In use", "Retired", "Awaiting Approval"
+    substatus = Column(Text, nullable=True)
+    retired_date = Column(DateTime(timezone=True), nullable=True)
+    scheduled_retirement = Column(DateTime(timezone=True), nullable=True)
+
+    # Verification
+    verification_status = Column(Text, nullable=True)
+    verified_date = Column(DateTime(timezone=True), nullable=True)
+    verified_by = Column(Text, nullable=True)
+
+    # Provenance
+    erp_created_by = Column(Text, nullable=True)
+    erp_created_date = Column(DateTime(timezone=True), nullable=True)
+    erp_updated_date = Column(DateTime(timezone=True), nullable=True)
+    owned_by = Column(Text, nullable=True)
+
+    # Standard
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+```
+
+**Data source**: ERP BPMS `POST /api/hWAsset/assetInfo`  
+**Registry**: auto-synced via `trg_hardware_registry_sync` trigger  
+**Total inventory**: ~9,000 assets; ~3,000 have no assigned worker
+
+### Schemas
+
+```python
+class HardwareCreate(BaseModel):
+    serial_number: str  # Required; immutable after creation
+
+    # All remaining fields optional
+    worker_oid: Optional[str] = None
+    asset_tag: Optional[str] = None
+    asset_number: Optional[str] = None
+    model_category: Optional[str] = None
+    model_display_name: Optional[str] = None
+    model_name: Optional[str] = None
+    main_category: Optional[str] = None
+    asset_function: Optional[str] = None
+    asset_owner: Optional[str] = None
+    assigned_to_username: Optional[str] = None
+    assigned_to_display_name: Optional[str] = None
+    employment_type: Optional[str] = None
+    employment_start_date: Optional[datetime] = None
+    assigned_date: Optional[datetime] = None
+    first_assigned_date: Optional[datetime] = None
+    company: Optional[str] = None
+    business_group: Optional[str] = None
+    department: Optional[str] = None
+    location: Optional[str] = None
+    office_id: Optional[str] = None
+    region_code: Optional[str] = None
+    region: Optional[str] = None
+    office_region: Optional[str] = None
+    stock_room: Optional[str] = None
+    cost: Optional[Decimal] = None
+    cost_center: Optional[str] = None
+    procured_cost_center: Optional[str] = None
+    residual_value: Optional[Decimal] = None
+    residual_date: Optional[datetime] = None
+    budget_by_oit: Optional[bool] = None
+    cost_by_oit: Optional[bool] = None
+    asset_status: Optional[str] = None
+    substatus: Optional[str] = None
+    retired_date: Optional[datetime] = None
+    scheduled_retirement: Optional[datetime] = None
+    verification_status: Optional[str] = None
+    verified_date: Optional[datetime] = None
+    verified_by: Optional[str] = None
+    erp_created_by: Optional[str] = None
+    erp_created_date: Optional[datetime] = None
+    erp_updated_date: Optional[datetime] = None
+    owned_by: Optional[str] = None
     is_active: bool = True
 
-class WorkerHardwareUpdate(BaseModel):
-    hardware_type: Optional[str] = None
-    tracking_id: Optional[str] = None
-    serial_number: Optional[str] = None
-    model: Optional[str] = None
-    assignment_date: Optional[datetime] = None
-    renew_eligible_date: Optional[datetime] = None
-    notes: Optional[str] = None
+class HardwareUpdate(BaseModel):
+    # serial_number is NOT included — it is an immutable business key
+    worker_oid: Optional[str] = None
+    asset_tag: Optional[str] = None
+    # ... all other fields from HardwareCreate except serial_number
     is_active: Optional[bool] = None
 
-class WorkerHardwareResponse(BaseModel):
+class HardwareResponse(BaseModel):
     oid: str
-    worker_oid: str
-    hardware_type: str
-    tracking_id: Optional[str] = None
-    serial_number: Optional[str] = None
-    model: Optional[str] = None
-    assignment_date: datetime
-    renew_eligible_date: Optional[datetime] = None
-    notes: Optional[str] = None
+    serial_number: str
+    worker_oid: Optional[str] = None  # null when unassigned
+    asset_tag: Optional[str] = None
+    asset_number: Optional[str] = None
+    model_category: Optional[str] = None
+    model_display_name: Optional[str] = None
+    model_name: Optional[str] = None
+    main_category: Optional[str] = None
+    asset_function: Optional[str] = None
+    asset_owner: Optional[str] = None
+    assigned_to_username: Optional[str] = None
+    assigned_to_display_name: Optional[str] = None
+    employment_type: Optional[str] = None
+    employment_start_date: Optional[datetime] = None
+    assigned_date: Optional[datetime] = None
+    first_assigned_date: Optional[datetime] = None
+    company: Optional[str] = None
+    business_group: Optional[str] = None
+    department: Optional[str] = None
+    location: Optional[str] = None
+    office_id: Optional[str] = None
+    region_code: Optional[str] = None
+    region: Optional[str] = None
+    office_region: Optional[str] = None
+    stock_room: Optional[str] = None
+    cost: Optional[str] = None           # Decimal serialized as string, e.g. "4135.83"
+    cost_center: Optional[str] = None
+    procured_cost_center: Optional[str] = None
+    residual_value: Optional[str] = None  # Decimal serialized as string
+    residual_date: Optional[datetime] = None
+    budget_by_oit: Optional[bool] = None
+    cost_by_oit: Optional[bool] = None
+    asset_status: Optional[str] = None
+    substatus: Optional[str] = None
+    retired_date: Optional[datetime] = None
+    scheduled_retirement: Optional[datetime] = None
+    verification_status: Optional[str] = None
+    verified_date: Optional[datetime] = None
+    verified_by: Optional[str] = None
+    erp_created_by: Optional[str] = None
+    erp_created_date: Optional[datetime] = None
+    erp_updated_date: Optional[datetime] = None
+    owned_by: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class HardwareListResponse(BaseModel):
+    items: List[HardwareResponse]
+    total: int
+    skip: int
+    limit: int
+
+class HardwareBulkUpsertRequest(BaseModel):
+    items: List[HardwareCreate]  # max 500 items; match/update on serial_number
+
+class HardwareBulkUpsertResponse(BaseModel):
+    created: int
+    updated: int
+    unchanged: int
+    skipped_no_serial: int
+    errors: List[str]
+
+class HardwarePruneRequest(BaseModel):
+    kept_serial_numbers: List[str]  # All hardware NOT in this list will be hard-deleted
+
+class HardwarePruneResponse(BaseModel):
+    deleted: int
+
+class HardwareReconcileResponse(BaseModel):
+    resolved: int       # Rows where worker_oid was successfully backfilled
+    still_unresolved: int  # Rows with assigned_to_username but no matching worker
 ```
 
-> **Timestamp behavior**: `assignment_date` and `renew_eligible_date` should be timezone-aware ISO8601 (e.g., `2026-02-02T12:34:56Z`). Naive timestamps are assumed to be UTC and are normalized to UTC.
+### Endpoints
 
-#### Endpoints
+| Verb | Path | Permission | Purpose |
+|------|------|------------|---------|
+| POST | `/objects/hardwares` | `objects:hardwares:write` | Create one |
+| GET | `/objects/hardwares` | `objects:hardwares:read` | List with filters + pagination |
+| GET | `/objects/hardwares/detail?hardware_oid=...` | `objects:hardwares:read` | Get one by OID |
+| PUT | `/objects/hardwares/detail?hardware_oid=...` | `objects:hardwares:write` | Update one |
+| DELETE | `/objects/hardwares/detail?hardware_oid=...` | `objects:hardwares:write` | Delete one |
+| POST | `/objects/hardwares/bulk_upsert` | `objects:hardwares:write` | Batch insert/update by `serial_number` |
+| POST | `/objects/hardwares/prune` | `objects:hardwares:write` | Hard-delete rows not in kept set |
+| POST | `/objects/hardwares/reconcile_assignees` | `objects:hardwares:write` | Backfill `worker_oid` from `assigned_to_username` |
 
-| Method | Path | Description | Permission |
-|--------|------|-------------|------------|
-| POST | `/objects/workers/hardwares?worker_oid={worker_oid}` | Create hardware | `objects:workers:edit` |
-| GET | `/objects/workers/hardwares?worker_oid={worker_oid}` | List hardware | `objects:workers:read` |
-| GET | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Get hardware | `objects:workers:read` |
-| PUT | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Update hardware | `objects:workers:edit` |
-| DELETE | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Delete hardware | `objects:workers:edit` |
-
-#### Query Parameters (Hardwares)
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `worker_oid` | string | One of `worker_oid` or `stable_id` | Worker OID (22-char base64url ULID) |
-| `stable_id` | string | One of `worker_oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
-
-#### Query Parameters (Hardware Detail)
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `worker_oid` | string | One of `worker_oid` or `stable_id` | Worker OID (22-char base64url ULID) |
-| `stable_id` | string | One of `worker_oid` or `stable_id` | Worker stable_id (e.g. `byjackchen`) |
-| `hardware_oid` | string | Yes | Hardware OID (22-char base64url ULID) |
-
-> [!NOTE]
-> Deleting a worker cascades to all associated hardware records.
-
-#### Error Responses
-
-| Status | Condition | Response |
-|--------|-----------|----------|
-| 404 | Worker not found | `{"detail": "Worker not found"}` |
-| 404 | Hardware not found | `{"detail": "Hardware not found"}` |
-| 409 | Tracking ID exists | `{"detail": "Tracking ID already exists"}` |
-| 409 | Serial number exists | `{"detail": "Serial number already exists"}` |
-
-#### Query Parameters (List)
+### Query Parameters (List)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `skip` | integer | 0 | Records to skip |
+| `limit` | integer | 50 | Max records (1-500) |
+| `worker_oid` | string | null | Filter by assigned worker OID |
+| `assigned_to_username` | string | null | Filter by ERP username |
+| `serial_number` | string | null | Filter by serial number (exact) |
+| `asset_tag` | string | null | Filter by asset tag |
+| `model_category` | string | null | Filter by model category (e.g. "Laptop") |
+| `main_category` | string | null | Filter by main category |
+| `asset_status` | string | null | Filter by status (e.g. "In use", "Retired") |
+| `office_id` | string | null | Filter by office |
+| `region` | string | null | Filter by region |
 | `is_active` | boolean | null | Filter by active status |
+| `unassigned` | boolean | null | If `true`, return only rows where `worker_oid IS NULL` |
 
-#### Create Hardware Example
+### Key Fields by Cluster
 
-```json
-{
-  "hardware_type": "Laptop",
-  "tracking_id": "MacBook-001",
-  "serial_number": "C02XYZ123ABC",
-  "model": "MacBook Pro 16",
-  "assignment_date": "2024-01-15T00:00:00Z"
-}
-```
+| Cluster | Fields |
+|---------|--------|
+| **Identity** | `serial_number` (unique, immutable), `asset_tag`, `asset_number` |
+| **Model** | `model_category`, `model_display_name`, `model_name`, `main_category`, `asset_function`, `asset_owner` |
+| **Assignment** | `worker_oid` (optional FK), `assigned_to_username`, `assigned_to_display_name`, `employment_type`, `employment_start_date`, `assigned_date`, `first_assigned_date` |
+| **Location/Org** | `company`, `business_group`, `department`, `location`, `office_id`, `region_code`, `region`, `office_region`, `stock_room` |
+| **Cost** | `cost` (Decimal→string), `cost_center`, `procured_cost_center`, `residual_value` (Decimal→string), `residual_date`, `budget_by_oit`, `cost_by_oit` |
+| **Status** | `asset_status`, `substatus`, `retired_date`, `scheduled_retirement` |
+| **Verification** | `verification_status`, `verified_date`, `verified_by` |
+| **Provenance** | `erp_created_by`, `erp_created_date`, `erp_updated_date`, `owned_by` |
+
+### Error Responses
+
+| Status | Condition | Response |
+|--------|-----------|----------|
+| 404 | Hardware not found | `{"detail": "Hardware not found"}` |
+| 409 | Serial number already exists | `{"detail": "Serial number already exists"}` |
+| 422 | `serial_number` missing on create | FastAPI validation error |
+| 422 | `bulk_upsert` items exceed 500 | FastAPI validation error |
 
 ---
 
@@ -571,12 +727,15 @@ class WorkerHierarchyRoleResponse(BaseModel):
 | 8 | POST | `/objects/worker-hierarchy-roles` | Create assignment | `objects:worker_hierarchy_roles:edit` |
 | 9 | GET | `/objects/worker-hierarchy-roles` | List assignments | `objects:worker_hierarchy_roles:read` |
 | 10 | DELETE | `/objects/worker-hierarchy-roles/{w}/{r}/{h}` | Delete assignment | `objects:worker_hierarchy_roles:edit` |
-| **Worker Hardwares** |||||
-| 11 | POST | `/objects/workers/hardwares?worker_oid={worker_oid}` | Create hardware | `objects:workers:edit` |
-| 12 | GET | `/objects/workers/hardwares?worker_oid={worker_oid}` | List hardware | `objects:workers:read` |
-| 13 | GET | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Get hardware | `objects:workers:read` |
-| 14 | PUT | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Update hardware | `objects:workers:edit` |
-| 15 | DELETE | `/objects/workers/hardwares/detail?worker_oid={worker_oid}&hardware_oid={hardware_oid}` | Delete hardware | `objects:workers:edit` |
+| **Hardwares** |||||
+| 11 | POST | `/objects/hardwares` | Create hardware | `objects:hardwares:write` |
+| 12 | GET | `/objects/hardwares` | List hardwares | `objects:hardwares:read` |
+| 13 | GET | `/objects/hardwares/detail?hardware_oid={oid}` | Get hardware | `objects:hardwares:read` |
+| 14 | PUT | `/objects/hardwares/detail?hardware_oid={oid}` | Update hardware | `objects:hardwares:write` |
+| 15 | DELETE | `/objects/hardwares/detail?hardware_oid={oid}` | Delete hardware | `objects:hardwares:write` |
+| 16 | POST | `/objects/hardwares/bulk_upsert` | Batch upsert by serial_number | `objects:hardwares:write` |
+| 17 | POST | `/objects/hardwares/prune` | Hard-delete missing rows | `objects:hardwares:write` |
+| 18 | POST | `/objects/hardwares/reconcile_assignees` | Backfill worker_oid | `objects:hardwares:write` |
 
 ---
 
@@ -590,7 +749,7 @@ class WorkerHierarchyRoleResponse(BaseModel):
 ### Cascade Behavior
 
 - Deleting a hierarchy node cascades to all children.
-- Deleting a worker cascades to `account_worker`, `worker_hierarchy_role`, `worker_profiles`, and worker hardware rows.
+- Deleting a worker cascades to `account_worker`, `worker_hierarchy_role`, and `worker_profiles`. Hardware rows are NOT deleted — their `worker_oid` is set to `NULL` (ON DELETE SET NULL).
 - Foreign key constraints ensure referential integrity.
 
 ---

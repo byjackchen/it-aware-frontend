@@ -6,6 +6,7 @@ const RESOURCE_PATHS = {
     organizations: '/objects/organizations',
     locations: '/objects/locations',
     workers: '/objects/workers',
+    hardwares: '/objects/hardwares',
     'service-catalogs': '/objects/service-catalogs',
     articles: '/objects/articles',
     incidents: '/objects/activities/incidents',

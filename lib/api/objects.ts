@@ -20,9 +20,11 @@ import type {
     WorkerUpdate,
     WorkerProfile,
     WorkerProfileUpsert,
-    WorkerHardware,
-    WorkerHardwareCreate,
-    WorkerHardwareUpdate,
+    Hardware,
+    HardwareCreate,
+    HardwareUpdate,
+    HardwareListResponse,
+    HardwareListParams,
     WorkerHierarchyRole,
     WorkerHierarchyRoleCreate,
     GlobalEdgeListResponse,
@@ -367,35 +369,49 @@ export async function upsertWorkerProfile(workerOidOrStableId: string, data: Wor
 }
 
 // ============================================================================
-// Worker Hardware APIs
+// Hardware APIs (standalone)
 // ============================================================================
 
-export async function getWorkerHardwares(workerOidOrStableId: string, includeInactive: boolean = false): Promise<WorkerHardware[]> {
-    const params = new URLSearchParams();
-    if (includeInactive) params.append('is_active', 'false');
-    else params.append('is_active', 'true');
-
-    return fetchApi<WorkerHardware[]>(`${OBJECTS_BASE}/workers/hardwares?${workerOidParam(workerOidOrStableId)}&${params.toString()}`);
+export async function listHardwares(params: HardwareListParams = {}): Promise<HardwareListResponse> {
+    const query = new URLSearchParams();
+    if (params.skip !== undefined) query.set('skip', String(params.skip));
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.worker_oid) query.set('worker_oid', params.worker_oid);
+    if (params.assigned_to_username) query.set('assigned_to_username', params.assigned_to_username);
+    if (params.serial_number) query.set('serial_number', params.serial_number);
+    if (params.asset_tag) query.set('asset_tag', params.asset_tag);
+    if (params.model_category) query.set('model_category', params.model_category);
+    if (params.main_category) query.set('main_category', params.main_category);
+    if (params.asset_status) query.set('asset_status', params.asset_status);
+    if (params.office_id) query.set('office_id', params.office_id);
+    if (params.region) query.set('region', params.region);
+    if (params.is_active !== undefined) query.set('is_active', String(params.is_active));
+    if (params.unassigned !== undefined) query.set('unassigned', String(params.unassigned));
+    return fetchApi<HardwareListResponse>(`${OBJECTS_BASE}/hardwares?${query.toString()}`);
 }
 
-export async function createWorkerHardware(workerOidOrStableId: string, data: WorkerHardwareCreate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares?${workerOidParam(workerOidOrStableId)}`, {
+export async function getHardware(hardwareOid: string): Promise<Hardware> {
+    return fetchApi<Hardware>(`${OBJECTS_BASE}/hardwares/detail?hardware_oid=${encodeURIComponent(hardwareOid)}`);
+}
+
+export async function createHardware(data: HardwareCreate): Promise<Hardware> {
+    return fetchApi<Hardware>(`${OBJECTS_BASE}/hardwares`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
 
-export async function updateWorkerHardware(workerOidOrStableId: string, hardwareOid: string, data: WorkerHardwareUpdate): Promise<WorkerHardware> {
-    return fetchApi<WorkerHardware>(`${OBJECTS_BASE}/workers/hardwares/detail?${workerOidParam(workerOidOrStableId)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
+export async function updateHardware(hardwareOid: string, data: HardwareUpdate): Promise<Hardware> {
+    return fetchApi<Hardware>(`${OBJECTS_BASE}/hardwares/detail?hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteWorkerHardware(workerOidOrStableId: string, hardwareOid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/workers/hardwares/detail?${workerOidParam(workerOidOrStableId)}&hardware_oid=${encodeURIComponent(hardwareOid)}`, {
+export async function deleteHardware(hardwareOid: string): Promise<void> {
+    return fetchApi<void>(`${OBJECTS_BASE}/hardwares/detail?hardware_oid=${encodeURIComponent(hardwareOid)}`, {
         method: 'DELETE',
     });
 }
