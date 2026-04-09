@@ -688,6 +688,12 @@ export async function createIncidentAction(formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -719,6 +725,12 @@ export async function createIncidentAction(formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -752,6 +764,12 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -782,6 +800,12 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -843,6 +867,14 @@ export async function createRequestAction(formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const item = formData.get('item') as string | null;
+    const request_item = formData.get('request_item') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -879,6 +911,14 @@ export async function createRequestAction(formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            item: item || undefined,
+            request_item: request_item || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -912,6 +952,14 @@ export async function updateRequestAction(oid: string, formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const item = formData.get('item') as string | null;
+    const request_item = formData.get('request_item') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -942,6 +990,14 @@ export async function updateRequestAction(oid: string, formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            item: item || undefined,
+            request_item: request_item || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,

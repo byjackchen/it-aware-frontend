@@ -620,6 +620,12 @@ export interface Incident {
     state: string;
     priority: string | null;
     urgency: string | null;
+    category: string | null;
+    subcategory: string | null;
+    impact: string | null;
+    caller_name: string | null;
+    assigned_to_name: string | null;
+    sn_id: string | null;
     channel: string | null;
 
     // Relationships
@@ -668,6 +674,14 @@ export interface Request {
     state: string;
     priority: string | null;
     urgency: string | null;
+    category: string | null;
+    subcategory: string | null;
+    impact: string | null;
+    item: string | null;
+    request_item: string | null;
+    caller_name: string | null;
+    assigned_to_name: string | null;
+    sn_id: string | null;
     channel: string | null;
 
     // Relationships
@@ -696,6 +710,12 @@ export interface IncidentCreate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -718,6 +738,14 @@ export interface RequestCreate {
     state: string;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    item?: string | null;
+    request_item?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -840,6 +868,12 @@ export interface IncidentUpdate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -860,6 +894,14 @@ export interface RequestUpdate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    item?: string | null;
+    request_item?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;

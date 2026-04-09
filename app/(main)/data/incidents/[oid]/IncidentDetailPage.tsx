@@ -55,6 +55,12 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
     const [urgency, setUrgency] = useState(incident.urgency || 'none');
     const [state, setState] = useState(incident.state);
     const [channel, setChannel] = useState(incident.channel || '');
+    const [category, setCategory] = useState(incident.category || '');
+    const [subcategory, setSubcategory] = useState(incident.subcategory || '');
+    const [impact, setImpact] = useState(incident.impact || '');
+    const [callerName, setCallerName] = useState(incident.caller_name || '');
+    const [assignedToName, setAssignedToName] = useState(incident.assigned_to_name || '');
+    const [snId, setSnId] = useState(incident.sn_id || '');
     const [assignedToOid, setAssignedToOid] = useState(incident.assigned_to_oid || '');
     const [serviceCatalogOid, setServiceCatalogOid] = useState(incident.service_catalog_oid || '');
     const [assignedGroup, setAssignedGroup] = useState(incident.assigned_group || '');
@@ -110,6 +116,12 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
             formData.set('urgency', urgency);
             formData.set('state', state);
             formData.set('channel', channel);
+            if (category) formData.set('category', category);
+            if (subcategory) formData.set('subcategory', subcategory);
+            if (impact) formData.set('impact', impact);
+            if (callerName) formData.set('caller_name', callerName);
+            if (assignedToName) formData.set('assigned_to_name', assignedToName);
+            if (snId) formData.set('sn_id', snId);
             if (assignedToOid) formData.set('assigned_to_oid', assignedToOid);
             if (serviceCatalogOid) formData.set('service_catalog_oid', serviceCatalogOid);
             formData.set('assigned_group', assignedGroup);
@@ -154,6 +166,12 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
         setUrgency(incident.urgency || 'none');
         setState(incident.state);
         setChannel(incident.channel || '');
+        setCategory(incident.category || '');
+        setSubcategory(incident.subcategory || '');
+        setImpact(incident.impact || '');
+        setCallerName(incident.caller_name || '');
+        setAssignedToName(incident.assigned_to_name || '');
+        setSnId(incident.sn_id || '');
         setAssignedToOid(incident.assigned_to_oid || '');
         setServiceCatalogOid(incident.service_catalog_oid || '');
         setAssignedGroup(incident.assigned_group || '');
@@ -339,6 +357,92 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 <div className={`flex items-center gap-1.5 text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                                     <span>{incident.state}</span>
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Category / Subcategory / Impact */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Category</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.category || '—'}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Subcategory</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={subcategory}
+                                    onChange={(e) => setSubcategory(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.subcategory || '—'}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Impact</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={impact}
+                                    onChange={(e) => setImpact(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.impact || '—'}</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* SN ID / Caller Name / Assigned To Name */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>SN sys_id</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={snId}
+                                    onChange={(e) => setSnId(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.sn_id || '—'}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Caller Name</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={callerName}
+                                    onChange={(e) => setCallerName(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.caller_name || '—'}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Assigned To Name</label>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={assignedToName}
+                                    onChange={(e) => setAssignedToName(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                />
+                            ) : (
+                                <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{incident.assigned_to_name || '—'}</div>
                             )}
                         </div>
                     </div>
