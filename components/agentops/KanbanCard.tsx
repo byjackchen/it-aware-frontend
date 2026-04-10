@@ -53,9 +53,8 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
         >
             <div className="flex items-start justify-between gap-2">
                 <button
-                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onClick(ticket.oid); }}
-                    className="text-sm font-medium text-left hover:text-[var(--accent-color)] transition-colors flex-1 line-clamp-2"
+                    className="text-sm font-medium text-left hover:text-[var(--accent-color)] hover:underline transition-colors flex-1 line-clamp-2"
                 >
                     {ticket.title}
                 </button>
