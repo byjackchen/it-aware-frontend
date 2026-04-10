@@ -26,6 +26,10 @@ import {
     Route,
     LayoutDashboard,
     BarChart3,
+    Bot,
+    TicketCheck,
+    KanbanSquare,
+    List,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -252,6 +256,34 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
+            {
+                labelKey: 'agentFleet',
+                items: [
+                    {
+                        href: '/data/agents',
+                        labelKey: 'agents',
+                        icon: Bot,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.AGENTS_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'agentOps',
+                items: [
+                    {
+                        href: '/data/agentops/tickets',
+                        labelKey: 'tickets',
+                        icon: TicketCheck,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.TICKETS_READ,
+                        ]),
+                    },
+                ],
+            },
         ],
     },
     '/campaign': {
@@ -316,6 +348,28 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.UI.NAVIGATION_DATA,
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                     PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+        ],
+    },
+    '/agent-ops': {
+        items: [
+            {
+                href: '/agent-ops/ticket-list',
+                labelKey: 'ticketList',
+                icon: List,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
+                ]),
+            },
+            {
+                href: '/agent-ops/ticket-kanban',
+                labelKey: 'ticketKanban',
+                icon: KanbanSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
         ],

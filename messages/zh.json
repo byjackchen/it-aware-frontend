@@ -26,8 +26,11 @@
             "typeSystem": "系统",
             "typeRegular": "普通",
             "status": "状态",
-            "isSystem": "系统账户",
-            "isSystemHint": "系统账户通过 API 密钥（密码）认证",
+            "accountType": "账户类型",
+            "accountTypeUser": "用户",
+            "accountTypeSystem": "系统",
+            "accountTypeAgent": "Agent",
+            "accountTypeHint": "系统账户和Agent账户通过 API 密钥（密码）认证",
             "isActive": "账户激活",
             "isActiveHint": "未激活的账户无法登录",
             "password": "密码（API 密钥）",
@@ -1056,7 +1059,13 @@
         "sscDashboard": "SSC 仪表盘",
         "surveyAnalytics": "问卷分析",
         "analytics": "分析",
-        "dataOverview": "数据总览"
+        "dataOverview": "数据总览",
+        "agentFleet": "Agent Fleet",
+        "agentOps": "AgentOps",
+        "agents": "Agents",
+        "tickets": "工单",
+        "ticketList": "工单列表",
+        "ticketKanban": "工单看板"
     },
     "SSCDashboard": {
         "title": "SSC 工作台",

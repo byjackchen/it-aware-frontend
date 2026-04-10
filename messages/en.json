@@ -32,8 +32,11 @@
             "typeSystem": "System",
             "typeRegular": "Regular",
             "status": "Status",
-            "isSystem": "System Account",
-            "isSystemHint": "System accounts authenticate via API key (password)",
+            "accountType": "Account Type",
+            "accountTypeUser": "User",
+            "accountTypeSystem": "System",
+            "accountTypeAgent": "Agent",
+            "accountTypeHint": "System and agent accounts authenticate via API key (password)",
             "isActive": "Active Account",
             "isActiveHint": "Inactive accounts cannot log in",
             "password": "Password (API Key)",
@@ -1064,7 +1067,13 @@
         "sscDashboard": "SSC Dashboard",
         "surveyAnalytics": "Survey Analytics",
         "analytics": "Analytics",
-        "dataOverview": "Data Overview"
+        "dataOverview": "Data Overview",
+        "agentFleet": "Agent Fleet",
+        "agentOps": "AgentOps",
+        "agents": "Agents",
+        "tickets": "Tickets",
+        "ticketList": "Ticket List",
+        "ticketKanban": "Ticket Kanban"
     },
     "SSCDashboard": {
         "title": "SSC Dashboard",

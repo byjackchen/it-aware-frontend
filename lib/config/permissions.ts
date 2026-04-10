@@ -15,6 +15,7 @@ export const PERMISSIONS = {
     NAVIGATION_KNOWLEDGE: 'ui:navigation:knowledge',
     NAVIGATION_DATA: 'ui:navigation:data',
     NAVIGATION_CAMPAIGN: 'ui:navigation:campaign',
+    NAVIGATION_AGENT_OPS: 'ui:navigation:agent_ops',
   },
   // Objects domain permissions
   OBJECTS: {
@@ -29,6 +30,11 @@ export const PERMISSIONS = {
     WORKERS_READ_SENSITIVE: 'objects:workers:read_sensitive',
     WORKERS_EDIT_SENSITIVE: 'objects:workers:edit_sensitive',
     HARDWARES_READ: 'objects:hardwares:read',
+    HARDWARES_WRITE: 'objects:hardwares:write',
+    AGENTS_READ: 'objects:agents:read',
+    AGENTS_WRITE: 'objects:agents:write',
+    TICKETS_READ: 'objects:tickets:read',
+    TICKETS_WRITE: 'objects:tickets:write',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
     WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
     ARTICLES_READ: 'objects:articles:read',
