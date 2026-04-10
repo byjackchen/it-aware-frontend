@@ -116,7 +116,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             if (chatFilters.start_time) body.start_time = chatFilters.start_time + ' 00:00:00';
             if (chatFilters.end_time) body.end_time = chatFilters.end_time + ' 23:59:59';
 
-            const res = await fetch(`/api/agentops/agents/${agent.oid}/chat-history`, {
+            const res = await fetch(`/api/agents/${agent.oid}/chat-history`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
