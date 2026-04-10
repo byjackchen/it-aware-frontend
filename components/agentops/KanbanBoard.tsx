@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { DndContext, DragEndEvent, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+    DndContext,
+    DragEndEvent,
+    DragStartEvent,
+    DragOverlay,
+    closestCorners,
+    PointerSensor,
+    KeyboardSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
 import { KanbanColumn } from './KanbanColumn';
+import { KanbanCard } from './KanbanCard';
 import type { Ticket } from '@/lib/types/objects';
 
 const COLUMNS = [
@@ -20,9 +31,13 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoardProps) {
     const [optimisticTickets, setOptimisticTickets] = useState<Ticket[]>(tickets);
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+    const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
 
-    // Sync when tickets prop changes
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(KeyboardSensor),
+    );
+
     useMemo(() => setOptimisticTickets(tickets), [tickets]);
 
     const ticketsByStatus = useMemo(() => {
@@ -35,7 +50,14 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
         return grouped;
     }, [optimisticTickets]);
 
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        const ticket = optimisticTickets.find(t => t.oid === event.active.id);
+        setActiveTicket(ticket || null);
+    }, [optimisticTickets]);
+
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+        setActiveTicket(null);
+
         const { active, over } = event;
         if (!over) return;
 
@@ -47,7 +69,6 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
         const ticket = optimisticTickets.find(t => t.oid === ticketOid);
         if (!ticket || ticket.status === newStatus) return;
 
-        // Optimistic update
         setOptimisticTickets(prev =>
             prev.map(t => t.oid === ticketOid ? { ...t, status: newStatus as Ticket['status'] } : t)
         );
@@ -55,16 +76,25 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
         try {
             await onStatusChange(ticketOid, newStatus);
         } catch {
-            // Revert on failure
             setOptimisticTickets(prev =>
                 prev.map(t => t.oid === ticketOid ? { ...t, status: ticket.status } : t)
             );
         }
     }, [optimisticTickets, onStatusChange]);
 
+    const handleDragCancel = useCallback(() => {
+        setActiveTicket(null);
+    }, []);
+
     return (
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-200px)]">
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+        >
+            <div className="flex gap-5 overflow-x-auto pb-4 min-h-[calc(100vh-200px)]">
                 {COLUMNS.map(col => (
                     <KanbanColumn
                         key={col.status}
@@ -76,6 +106,21 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
                     />
                 ))}
             </div>
+
+            {/* Floating drag overlay */}
+            <DragOverlay dropAnimation={{
+                duration: 250,
+                easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+            }}>
+                {activeTicket ? (
+                    <KanbanCard
+                        ticket={activeTicket}
+                        onStatusChange={() => {}}
+                        onClick={() => {}}
+                        isOverlay
+                    />
+                ) : null}
+            </DragOverlay>
         </DndContext>
     );
 }
