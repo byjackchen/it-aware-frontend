@@ -34,18 +34,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
 
-    const [chatHistory, setChatHistory] = useState<any[]>([]);
-    const [chatLoading, setChatLoading] = useState(false);
-    const [chatFilters, setChatFilters] = useState({
-        conversation_id: '',
-        user: '',
-        start_time: '',
-        end_time: '',
-        page: 1,
-        per_page: 20,
-    });
-    const [showHistory, setShowHistory] = useState(false);
-
     const [name, setName] = useState(agent.name);
     const [agentKey, setAgentKey] = useState(agent.agent_key || '');
     const [agentAdminKey, setAgentAdminKey] = useState(agent.agent_admin_key || '');
@@ -101,34 +89,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             alert(error instanceof Error ? error.message : 'Failed to delete agent');
         } finally {
             setIsPending(false);
-        }
-    };
-
-    const fetchChatHistory = async () => {
-        setChatLoading(true);
-        try {
-            const body: Record<string, unknown> = {
-                page: chatFilters.page,
-                per_page: chatFilters.per_page,
-            };
-            if (chatFilters.conversation_id) body.conversation_id = chatFilters.conversation_id;
-            if (chatFilters.user) body.user = chatFilters.user;
-            if (chatFilters.start_time) body.start_time = chatFilters.start_time + ' 00:00:00';
-            if (chatFilters.end_time) body.end_time = chatFilters.end_time + ' 23:59:59';
-
-            const res = await fetch(`/api/agents/${agent.oid}/chat-history`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
-            if (!res.ok) throw new Error('Failed to fetch chat history');
-            const data = await res.json();
-            setChatHistory(Array.isArray(data) ? data : data.data || data.items || [data]);
-        } catch (err) {
-            console.error(err);
-            setChatHistory([]);
-        } finally {
-            setChatLoading(false);
         }
     };
 
@@ -387,69 +347,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                     </div>
                 </div>
 
-                {/* Conversation Histories */}
-                <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    <button
-                        onClick={() => setShowHistory(!showHistory)}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold ${isLight ? 'text-slate-700 hover:bg-slate-50' : 'text-gray-300 hover:bg-white/5'} transition-colors`}
-                    >
-                        <span>Conversation Histories</span>
-                        <span className="text-xs text-[var(--text-secondary)]">{showHistory ? '▲' : '▼'}</span>
-                    </button>
-
-                    {showHistory && (
-                        <div className="px-4 pb-4 space-y-3 border-t border-[var(--card-border)]">
-                            {/* Filters */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-3">
-                                <input type="text" placeholder="Conversation ID"
-                                    value={chatFilters.conversation_id}
-                                    onChange={(e) => setChatFilters(f => ({ ...f, conversation_id: e.target.value }))}
-                                    className={`${inputClass} text-xs`} />
-                                <input type="text" placeholder="User"
-                                    value={chatFilters.user}
-                                    onChange={(e) => setChatFilters(f => ({ ...f, user: e.target.value }))}
-                                    className={`${inputClass} text-xs`} />
-                                <input type="date" value={chatFilters.start_time}
-                                    onChange={(e) => setChatFilters(f => ({ ...f, start_time: e.target.value }))}
-                                    className={`${inputClass} text-xs`} />
-                                <input type="date" value={chatFilters.end_time}
-                                    onChange={(e) => setChatFilters(f => ({ ...f, end_time: e.target.value }))}
-                                    className={`${inputClass} text-xs`} />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => void fetchChatHistory()} disabled={chatLoading}
-                                    className="px-3 py-1.5 rounded text-xs bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50 transition-colors">
-                                    {chatLoading ? 'Loading...' : 'Fetch'}
-                                </button>
-                                <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-                                    <button onClick={() => { setChatFilters(f => ({ ...f, page: Math.max(1, f.page - 1) })); }}
-                                        disabled={chatFilters.page <= 1} className="px-2 py-1 rounded border border-[var(--card-border)] disabled:opacity-30">Prev</button>
-                                    <span>Page {chatFilters.page}</span>
-                                    <button onClick={() => { setChatFilters(f => ({ ...f, page: f.page + 1 })); }}
-                                        className="px-2 py-1 rounded border border-[var(--card-border)]">Next</button>
-                                </div>
-                            </div>
-
-                            {/* Results */}
-                            {chatHistory.length > 0 ? (
-                                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                                    {chatHistory.map((item: any, idx: number) => (
-                                        <div key={idx} className={`p-3 rounded-lg border text-sm ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
-                                            <div className="flex items-center gap-2 mb-1 text-xs text-[var(--text-secondary)]">
-                                                {item.conversation_id && <span className="font-mono bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded">{item.conversation_id}</span>}
-                                                {item.user && <span>{item.user}</span>}
-                                                {item.created_at && <span>{formatDateTime(item.created_at, timezone)}</span>}
-                                            </div>
-                                            <div className="whitespace-pre-wrap">{item.content || item.message || JSON.stringify(item, null, 2)}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : !chatLoading && (
-                                <div className="text-xs text-[var(--text-secondary)] text-center py-4">No results. Click Fetch to load conversation histories.</div>
-                            )}
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     );

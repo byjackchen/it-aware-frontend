@@ -1073,7 +1073,8 @@
         "agents": "Agents",
         "tickets": "Tickets",
         "ticketList": "Ticket List",
-        "ticketKanban": "Ticket Kanban"
+        "ticketKanban": "Ticket Kanban",
+        "agentsManagement": "Agents Management"
     },
     "SSCDashboard": {
         "title": "SSC Dashboard",

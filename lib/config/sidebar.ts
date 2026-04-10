@@ -367,6 +367,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
+            {
+                href: '/agent-ops/agents',
+                labelKey: 'agentsManagement',
+                icon: Bot,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.AGENTS_READ,
+                ]),
+            },
         ],
     },
     // Note: /persona is intentionally excluded - it uses the full page width for the profile view
