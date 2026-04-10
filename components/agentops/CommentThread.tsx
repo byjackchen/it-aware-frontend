@@ -44,6 +44,11 @@ export function CommentThread({ comments, onReply, onDelete, streamingContent, a
                             <span className="text-xs text-[var(--text-secondary)]">
                                 {formatDateTime(comment.created_at, timezone)}
                             </span>
+                            {comment.agent_conversation_id && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                    conv: {comment.agent_conversation_id.slice(0, 12)}...
+                                </span>
+                            )}
                         </div>
                         <div className="text-sm whitespace-pre-wrap">{comment.content}</div>
                         <div className="flex gap-2 mt-2">
