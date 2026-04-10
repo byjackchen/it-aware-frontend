@@ -80,7 +80,10 @@ export function AgentsManagementPage() {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            const items = Array.isArray(data) ? data : data.data || data.items || [data];
+            // Knot API response shape: { code, data: { messages: [...], total }, msg }
+            const items = Array.isArray(data)
+                ? data
+                : data?.data?.messages || data?.messages || data?.items || [];
             updateState(agent.oid, s => ({ ...s, chatHistory: items, chatLoading: false }));
         } catch (err) {
             console.error(err);
@@ -164,17 +167,37 @@ export function AgentsManagementPage() {
 
                                     {/* Results */}
                                     {state.chatHistory.length > 0 ? (
-                                        <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                                            {state.chatHistory.map((item: any, idx: number) => (
-                                                <div key={idx} className={`p-3 rounded-lg border text-sm ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
-                                                    <div className="flex items-center gap-2 mb-1 text-xs text-[var(--text-secondary)]">
-                                                        {item.conversation_id && <span className="font-mono bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded">{item.conversation_id}</span>}
-                                                        {item.user && <span>{item.user}</span>}
-                                                        {item.created_at && <span>{formatDateTime(item.created_at, timezone)}</span>}
+                                        <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                                            {state.chatHistory.map((item: any, idx: number) => {
+                                                const conversationId = item.session_id || item.conversation_id || '';
+                                                const username = item.username || item.user || '';
+                                                const timestamp = item.user_request_at || item.created_at || '';
+                                                const userMessage = item.user_sent_request || '';
+                                                const agentResponse = item.user_received_response || item.content || item.message || '';
+                                                const model = item.specified_model_name || '';
+                                                return (
+                                                    <div key={item.id || idx} className={`p-3 rounded-lg border text-sm ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
+                                                        <div className="flex items-center flex-wrap gap-2 mb-2 text-xs text-[var(--text-secondary)]">
+                                                            {conversationId && <span className="font-mono bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded" title={conversationId}>{conversationId.slice(0, 16)}...</span>}
+                                                            {username && <span className="font-medium">{username}</span>}
+                                                            {model && <span className={`px-1.5 py-0.5 rounded text-[10px] ${isLight ? 'bg-slate-200 text-slate-600' : 'bg-white/10 text-gray-400'}`}>{model}</span>}
+                                                            {timestamp && <span>{formatDateTime(timestamp, timezone)}</span>}
+                                                        </div>
+                                                        {userMessage && (
+                                                            <div className="mb-2">
+                                                                <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] mb-1">User</div>
+                                                                <div className={`whitespace-pre-wrap text-sm p-2 rounded ${isLight ? 'bg-white' : 'bg-black/20'}`}>{userMessage}</div>
+                                                            </div>
+                                                        )}
+                                                        {agentResponse && (
+                                                            <div>
+                                                                <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] mb-1">Agent</div>
+                                                                <div className={`whitespace-pre-wrap text-sm p-2 rounded ${isLight ? 'bg-white' : 'bg-black/20'}`}>{agentResponse}</div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="whitespace-pre-wrap">{item.content || item.message || JSON.stringify(item, null, 2)}</div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     ) : !state.chatLoading && (
                                         <div className="text-xs text-[var(--text-secondary)] text-center py-4">No results. Click Fetch to load conversation histories.</div>
