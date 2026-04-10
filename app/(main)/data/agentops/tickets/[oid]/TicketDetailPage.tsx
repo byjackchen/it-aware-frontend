@@ -14,6 +14,8 @@ import {
     Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
@@ -38,6 +40,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
@@ -196,7 +199,7 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                             {status.replace('_', ' ')}
                         </span>
                         <div className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                            Created {new Date(ticket.created_at).toLocaleDateString()} &middot; Updated {new Date(ticket.updated_at).toLocaleDateString()}
+                            Created {formatDateTime(ticket.created_at, timezone)} &middot; Updated {formatDateTime(ticket.updated_at, timezone)}
                         </div>
                     </div>
                 </div>

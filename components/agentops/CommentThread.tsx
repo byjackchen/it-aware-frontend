@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
 import type { TicketComment } from '@/lib/types/objects';
 
 interface CommentThreadProps {
@@ -12,6 +14,7 @@ interface CommentThreadProps {
 }
 
 export function CommentThread({ comments, onReply, onDelete, streamingContent, agentRunning }: CommentThreadProps) {
+    const { timezone } = useTimezone();
     const bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -39,7 +42,7 @@ export function CommentThread({ comments, onReply, onDelete, streamingContent, a
                                 {comment.author_account_oid.slice(0, 8)}...
                             </span>
                             <span className="text-xs text-[var(--text-secondary)]">
-                                {new Date(comment.created_at).toLocaleString()}
+                                {formatDateTime(comment.created_at, timezone)}
                             </span>
                         </div>
                         <div className="text-sm whitespace-pre-wrap">{comment.content}</div>

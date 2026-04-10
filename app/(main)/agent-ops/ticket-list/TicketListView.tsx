@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flag, Plus, Calendar } from 'lucide-react';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
@@ -27,6 +29,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function TicketListView() {
     const router = useRouter();
+    const { timezone } = useTimezone();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
@@ -219,7 +222,7 @@ export function TicketListView() {
                                             }
                                         </td>
                                         <td className="px-4 py-3 text-[var(--text-secondary)]">
-                                            {new Date(ticket.created_at).toLocaleDateString()}
+                                            {formatDateTime(ticket.created_at, timezone)}
                                         </td>
                                     </tr>
                                 );

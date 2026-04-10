@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ticket as TicketIcon, Plus, RefreshCw, Search, Loader2, X } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { useServerSearch } from '@/lib/hooks/useServerSearch';
 import { Pagination } from '@/components/data/Pagination';
@@ -19,6 +21,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function TicketsListPage() {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
@@ -158,7 +161,7 @@ export function TicketsListPage() {
                         {ticket.status.replace('_', ' ')}
                     </span>
                     <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                        {new Date(ticket.created_at).toLocaleDateString()}
+                        {formatDateTime(ticket.created_at, timezone)}
                     </span>
                 </div>
             </button>
