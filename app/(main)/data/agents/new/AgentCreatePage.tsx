@@ -29,6 +29,7 @@ export function AgentCreatePage() {
     const [agentKey, setAgentKey] = useState('');
     const [accountOid, setAccountOid] = useState('');
     const [description, setDescription] = useState('');
+    const [workspaceId, setWorkspaceId] = useState('');
 
     const {
         items: workers,
@@ -57,6 +58,7 @@ export function AgentCreatePage() {
             formData.set('contact_worker_oid', contactWorkerOid);
 
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
+            if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
             if (description.trim()) formData.set('description', description.trim());
 
@@ -175,6 +177,17 @@ export function AgentCreatePage() {
                                 onChange={(e) => setAgentKey(e.target.value)}
                                 className={inputClass}
                                 placeholder="API key or identifier"
+                            />
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Workspace ID</label>
+                            <input
+                                type="text"
+                                value={workspaceId}
+                                onChange={(e) => setWorkspaceId(e.target.value)}
+                                className={inputClass}
+                                placeholder="e.g. f6c90bea-1078-408c-86ac-2090633ed5d3"
                             />
                         </div>
 

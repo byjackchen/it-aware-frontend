@@ -33,6 +33,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
 
     const [name, setName] = useState(agent.name);
     const [agentKey, setAgentKey] = useState(agent.agent_key || '');
+    const [workspaceId, setWorkspaceId] = useState(agent.agent_workspace_id || '');
     const [agentPlatform, setAgentPlatform] = useState(agent.agent_platform);
     const [contactWorkerOid, setContactWorkerOid] = useState(agent.contact_worker_oid);
     const [accountOid, setAccountOid] = useState(agent.account_oid || '');
@@ -54,6 +55,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             const formData = new FormData();
             if (name) formData.set('name', name);
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
+            if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (agentPlatform) formData.set('agent_platform', agentPlatform);
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
             if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
@@ -88,6 +90,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const handleCancel = () => {
         setName(agent.name);
         setAgentKey(agent.agent_key || '');
+        setWorkspaceId(agent.agent_workspace_id || '');
         setAgentPlatform(agent.agent_platform);
         setContactWorkerOid(agent.contact_worker_oid);
         setAccountOid(agent.account_oid || '');
@@ -262,6 +265,18 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                         ) : (
                             <div className={valueClass}>{agent.agent_key || '—'}</div>
                         )}
+                    </div>
+
+                    {/* Workspace ID */}
+                    <div>
+                        <label className={labelClass}>Workspace ID</label>
+                        <input
+                            type="text"
+                            value={workspaceId}
+                            onChange={(e) => setWorkspaceId(e.target.value)}
+                            className={inputClass}
+                            disabled={!isEditing}
+                        />
                     </div>
 
                     {/* Account OID */}

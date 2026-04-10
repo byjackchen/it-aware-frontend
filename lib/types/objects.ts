@@ -1509,6 +1509,7 @@ export interface Agent {
     contact_worker_oid: string;
     account_oid: string | null;
     description: string | null;
+    agent_workspace_id: string | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -1522,6 +1523,7 @@ export interface AgentCreate {
     contact_worker_oid: string;
     account_oid?: string;
     description?: string;
+    agent_workspace_id?: string;
 }
 
 export interface AgentUpdate {
@@ -1531,6 +1533,7 @@ export interface AgentUpdate {
     contact_worker_oid?: string;
     account_oid?: string;
     description?: string;
+    agent_workspace_id?: string;
     is_active?: boolean;
 }
 
