@@ -33,6 +33,12 @@ import {
     updateInquiry,
     deleteInquiry,
     deleteInteraction,
+    createAgent,
+    updateAgent,
+    deleteAgent,
+    createTicket,
+    updateTicket,
+    deleteTicket,
 } from '@/lib/api/objects';
 import {
     createAnalysis,
@@ -1394,6 +1400,158 @@ export async function deleteScenarioAction(oid: string) {
         revalidatePath('/data/scenarios');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Agent Actions
+// ============================================================================
+
+export async function createAgentAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createAgent';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const agent = await createAgent({
+            name: formData.get('name') as string,
+            agent_id: formData.get('agent_id') as string,
+            agent_platform: formData.get('agent_platform') as string,
+            contact_worker_oid: formData.get('contact_worker_oid') as string,
+            agent_key: formData.get('agent_key') as string || undefined,
+            account_oid: formData.get('account_oid') as string || undefined,
+            description: formData.get('description') as string || undefined,
+        });
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, agent };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateAgentAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateAgent';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const agent = await updateAgent(oid, {
+            name: formData.get('name') as string || undefined,
+            agent_key: formData.get('agent_key') as string || undefined,
+            agent_platform: formData.get('agent_platform') as string || undefined,
+            contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
+            account_oid: formData.get('account_oid') as string || undefined,
+            description: formData.get('description') as string || undefined,
+            is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
+        });
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, agent };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteAgentAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteAgent';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteAgent(oid);
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Ticket Actions
+// ============================================================================
+
+export async function createTicketAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createTicket';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const tagsRaw = formData.get('tags') as string | null;
+        const ticket = await createTicket({
+            title: formData.get('title') as string,
+            description: formData.get('description') as string || undefined,
+            assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
+        });
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, ticket };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateTicketAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateTicket';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const tagsRaw = formData.get('tags') as string | null;
+        const ticket = await updateTicket(oid, {
+            title: formData.get('title') as string || undefined,
+            description: formData.get('description') as string || undefined,
+            status: formData.get('status') as string || undefined,
+            flagged: formData.get('flagged') !== null ? formData.get('flagged') === 'true' : undefined,
+            assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
+        });
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, ticket };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteTicketAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteTicket';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteTicket(oid);
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });

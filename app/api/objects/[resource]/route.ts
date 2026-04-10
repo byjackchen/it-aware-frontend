@@ -17,6 +17,8 @@ const RESOURCE_PATHS = {
     'worker-clusters': '/objects/insights/worker-clusters',
     scenarios: '/objects/journeys/scenarios',
     roles: '/auth/config/roles',
+    agents: '/objects/agents',
+    tickets: '/objects/agentops/tickets',
 } as const;
 
 type ResourceName = keyof typeof RESOURCE_PATHS;

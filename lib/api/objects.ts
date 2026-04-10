@@ -50,6 +50,17 @@ import type {
     Interaction,
     InteractionListParams,
     InteractionListResponse,
+    Agent,
+    AgentCreate,
+    AgentUpdate,
+    AgentListResponse,
+    Ticket,
+    TicketCreate,
+    TicketUpdate,
+    TicketListResponse,
+    TicketComment,
+    TicketCommentCreate,
+    TicketCommentListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -815,3 +826,111 @@ export async function deleteInteraction(oid: string): Promise<void> {
 
 // Review APIs have been moved to @/lib/api/exports (client-safe module).
 // Import updateInteractionReview / updateIncidentReview from there.
+
+// ==================== Agents ====================
+
+export async function getAgents(): Promise<Agent[]> {
+    return fetchApi<Agent[]>(`${OBJECTS_BASE}/agents?limit=1000`);
+}
+
+export async function getAgentsPage(params: { skip?: number; limit?: number; is_active?: boolean; agent_platform?: string }): Promise<AgentListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params.agent_platform) searchParams.set('agent_platform', params.agent_platform);
+    return fetchApi<AgentListResponse>(`${OBJECTS_BASE}/agents?${searchParams}`);
+}
+
+export async function getAgent(oid: string): Promise<Agent> {
+    return fetchApi<Agent>(`${OBJECTS_BASE}/agents/${oid}`);
+}
+
+export async function createAgent(data: AgentCreate): Promise<Agent> {
+    return fetchApi<Agent>(`${OBJECTS_BASE}/agents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateAgent(oid: string, data: AgentUpdate): Promise<Agent> {
+    return fetchApi<Agent>(`${OBJECTS_BASE}/agents/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteAgent(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/agents/${oid}`, { method: 'DELETE' });
+}
+
+// ==================== Tickets ====================
+
+export async function getTickets(): Promise<Ticket[]> {
+    return fetchApi<Ticket[]>(`${OBJECTS_BASE}/agentops/tickets?limit=1000`);
+}
+
+export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; flagged?: boolean; assignee_account_oid?: string }): Promise<TicketListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params.status) searchParams.set('status', params.status);
+    if (params.flagged !== undefined) searchParams.set('flagged', String(params.flagged));
+    if (params.assignee_account_oid) searchParams.set('assignee_account_oid', params.assignee_account_oid);
+    return fetchApi<TicketListResponse>(`${OBJECTS_BASE}/agentops/tickets?${searchParams}`);
+}
+
+export async function getTicket(oid: string): Promise<Ticket> {
+    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}`);
+}
+
+export async function createTicket(data: TicketCreate): Promise<Ticket> {
+    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateTicket(oid: string, data: TicketUpdate): Promise<Ticket> {
+    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateTicketStatus(oid: string, status: string): Promise<Ticket> {
+    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+    });
+}
+
+export async function deleteTicket(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, { method: 'DELETE' });
+}
+
+// ==================== Ticket Comments ====================
+
+export async function getTicketComments(ticketOid: string, params?: { skip?: number; limit?: number }): Promise<TicketCommentListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<TicketCommentListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments?${searchParams}`);
+}
+
+export async function createTicketComment(ticketOid: string, data: TicketCommentCreate): Promise<TicketComment> {
+    return fetchApi<TicketComment>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteTicketComment(ticketOid: string, commentOid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
+}

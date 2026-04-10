@@ -85,7 +85,7 @@ export function AccountsListPage({
                                                 <span className="font-medium text-white">{account.username}</span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                {account.is_system ? (
+                                                {account.account_type === 'system' ? (
                                                     <span className="flex items-center gap-1.5 text-purple-400">
                                                         <Bot className="w-4 h-4" />
                                                         <span className="text-sm">{t('accounts.typeSystem')}</span>

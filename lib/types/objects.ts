@@ -1497,3 +1497,109 @@ export interface WorkerContext {
     country: string | null;
     department: string | null;
 }
+
+// ==================== Agent ====================
+
+export interface Agent {
+    oid: string;
+    name: string;
+    agent_id: string;
+    agent_key: string | null;
+    agent_platform: string;
+    contact_worker_oid: string;
+    account_oid: string | null;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AgentCreate {
+    name: string;
+    agent_id: string;
+    agent_key?: string;
+    agent_platform: string;
+    contact_worker_oid: string;
+    account_oid?: string;
+    description?: string;
+}
+
+export interface AgentUpdate {
+    name?: string;
+    agent_key?: string;
+    agent_platform?: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+    is_active?: boolean;
+}
+
+export interface AgentListResponse {
+    items: Agent[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== Ticket ====================
+
+export interface Ticket {
+    oid: string;
+    title: string;
+    description: string | null;
+    status: 'backlog' | 'in_progress' | 'blocked' | 'done';
+    flagged: boolean;
+    creator_account_oid: string;
+    assignee_account_oid: string | null;
+    agent_conversations: Array<{ agent_oid: string; conversation_id: string }> | null;
+    agent_status: 'idle' | 'running' | 'error';
+    tags: string[] | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TicketCreate {
+    title: string;
+    description?: string;
+    assignee_account_oid?: string;
+    tags?: string[];
+}
+
+export interface TicketUpdate {
+    title?: string;
+    description?: string;
+    status?: string;
+    flagged?: boolean;
+    assignee_account_oid?: string;
+    tags?: string[];
+}
+
+export interface TicketListResponse {
+    items: Ticket[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== TicketComment ====================
+
+export interface TicketComment {
+    oid: string;
+    ticket_oid: string;
+    author_account_oid: string;
+    content: string;
+    replied_to_comment_oid: string | null;
+    created_at: string;
+}
+
+export interface TicketCommentCreate {
+    content: string;
+    replied_to_comment_oid?: string;
+}
+
+export interface TicketCommentListResponse {
+    items: TicketComment[];
+    total: number;
+    skip: number;
+    limit: number;
+}
