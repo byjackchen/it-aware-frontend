@@ -1065,8 +1065,7 @@
         "agents": "Agents",
         "tickets": "工单",
         "ticketList": "工单列表",
-        "ticketKanban": "工单看板",
-        "agentsManagement": "Agent管理"
+        "ticketKanban": "工单看板"
     },
     "SSCDashboard": {
         "title": "SSC 工作台",

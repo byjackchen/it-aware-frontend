@@ -100,7 +100,7 @@ export function AgentsManagementPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-purple-100 text-purple-600' : 'bg-purple-500/20 text-purple-400'}`}>
                     <Bot className="w-5 h-5" />
                 </div>
-                <h1 className="text-2xl font-bold">Agents Management</h1>
+                <h1 className="text-2xl font-bold">Agent Fleet</h1>
                 <span className="text-sm text-[var(--text-secondary)]">{agents.length} agents</span>
             </div>
 

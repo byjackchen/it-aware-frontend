@@ -369,7 +369,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
             {
                 href: '/agent-ops/agents',
-                labelKey: 'agentsManagement',
+                labelKey: 'agentFleet',
                 icon: Bot,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
