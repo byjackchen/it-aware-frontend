@@ -1505,6 +1505,7 @@ export interface Agent {
     name: string;
     agent_id: string;
     agent_key: string | null;
+    agent_admin_key: string | null;
     agent_platform: string;
     contact_worker_oid: string;
     account_oid: string | null;
@@ -1519,6 +1520,7 @@ export interface AgentCreate {
     name: string;
     agent_id: string;
     agent_key?: string;
+    agent_admin_key?: string;
     agent_platform: string;
     contact_worker_oid: string;
     account_oid?: string;
@@ -1529,6 +1531,7 @@ export interface AgentCreate {
 export interface AgentUpdate {
     name?: string;
     agent_key?: string;
+    agent_admin_key?: string;
     agent_platform?: string;
     contact_worker_oid?: string;
     account_oid?: string;

@@ -27,6 +27,7 @@ export function AgentCreatePage() {
 
     // Optional fields
     const [agentKey, setAgentKey] = useState('');
+    const [agentAdminKey, setAgentAdminKey] = useState('');
     const [accountOid, setAccountOid] = useState('');
     const [description, setDescription] = useState('');
     const [workspaceId, setWorkspaceId] = useState('');
@@ -58,6 +59,7 @@ export function AgentCreatePage() {
             formData.set('contact_worker_oid', contactWorkerOid);
 
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
+            if (agentAdminKey.trim()) formData.set('agent_admin_key', agentAdminKey.trim());
             if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
             if (description.trim()) formData.set('description', description.trim());
@@ -176,7 +178,18 @@ export function AgentCreatePage() {
                                 value={agentKey}
                                 onChange={(e) => setAgentKey(e.target.value)}
                                 className={inputClass}
-                                placeholder="API key or identifier"
+                                placeholder="API key for agent execution"
+                            />
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Agent Admin Key</label>
+                            <input
+                                type="text"
+                                value={agentAdminKey}
+                                onChange={(e) => setAgentAdminKey(e.target.value)}
+                                className={inputClass}
+                                placeholder="Admin API key (e.g. for pulling conversation histories)"
                             />
                         </div>
 

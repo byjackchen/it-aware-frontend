@@ -33,6 +33,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
 
     const [name, setName] = useState(agent.name);
     const [agentKey, setAgentKey] = useState(agent.agent_key || '');
+    const [agentAdminKey, setAgentAdminKey] = useState(agent.agent_admin_key || '');
     const [workspaceId, setWorkspaceId] = useState(agent.agent_workspace_id || '');
     const [agentPlatform, setAgentPlatform] = useState(agent.agent_platform);
     const [contactWorkerOid, setContactWorkerOid] = useState(agent.contact_worker_oid);
@@ -55,6 +56,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             const formData = new FormData();
             if (name) formData.set('name', name);
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
+            if (agentAdminKey.trim()) formData.set('agent_admin_key', agentAdminKey.trim());
             if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (agentPlatform) formData.set('agent_platform', agentPlatform);
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
@@ -90,6 +92,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const handleCancel = () => {
         setName(agent.name);
         setAgentKey(agent.agent_key || '');
+        setAgentAdminKey(agent.agent_admin_key || '');
         setWorkspaceId(agent.agent_workspace_id || '');
         setAgentPlatform(agent.agent_platform);
         setContactWorkerOid(agent.contact_worker_oid);
@@ -260,10 +263,26 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                                 value={agentKey}
                                 onChange={(e) => setAgentKey(e.target.value)}
                                 className={inputClass}
-                                placeholder="Optional API key or identifier"
+                                placeholder="API key for agent execution"
                             />
                         ) : (
                             <div className={valueClass}>{agent.agent_key || '—'}</div>
+                        )}
+                    </div>
+
+                    {/* Agent Admin Key */}
+                    <div>
+                        <label className={labelClass}>Agent Admin Key</label>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={agentAdminKey}
+                                onChange={(e) => setAgentAdminKey(e.target.value)}
+                                className={inputClass}
+                                placeholder="Admin API key (e.g. for pulling conversation histories)"
+                            />
+                        ) : (
+                            <div className={valueClass}>{agent.agent_admin_key || '—'}</div>
                         )}
                     </div>
 
