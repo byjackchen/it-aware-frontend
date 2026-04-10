@@ -147,7 +147,7 @@ export function TicketListView() {
                                 return (
                                     <tr
                                         key={ticket.oid}
-                                        onClick={() => router.push(`/data/agentops/tickets/${ticket.oid}`)}
+                                        onClick={() => window.open(`/data/agentops/tickets/${ticket.oid}`, '_blank')}
                                         className="hover:bg-[var(--glass-bg)] cursor-pointer transition-colors"
                                     >
                                         <td className="px-4 py-3 font-medium">{ticket.title}</td>

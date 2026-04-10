@@ -34,8 +34,8 @@ export function TicketKanbanView() {
     }, [reload]);
 
     const handleCardClick = useCallback((oid: string) => {
-        router.push(`/data/agentops/tickets/${oid}`);
-    }, [router]);
+        window.open(`/data/agentops/tickets/${oid}`, '_blank');
+    }, []);
 
     if (isInitialLoading) {
         return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Loading...</div>;
