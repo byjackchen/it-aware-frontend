@@ -7,6 +7,24 @@ export interface TicketWSEvent {
     [key: string]: unknown;
 }
 
+/**
+ * Backend WebSocket URL resolution.
+ *
+ * The WS endpoint lives on the backend (not proxied through Next.js).
+ * - Local dev: frontend on :3007, backend on :8007 — connect directly to :8007
+ * - Production: use same host, backend is reachable at ws[s]://host/ws/...
+ */
+function getBackendWsUrl(ticketOid: string, token: string): string {
+    const { protocol, hostname, port } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+
+    // If frontend is on :3007, backend is on :8007. Otherwise assume same host.
+    const backendPort = port === '3007' ? '8007' : port;
+    const backendHost = backendPort ? `${hostname}:${backendPort}` : hostname;
+
+    return `${wsProtocol}//${backendHost}/ws/agentops/tickets/${ticketOid}?token=${encodeURIComponent(token)}`;
+}
+
 export function useTicketWebSocket(ticketOid: string | null) {
     const wsRef = useRef<WebSocket | null>(null);
     const [lastEvent, setLastEvent] = useState<TicketWSEvent | null>(null);
@@ -23,19 +41,34 @@ export function useTicketWebSocket(ticketOid: string | null) {
     useEffect(() => {
         if (!ticketOid) return;
 
+        // Read access token from cookie (set during login)
         const cookies = document.cookie.split(';');
         const tokenCookie = cookies.find(c => c.trim().startsWith('it_aware_access='));
-        const token = tokenCookie ? tokenCookie.split('=')[1] : '';
+        const token = tokenCookie ? tokenCookie.split('=')[1].trim() : '';
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/ws/agentops/tickets/${ticketOid}?token=${token}`;
+        if (!token) {
+            console.warn('[useTicketWebSocket] no access token found in cookies');
+            return;
+        }
+
+        const wsUrl = getBackendWsUrl(ticketOid, token);
+        console.log('[useTicketWebSocket] connecting to', wsUrl.replace(/token=[^&]+/, 'token=***'));
 
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
-        ws.onopen = () => setIsConnected(true);
-        ws.onclose = () => setIsConnected(false);
-        ws.onerror = () => setIsConnected(false);
+        ws.onopen = () => {
+            console.log('[useTicketWebSocket] connected');
+            setIsConnected(true);
+        };
+        ws.onclose = (evt) => {
+            console.log('[useTicketWebSocket] closed', evt.code, evt.reason);
+            setIsConnected(false);
+        };
+        ws.onerror = (evt) => {
+            console.error('[useTicketWebSocket] error', evt);
+            setIsConnected(false);
+        };
 
         ws.onmessage = (event) => {
             try {
