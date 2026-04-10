@@ -204,8 +204,8 @@ export function AccountDetailPage({
                             </div>
                         </div>
 
-                        {/* Password (System accounts only, edit mode) */}
-                        {isEditing && account.account_type === 'system' && (
+                        {/* Password (Non-user accounts only, edit mode) */}
+                        {isEditing && account.account_type !== 'user' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">
                                     {t('accounts.newPassword')}
@@ -248,8 +248,8 @@ export function AccountDetailPage({
                         </div>
                     )}
 
-                    {/* Linked Worker (Non-system accounts only) */}
-                    {account.account_type !== 'system' && (
+                    {/* Linked Worker (User accounts only) */}
+                    {account.account_type === 'user' && (
                         <div className="border-t pt-6 border-white/10">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
                                 {t('accounts.linkedWorker')}
