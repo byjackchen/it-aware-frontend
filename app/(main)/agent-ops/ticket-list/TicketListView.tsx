@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flag, Plus } from 'lucide-react';
+import { Flag, Plus, Calendar } from 'lucide-react';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
@@ -29,6 +29,8 @@ export function TicketListView() {
     const router = useRouter();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [flaggedOnly, setFlaggedOnly] = useState(false);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
 
@@ -51,8 +53,14 @@ export function TicketListView() {
         if (flaggedOnly) {
             result = result.filter(t => t.flagged);
         }
+        if (dateFrom) {
+            result = result.filter(t => new Date(t.created_at) >= new Date(dateFrom));
+        }
+        if (dateTo) {
+            result = result.filter(t => new Date(t.created_at) <= new Date(dateTo + 'T23:59:59'));
+        }
         return result;
-    }, [tickets, statusFilter, flaggedOnly]);
+    }, [tickets, statusFilter, flaggedOnly, dateFrom, dateTo]);
 
     const totalPages = Math.ceil(filteredTickets.length / pageSize) || 1;
     const startIdx = (currentPage - 1) * pageSize;
@@ -119,6 +127,30 @@ export function TicketListView() {
                     <Flag className="w-3.5 h-3.5" />
                     Flagged
                 </button>
+                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                        className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
+                    />
+                    <span>to</span>
+                    <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                        className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
+                    />
+                    {(dateFrom || dateTo) && (
+                        <button
+                            onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
+                            className="text-[var(--accent-color)] hover:underline text-xs"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Table */}

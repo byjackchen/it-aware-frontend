@@ -191,10 +191,13 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end gap-1">
                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
                             {status.replace('_', ' ')}
                         </span>
+                        <div className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                            Created {new Date(ticket.created_at).toLocaleDateString()} &middot; Updated {new Date(ticket.updated_at).toLocaleDateString()}
+                        </div>
                     </div>
                 </div>
 
@@ -270,11 +273,6 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                             className={inputClass}
                             placeholder="e.g. bug, urgent, backend"
                         />
-                    </div>
-
-                    <div className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                        Created: {new Date(ticket.created_at).toLocaleString()} &nbsp;|&nbsp;
-                        Updated: {new Date(ticket.updated_at).toLocaleString()}
                     </div>
 
                     <div className="flex items-center gap-3 pt-2">
