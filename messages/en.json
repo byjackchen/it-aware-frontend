@@ -1236,6 +1236,7 @@
         "knowledge": "Knowledge",
         "persona": "Persona",
         "campaign": "Campaign",
-        "sscCockpit": "SSC Cockpit"
+        "sscCockpit": "SSC Cockpit",
+        "agentOps": "AgentOps"
     }
 }

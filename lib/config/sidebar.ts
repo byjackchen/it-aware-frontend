@@ -136,6 +136,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
+                        href: '/data/agents',
+                        labelKey: 'agents',
+                        icon: Bot,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.AGENTS_READ,
+                        ]),
+                    },
+                    {
                         href: '/data/hardwares',
                         labelKey: 'hardwares',
                         icon: HardDrive,
@@ -252,20 +261,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.WORKER_CLUSTERS_READ,
-                        ]),
-                    },
-                ],
-            },
-            {
-                labelKey: 'agentFleet',
-                items: [
-                    {
-                        href: '/data/agents',
-                        labelKey: 'agents',
-                        icon: Bot,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.AGENTS_READ,
                         ]),
                     },
                 ],

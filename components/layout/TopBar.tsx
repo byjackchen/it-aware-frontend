@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -124,6 +124,14 @@ export function TopBar() {
           ]),
         },
       ],
+    },
+    {
+      href: '/agent-ops',
+      label: t('agentOps'),
+      icon: KanbanSquare,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+      ]),
     },
     {
       href: '/dashboard/data-overview',
