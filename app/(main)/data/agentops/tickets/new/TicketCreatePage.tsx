@@ -9,8 +9,13 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Ticket as TicketIcon, Loader2, Save } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { createTicketAction } from '@/app/actions/objects';
+import type { Account } from '@/lib/types/security';
 
-export function TicketCreatePage() {
+interface TicketCreatePageProps {
+    accounts: Account[];
+}
+
+export function TicketCreatePage({ accounts }: TicketCreatePageProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
@@ -110,14 +115,19 @@ export function TicketCreatePage() {
                         </div>
 
                         <div>
-                            <label className={labelClass}>Assignee Account OID</label>
-                            <input
-                                type="text"
+                            <label className={labelClass}>Assignee</label>
+                            <select
                                 value={assigneeOid}
                                 onChange={(e) => setAssigneeOid(e.target.value)}
                                 className={inputClass}
-                                placeholder="Leave blank for unassigned"
-                            />
+                            >
+                                <option value="">Unassigned</option>
+                                {accounts.map(account => (
+                                    <option key={account.oid} value={account.oid}>
+                                        {account.username} ({account.account_type})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
