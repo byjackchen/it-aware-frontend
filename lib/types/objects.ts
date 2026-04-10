@@ -1557,7 +1557,6 @@ export interface Ticket {
     flagged: boolean;
     creator_account_oid: string;
     assignee_account_oid: string | null;
-    agent_conversations: Array<{ agent_oid: string; conversation_id: string }> | null;
     agent_status: 'idle' | 'running' | 'error';
     tags: string[] | null;
     created_at: string;
@@ -1595,6 +1594,7 @@ export interface TicketComment {
     author_account_oid: string;
     content: string;
     replied_to_comment_oid: string | null;
+    agent_conversation_id: string | null;
     created_at: string;
 }
 
