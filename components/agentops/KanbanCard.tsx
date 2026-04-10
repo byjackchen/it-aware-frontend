@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Flag, GripVertical } from 'lucide-react';
+import { Flag } from 'lucide-react';
 import { AgentStatusIndicator } from './AgentStatusIndicator';
 import type { Ticket } from '@/lib/types/objects';
 
@@ -40,8 +40,8 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
         <div
             ref={isOverlay ? undefined : setNodeRef}
             style={isOverlay ? overlayStyle : style}
-            {...(isOverlay ? {} : attributes)}
-            className={`group relative p-3 rounded-xl border backdrop-blur-sm
+            {...(isOverlay ? {} : { ...attributes, ...listeners })}
+            className={`group relative p-3 rounded-xl border backdrop-blur-sm cursor-grab active:cursor-grabbing
                 ${isOverlay
                     ? 'bg-[var(--card-bg)] border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]/30'
                     : 'bg-[var(--card-bg)] border-[var(--card-border)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-black/10'
@@ -51,19 +51,9 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                 ${ticket.agent_status === 'error' ? 'ring-2 ring-red-400/60' : ''}
             `}
         >
-            {/* Drag handle */}
-            {!isOverlay && (
-                <div
-                    {...listeners}
-                    className="absolute -left-0 top-0 bottom-0 w-6 flex items-center justify-center cursor-grab active:cursor-grabbing
-                        opacity-0 group-hover:opacity-60 transition-opacity rounded-l-xl hover:bg-white/5"
-                >
-                    <GripVertical className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                </div>
-            )}
-
-            <div className="flex items-start justify-between gap-2 pl-3">
+            <div className="flex items-start justify-between gap-2">
                 <button
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onClick(ticket.oid); }}
                     className="text-sm font-medium text-left hover:text-[var(--accent-color)] transition-colors flex-1 line-clamp-2"
                 >
@@ -76,7 +66,7 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
             </div>
 
             {ticket.tags && ticket.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2 pl-3">
+                <div className="flex flex-wrap gap-1 mt-2">
                     {ticket.tags.map(tag => (
                         <span key={tag} className="px-1.5 py-0.5 text-[10px] font-medium rounded-md
                             bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20">
@@ -86,7 +76,7 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                 </div>
             )}
 
-            <div className="flex items-center justify-between mt-2.5 pl-3 text-xs text-[var(--text-secondary)]">
+            <div className="flex items-center justify-between mt-2.5 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1">
                     <span className={`w-1.5 h-1.5 rounded-full ${ticket.assignee_account_oid ? 'bg-green-400' : 'bg-gray-500'}`} />
                     {ticket.assignee_account_oid ? 'Assigned' : 'Unassigned'}
@@ -94,6 +84,7 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                 {!isOverlay && (
                     <select
                         value={ticket.status}
+                        onPointerDown={(e) => e.stopPropagation()}
                         onChange={(e) => { e.stopPropagation(); onStatusChange(ticket.oid, e.target.value); }}
                         onClick={(e) => e.stopPropagation()}
                         className="text-[10px] bg-transparent border border-[var(--card-border)] rounded-md px-1.5 py-0.5
