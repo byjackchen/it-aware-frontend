@@ -350,6 +350,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
     '/agent-ops': {
         items: [
             {
+                href: '/agent-ops/agents',
+                labelKey: 'agentFleet',
+                icon: Bot,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.AGENTS_READ,
+                ]),
+            },
+            {
                 href: '/agent-ops/ticket-list',
                 labelKey: 'ticketList',
                 icon: List,
@@ -365,15 +374,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
                     PERMISSIONS.OBJECTS.TICKETS_READ,
-                ]),
-            },
-            {
-                href: '/agent-ops/agents',
-                labelKey: 'agentFleet',
-                icon: Bot,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                    PERMISSIONS.OBJECTS.AGENTS_READ,
                 ]),
             },
         ],

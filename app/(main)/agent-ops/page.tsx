@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function AgentOpsPage() {
-    redirect('/agent-ops/ticket-kanban');
+    redirect('/agent-ops/agents');
 }
