@@ -19,10 +19,12 @@ import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
 import { useTicketWebSocket } from '@/lib/hooks/useTicketWebSocket';
 import type { Ticket, TicketComment, TicketCommentListResponse } from '@/lib/types/objects';
+import type { Account } from '@/lib/types/security';
 import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
 interface TicketDetailPageProps {
     ticket: Ticket;
+    accounts: Account[];
 }
 
 const STATUS_OPTIONS = ['backlog', 'in_progress', 'blocked', 'done'] as const;
@@ -34,7 +36,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     done: { bg: 'bg-green-500/20', text: 'text-green-400' },
 };
 
-export function TicketDetailPage({ ticket }: TicketDetailPageProps) {
+export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     const { theme } = useTheme();
     const router = useRouter();
     const isLight = theme === 'light';
@@ -244,14 +246,19 @@ export function TicketDetailPage({ ticket }: TicketDetailPageProps) {
                     </div>
 
                     <div>
-                        <label className={labelClass}>Assignee Account OID</label>
-                        <input
-                            type="text"
+                        <label className={labelClass}>Assignee</label>
+                        <select
                             value={assigneeOid}
                             onChange={(e) => setAssigneeOid(e.target.value)}
                             className={inputClass}
-                            placeholder="Leave blank for unassigned"
-                        />
+                        >
+                            <option value="">Unassigned</option>
+                            {accounts.map(account => (
+                                <option key={account.oid} value={account.oid}>
+                                    {account.username} ({account.account_type})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>
