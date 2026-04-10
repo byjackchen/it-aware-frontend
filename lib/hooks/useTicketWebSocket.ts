@@ -8,25 +8,18 @@ export interface TicketWSEvent {
 }
 
 /**
- * Backend WebSocket URL resolution.
+ * Ticket live update subscription.
  *
- * The WS endpoint lives on the backend (not proxied through Next.js).
- * - Local dev: frontend on :3007, backend on :8007 — connect directly to :8007
- * - Production: use same host, backend is reachable at ws[s]://host/ws/...
+ * Uses Server-Sent Events (EventSource) against a Next.js API route that
+ * proxies to the backend WebSocket server-side. This keeps the browser on
+ * the same origin — no CORS, no direct backend exposure, works in k8s where
+ * the backend is not reachable from the internet.
+ *
+ * If the browser disconnects, the Next.js route closes the upstream WS.
+ * The backend agent task (asyncio.Task) continues independently — the final
+ * comment is persisted regardless of whether anyone is listening.
  */
-function getBackendWsUrl(ticketOid: string, token: string): string {
-    const { protocol, hostname, port } = window.location;
-    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-
-    // If frontend is on :3007, backend is on :8007. Otherwise assume same host.
-    const backendPort = port === '3007' ? '8007' : port;
-    const backendHost = backendPort ? `${hostname}:${backendPort}` : hostname;
-
-    return `${wsProtocol}//${backendHost}/ws/agentops/tickets/${ticketOid}?token=${encodeURIComponent(token)}`;
-}
-
 export function useTicketWebSocket(ticketOid: string | null) {
-    const wsRef = useRef<WebSocket | null>(null);
     const [lastEvent, setLastEvent] = useState<TicketWSEvent | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const listenersRef = useRef<Array<(event: TicketWSEvent) => void>>([]);
@@ -41,55 +34,42 @@ export function useTicketWebSocket(ticketOid: string | null) {
     useEffect(() => {
         if (!ticketOid) return;
 
-        // Read access token from cookie (set during login)
-        const cookies = document.cookie.split(';');
-        const tokenCookie = cookies.find(c => c.trim().startsWith('it_aware_access='));
-        const token = tokenCookie ? tokenCookie.split('=')[1].trim() : '';
+        const streamUrl = `/api/agentops/tickets/${ticketOid}/stream`;
+        console.log('[ticket-stream] connecting to', streamUrl);
 
-        if (!token) {
-            console.warn('[useTicketWebSocket] no access token found in cookies');
-            return;
-        }
+        const source = new EventSource(streamUrl, { withCredentials: true });
 
-        const wsUrl = getBackendWsUrl(ticketOid, token);
-        console.log('[useTicketWebSocket] connecting to', wsUrl.replace(/token=[^&]+/, 'token=***'));
+        source.addEventListener('ready', () => {
+            console.log('[ticket-stream] ready');
+        });
 
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-            console.log('[useTicketWebSocket] connected');
+        source.addEventListener('connected', () => {
+            console.log('[ticket-stream] upstream connected');
             setIsConnected(true);
-        };
-        ws.onclose = (evt) => {
-            console.log('[useTicketWebSocket] closed', evt.code, evt.reason);
-            setIsConnected(false);
-        };
-        ws.onerror = (evt) => {
-            console.error('[useTicketWebSocket] error', evt);
-            setIsConnected(false);
-        };
+        });
 
-        ws.onmessage = (event) => {
+        source.addEventListener('closed', (ev) => {
+            console.log('[ticket-stream] upstream closed', (ev as MessageEvent).data);
+            setIsConnected(false);
+        });
+
+        source.addEventListener('error', (ev) => {
+            console.error('[ticket-stream] error', ev);
+            setIsConnected(false);
+        });
+
+        source.addEventListener('message', (ev: MessageEvent) => {
             try {
-                const data = JSON.parse(event.data) as TicketWSEvent;
+                const data = JSON.parse(ev.data) as TicketWSEvent;
                 setLastEvent(data);
                 listenersRef.current.forEach(l => l(data));
-            } catch {
-                // ignore
+            } catch (err) {
+                console.warn('[ticket-stream] unparseable message', err);
             }
-        };
-
-        const pingInterval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send('ping');
-            }
-        }, 30000);
+        });
 
         return () => {
-            clearInterval(pingInterval);
-            ws.close();
-            wsRef.current = null;
+            source.close();
             setIsConnected(false);
         };
     }, [ticketOid]);
