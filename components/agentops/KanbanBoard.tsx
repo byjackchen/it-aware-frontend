@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
     DndContext,
     DragEndEvent,
@@ -32,13 +32,19 @@ interface KanbanBoardProps {
 export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoardProps) {
     const [optimisticTickets, setOptimisticTickets] = useState<Ticket[]>(tickets);
     const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
+    const isDraggingRef = useRef(false);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor),
     );
 
-    useMemo(() => setOptimisticTickets(tickets), [tickets]);
+    // Sync from props only when not actively dragging
+    useEffect(() => {
+        if (!isDraggingRef.current) {
+            setOptimisticTickets(tickets);
+        }
+    }, [tickets]);
 
     const ticketsByStatus = useMemo(() => {
         const grouped: Record<string, Ticket[]> = { backlog: [], in_progress: [], blocked: [], done: [] };
@@ -51,6 +57,7 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
     }, [optimisticTickets]);
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
+        isDraggingRef.current = true;
         const ticket = optimisticTickets.find(t => t.oid === event.active.id);
         setActiveTicket(ticket || null);
     }, [optimisticTickets]);
@@ -59,16 +66,32 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
         setActiveTicket(null);
 
         const { active, over } = event;
-        if (!over) return;
+        if (!over) {
+            isDraggingRef.current = false;
+            return;
+        }
 
         const ticketOid = active.id as string;
-        const newStatus = over.id as string;
-
-        if (!COLUMNS.some(c => c.status === newStatus)) return;
+        // Drop target can be a column id or another card — resolve the status
+        let newStatus = over.id as string;
+        if (!COLUMNS.some(c => c.status === newStatus)) {
+            // Dropped on another card — find that card's status
+            const targetTicket = optimisticTickets.find(t => t.oid === newStatus);
+            if (targetTicket) {
+                newStatus = targetTicket.status;
+            } else {
+                isDraggingRef.current = false;
+                return;
+            }
+        }
 
         const ticket = optimisticTickets.find(t => t.oid === ticketOid);
-        if (!ticket || ticket.status === newStatus) return;
+        if (!ticket || ticket.status === newStatus) {
+            isDraggingRef.current = false;
+            return;
+        }
 
+        // Optimistic update
         setOptimisticTickets(prev =>
             prev.map(t => t.oid === ticketOid ? { ...t, status: newStatus as Ticket['status'] } : t)
         );
@@ -79,10 +102,13 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
             setOptimisticTickets(prev =>
                 prev.map(t => t.oid === ticketOid ? { ...t, status: ticket.status } : t)
             );
+        } finally {
+            isDraggingRef.current = false;
         }
     }, [optimisticTickets, onStatusChange]);
 
     const handleDragCancel = useCallback(() => {
+        isDraggingRef.current = false;
         setActiveTicket(null);
     }, []);
 
