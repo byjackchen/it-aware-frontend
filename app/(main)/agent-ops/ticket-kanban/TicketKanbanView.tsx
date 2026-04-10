@@ -12,7 +12,7 @@ export function TicketKanbanView() {
     const [flaggedOnly, setFlaggedOnly] = useState(false);
 
     const { items: tickets, isInitialLoading, reload } = useInfiniteResource<Ticket, TicketListResponse>(
-        'agentops/tickets',
+        'tickets',
         {
             pageSize: 500,
             auto: true,
@@ -25,7 +25,7 @@ export function TicketKanbanView() {
     const filteredTickets = flaggedOnly ? tickets.filter(t => t.flagged) : tickets;
 
     const handleStatusChange = useCallback(async (oid: string, newStatus: string) => {
-        await fetch(`/api/objects/tickets/${oid}/status`, {
+        await fetch(`/api/agentops/tickets/${oid}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus }),

@@ -33,7 +33,7 @@ export function TicketListView() {
     const [pageSize, setPageSize] = useState(50);
 
     const { items: tickets, isInitialLoading, error, reload } = useInfiniteResource<Ticket, TicketListResponse>(
-        'agentops/tickets',
+        'tickets',
         {
             pageSize: 500,
             auto: true,
@@ -59,7 +59,7 @@ export function TicketListView() {
     const displayedTickets = filteredTickets.slice(startIdx, startIdx + pageSize);
 
     const handleStatusChange = async (oid: string, status: string) => {
-        await fetch(`/api/objects/tickets/${oid}/status`, {
+        await fetch(`/api/agentops/tickets/${oid}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status }),

@@ -62,7 +62,7 @@ export function TicketDetailPage({ ticket }: TicketDetailPageProps) {
 
     const loadComments = useCallback(async () => {
         try {
-            const res = await fetch(`/api/objects/agentops/tickets/${ticket.oid}/comments?limit=200`);
+            const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments?limit=200`);
             if (res.ok) {
                 const data = (await res.json()) as TicketCommentListResponse;
                 setComments(data.items);
@@ -134,7 +134,7 @@ export function TicketDetailPage({ ticket }: TicketDetailPageProps) {
     };
 
     const handleSubmitComment = async (content: string, repliedToOid?: string) => {
-        const res = await fetch(`/api/objects/agentops/tickets/${ticket.oid}/comments`, {
+        const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content, replied_to_comment_oid: repliedToOid }),
@@ -149,7 +149,7 @@ export function TicketDetailPage({ ticket }: TicketDetailPageProps) {
 
     const handleDeleteComment = async (commentOid: string) => {
         if (!confirm('Delete this comment?')) return;
-        const res = await fetch(`/api/objects/agentops/tickets/${ticket.oid}/comments/${commentOid}`, {
+        const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments/${commentOid}`, {
             method: 'DELETE',
         });
         if (res.ok) {

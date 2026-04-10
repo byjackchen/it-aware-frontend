@@ -34,7 +34,7 @@ export function TicketsListPage() {
         isInitialLoading,
         error,
         reload,
-    } = useInfiniteResource<Ticket, TicketListResponse>('agentops/tickets', {
+    } = useInfiniteResource<Ticket, TicketListResponse>('tickets', {
         pageSize: 500,
         auto: true,
         extractItems: (response) => response.items,
@@ -42,7 +42,7 @@ export function TicketsListPage() {
         inferHasMore: () => false,
     });
 
-    const { searchResults, isSearching, searchError, searchByStableId, clearSearch } = useServerSearch<Ticket>('agentops/tickets');
+    const { searchResults, isSearching, searchError, searchByStableId, clearSearch } = useServerSearch<Ticket>('tickets');
 
     const isFiltering = searchQuery.trim().length > 0;
 
@@ -79,7 +79,7 @@ export function TicketsListPage() {
         abortRef.current = controller;
         setIsPageLoading(true);
         const skip = (page - 1) * pageSize;
-        fetch(`/api/objects/agentops/tickets?skip=${skip}&limit=${pageSize}`, {
+        fetch(`/api/objects/tickets?skip=${skip}&limit=${pageSize}`, {
             cache: 'no-store',
             signal: controller.signal,
         })
