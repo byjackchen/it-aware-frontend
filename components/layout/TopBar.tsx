@@ -89,8 +89,17 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
         PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
+        PERMISSIONS.UI.NAVIGATION_DATA,
       ]),
       children: [
+        {
+          href: '/dashboard/data-overview',
+          label: t('dashboard'),
+          icon: LayoutDashboard,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_DATA
+          ]),
+        },
         {
           href: '/knowledge',
           label: t('knowledge'),
@@ -132,12 +141,6 @@ export function TopBar() {
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
       ]),
-    },
-    {
-      href: '/dashboard/data-overview',
-      label: t('dashboard'),
-      icon: LayoutDashboard,
-      permissions: requireAnyPermission([]),
     },
   ];
 
