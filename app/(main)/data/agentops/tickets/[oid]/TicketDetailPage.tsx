@@ -4,7 +4,7 @@
  * Ticket detail page client component.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
@@ -19,7 +19,6 @@ import { formatDateTime } from '@/lib/utils/datetime';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
-import { useTicketWebSocket } from '@/lib/hooks/useTicketWebSocket';
 import type { Ticket, TicketComment, TicketCommentListResponse } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
 import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
@@ -58,11 +57,9 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     const [commentsLoading, setCommentsLoading] = useState(true);
     const [replyToOid, setReplyToOid] = useState<string | null>(null);
 
-    // WebSocket
-    const { subscribe, isConnected } = useTicketWebSocket(ticket.oid);
-
     // Agent running state
     const [agentRunning, setAgentRunning] = useState(ticket.agent_status === 'running');
+    const prevCommentCountRef = useRef(0);
 
     const loadComments = useCallback(async () => {
         try {
@@ -82,20 +79,31 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
         void loadComments();
     }, [loadComments]);
 
-    // Subscribe to WebSocket events — only start/complete/error, no streaming
+    // Poll ticket status while agent is running (every 3s)
+    // Works across multiple pods — no WebSocket needed
     useEffect(() => {
-        const unsubscribe = subscribe((event) => {
-            if (event.type === 'comment_added') {
-                void loadComments();
-            } else if (event.type === 'agent_started') {
-                setAgentRunning(true);
-            } else if (event.type === 'agent_completed' || event.type === 'agent_error') {
-                setAgentRunning(false);
-                void loadComments();
+        if (!agentRunning) return;
+
+        prevCommentCountRef.current = comments.length;
+
+        const interval = setInterval(async () => {
+            try {
+                const ticketRes = await fetch(`/api/agentops/tickets/${ticket.oid}`);
+                if (!ticketRes.ok) return;
+                const ticketData = await ticketRes.json();
+                const newStatus = ticketData.agent_status;
+
+                if (newStatus === 'idle' || newStatus === 'error') {
+                    setAgentRunning(false);
+                    void loadComments();
+                }
+            } catch {
+                // ignore polling errors
             }
-        });
-        return unsubscribe;
-    }, [subscribe, loadComments]);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [agentRunning, ticket.oid, loadComments, comments.length]);
 
     const handleSave = async () => {
         setIsPending(true);
@@ -181,9 +189,6 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                                 <p className={`text-sm flex items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                     <span>{ticket.oid.slice(0, 12)}...</span>
                                     <AgentStatusIndicator agentStatus={agentRunning ? 'running' : ticket.agent_status} size="sm" />
-                                    {isConnected && (
-                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" title="Live updates connected" />
-                                    )}
                                 </p>
                             </div>
                         </div>
