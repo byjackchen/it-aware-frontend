@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 export interface TicketWSEvent {
-    type: 'agent_started' | 'agent_thinking' | 'agent_tool_call' | 'agent_content' | 'agent_completed' | 'agent_error' | 'comment_added';
+    type: 'agent_started' | 'agent_completed' | 'agent_error' | 'comment_added';
     [key: string]: unknown;
 }
 

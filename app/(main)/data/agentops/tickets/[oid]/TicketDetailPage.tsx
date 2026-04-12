@@ -61,9 +61,8 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     // WebSocket
     const { subscribe, isConnected } = useTicketWebSocket(ticket.oid);
 
-    // Streaming state for agent output
+    // Agent running state
     const [agentRunning, setAgentRunning] = useState(ticket.agent_status === 'running');
-    const [streamingContent, setStreamingContent] = useState('');
 
     const loadComments = useCallback(async () => {
         try {
@@ -83,19 +82,15 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
         void loadComments();
     }, [loadComments]);
 
-    // Subscribe to WebSocket events
+    // Subscribe to WebSocket events — only start/complete/error, no streaming
     useEffect(() => {
         const unsubscribe = subscribe((event) => {
             if (event.type === 'comment_added') {
                 void loadComments();
             } else if (event.type === 'agent_started') {
                 setAgentRunning(true);
-                setStreamingContent('');
-            } else if (event.type === 'agent_content') {
-                setStreamingContent(prev => prev + ((event.content as string) || ''));
             } else if (event.type === 'agent_completed' || event.type === 'agent_error') {
                 setAgentRunning(false);
-                setStreamingContent('');
                 void loadComments();
             }
         });
@@ -315,7 +310,6 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                             comments={comments}
                             onReply={(oid) => setReplyToOid(oid)}
                             onDelete={handleDeleteComment}
-                            streamingContent={streamingContent}
                             agentRunning={agentRunning}
                         />
                     )}

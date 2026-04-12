@@ -9,17 +9,16 @@ interface CommentThreadProps {
     comments: TicketComment[];
     onReply: (commentOid: string) => void;
     onDelete?: (commentOid: string) => void;
-    streamingContent?: string;
     agentRunning?: boolean;
 }
 
-export function CommentThread({ comments, onReply, onDelete, streamingContent, agentRunning }: CommentThreadProps) {
+export function CommentThread({ comments, onReply, onDelete, agentRunning }: CommentThreadProps) {
     const { timezone } = useTimezone();
     const bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [comments.length, streamingContent]);
+    }, [comments.length]);
 
     const findRepliedComment = (oid: string | null) => {
         if (!oid) return null;
@@ -63,8 +62,7 @@ export function CommentThread({ comments, onReply, onDelete, streamingContent, a
 
             {agentRunning && (
                 <div className="p-3 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10 animate-pulse">
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Agent is working...</div>
-                    <div className="text-sm whitespace-pre-wrap">{streamingContent || '...'}</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Agent is working...</div>
                 </div>
             )}
             <div ref={bottomRef} />
