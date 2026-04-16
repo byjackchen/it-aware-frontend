@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { useAllActiveWorkers } from '@/components/campaign_surveys/useAllActiveWorkers';
+import { useAllLocations } from '@/components/campaign_surveys/useAllLocations';
 import type { SurveyBatch, Survey, SurveyBatchListResponse, SurveyListResponse } from '@/lib/types/objects';
 
 const PAGE_SIZE = 1000;
@@ -37,6 +38,7 @@ export function SurveysListPage() {
     // country_name/region_name for the export. is_active=true is intentional: departed
     // workers fall through to empty geo cells in the export, which is acceptable.
     const { workers, error: workersError, isLoading: isLoadingWorkers } = useAllActiveWorkers();
+    const { locations, error: locationsError, isLoading: isLoadingLocations } = useAllLocations();
 
     // Fetch batches on mount
     useEffect(() => {
@@ -117,19 +119,34 @@ export function SurveysListPage() {
         return surveys.filter((s) => s.receiver_stable_id.toLowerCase().includes(q));
     }, [surveys, searchQuery]);
 
-    // Map worker_oid → denormalized country/region from the Worker list endpoint.
-    // Used by handleExportExcel to enrich exported rows. Either field can be null
-    // when the backend has not resolved geo for that worker.
+    // Map location_oid → Location.name. Built from the full Locations list so we
+    // can resolve the leaf office/site that Worker.location_oid points at. The
+    // backend's Worker list endpoint denormalizes country_name/region_name but
+    // not the location name, so this lookup lives client-side.
+    const locationNameMap = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const loc of locations) {
+            map.set(loc.oid, loc.name);
+        }
+        return map;
+    }, [locations]);
+
+    // Map worker_oid → denormalized country/region + resolved location name.
+    // Used by both the row renderer and handleExportExcel. Any field can be null
+    // when the backend has not resolved geo for that worker or when location_oid
+    // points at a stale/unknown location.
     const workerGeoMap = useMemo(() => {
-        const map = new Map<string, { country: string | null; region: string | null }>();
+        const map = new Map<string, { country: string | null; region: string | null; location: string | null }>();
         for (const w of workers) {
+            const locationName = w.location_oid ? locationNameMap.get(w.location_oid) ?? null : null;
             map.set(w.oid, {
                 country: w.country_name ?? null,
                 region: w.region_name ?? null,
+                location: locationName,
             });
         }
         return map;
-    }, [workers]);
+    }, [workers, locationNameMap]);
 
     const selectedBatch = batches.find(b => b.oid === selectedBatchOid);
 
@@ -139,7 +156,7 @@ export function SurveysListPage() {
 
     // Guard: only enable export when ALL data the exporter depends on has resolved.
     // Prevents partial-row and blank-geo exports that silently diverge from the UI.
-    const isExportReady = !isLoadingSurveys && !isLoadingWorkers && filteredSurveys.length > 0;
+    const isExportReady = !isLoadingSurveys && !isLoadingWorkers && !isLoadingLocations && filteredSurveys.length > 0;
 
     const handleExportExcel = useCallback(() => {
         if (!isExportReady) return;
@@ -154,7 +171,7 @@ export function SurveysListPage() {
         );
 
         const headers: string[] = [
-            'Receiver Stable ID', 'Country', 'Region', 'Status', 'Submitted At', 'Created At', 'Updated At',
+            'Receiver Stable ID', 'Country', 'Region', 'Location', 'Status', 'Submitted At', 'Created At', 'Updated At',
         ];
         for (let i = 1; i <= maxQuestionCount; i++) {
             headers.push(`Question ${i}`, `Answer ${i}`);
@@ -207,6 +224,7 @@ export function SurveysListPage() {
                 survey.receiver_stable_id,
                 geo?.country ?? '',
                 geo?.region ?? '',
+                geo?.location ?? '',
                 survey.status,
                 survey.submitted_at ?? '',
                 survey.created_at,
@@ -248,12 +266,14 @@ export function SurveysListPage() {
                                     ? 'Loading surveys — export will be enabled when all rows are loaded'
                                     : isLoadingWorkers
                                         ? 'Loading worker geo data — export will be enabled shortly'
-                                        : filteredSurveys.length === 0
-                                            ? 'No surveys to export'
-                                            : 'Export to Excel'
+                                        : isLoadingLocations
+                                            ? 'Loading office/site locations — export will be enabled shortly'
+                                            : filteredSurveys.length === 0
+                                                ? 'No surveys to export'
+                                                : 'Export to Excel'
                             }
                         >
-                            {isLoadingSurveys || isLoadingWorkers ? (
+                            {isLoadingSurveys || isLoadingWorkers || isLoadingLocations ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <Download className="w-5 h-5" />
@@ -296,10 +316,14 @@ export function SurveysListPage() {
                     </div>
                 </div>
 
-                {/* Worker geo data failure banner — export still works, but Country/Region cells will be empty */}
-                {workersError && (
+                {/* Worker/location geo data failure banner — export still works, but affected cells will be empty */}
+                {(workersError || locationsError) && (
                     <div className={`mb-4 px-3 py-2 rounded-lg text-xs ${isLight ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                        Country/Region unavailable — worker geo data failed to load. Export will still run with empty geo columns.
+                        {workersError && locationsError
+                            ? 'Country/Region/Location unavailable — worker and location data failed to load. Export will still run with empty geo columns.'
+                            : workersError
+                                ? 'Country/Region unavailable — worker geo data failed to load. Export will still run with empty geo columns.'
+                                : 'Location unavailable — office/site data failed to load. Export will still run with empty Location cells.'}
                     </div>
                 )}
 
@@ -327,6 +351,11 @@ export function SurveysListPage() {
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
                             {filteredSurveys.map((survey) => {
                                 const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.created;
+                                const geo = workerGeoMap.get(survey.receiver_oid);
+                                const locationLabel = geo?.location ?? '—';
+                                const submittedLabel = survey.submitted_at
+                                    ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}`
+                                    : 'Not submitted';
                                 return (
                                     <button
                                         key={survey.oid}
@@ -337,8 +366,8 @@ export function SurveysListPage() {
                                             <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                                 {survey.receiver_stable_id}
                                             </div>
-                                            <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {survey.submitted_at ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}` : 'Not submitted'}
+                                            <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {submittedLabel} · {locationLabel}
                                             </div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
