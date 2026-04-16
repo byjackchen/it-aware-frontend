@@ -36,7 +36,7 @@ export function SurveysListPage() {
     // Workers — fetched on mount in parallel with batches/surveys; provides denormalized
     // country_name/region_name for the export. is_active=true is intentional: departed
     // workers fall through to empty geo cells in the export, which is acceptable.
-    const { workers, error: workersError } = useAllActiveWorkers();
+    const { workers, error: workersError, isLoading: isLoadingWorkers } = useAllActiveWorkers();
 
     // Fetch batches on mount
     useEffect(() => {
@@ -137,43 +137,70 @@ export function SurveysListPage() {
         if (selectedBatchOid) void fetchAllSurveys(selectedBatchOid);
     };
 
+    // Guard: only enable export when ALL data the exporter depends on has resolved.
+    // Prevents partial-row and blank-geo exports that silently diverge from the UI.
+    const isExportReady = !isLoadingSurveys && !isLoadingWorkers && filteredSurveys.length > 0;
+
     const handleExportExcel = useCallback(() => {
-        if (filteredSurveys.length === 0) return;
+        if (!isExportReady) return;
 
-        // Collect unique questions from the first survey (all surveys in a batch share the same questions)
-        const questions = filteredSurveys[0]?.survey_questions?.questions ?? [];
+        // Each survey carries its own question schema, so we compute the maximum
+        // question count across the filtered set and pad shorter rows with empty
+        // cells. This avoids dropping columns when the first survey lacks a schema
+        // or when individual surveys diverge from the batch's typical shape.
+        const maxQuestionCount = filteredSurveys.reduce(
+            (max, s) => Math.max(max, s.survey_questions?.questions?.length ?? 0),
+            0,
+        );
 
-        const headers = [
+        const headers: string[] = [
             'Receiver Stable ID', 'Country', 'Region', 'Status', 'Submitted At', 'Created At', 'Updated At',
-            ...questions.map((q) => q.title),
         ];
+        for (let i = 1; i <= maxQuestionCount; i++) {
+            headers.push(`Question ${i}`, `Answer ${i}`);
+        }
+
+        const resolveAnswerText = (
+            question: (typeof filteredSurveys)[number]['survey_questions']['questions'][number],
+            answer: NonNullable<(typeof filteredSurveys)[number]['survey_answer']>['answers'][number] | undefined,
+        ): string => {
+            if (!answer) return '';
+            if (answer.type === 'single_select') {
+                if (question.type === 'single_select' || question.type === 'multi_select') {
+                    const opt = question.options.find((o) => o.option_id === answer.selected_option_id);
+                    return opt?.label ?? answer.selected_option_id;
+                }
+                return answer.selected_option_id;
+            }
+            if (answer.type === 'multi_select') {
+                if (question.type === 'single_select' || question.type === 'multi_select') {
+                    return answer.selected_option_ids
+                        .map((id) => {
+                            const opt = question.options.find((o) => o.option_id === id);
+                            return opt?.label ?? id;
+                        })
+                        .join(', ');
+                }
+                return answer.selected_option_ids.join(', ');
+            }
+            if (answer.type === 'text') return answer.text;
+            return '';
+        };
 
         const rows = filteredSurveys.map((survey) => {
+            const questions = survey.survey_questions?.questions ?? [];
             const answers = survey.survey_answer?.answers ?? [];
-            const answerCells = questions.map((question) => {
-                const answer = answers.find((a) => a.question_id === question.question_id);
-                if (!answer) return '';
-                if (answer.type === 'single_select') {
-                    if (question.type === 'single_select' || question.type === 'multi_select') {
-                        const opt = question.options.find((o) => o.option_id === answer.selected_option_id);
-                        return opt?.label ?? answer.selected_option_id;
-                    }
-                    return answer.selected_option_id;
+
+            const qaCells: string[] = [];
+            for (let i = 0; i < maxQuestionCount; i++) {
+                const q = questions[i];
+                if (!q) {
+                    qaCells.push('', '');
+                    continue;
                 }
-                if (answer.type === 'multi_select') {
-                    if (question.type === 'single_select' || question.type === 'multi_select') {
-                        return answer.selected_option_ids
-                            .map((id) => {
-                                const opt = question.options.find((o) => o.option_id === id);
-                                return opt?.label ?? id;
-                            })
-                            .join(', ');
-                    }
-                    return answer.selected_option_ids.join(', ');
-                }
-                if (answer.type === 'text') return answer.text;
-                return '';
-            });
+                const a = answers.find((x) => x.question_id === q.question_id);
+                qaCells.push(q.title, resolveAnswerText(q, a));
+            }
 
             const geo = workerGeoMap.get(survey.receiver_oid);
             return [
@@ -184,13 +211,13 @@ export function SurveysListPage() {
                 survey.submitted_at ?? '',
                 survey.created_at,
                 survey.updated_at,
-                ...answerCells,
+                ...qaCells,
             ];
         });
 
         const batchName = selectedBatch?.name?.replace(/[^a-zA-Z0-9_-]/g, '_') ?? 'batch';
         downloadXlsx('Surveys', headers, rows, `surveys_${batchName}_export.xlsx`);
-    }, [filteredSurveys, selectedBatch, workerGeoMap]);
+    }, [isExportReady, filteredSurveys, selectedBatch, workerGeoMap]);
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
@@ -212,8 +239,25 @@ export function SurveysListPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={handleExportExcel} disabled={filteredSurveys.length === 0} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30`} title="Export to Excel">
-                            <Download className="w-5 h-5" />
+                        <button
+                            onClick={handleExportExcel}
+                            disabled={!isExportReady}
+                            className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                            title={
+                                isLoadingSurveys
+                                    ? 'Loading surveys — export will be enabled when all rows are loaded'
+                                    : isLoadingWorkers
+                                        ? 'Loading worker geo data — export will be enabled shortly'
+                                        : filteredSurveys.length === 0
+                                            ? 'No surveys to export'
+                                            : 'Export to Excel'
+                            }
+                        >
+                            {isLoadingSurveys || isLoadingWorkers ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <Download className="w-5 h-5" />
+                            )}
                         </button>
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
                             <RefreshCw className={`w-5 h-5 ${isLoadingSurveys ? 'animate-spin' : ''}`} />
