@@ -340,9 +340,21 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 labelKey: 'sscDashboard',
                 icon: LayoutDashboard,
                 permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_DATA,
+                    PERMISSIONS.UI.NAVIGATION_SSC,
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                     PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+        ],
+    },
+    '/operation-teams': {
+        items: [
+            {
+                href: '/operation-teams/ops-dashboard',
+                labelKey: 'opsDashboard',
+                icon: LayoutDashboard,
+                permissions: requireAnyPermission([
+                    PERMISSIONS.UI.NAVIGATION_OPERATION,
                 ]),
             },
         ],

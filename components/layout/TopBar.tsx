@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -90,6 +90,8 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
+        PERMISSIONS.UI.NAVIGATION_SSC,
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
       children: [
         {
@@ -129,7 +131,15 @@ export function TopBar() {
           label: t('sscCockpit'),
           icon: Headset,
           permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_DATA,
+            PERMISSIONS.UI.NAVIGATION_SSC,
+          ]),
+        },
+        {
+          href: '/operation-teams',
+          label: t('operationTeams'),
+          icon: Wrench,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_OPERATION,
           ]),
         },
       ],

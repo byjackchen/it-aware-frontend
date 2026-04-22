@@ -1065,6 +1065,7 @@
         "journeys": "Journeys",
         "scenarios": "Scenarios",
         "sscDashboard": "SSC Dashboard",
+        "opsDashboard": "Ops Dashboard",
         "surveyAnalytics": "Survey Analytics",
         "analytics": "Analytics",
         "dataOverview": "Data Overview",
@@ -1074,6 +1075,10 @@
         "tickets": "Tickets",
         "ticketList": "Ticket List",
         "ticketKanban": "Ticket Kanban"
+    },
+    "OpsDashboard": {
+        "title": "Ops Dashboard",
+        "subtitle": "Operations team metrics and ticket activity (scaffold — content coming soon)"
     },
     "SSCDashboard": {
         "title": "SSC Dashboard",
@@ -1237,6 +1242,7 @@
         "persona": "Persona",
         "campaign": "Campaign",
         "sscCockpit": "SSC Cockpit",
+        "operationTeams": "Operation Teams",
         "agentOps": "AgentOps"
     }
 }
