@@ -47,6 +47,9 @@ next-env.d.ts
 # local git worktrees
 .wt/
 
+# local reference clones
+/temp_ref/
+
 # claude
 CLAUDE.md
 .gstack/

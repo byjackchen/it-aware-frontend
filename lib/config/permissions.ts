@@ -16,6 +16,8 @@ export const PERMISSIONS = {
     NAVIGATION_DATA: 'ui:navigation:data',
     NAVIGATION_CAMPAIGN: 'ui:navigation:campaign',
     NAVIGATION_AGENT_OPS: 'ui:navigation:agent_ops',
+    NAVIGATION_SSC: 'ui:navigation:ssc',
+    NAVIGATION_OPERATION: 'ui:navigation:operation',
   },
   // Objects domain permissions
   OBJECTS: {

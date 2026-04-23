@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -90,8 +90,26 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
+        PERMISSIONS.UI.NAVIGATION_SSC,
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
       children: [
+        {
+          href: '/operation-teams',
+          label: t('operationTeams'),
+          icon: Wrench,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_OPERATION,
+          ]),
+        },
+        {
+          href: '/ssc-cockpit',
+          label: t('sscCockpit'),
+          icon: Headset,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_SSC,
+          ]),
+        },
         {
           href: '/dashboard/data-overview',
           label: t('dashboard'),
@@ -122,14 +140,6 @@ export function TopBar() {
           icon: Megaphone,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_CAMPAIGN
-          ]),
-        },
-        {
-          href: '/ssc-cockpit',
-          label: t('sscCockpit'),
-          icon: Headset,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_DATA,
           ]),
         },
       ],
