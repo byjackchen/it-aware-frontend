@@ -1138,7 +1138,15 @@
             "world": "World",
             "axisMonth": "Month",
             "axisTickets": "Tickets",
-            "axisAssets": "Assets"
+            "axisAssets": "Assets",
+            "procuredBy": "Procured By",
+            "procuredBySubtitle": "Click a slice to filter",
+            "inStockLocation": "In-Stock Location",
+            "supportGroupDevice": "Assets by Support Group & Device Type",
+            "byCategory": "By Category",
+            "legendMac": "Mac",
+            "legendWindows": "Windows",
+            "legendOther": "Other"
         },
         "filters": {
             "assignmentGroup": "Assignment Group",
@@ -1153,7 +1161,11 @@
             "deviceType": "Device Type",
             "region": "Region",
             "assetStatus": "Asset Status",
-            "substatus": "Substatus"
+            "substatus": "Substatus",
+            "supportGroup": "Support Group",
+            "procuredBy": "Procured By",
+            "stockroom": "Stockroom",
+            "modelCategory": "Model Category"
         },
         "tables": {
             "number": "Number",
@@ -1183,12 +1195,29 @@
             "stockRoom": "Stock Room",
             "region": "Region",
             "residualValue": "Residual Value",
-            "assignedToUser": "Assigned To"
+            "assignedToUser": "Assigned To",
+            "device": "Device",
+            "substate": "Substate",
+            "age": "Age",
+            "created": "Created",
+            "supportGroup": "Support Group"
         },
         "tabs": {
             "pendingReturn": "Pending Return",
             "pendingRepair": "Pending Repair",
             "unconfirmed": "Unconfirmed"
+        },
+        "pages": {
+            "assetsTitle": "Asset Dashboard",
+            "assetsSubtitle": "Hardware inventory across the organisation",
+            "inStockTitle": "In-Stock Assets",
+            "inStockSubtitle": "Hardware currently in a stockroom",
+            "pendingTitle": "Pending Assets",
+            "pendingSubtitle": "Assets awaiting confirmation, return, or repair",
+            "filteredCount": "Filtered: {filtered} of {total} assets",
+            "records": "{count} records",
+            "totalResidual": "Total Residual Value",
+            "avgAge": "Asset Age Avg."
         },
         "empty": {
             "noData": "No data",

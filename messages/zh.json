@@ -1130,7 +1130,15 @@
             "world": "世界",
             "axisMonth": "月份",
             "axisTickets": "工单",
-            "axisAssets": "资产"
+            "axisAssets": "资产",
+            "procuredBy": "采购方",
+            "procuredBySubtitle": "点击切片以筛选",
+            "inStockLocation": "库存位置",
+            "supportGroupDevice": "按支持组与设备类型划分的资产",
+            "byCategory": "按类别",
+            "legendMac": "Mac",
+            "legendWindows": "Windows",
+            "legendOther": "其他"
         },
         "filters": {
             "assignmentGroup": "分配组",
@@ -1145,7 +1153,11 @@
             "deviceType": "设备类型",
             "region": "区域",
             "assetStatus": "资产状态",
-            "substatus": "子状态"
+            "substatus": "子状态",
+            "supportGroup": "支持组",
+            "procuredBy": "采购方",
+            "stockroom": "库房",
+            "modelCategory": "型号类别"
         },
         "tables": {
             "number": "编号",
@@ -1175,12 +1187,29 @@
             "stockRoom": "库房",
             "region": "区域",
             "residualValue": "残值",
-            "assignedToUser": "使用者"
+            "assignedToUser": "使用者",
+            "device": "设备",
+            "substate": "子状态",
+            "age": "资产年限",
+            "created": "创建时间",
+            "supportGroup": "支持组"
         },
         "tabs": {
             "pendingReturn": "待归还",
             "pendingRepair": "待维修",
             "unconfirmed": "未确认"
+        },
+        "pages": {
+            "assetsTitle": "资产仪表盘",
+            "assetsSubtitle": "全公司硬件资产概览",
+            "inStockTitle": "库存资产",
+            "inStockSubtitle": "当前在库房的硬件",
+            "pendingTitle": "待处理资产",
+            "pendingSubtitle": "待确认、归还或维修的资产",
+            "filteredCount": "已筛选：{filtered} / {total} 项资产",
+            "records": "{count} 条记录",
+            "totalResidual": "残值合计",
+            "avgAge": "平均年限"
         },
         "empty": {
             "noData": "暂无数据",
