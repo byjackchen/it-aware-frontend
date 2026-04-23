@@ -100,7 +100,9 @@ export function VipTicketsDashboard() {
     });
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
 
-    // Merge, narrow to active states, sort by updated_at DESC.
+    // Merge, narrow to active states, sort by source_updated_at DESC
+    // (Phase 2 aging clock; fall back to updated_at on pre-backfill rows
+    // or non-SN activity sources).
     const merged: TicketRow[] = useMemo(() => {
         const a = incidentQuery.data?.items ?? [];
         const b = requestQuery.data?.items ?? [];
@@ -112,7 +114,11 @@ export function VipTicketsDashboard() {
             seen.add(row.oid);
             all.push(row);
         }
-        all.sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
+        all.sort(
+            (x, y) =>
+                Date.parse(y.source_updated_at ?? y.updated_at) -
+                Date.parse(x.source_updated_at ?? x.updated_at),
+        );
         return all;
     }, [incidentQuery.data, requestQuery.data]);
 
@@ -150,7 +156,7 @@ export function VipTicketsDashboard() {
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
                 _openedFormatted: formatShortDate(r.created_at),
-                _updatedAtMs: Date.parse(r.updated_at) || 0,
+                _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now, t],
     );

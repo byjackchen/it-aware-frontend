@@ -121,7 +121,7 @@ export function AgingScTasksDashboard() {
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
                 _openedFormatted: formatShortDate(r.created_at),
-                _updatedAtMs: Date.parse(r.updated_at) || 0,
+                _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now],
     );
