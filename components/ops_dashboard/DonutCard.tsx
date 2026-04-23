@@ -47,7 +47,7 @@ export function DonutCard({
     subtitle,
     data,
     palette = DEFAULT_PALETTE,
-    height = 220,
+    height = 320,
     onSliceClick,
     actionSlot,
     emptyText = 'No data',
@@ -84,9 +84,9 @@ export function DonutCard({
                         <Pie
                             data={nonZero}
                             cx="50%"
-                            cy="45%"
-                            innerRadius={50}
-                            outerRadius={80}
+                            cy="42%"
+                            innerRadius="52%"
+                            outerRadius="78%"
                             paddingAngle={2}
                             dataKey="value"
                             cursor={onSliceClick ? 'pointer' : undefined}
@@ -107,7 +107,13 @@ export function DonutCard({
                         />
                         <Legend
                             verticalAlign="bottom"
-                            height={36}
+                            height={72}
+                            wrapperStyle={{
+                                paddingTop: '4px',
+                                maxHeight: '80px',
+                                overflowY: 'auto',
+                                lineHeight: '18px',
+                            }}
                             formatter={(v: string) => (
                                 <span style={{ color: isLight ? '#475569' : '#94a3b8', fontSize: '12px' }}>
                                     {v}
