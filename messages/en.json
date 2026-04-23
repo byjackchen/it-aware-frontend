@@ -1122,7 +1122,14 @@
             "pendingReturn": "Pending Return",
             "pendingRepair": "Pending Repair",
             "unconfirmed": "Unconfirmed",
-            "zeroResidual": "Zero Residual"
+            "zeroResidual": "Zero Residual",
+            "totalIncidents": "Total Incidents",
+            "active": "Active",
+            "p1": "P1 Active",
+            "p2": "P2 Active",
+            "agingGt2d": "Aging > 2d",
+            "agingGt7d": "Aging > 7d",
+            "resolvedRate": "Resolved Rate"
         },
         "charts": {
             "ticketsByAssignmentGroup": "Tickets by Assignment Group",
@@ -1146,7 +1153,11 @@
             "byCategory": "By Category",
             "legendMac": "Mac",
             "legendWindows": "Windows",
-            "legendOther": "Other"
+            "legendOther": "Other",
+            "activeByPriority": "Active by Priority",
+            "activeByPrioritySubtitle": "Click a slice to filter",
+            "byStateAll": "By State (All)",
+            "activeByGroup": "Active Incidents by Assignment Group"
         },
         "filters": {
             "assignmentGroup": "Assignment Group",
@@ -1217,7 +1228,13 @@
             "filteredCount": "Filtered: {filtered} of {total} assets",
             "records": "{count} records",
             "totalResidual": "Total Residual Value",
-            "avgAge": "Asset Age Avg."
+            "avgAge": "Asset Age Avg.",
+            "incidentsTitle": "Incident Analysis",
+            "incidentsSubtitle": "Priority mix, aging, and assignment-group load for incidents",
+            "filteredIncidents": "Filtered: {filtered} of {total} incidents",
+            "vipTitle": "VIP Active Tickets",
+            "vipSubtitle": "Open incidents and requests raised by VIP callers",
+            "vipRecords": "{count} VIP ticket(s)"
         },
         "empty": {
             "noData": "No data",

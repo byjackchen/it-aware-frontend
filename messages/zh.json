@@ -1114,7 +1114,14 @@
             "pendingReturn": "待归还",
             "pendingRepair": "待维修",
             "unconfirmed": "未确认",
-            "zeroResidual": "残值为零"
+            "zeroResidual": "残值为零",
+            "totalIncidents": "事件总数",
+            "active": "活动",
+            "p1": "P1 活动",
+            "p2": "P2 活动",
+            "agingGt2d": "老化 > 2 天",
+            "agingGt7d": "老化 > 7 天",
+            "resolvedRate": "解决率"
         },
         "charts": {
             "ticketsByAssignmentGroup": "按分配组划分的工单",
@@ -1138,7 +1145,11 @@
             "byCategory": "按类别",
             "legendMac": "Mac",
             "legendWindows": "Windows",
-            "legendOther": "其他"
+            "legendOther": "其他",
+            "activeByPriority": "按优先级划分的活动事件",
+            "activeByPrioritySubtitle": "点击切片以筛选",
+            "byStateAll": "按状态（全部）",
+            "activeByGroup": "按分配组划分的活动事件"
         },
         "filters": {
             "assignmentGroup": "分配组",
@@ -1209,7 +1220,13 @@
             "filteredCount": "已筛选：{filtered} / {total} 项资产",
             "records": "{count} 条记录",
             "totalResidual": "残值合计",
-            "avgAge": "平均年限"
+            "avgAge": "平均年限",
+            "incidentsTitle": "事件分析",
+            "incidentsSubtitle": "事件的优先级分布、老化与分配组负载",
+            "filteredIncidents": "已筛选：{filtered} / {total} 个事件",
+            "vipTitle": "VIP 活动工单",
+            "vipSubtitle": "VIP 报修人开出的未关闭事件与请求",
+            "vipRecords": "{count} 条 VIP 工单"
         },
         "empty": {
             "noData": "暂无数据",
