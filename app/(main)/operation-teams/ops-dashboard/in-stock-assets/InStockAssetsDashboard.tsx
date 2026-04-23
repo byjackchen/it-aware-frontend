@@ -88,6 +88,8 @@ export function InStockAssetsDashboard() {
         stock_room: [],
     });
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
+    // Capture "now" at mount so age math is stable across re-renders.
+    const [now] = useState<number>(() => Date.now());
 
     // Base set for this page: dashboard categories AND in-stock.
     const base = useMemo(
@@ -116,7 +118,6 @@ export function InStockAssetsDashboard() {
 
     // Enrich once so both KPIs and the table can consume the same derived fields.
     const enriched: TableRow[] = useMemo(() => {
-        const now = Date.now();
         return filtered.map((r) => {
             const months = ageMonths(r.created_at, now);
             const enrichedRow: TableRow = {
@@ -129,7 +130,7 @@ export function InStockAssetsDashboard() {
             };
             return enrichedRow;
         });
-    }, [filtered]);
+    }, [filtered, now]);
 
     // KPIs
     const kpis = useMemo(() => {
