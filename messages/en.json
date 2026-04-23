@@ -1434,7 +1434,7 @@
     },
     "TopBar": {
         "title": "Ohla IT-Aware",
-        "dashboard": "Dashboard",
+        "dashboard": "Raw Data",
         "dataOverview": "Data Overview",
         "surveyAnalytics": "Survey Analytics",
         "auth": "Auth",
@@ -1443,7 +1443,7 @@
         "knowledge": "Knowledge",
         "persona": "Persona",
         "campaign": "Campaign",
-        "sscCockpit": "SSC Cockpit",
+        "sscCockpit": "SSC Teams",
         "operationTeams": "Operation Teams",
         "agentOps": "AgentOps"
     }

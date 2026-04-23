@@ -1426,7 +1426,7 @@
     },
     "TopBar": {
         "title": "Ohla IT-Aware",
-        "dashboard": "看板",
+        "dashboard": "原始数据",
         "dataOverview": "数据概览",
         "surveyAnalytics": "问卷分析",
         "auth": "权限",
@@ -1435,7 +1435,7 @@
         "knowledge": "知识库",
         "persona": "用户画像",
         "campaign": "运营活动",
-        "sscCockpit": "SSC 驾驶舱",
+        "sscCockpit": "SSC 团队",
         "operationTeams": "运维团队",
         "agentOps": "AgentOps"
     }

@@ -95,6 +95,22 @@ export function TopBar() {
       ]),
       children: [
         {
+          href: '/operation-teams',
+          label: t('operationTeams'),
+          icon: Wrench,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_OPERATION,
+          ]),
+        },
+        {
+          href: '/ssc-cockpit',
+          label: t('sscCockpit'),
+          icon: Headset,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_SSC,
+          ]),
+        },
+        {
           href: '/dashboard/data-overview',
           label: t('dashboard'),
           icon: LayoutDashboard,
@@ -124,22 +140,6 @@ export function TopBar() {
           icon: Megaphone,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_CAMPAIGN
-          ]),
-        },
-        {
-          href: '/ssc-cockpit',
-          label: t('sscCockpit'),
-          icon: Headset,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_SSC,
-          ]),
-        },
-        {
-          href: '/operation-teams',
-          label: t('operationTeams'),
-          icon: Wrench,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_OPERATION,
           ]),
         },
       ],
