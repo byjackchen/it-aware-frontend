@@ -1203,7 +1203,11 @@
             "substate": "子状态",
             "age": "资产年限",
             "created": "创建时间",
-            "supportGroup": "支持组"
+            "supportGroup": "支持组",
+            "incident": "事件",
+            "request": "请求",
+            "daysNoUpdate": "未更新天数",
+            "shortDescription": "简要描述"
         },
         "tabs": {
             "pendingReturn": "待归还",

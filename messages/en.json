@@ -1211,7 +1211,11 @@
             "substate": "Substate",
             "age": "Age",
             "created": "Created",
-            "supportGroup": "Support Group"
+            "supportGroup": "Support Group",
+            "incident": "Incident",
+            "request": "Request",
+            "daysNoUpdate": "Days No Update",
+            "shortDescription": "Short Description"
         },
         "tabs": {
             "pendingReturn": "Pending Return",
