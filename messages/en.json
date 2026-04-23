@@ -1437,12 +1437,12 @@
         "surveyAnalytics": "Survey Analytics",
         "auth": "Auth",
         "data": "Data",
-        "application": "Applications",
+        "application": "Other Apps",
         "knowledge": "Knowledge",
         "persona": "Persona",
         "campaign": "Campaign",
-        "sscCockpit": "SSC Teams",
-        "operationTeams": "Operation Teams",
+        "sscCockpit": "SSC Team",
+        "operationTeams": "Ops Team",
         "agentOps": "AgentOps"
     }
 }
