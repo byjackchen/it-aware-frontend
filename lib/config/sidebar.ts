@@ -360,14 +360,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 items: [
                     {
                         href: '/operation-teams/ops-dashboard',
-                        labelKey: 'opsOverview',
-                        icon: LayoutDashboard,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_OPERATION,
-                        ]),
-                    },
-                    {
-                        href: '/operation-teams/ops-dashboard/tickets',
                         labelKey: 'opsActiveMonitoring',
                         icon: Gauge,
                         permissions: requireAnyPermission([
@@ -452,14 +444,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/pending-assets',
                         labelKey: 'opsPendingAssets',
                         icon: PackageOpen,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_OPERATION,
-                        ]),
-                    },
-                    {
-                        href: '/operation-teams/ops-dashboard/wip-repairs',
-                        labelKey: 'opsWipRepairs',
-                        icon: Wrench,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
