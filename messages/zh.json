@@ -1167,8 +1167,12 @@
             "supportGroupSubtitle": "按支持组统计的资产"
         },
         "filters": {
+            "title": "筛选器",
+            "clearAll": "清除全部",
+            "clientSideTooltip": "仅对当前已加载的数据进行筛选。请扩大时间范围或清除其他筛选以加载更多选项。",
             "assignmentGroup": "分配组",
             "priority": "优先级",
+            "state": "状态",
             "location": "地点",
             "department": "部门",
             "isVip": "仅 VIP",

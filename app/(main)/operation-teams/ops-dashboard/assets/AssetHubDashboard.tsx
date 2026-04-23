@@ -25,7 +25,7 @@ import {
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
-import { SidebarFilters, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/SidebarFilters';
+import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 
 const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 const MAC_COLOR = '#6366f1';
@@ -72,9 +72,27 @@ export function AssetHubDashboard() {
         const procured = groupBy(rows, procuredByOf).map((g) => g.key);
         const departments = groupBy(rows, (r) => r.department).map((g) => g.key);
         return [
-            { type: 'multi', param: 'support_group', label: t('filters.supportGroup'), options: supportGroups },
-            { type: 'multi', param: 'procured_by', label: t('filters.procuredBy'), options: procured },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
         ];
     }, [rows, t]);
 
@@ -142,39 +160,50 @@ export function AssetHubDashboard() {
     const inStockPctCritical = kpis.total > 0 && inStockPct < 70;
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            {/* Main content */}
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
-                            <BarChart3 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.assetsTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.assetsSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
+                        <BarChart3 className="w-5 h-5" />
                     </div>
-                    <div className="flex items-center gap-3">
-                        {hasFilters && (
-                            <span className="text-xs text-blue-400">
-                                {t('pages.filteredCount', {
-                                    filtered: filtered.length.toLocaleString(),
-                                    total: rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category)).length.toLocaleString(),
-                                })}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => void refetch()}
-                            className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                            title={t('empty.retry')}
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                        </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.assetsTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.assetsSubtitle')}</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredCount', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category)).length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
 
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={setFilters}
+                storageKey="ops-dashboard:assets:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Loading / error / partial banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -278,11 +307,6 @@ export function AssetHubDashboard() {
                         </ResponsiveContainer>
                     )}
                 </div>
-            </div>
-
-            {/* Right sidebar slicer */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters slicers={slicers} value={filters} onChange={setFilters} />
             </div>
         </div>
     );

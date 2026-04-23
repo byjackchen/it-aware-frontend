@@ -28,10 +28,10 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 
 /**
  * Priority palette keyed by the prototype's ServiceNow labels
@@ -127,7 +127,13 @@ export function IncidentAnalysisDashboard() {
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
             { type: 'multi', param: 'priority', label: t('filters.priority'), options: priorities },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
     }, [rows, t]);
@@ -210,39 +216,50 @@ export function IncidentAnalysisDashboard() {
     });
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            {/* Main content */}
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-red-100 text-red-600' : 'bg-red-500/20 text-red-400'}`}>
-                            <AlertTriangle className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.incidentsTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.incidentsSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-red-100 text-red-600' : 'bg-red-500/20 text-red-400'}`}>
+                        <AlertTriangle className="w-5 h-5" />
                     </div>
-                    <div className="flex items-center gap-3">
-                        {hasFilters && (
-                            <span className="text-xs text-blue-400">
-                                {t('pages.filteredIncidents', {
-                                    filtered: filtered.length.toLocaleString(),
-                                    total: rows.length.toLocaleString(),
-                                })}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => void refetch()}
-                            className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                            title={t('empty.retry')}
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                        </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.incidentsTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.incidentsSubtitle')}</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredIncidents', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: rows.length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
 
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={setFilters}
+                storageKey="ops-dashboard:incidents:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -311,11 +328,6 @@ export function IncidentAnalysisDashboard() {
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
-            </div>
-
-            {/* Right sidebar */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters slicers={slicers} value={filters} onChange={setFilters} />
             </div>
         </div>
     );

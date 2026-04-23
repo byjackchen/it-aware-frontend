@@ -1175,8 +1175,12 @@
             "supportGroupSubtitle": "Assets by support group"
         },
         "filters": {
+            "title": "Filters",
+            "clearAll": "Clear all",
+            "clientSideTooltip": "Filters the currently loaded window. Widen the date range or clear other filters to see more options.",
             "assignmentGroup": "Assignment Group",
             "priority": "Priority",
+            "state": "State",
             "location": "Location",
             "department": "Department",
             "isVip": "VIP only",

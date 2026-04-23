@@ -25,10 +25,10 @@ import type { TicketRow } from '@/lib/api/ops_dashboard';
 import { ACTIVE_STATES, daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 
 const PAGE_SIZE = 100;
 
@@ -121,7 +121,13 @@ export function VipTicketsDashboard() {
         const locations = groupBy(merged, locationOf).map((g) => g.key);
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            { type: 'multi', param: 'location', label: t('filters.location'), options: locations },
+            {
+                type: 'multi',
+                param: 'location',
+                label: t('filters.location'),
+                options: locations,
+                clientSide: true,
+            },
         ];
     }, [merged, t]);
 
@@ -210,61 +216,61 @@ export function VipTicketsDashboard() {
     }, [t, isLight]);
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            <div className="flex-1 flex flex-col overflow-hidden p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-3 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-400'}`}>
-                            <Star className="w-5 h-5 fill-current" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.vipTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>
-                                {t('pages.vipSubtitle')} · {t('pages.vipRecords', { count: filtered.length.toLocaleString() })}
-                            </p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-400'}`}>
+                        <Star className="w-5 h-5 fill-current" />
                     </div>
-                    <button
-                        onClick={() => void refetch()}
-                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                        title={t('empty.retry')}
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.vipTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>
+                            {t('pages.vipSubtitle')} · {t('pages.vipRecords', { count: filtered.length.toLocaleString() })}
+                        </p>
+                    </div>
                 </div>
-
-                {/* Table */}
-                <div className="flex-1 min-h-0">
-                    <DataTable<VipTableRow>
-                        rows={pageRows}
-                        cols={cols}
-                        searchKeys={['stable_id', 'title', 'assigned_to_name', '_openedBy'] as (keyof VipTableRow)[]}
-                        total={enriched.length}
-                        skip={page.skip}
-                        limit={page.limit}
-                        onPageChange={setPage}
-                        loading={loading}
-                        partial={partial}
-                        error={error}
-                        onRetry={() => void refetch()}
-                        emptyText={t('empty.noData')}
-                        loadingText={t('empty.loading')}
-                        partialText={t('empty.partialResult')}
-                        pageSizeOptions={[50, 100, 200, 500]}
-                    />
-                </div>
+                <button
+                    onClick={() => void refetch()}
+                    className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                    title={t('empty.retry')}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                </button>
             </div>
 
-            {/* Right sidebar */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters
-                    slicers={slicers}
-                    value={filters}
-                    onChange={(next) => {
-                        setFilters(next);
-                        setPage({ skip: 0, limit: PAGE_SIZE });
-                    }}
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={(next) => {
+                    setFilters(next);
+                    setPage({ skip: 0, limit: PAGE_SIZE });
+                }}
+                storageKey="ops-dashboard:vip-tickets:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Table */}
+            <div className="flex-1 min-h-0">
+                <DataTable<VipTableRow>
+                    rows={pageRows}
+                    cols={cols}
+                    searchKeys={['stable_id', 'title', 'assigned_to_name', '_openedBy'] as (keyof VipTableRow)[]}
+                    total={enriched.length}
+                    skip={page.skip}
+                    limit={page.limit}
+                    onPageChange={setPage}
+                    loading={loading}
+                    partial={partial}
+                    error={error}
+                    onRetry={() => void refetch()}
+                    emptyText={t('empty.noData')}
+                    loadingText={t('empty.loading')}
+                    partialText={t('empty.partialResult')}
+                    pageSizeOptions={[50, 100, 200, 500]}
                 />
             </div>
         </div>

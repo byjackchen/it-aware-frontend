@@ -37,10 +37,10 @@ import {
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 import { TicketsPanel, type TicketKpis } from './TicketsPanel';
 import { AssetsPanel, type SupportGroupMatrixRow } from './AssetsPanel';
 
@@ -144,7 +144,13 @@ export function OpsDashboardHub() {
             .sort();
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            { type: 'multi', param: 'location', label: t('filters.location'), options: locations },
+            {
+                type: 'multi',
+                param: 'location',
+                label: t('filters.location'),
+                options: locations,
+                clientSide: true,
+            },
             { type: 'multi', param: 'priority', label: t('filters.priority'), options: priorities },
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
@@ -155,9 +161,27 @@ export function OpsDashboardHub() {
         const procured = groupBy(allAssets, procuredByOf).map((g) => g.key);
         const departments = groupBy(allAssets, (r) => r.department).map((g) => g.key);
         return [
-            { type: 'multi', param: 'support_group', label: t('filters.supportGroup'), options: supportGroups },
-            { type: 'multi', param: 'procured_by', label: t('filters.procuredBy'), options: procured },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
         ];
     }, [allAssets, t]);
 
@@ -329,29 +353,49 @@ export function OpsDashboardHub() {
     );
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            {/* Main content */}
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                            <BarChart3 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.hubTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                        <BarChart3 className="w-5 h-5" />
                     </div>
-                    <button
-                        onClick={() => void refetchAll()}
-                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                        title={t('empty.retry')}
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.hubTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => void refetchAll()}
+                    className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                    title={t('empty.retry')}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                </button>
+            </div>
 
+            {/* Two stacked filter bars — tickets + assets */}
+            <TopFilterBar
+                slicers={ticketSlicers}
+                value={ticketFilters}
+                onChange={setTicketFilters}
+                storageKey="ops-dashboard:hub:tickets:filters"
+                title={`${t('filters.title')} · ${t('pages.hubTicketsSection')}`}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+            <TopFilterBar
+                slicers={assetSlicers}
+                value={assetFilters}
+                onChange={setAssetFilters}
+                storageKey="ops-dashboard:hub:assets:filters"
+                title={`${t('filters.title')} · ${t('pages.hubAssetsSection')}`}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -389,19 +433,6 @@ export function OpsDashboardHub() {
                     onProcuredSliceClick={onProcuredSliceClick}
                     onSupportGroupSliceClick={onSupportGroupSliceClick}
                 />
-            </div>
-
-            {/* Right sidebar — two stacked panels */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <p className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textMuted}`}>
-                    {t('pages.hubTicketsSection')}
-                </p>
-                <SidebarFilters slicers={ticketSlicers} value={ticketFilters} onChange={setTicketFilters} />
-                <div className={`my-4 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`} />
-                <p className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textMuted}`}>
-                    {t('pages.hubAssetsSection')}
-                </p>
-                <SidebarFilters slicers={assetSlicers} value={assetFilters} onChange={setAssetFilters} />
             </div>
         </div>
     );
