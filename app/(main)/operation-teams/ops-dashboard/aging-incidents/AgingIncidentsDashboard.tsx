@@ -3,7 +3,7 @@
 /**
  * Aging Incidents (Page 1.3.6) — ports `temp_ref/.../dashboard/aging-incidents/AgingIncidentsPage.tsx`.
  *
- * Base filter: incidents, `oit_only=true`, active state, and — the bit
+ * Base filter: incidents, active state, and — the bit
  * that can't be expressed server-side in Phase 1 — days-no-update > 2.
  * Pagination is therefore client-side: we aggregate the filtered array,
  * slice it, and hand the slice to the shared AgingTable.
@@ -58,7 +58,7 @@ export function AgingIncidentsDashboard() {
     // Aging view only cares about active tickets by definition. Server-side
     // active filter + page-through avoids the 1000-row silent cutoff.
     const { data, loading, error, refetch } = useIncidents(
-        { limit: 1000, oit_only: true, is_business_wise_active: true },
+        { limit: 1000, is_business_wise_active: true },
         { fetchAll: true },
     );
     const partial = data?.partial === true;

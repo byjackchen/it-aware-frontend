@@ -5,8 +5,8 @@
  * monitoring with the hardware-fleet overview in a single page.
  *
  * Data sources (three concurrent fetches):
- *   - useIncidents({ oit_only, limit: 1000 })
- *   - useRequests({ oit_only, limit: 1000 })
+ *   - useIncidents({ limit: 1000 })
+ *   - useRequests({ limit: 1000 })
  *   - useHardwares({ is_active, limit: 1000 })
  *
  * Incidents + requests are merged into one "tickets" array for
@@ -86,11 +86,11 @@ export function OpsDashboardHub() {
     // silent cutoff. created_at_from narrows the server fetch to ~3 months
     // — covers the trend chart horizon without pulling unbounded history.
     const incidentQuery = useIncidents(
-        { limit: 1000, oit_only: true, view: 'slim', created_at_from: threeMonthsAgoIso },
+        { limit: 1000, view: 'slim', created_at_from: threeMonthsAgoIso },
         { fetchAll: true },
     );
     const requestQuery = useRequests(
-        { limit: 1000, oit_only: true, view: 'slim', created_at_from: threeMonthsAgoIso },
+        { limit: 1000, view: 'slim', created_at_from: threeMonthsAgoIso },
         { fetchAll: true },
     );
     const hardwareQuery = useHardwares(

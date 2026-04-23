@@ -4,7 +4,7 @@
  * VIP Tickets (Page 1.3.5) — ports `temp_ref/.../dashboard/vip-tickets/VipTicketsPage.tsx`.
  *
  * The VIP cohort spans both incidents and requests. We fetch both with
- * `is_vip=true, oit_only=true`, merge, and run an active-state client
+ * `is_vip=true`, merge, and run an active-state client
  * filter to keep Phase 1's contract. Each endpoint caps at 1000 rows —
  * the merged union gives us up to 2000 tickets, which comfortably
  * covers the current VIP volume; flagged as a known ceiling if it ever
@@ -75,11 +75,11 @@ export function VipTicketsDashboard() {
     // active-only (VIP page only shows open tickets). fetchAll pages
     // through so we don't silently drop older VIP tickets past the first 1000.
     const incidentQuery = useIncidents(
-        { limit: 1000, is_vip: true, oit_only: true, is_business_wise_active: true },
+        { limit: 1000, is_vip: true, is_business_wise_active: true },
         { fetchAll: true },
     );
     const requestQuery = useRequests(
-        { limit: 1000, is_vip: true, oit_only: true, is_business_wise_active: true },
+        { limit: 1000, is_vip: true, is_business_wise_active: true },
         { fetchAll: true },
     );
 

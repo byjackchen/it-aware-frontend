@@ -1171,7 +1171,6 @@
             "priority": "优先级",
             "location": "地点",
             "department": "部门",
-            "oitOnly": "仅 OIT 支持组",
             "isVip": "仅 VIP",
             "opened": "开单时间",
             "updated": "更新时间",

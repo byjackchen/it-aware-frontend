@@ -62,7 +62,7 @@ export function AgingScTasksDashboard() {
     const isLight = theme === 'light';
 
     const { data, loading, error, refetch } = useRequests(
-        { limit: 1000, oit_only: true, is_business_wise_active: true },
+        { limit: 1000, is_business_wise_active: true },
         { fetchAll: true },
     );
     const partial = data?.partial === true;

@@ -136,8 +136,6 @@ export interface ActivityListParams extends BaseListParams {
     priority?: string;
     stable_id?: string;
     assigned_group?: string[];
-    /** True = filter to AMER/APAC/EMEA OIT Support groups on the server. */
-    oit_only?: boolean;
     /**
      * True = filter to the business-wise active state set (New / In Progress /
      * On Hold / Solution Proposed / Open / Work in Progress / Pending).
@@ -210,7 +208,6 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'priority', params.priority);
     appendParam(q, 'stable_id', params.stable_id);
     appendParam(q, 'assigned_group', params.assigned_group);
-    appendParam(q, 'oit_only', params.oit_only);
     appendParam(q, 'is_business_wise_active', params.is_business_wise_active);
     appendParam(q, 'is_vip', params.is_vip);
     appendParam(q, 'actor_location_oid', params.actor_location_oid);
@@ -292,14 +289,3 @@ export async function fetchHardwares(
     return fetchJson<ListResponse<HardwareRow>>(buildOpsDashboardUrl('hardwares', qs));
 }
 
-// =============================================================================
-// Shared constants
-// =============================================================================
-
-/** The three OIT Support assignment groups the dashboard filters to when `oit_only=true`. */
-export const OIT_SUPPORT_GROUPS = [
-    'AMER OIT Support',
-    'APAC OIT Support',
-    'EMEA OIT Support',
-] as const;
-export type OitSupportGroup = (typeof OIT_SUPPORT_GROUPS)[number];
