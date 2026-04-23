@@ -1129,7 +1129,10 @@
             "p2": "P2 Active",
             "agingGt2d": "Aging > 2d",
             "agingGt7d": "Aging > 7d",
-            "resolvedRate": "Resolved Rate"
+            "agingGt30d": "Aging > 30d",
+            "resolvedRate": "Resolved Rate",
+            "resolved": "Resolved",
+            "totalCatalogTasks": "Total Catalog Tasks"
         },
         "charts": {
             "ticketsByAssignmentGroup": "Tickets by Assignment Group",
@@ -1157,7 +1160,11 @@
             "activeByPriority": "Active by Priority",
             "activeByPrioritySubtitle": "Click a slice to filter",
             "byStateAll": "By State (All)",
-            "activeByGroup": "Active Incidents by Assignment Group"
+            "activeByGroup": "Active Incidents by Assignment Group",
+            "activeByGroupCatalog": "Active Catalog Tasks by Group",
+            "activeByGroupSubtitle": "Click a slice to filter",
+            "byDepartment": "Active by Department",
+            "volumeTrend": "Volume Trend"
         },
         "filters": {
             "assignmentGroup": "Assignment Group",
@@ -1238,8 +1245,19 @@
             "filteredIncidents": "Filtered: {filtered} of {total} incidents",
             "vipTitle": "VIP Active Tickets",
             "vipSubtitle": "Open incidents and requests raised by VIP callers",
-            "vipRecords": "{count} VIP ticket(s)"
+            "vipRecords": "{count} VIP ticket(s)",
+            "agingIncidentsTitle": "Aging Incidents",
+            "agingIncidentsSubtitle": "OIT incidents with no update in over 2 days",
+            "agingScTasksTitle": "Aging SC Tasks",
+            "agingScTasksSubtitle": "OIT catalog tasks with no update in over 30 days",
+            "agingAssetTasksTitle": "Aging Asset Tasks",
+            "agingAssetTasksSubtitle": "OIT asset tasks with no update in over 30 days",
+            "agingRecords": "{count} record(s)",
+            "catalogTitle": "Catalog Task Dashboard",
+            "catalogSubtitle": "Volume, aging, and workload across service-catalog tasks",
+            "filteredCatalog": "Filtered: {filtered} of {total} tasks"
         },
+        "classifierCaveat": "Catalog vs Asset classification is heuristic in Phase 1 (client-side). Phase 2 uses a server-side discriminator.",
         "empty": {
             "noData": "No data",
             "loading": "Loading...",

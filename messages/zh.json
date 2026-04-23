@@ -1121,7 +1121,10 @@
             "p2": "P2 活动",
             "agingGt2d": "老化 > 2 天",
             "agingGt7d": "老化 > 7 天",
-            "resolvedRate": "解决率"
+            "agingGt30d": "老化 > 30 天",
+            "resolvedRate": "解决率",
+            "resolved": "已解决",
+            "totalCatalogTasks": "服务目录任务总数"
         },
         "charts": {
             "ticketsByAssignmentGroup": "按分配组划分的工单",
@@ -1149,7 +1152,11 @@
             "activeByPriority": "按优先级划分的活动事件",
             "activeByPrioritySubtitle": "点击切片以筛选",
             "byStateAll": "按状态（全部）",
-            "activeByGroup": "按分配组划分的活动事件"
+            "activeByGroup": "按分配组划分的活动事件",
+            "activeByGroupCatalog": "按分配组划分的活动目录任务",
+            "activeByGroupSubtitle": "点击切片以筛选",
+            "byDepartment": "按部门划分的活动",
+            "volumeTrend": "工单量趋势"
         },
         "filters": {
             "assignmentGroup": "分配组",
@@ -1230,8 +1237,19 @@
             "filteredIncidents": "已筛选：{filtered} / {total} 个事件",
             "vipTitle": "VIP 活动工单",
             "vipSubtitle": "VIP 报修人开出的未关闭事件与请求",
-            "vipRecords": "{count} 条 VIP 工单"
+            "vipRecords": "{count} 条 VIP 工单",
+            "agingIncidentsTitle": "老化事件",
+            "agingIncidentsSubtitle": "超过 2 天未更新的 OIT 事件",
+            "agingScTasksTitle": "老化服务目录任务",
+            "agingScTasksSubtitle": "超过 30 天未更新的 OIT 服务目录任务",
+            "agingAssetTasksTitle": "老化资产任务",
+            "agingAssetTasksSubtitle": "超过 30 天未更新的 OIT 资产任务",
+            "agingRecords": "{count} 条记录",
+            "catalogTitle": "服务目录任务仪表盘",
+            "catalogSubtitle": "服务目录任务的工单量、老化与团队负载",
+            "filteredCatalog": "已筛选：{filtered} / {total} 个任务"
         },
+        "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
         "empty": {
             "noData": "暂无数据",
             "loading": "加载中...",
