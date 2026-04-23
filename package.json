@@ -24,6 +24,7 @@
     "react-simple-maps": "^3.0.0",
     "recharts": "^3.8.0",
     "tailwind-merge": "^3.4.0",
+    "world-atlas": "^2.0.2",
     "ws": "^8.20.0",
     "xlsx": "^0.18.5"
   },
