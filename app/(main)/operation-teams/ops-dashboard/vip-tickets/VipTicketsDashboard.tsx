@@ -22,7 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
     SidebarFilters,
@@ -75,11 +75,11 @@ export function VipTicketsDashboard() {
     // active-only (VIP page only shows open tickets). fetchAll pages
     // through so we don't silently drop older VIP tickets past the first 1000.
     const incidentQuery = useIncidents(
-        { limit: 1000, is_vip: true, is_business_wise_active: true },
+        { limit: 1000, is_vip: true, states_list: ACTIVE_STATES },
         { fetchAll: true },
     );
     const requestQuery = useRequests(
-        { limit: 1000, is_vip: true, is_business_wise_active: true },
+        { limit: 1000, is_vip: true, states_list: ACTIVE_STATES },
         { fetchAll: true },
     );
 

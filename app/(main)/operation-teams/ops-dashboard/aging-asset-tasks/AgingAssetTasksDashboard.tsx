@@ -15,6 +15,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
+    ACTIVE_STATES,
     classifyRequestType,
     daysSinceUpdated,
     groupBy,
@@ -61,7 +62,7 @@ export function AgingAssetTasksDashboard() {
     const isLight = theme === 'light';
 
     const { data, loading, error, refetch } = useRequests(
-        { limit: 1000, is_business_wise_active: true },
+        { limit: 1000, states_list: ACTIVE_STATES },
         { fetchAll: true },
     );
     const partial = data?.partial === true;

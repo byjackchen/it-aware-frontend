@@ -137,12 +137,12 @@ export interface ActivityListParams extends BaseListParams {
     stable_id?: string;
     assigned_group?: string[];
     /**
-     * True = filter to the business-wise active state set (New / In Progress /
-     * On Hold / Solution Proposed / Open / Work in Progress / Pending).
-     * Dashboards that only care about open work pass this to drop payload
-     * ~5-10x.
+     * Multi-value state filter. Matches ``state = ANY(states_list)`` on the
+     * server. Pass ``ACTIVE_STATES`` from ``lib/ops_dashboard/aggregate`` to
+     * narrow a fetch to open tickets only — aligned with the
+     * backend's ``states_list`` FilterSpec.
      */
-    is_business_wise_active?: boolean;
+    states_list?: readonly string[];
     /** Joins to caller worker. */
     is_vip?: boolean;
     /** Base64 OID strings — backs the "Location" sidebar slicer. */
@@ -208,7 +208,7 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'priority', params.priority);
     appendParam(q, 'stable_id', params.stable_id);
     appendParam(q, 'assigned_group', params.assigned_group);
-    appendParam(q, 'is_business_wise_active', params.is_business_wise_active);
+    appendParam(q, 'states_list', params.states_list);
     appendParam(q, 'is_vip', params.is_vip);
     appendParam(q, 'actor_location_oid', params.actor_location_oid);
     appendParam(q, 'actor_org_oid', params.actor_org_oid);

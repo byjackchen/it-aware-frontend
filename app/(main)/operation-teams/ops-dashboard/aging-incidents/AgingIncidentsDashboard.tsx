@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -58,7 +58,7 @@ export function AgingIncidentsDashboard() {
     // Aging view only cares about active tickets by definition. Server-side
     // active filter + page-through avoids the 1000-row silent cutoff.
     const { data, loading, error, refetch } = useIncidents(
-        { limit: 1000, is_business_wise_active: true },
+        { limit: 1000, states_list: ACTIVE_STATES },
         { fetchAll: true },
     );
     const partial = data?.partial === true;
