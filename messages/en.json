@@ -1112,6 +1112,10 @@
             "totalActive": "Total Active Tickets",
             "incidentsActive": "Active Incidents",
             "requestsActive": "Active Requests",
+            "activeIncident": "Active Incidents",
+            "activeCatalog": "Active Catalog",
+            "activeAsset": "Active Asset Tasks",
+            "agingAsset30d": "Aging Asset > 30d",
             "vipActive": "Active VIP Tickets",
             "agingIncidentsGt2d": "Incidents > 2 days",
             "agingCatalogGt30d": "Catalog Tasks > 30 days",
@@ -1164,7 +1168,13 @@
             "activeByGroupCatalog": "Active Catalog Tasks by Group",
             "activeByGroupSubtitle": "Click a slice to filter",
             "byDepartment": "Active by Department",
-            "volumeTrend": "Volume Trend"
+            "volumeTrend": "Volume Trend",
+            "byAssignmentGroupTop8": "Active by Assignment Group",
+            "byAssignmentGroupTop8Subtitle": "Top 8 · click to filter",
+            "worldMap": "Region Distribution",
+            "worldMapSubtitle": "Active tickets by caller region",
+            "supportGroup": "Support Group",
+            "supportGroupSubtitle": "Assets by support group"
         },
         "filters": {
             "assignmentGroup": "Assignment Group",
@@ -1255,7 +1265,13 @@
             "agingRecords": "{count} record(s)",
             "catalogTitle": "Catalog Task Dashboard",
             "catalogSubtitle": "Volume, aging, and workload across service-catalog tasks",
-            "filteredCatalog": "Filtered: {filtered} of {total} tasks"
+            "filteredCatalog": "Filtered: {filtered} of {total} tasks",
+            "hubTitle": "Active Monitoring Hub",
+            "hubSubtitle": "Cross-region view of active tickets and the hardware fleet",
+            "hubTicketsSection": "Tickets",
+            "hubAssetsSection": "Assets",
+            "hubFilteredTickets": "Filtered: {filtered} of {total} active tickets",
+            "hubFilteredAssets": "Filtered: {filtered} of {total} assets"
         },
         "classifierCaveat": "Catalog vs Asset classification is heuristic in Phase 1 (client-side). Phase 2 uses a server-side discriminator.",
         "empty": {

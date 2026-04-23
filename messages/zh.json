@@ -1104,6 +1104,10 @@
             "totalActive": "活动工单总数",
             "incidentsActive": "活动事件",
             "requestsActive": "活动请求",
+            "activeIncident": "活动事件",
+            "activeCatalog": "活动服务目录",
+            "activeAsset": "活动资产任务",
+            "agingAsset30d": "老化资产 > 30 天",
             "vipActive": "活动 VIP 工单",
             "agingIncidentsGt2d": "事件 > 2 天",
             "agingCatalogGt30d": "服务目录任务 > 30 天",
@@ -1156,7 +1160,13 @@
             "activeByGroupCatalog": "按分配组划分的活动目录任务",
             "activeByGroupSubtitle": "点击切片以筛选",
             "byDepartment": "按部门划分的活动",
-            "volumeTrend": "工单量趋势"
+            "volumeTrend": "工单量趋势",
+            "byAssignmentGroupTop8": "按分配组划分的活动工单",
+            "byAssignmentGroupTop8Subtitle": "前 8 · 点击以筛选",
+            "worldMap": "区域分布",
+            "worldMapSubtitle": "按报修人所在区域统计的活动工单",
+            "supportGroup": "支持组",
+            "supportGroupSubtitle": "按支持组统计的资产"
         },
         "filters": {
             "assignmentGroup": "分配组",
@@ -1247,7 +1257,13 @@
             "agingRecords": "{count} 条记录",
             "catalogTitle": "服务目录任务仪表盘",
             "catalogSubtitle": "服务目录任务的工单量、老化与团队负载",
-            "filteredCatalog": "已筛选：{filtered} / {total} 个任务"
+            "filteredCatalog": "已筛选：{filtered} / {total} 个任务",
+            "hubTitle": "实时监控中心",
+            "hubSubtitle": "跨区域的活动工单与硬件资产总览",
+            "hubTicketsSection": "工单",
+            "hubAssetsSection": "资产",
+            "hubFilteredTickets": "已筛选：{filtered} / {total} 条活动工单",
+            "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产"
         },
         "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
         "empty": {

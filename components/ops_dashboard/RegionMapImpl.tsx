@@ -16,7 +16,7 @@
 import { useMemo } from 'react';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import { useTheme } from '@/lib/contexts/theme-context';
-import type { Region, RegionBubble, RegionMapProps } from './RegionMap';
+import type { Region, RegionMapProps } from './RegionMap';
 
 // The geography prop accepts a string URL or a parsed topojson object.
 // We use the CDN URL (cached by react-simple-maps internally via d3-fetch)
