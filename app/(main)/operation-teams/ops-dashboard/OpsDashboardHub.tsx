@@ -32,6 +32,7 @@ import {
     inferDeviceType,
     isActiveState,
     isInStock,
+    monthsFromRange,
     summarizeAssets,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
@@ -74,23 +75,54 @@ export function OpsDashboardHub() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    // Default the opened-date window to the last 3 months for dashboard
-    // pulls. Pinned via useState so the same value is reused across renders
-    // (stable cache key for useOpsDashboard).
-    const [threeMonthsAgoIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    // Default the opened-date window to the last 3 months. Seeded into
+    // the user-visible filter state so the date picker reflects it —
+    // otherwise the default is invisible and users mistake it for a
+    // server-side cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     );
+
+    // ── Filter state ────────────────────────────────────────────
+    // Declared before the API fetches so the ticket query can read the
+    // current date range off ticketFilters.
+    const [ticketFilters, setTicketFilters] = useState<FilterState>({
+        assigned_group: [],
+        location: [],
+        priority: [],
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
+    });
+    const [assetFilters, setAssetFilters] = useState<FilterState>({
+        support_group: [],
+        procured_by: [],
+        department: [],
+    });
+
+    const ticketDateRange =
+        (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
+        { from: null, to: null };
 
     // ── Three concurrent fetches ─────────────────────────────────
     // fetchAll: true pages through skip/limit so we don't hit the 1000-row
-    // silent cutoff. created_at_from narrows the server fetch to ~3 months
-    // — covers the trend chart horizon without pulling unbounded history.
+    // silent cutoff. created_at_from/to are read off ticketFilters so the
+    // picker and the payload stay in sync.
     const incidentQuery = useIncidents(
-        { limit: 1000, view: 'slim', created_at_from: threeMonthsAgoIso },
+        {
+            limit: 1000,
+            view: 'slim',
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
         { fetchAll: true },
     );
     const requestQuery = useRequests(
-        { limit: 1000, view: 'slim', created_at_from: threeMonthsAgoIso },
+        {
+            limit: 1000,
+            view: 'slim',
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
         { fetchAll: true },
     );
     const hardwareQuery = useHardwares(
@@ -121,20 +153,6 @@ export function OpsDashboardHub() {
         const rows = hardwareQuery.data?.items ?? [];
         return rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category));
     }, [hardwareQuery.data]);
-
-    // ── Filter state ────────────────────────────────────────────
-    const [ticketFilters, setTicketFilters] = useState<FilterState>({
-        assigned_group: [],
-        location: [],
-        priority: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
-    });
-    const [assetFilters, setAssetFilters] = useState<FilterState>({
-        support_group: [],
-        procured_by: [],
-        department: [],
-    });
 
     const ticketSlicers: SlicerConfig[] = useMemo(() => {
         const groups = groupBy(allTickets, (r) => r.assigned_group).map((g) => g.key);
@@ -275,7 +293,14 @@ export function OpsDashboardHub() {
         [activeTickets],
     );
 
-    const trend = useMemo(() => trendByMonth(filteredTickets, 10, now), [filteredTickets, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(ticketDateRange.from, ticketDateRange.to, now),
+        [ticketDateRange.from, ticketDateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filteredTickets, trendMonths, now),
+        [filteredTickets, trendMonths, now],
+    );
 
     const regionData: RegionBubble[] = useMemo(() => {
         const counts: Record<Region, number> = { AMER: 0, EMEA: 0, APAC: 0, OTHER: 0 };
@@ -374,22 +399,24 @@ export function OpsDashboardHub() {
                 </button>
             </div>
 
-            {/* Two stacked filter bars — tickets + assets */}
+            {/* Single combined filter bar with subtitled sections for tickets + assets. */}
             <TopFilterBar
-                slicers={ticketSlicers}
-                value={ticketFilters}
-                onChange={setTicketFilters}
-                storageKey="ops-dashboard:hub:tickets:filters"
-                title={`${t('filters.title')} · ${t('pages.hubTicketsSection')}`}
-                clearLabel={t('filters.clearAll')}
-                clientSideTooltip={t('filters.clientSideTooltip')}
-            />
-            <TopFilterBar
-                slicers={assetSlicers}
-                value={assetFilters}
-                onChange={setAssetFilters}
-                storageKey="ops-dashboard:hub:assets:filters"
-                title={`${t('filters.title')} · ${t('pages.hubAssetsSection')}`}
+                sections={[
+                    {
+                        subtitle: t('pages.hubTicketsSection'),
+                        slicers: ticketSlicers,
+                        value: ticketFilters,
+                        onChange: setTicketFilters,
+                    },
+                    {
+                        subtitle: t('pages.hubAssetsSection'),
+                        slicers: assetSlicers,
+                        value: assetFilters,
+                        onChange: setAssetFilters,
+                    },
+                ]}
+                storageKey="ops-dashboard:hub:filters"
+                title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
             />
@@ -414,6 +441,7 @@ export function OpsDashboardHub() {
                     kpis={ticketKpis}
                     groupDonut={groupDonut}
                     trend={trend}
+                    trendMonths={trendMonths}
                     regionData={regionData}
                     loading={loading}
                     filteredCount={activeTickets.length}

@@ -21,6 +21,7 @@ import {
     groupBy,
     isActiveState,
     daysSinceUpdated,
+    monthsFromRange,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -93,18 +94,12 @@ export function IncidentAnalysisDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    // 3-month default horizon on page load + page-through to avoid the
-    // 1000-row silent cutoff. created_at_from pins the window so server
-    // payload stays bounded.
-    const [threeMonthsAgoIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    // 3-month default horizon on page load. Seeded into the user-facing
+    // filter state so the date picker shows it — otherwise the default is
+    // invisible and users mistake it for a data cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     );
-    const { data, loading, error, refetch } = useIncidents(
-        { limit: 1000, created_at_from: threeMonthsAgoIso },
-        { fetchAll: true },
-    );
-    const rows: TicketRow[] = useMemo(() => data?.items ?? [], [data]);
-    const partial = data?.partial === true;
 
     // Capture "now" at mount so aging math is stable across re-renders
     // (react-hooks/purity rejects Date.now() inside useMemo).
@@ -114,9 +109,24 @@ export function IncidentAnalysisDashboard() {
         assigned_group: [],
         priority: [],
         department: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
     });
+
+    // Drive the server fetch from the user-visible date range so the
+    // picker and the payload stay in sync. fetchAll: true pages through
+    // skip/limit to avoid the 1000-row silent cutoff.
+    const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    const { data, loading, error, refetch } = useIncidents(
+        {
+            limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const rows: TicketRow[] = useMemo(() => data?.items ?? [], [data]);
+    const partial = data?.partial === true;
 
     const slicers: SlicerConfig[] = useMemo(() => {
         const groups = groupBy(rows, (r) => r.assigned_group).map((g) => g.key);
@@ -198,7 +208,14 @@ export function IncidentAnalysisDashboard() {
 
     const groupBar = useMemo(() => groupBy(activeRows, (r) => r.assigned_group), [activeRows]);
 
-    const trend = useMemo(() => trendByMonth(filtered, 10, now), [filtered, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(dateRange.from, dateRange.to, now),
+        [dateRange.from, dateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
+        [filtered, trendMonths, now],
+    );
 
     const onPrioritySliceClick = (slice: { name: string }) => {
         const cur = (filters.priority as string[]) ?? [];
@@ -321,7 +338,7 @@ export function IncidentAnalysisDashboard() {
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <TrendLineCard
-                        title={t('charts.monthlyOpenedTrend')}
+                        title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
                         data={trend}
                         color="#ef4444"
                         height={260}

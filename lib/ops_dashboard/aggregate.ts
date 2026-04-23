@@ -183,6 +183,29 @@ function addMonthsUtc(base: Date, delta: number): Date {
 }
 
 /**
+ * Derive a month-bucket count from a date-range filter so the trend
+ * chart horizon matches whatever window the user is looking at. Falls
+ * back to ``fallback`` when no ``from`` is set.
+ */
+export function monthsFromRange(
+    from: string | null | undefined,
+    to: string | null | undefined,
+    now: number = Date.now(),
+    fallback: number = 3,
+): number {
+    if (!from) return fallback;
+    const fromMs = Date.parse(from);
+    if (!Number.isFinite(fromMs)) return fallback;
+    const toMs = to ? Date.parse(to) : now;
+    const endMs = Number.isFinite(toMs) ? toMs : now;
+    const diffDays = Math.max(0, (endMs - fromMs) / (1000 * 60 * 60 * 24));
+    // Round up so a 3-month window covers 3 full buckets including the
+    // current month. Clamp to 1..36 for chart readability.
+    const months = Math.ceil(diffDays / 30.436875) + 1;
+    return Math.min(36, Math.max(1, months));
+}
+
+/**
  * Trailing `monthCount`-month trend (inclusive of the current month),
  * bucketed by `created_at`. Months with zero rows are filled in so the
  * chart renders a continuous axis.

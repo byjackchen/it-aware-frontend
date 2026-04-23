@@ -1135,7 +1135,7 @@
             "ticketsByDepartment": "按部门划分的工单",
             "ticketsByChannel": "按渠道划分的工单",
             "ticketsByCategory": "按分类划分的工单",
-            "monthlyOpenedTrend": "工单开单趋势（近 10 个月）",
+            "monthlyOpenedTrend": "工单开单趋势（近 {months} 个月）",
             "deviceType": "设备类型",
             "assetsByRegion": "按区域划分的资产",
             "assetsByStatus": "按状态划分的资产",

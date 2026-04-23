@@ -1143,7 +1143,7 @@
             "ticketsByDepartment": "Tickets by Department",
             "ticketsByChannel": "Tickets by Channel",
             "ticketsByCategory": "Tickets by Category",
-            "monthlyOpenedTrend": "Opened Tickets — 10-month Trend",
+            "monthlyOpenedTrend": "Opened Tickets — {months}-month Trend",
             "deviceType": "Device Type",
             "assetsByRegion": "Assets by Region",
             "assetsByStatus": "Assets by Status",

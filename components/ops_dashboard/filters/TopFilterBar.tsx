@@ -29,7 +29,7 @@
  * parents currently using SidebarFilters can swap imports.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { DateRangePicker, type DateRangeValue } from './DateRangePicker';
@@ -63,10 +63,29 @@ export type SlicerConfig =
  */
 export type FilterState = Record<string, string[] | DateRangeValue>;
 
-export interface TopFilterBarProps {
+/**
+ * A single subtitled section inside a combined filter bar. Each
+ * section owns its own value + onChange pair because different sections
+ * drive different server fetches (e.g. tickets vs. assets on the Hub).
+ */
+export interface FilterSection {
+    subtitle: string;
     slicers: SlicerConfig[];
     value: FilterState;
     onChange: (next: FilterState) => void;
+}
+
+export interface TopFilterBarProps {
+    /** Flat slicer list (single-section mode). Mutually exclusive with `sections`. */
+    slicers?: SlicerConfig[];
+    value?: FilterState;
+    onChange?: (next: FilterState) => void;
+    /**
+     * Multi-section mode: render the card with N subtitled subsections.
+     * Each section has its own filter state — used when a single page
+     * drives multiple independent fetches (tickets + assets on the Hub).
+     */
+    sections?: FilterSection[];
     /**
      * Key used to persist expanded/collapsed state to localStorage.
      * Pass a stable per-page identifier (e.g. 'ops-dashboard:incidents').
@@ -120,10 +139,88 @@ function countActive(slicers: SlicerConfig[], value: FilterState): number {
     }, 0);
 }
 
+function clearSlicers(slicers: SlicerConfig[]): FilterState {
+    const cleared: FilterState = {};
+    for (const slicer of slicers) {
+        if (slicer.type === 'multi') cleared[slicer.param] = [];
+        else {
+            cleared[slicer.param[0]] = { from: null, to: null };
+            cleared[slicer.param[1]] = { from: null, to: null };
+        }
+    }
+    return cleared;
+}
+
+interface SectionGridProps {
+    slicers: SlicerConfig[];
+    value: FilterState;
+    onChange: (next: FilterState) => void;
+    clientSideTooltip: string;
+}
+
+function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGridProps) {
+    function getMulti(param: string): string[] {
+        const v = value[param];
+        return Array.isArray(v) ? v : [];
+    }
+
+    function getRange(paramPair: [string, string]): DateRangeValue {
+        const [fromParam] = paramPair;
+        const v = value[fromParam];
+        if (v && !Array.isArray(v)) return v;
+        return { from: null, to: null };
+    }
+
+    const setMulti = (param: string, next: string[]) => {
+        onChange({ ...value, [param]: next });
+    };
+
+    const setDateRange = (paramPair: [string, string], next: DateRangeValue) => {
+        const [fromParam, toParam] = paramPair;
+        onChange({
+            ...value,
+            [fromParam]: { from: next.from, to: next.to },
+            [toParam]: { from: next.from, to: next.to },
+        });
+    };
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {slicers.map((slicer) => {
+                if (slicer.type === 'multi') {
+                    const label = slicer.clientSide ? `${slicer.label} ⓘ` : slicer.label;
+                    return (
+                        <div
+                            key={slicer.param}
+                            title={slicer.clientSide ? clientSideTooltip : undefined}
+                        >
+                            <MultiSelect
+                                label={label}
+                                options={normaliseOptions(slicer.options)}
+                                value={getMulti(slicer.param)}
+                                onChange={(next) => setMulti(slicer.param, next)}
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <DateRangePicker
+                        key={slicer.param.join(':')}
+                        label={slicer.label}
+                        value={getRange(slicer.param)}
+                        onChange={(next) => setDateRange(slicer.param, next)}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
 export function TopFilterBar({
     slicers,
     value,
     onChange,
+    sections,
     storageKey,
     defaultExpanded = true,
     title = 'Filters',
@@ -143,54 +240,33 @@ export function TopFilterBar({
     const cardCls = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
     const titleCls = isLight ? 'text-slate-800' : 'text-white';
     const mutedCls = isLight ? 'text-slate-500' : 'text-gray-400';
+    const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-400';
     const badgeCls = isLight ? 'bg-blue-50 text-blue-700' : 'bg-blue-500/10 text-blue-300';
     const btnCls = isLight
         ? 'border-slate-200 text-slate-700 hover:bg-slate-100'
         : 'border-white/10 text-gray-300 hover:bg-white/10';
 
-    const activeCount = countActive(slicers, value);
+    // Resolve to one code path: either a single flat section or N subtitled sections.
+    const resolvedSections: FilterSection[] = sections
+        ? sections
+        : [
+              {
+                  subtitle: '',
+                  slicers: slicers ?? [],
+                  value: value ?? {},
+                  onChange: onChange ?? (() => {}),
+              },
+          ];
 
-    const setMulti = useCallback(
-        (param: string, next: string[]) => {
-            onChange({ ...value, [param]: next });
-        },
-        [value, onChange],
+    const activeCount = resolvedSections.reduce(
+        (acc, s) => acc + countActive(s.slicers, s.value),
+        0,
     );
-
-    const setDateRange = useCallback(
-        (paramPair: [string, string], next: DateRangeValue) => {
-            const [fromParam, toParam] = paramPair;
-            onChange({
-                ...value,
-                [fromParam]: { from: next.from, to: next.to },
-                [toParam]: { from: next.from, to: next.to },
-            });
-        },
-        [value, onChange],
-    );
-
-    function getMulti(param: string): string[] {
-        const v = value[param];
-        return Array.isArray(v) ? v : [];
-    }
-
-    function getRange(paramPair: [string, string]): DateRangeValue {
-        const [fromParam] = paramPair;
-        const v = value[fromParam];
-        if (v && !Array.isArray(v)) return v;
-        return { from: null, to: null };
-    }
 
     function clearAll() {
-        const cleared: FilterState = {};
-        for (const slicer of slicers) {
-            if (slicer.type === 'multi') cleared[slicer.param] = [];
-            else {
-                cleared[slicer.param[0]] = { from: null, to: null };
-                cleared[slicer.param[1]] = { from: null, to: null };
-            }
+        for (const section of resolvedSections) {
+            section.onChange(clearSlicers(section.slicers));
         }
-        onChange(cleared);
     }
 
     return (
@@ -235,35 +311,24 @@ export function TopFilterBar({
             </div>
 
             {expanded && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 px-4 pb-4 pt-0">
-                    {slicers.map((slicer) => {
-                        if (slicer.type === 'multi') {
-                            const label = slicer.clientSide
-                                ? `${slicer.label} ⓘ`
-                                : slicer.label;
-                            return (
+                <div className="px-4 pb-4 pt-0 space-y-4">
+                    {resolvedSections.map((section, idx) => (
+                        <div key={section.subtitle || `section-${idx}`}>
+                            {section.subtitle && (
                                 <div
-                                    key={slicer.param}
-                                    title={slicer.clientSide ? clientSideTooltip : undefined}
+                                    className={`text-[11px] uppercase tracking-wide font-semibold mb-2 ${subtitleCls}`}
                                 >
-                                    <MultiSelect
-                                        label={label}
-                                        options={normaliseOptions(slicer.options)}
-                                        value={getMulti(slicer.param)}
-                                        onChange={(next) => setMulti(slicer.param, next)}
-                                    />
+                                    {section.subtitle}
                                 </div>
-                            );
-                        }
-                        return (
-                            <DateRangePicker
-                                key={slicer.param.join(':')}
-                                label={slicer.label}
-                                value={getRange(slicer.param)}
-                                onChange={(next) => setDateRange(slicer.param, next)}
+                            )}
+                            <SectionGrid
+                                slicers={section.slicers}
+                                value={section.value}
+                                onChange={section.onChange}
+                                clientSideTooltip={clientSideTooltip}
                             />
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

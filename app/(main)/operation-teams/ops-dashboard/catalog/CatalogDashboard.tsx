@@ -25,6 +25,7 @@ import {
     daysSinceUpdated,
     groupBy,
     isActiveState,
+    monthsFromRange,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -72,14 +73,12 @@ export function CatalogDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const [threeMonthsAgoIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    // 3-month default seeded into the user-visible filter so the picker
+    // reflects what's actually being fetched. Otherwise users see a date
+    // gap and mistake it for a server-side cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     );
-    const { data, loading, error, refetch } = useRequests(
-        { limit: 1000, created_at_from: threeMonthsAgoIso },
-        { fetchAll: true },
-    );
-    const partial = data?.partial === true;
 
     // Stable aging clock.
     const [now] = useState<number>(() => Date.now());
@@ -88,9 +87,20 @@ export function CatalogDashboard() {
         assigned_group: [],
         department: [],
         location: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
     });
+
+    const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    const { data, loading, error, refetch } = useRequests(
+        {
+            limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const partial = data?.partial === true;
 
     // Narrow to catalog tasks (Phase 1 heuristic).
     const catalogRows: TicketRow[] = useMemo(() => {
@@ -172,7 +182,14 @@ export function CatalogDashboard() {
         return ranked.map((g) => ({ key: trimLabel(g.key), count: g.count }));
     }, [activeRows]);
 
-    const trend = useMemo(() => trendByMonth(filtered, 10, now), [filtered, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(dateRange.from, dateRange.to, now),
+        [dateRange.from, dateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
+        [filtered, trendMonths, now],
+    );
 
     const onGroupSliceClick = useCallback(
         (slice: { name: string }) => {
