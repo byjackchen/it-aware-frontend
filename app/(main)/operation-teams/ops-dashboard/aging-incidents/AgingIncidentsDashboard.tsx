@@ -55,7 +55,12 @@ export function AgingIncidentsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useIncidents({ limit: 1000, oit_only: true });
+    // Aging view only cares about active tickets by definition. Server-side
+    // active filter + page-through avoids the 1000-row silent cutoff.
+    const { data, loading, error, refetch } = useIncidents(
+        { limit: 1000, oit_only: true, is_business_wise_active: true },
+        { fetchAll: true },
+    );
     const partial = data?.partial === true;
 
     // Capture "now" at mount so aging math is stable across re-renders.

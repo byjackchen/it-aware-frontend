@@ -83,10 +83,10 @@ export function PendingAssetsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useHardwares({
-        limit: 1000,
-        is_active: true,
-    });
+    const { data, loading, error, refetch } = useHardwares(
+        { limit: 1000, is_active: true },
+        { fetchAll: true },
+    );
     const rows: HardwareRow[] = useMemo(() => data?.items ?? [], [data]);
     const partial = data?.partial === true;
 

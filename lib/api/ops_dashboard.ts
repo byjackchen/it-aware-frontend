@@ -138,6 +138,13 @@ export interface ActivityListParams extends BaseListParams {
     assigned_group?: string[];
     /** True = filter to AMER/APAC/EMEA OIT Support groups on the server. */
     oit_only?: boolean;
+    /**
+     * True = filter to the business-wise active state set (New / In Progress /
+     * On Hold / Solution Proposed / Open / Work in Progress / Pending).
+     * Dashboards that only care about open work pass this to drop payload
+     * ~5-10x.
+     */
+    is_business_wise_active?: boolean;
     /** Joins to caller worker. */
     is_vip?: boolean;
     /** Base64 OID strings — backs the "Location" sidebar slicer. */
@@ -204,6 +211,7 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'stable_id', params.stable_id);
     appendParam(q, 'assigned_group', params.assigned_group);
     appendParam(q, 'oit_only', params.oit_only);
+    appendParam(q, 'is_business_wise_active', params.is_business_wise_active);
     appendParam(q, 'is_vip', params.is_vip);
     appendParam(q, 'actor_location_oid', params.actor_location_oid);
     appendParam(q, 'actor_org_oid', params.actor_org_oid);

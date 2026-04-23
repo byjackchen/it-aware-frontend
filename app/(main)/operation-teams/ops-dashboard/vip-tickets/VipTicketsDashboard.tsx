@@ -71,9 +71,17 @@ export function VipTicketsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    // Fetch both endpoints in parallel — both filtered by is_vip + OIT.
-    const incidentQuery = useIncidents({ limit: 1000, is_vip: true, oit_only: true });
-    const requestQuery = useRequests({ limit: 1000, is_vip: true, oit_only: true });
+    // Fetch both endpoints in parallel — both filtered by is_vip + OIT +
+    // active-only (VIP page only shows open tickets). fetchAll pages
+    // through so we don't silently drop older VIP tickets past the first 1000.
+    const incidentQuery = useIncidents(
+        { limit: 1000, is_vip: true, oit_only: true, is_business_wise_active: true },
+        { fetchAll: true },
+    );
+    const requestQuery = useRequests(
+        { limit: 1000, is_vip: true, oit_only: true, is_business_wise_active: true },
+        { fetchAll: true },
+    );
 
     const loading = incidentQuery.loading || requestQuery.loading;
     const partial = incidentQuery.data?.partial === true || requestQuery.data?.partial === true;

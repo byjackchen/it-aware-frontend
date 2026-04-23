@@ -33,8 +33,73 @@ interface CacheEntry<T> {
 
 const CACHE_TTL_MS = 60_000;
 
+/** Default hard cap on pages when `fetchAll: true` — 20 pages * 1000 rows = 20k. */
+const FETCH_ALL_PAGE_CAP = 20;
+
 const cache = new Map<string, CacheEntry<unknown>>();
 const promiseCache = new Map<string, Promise<unknown>>();
+
+/**
+ * Loop through skip/limit pages until the server returns a short page
+ * (end of set) OR we hit {@link FETCH_ALL_PAGE_CAP}. Returns one combined
+ * ListResponse covering every page fetched. When the cap is hit, the
+ * returned response carries `partial: true` so the page can surface a
+ * "still loading, retry" banner.
+ *
+ * Why not just ask the server for everything at once? The backend caps
+ * list endpoints at 1000 rows per request. For the ops dashboard, a
+ * 1000-row silent cutoff is the bug we're paging around here.
+ */
+async function fetchAllPages<
+    TParams extends { skip?: number; limit?: number },
+    TRow,
+>(
+    fetcher: (params: TParams) => Promise<ListResponse<TRow>>,
+    baseParams: TParams,
+    maxPages = FETCH_ALL_PAGE_CAP,
+): Promise<ListResponse<TRow>> {
+    const pageSize = baseParams.limit ?? 1000;
+    const allItems: TRow[] = [];
+    let skip = 0;
+    let lastTotal: number | null = null;
+    let pagesFetched = 0;
+    let hitCap = false;
+
+    while (true) {
+        const page = await fetcher({ ...baseParams, skip, limit: pageSize });
+        lastTotal = page.total ?? lastTotal;
+
+        // Backend already flagged partial (e.g. 5s statement timeout) —
+        // return what we have so far plus the page's items, preserving
+        // the partial flag so the UI can surface it.
+        if (page.partial) {
+            return {
+                items: [...allItems, ...page.items],
+                total: page.total ?? null,
+                skip: 0,
+                limit: allItems.length + page.items.length,
+                partial: true,
+            };
+        }
+
+        allItems.push(...page.items);
+        pagesFetched += 1;
+        if (page.items.length < pageSize) break;
+        skip += pageSize;
+        if (pagesFetched >= maxPages) {
+            hitCap = true;
+            break;
+        }
+    }
+
+    return {
+        items: allItems,
+        total: lastTotal,
+        skip: 0,
+        limit: allItems.length,
+        ...(hitCap ? { partial: true } : {}),
+    };
+}
 
 function isCacheFresh<T>(entry: CacheEntry<T> | undefined): entry is CacheEntry<T> {
     if (!entry) return false;
@@ -54,13 +119,17 @@ function stableKey(prefix: string, params: unknown): string {
     return `${prefix}:${JSON.stringify(params, Object.keys((params as object) ?? {}).sort())}`;
 }
 
-function useListResource<TParams, TRow>(
+function useListResource<TParams extends { skip?: number; limit?: number }, TRow>(
     fetcher: (params: TParams) => Promise<ListResponse<TRow>>,
     keyPrefix: string,
     params: TParams,
     enabled: boolean,
+    fetchAll: boolean,
 ): UseOpsDashboardResult<TRow> {
-    const cacheKey = useMemo(() => stableKey(keyPrefix, params), [keyPrefix, params]);
+    const cacheKey = useMemo(
+        () => stableKey(`${keyPrefix}${fetchAll ? ':all' : ''}`, params),
+        [keyPrefix, fetchAll, params],
+    );
 
     const [data, setData] = useState<ListResponse<TRow> | null>(() => {
         const existing = cache.get(cacheKey) as CacheEntry<TRow> | undefined;
@@ -109,7 +178,11 @@ function useListResource<TParams, TRow>(
             setLoading(true);
             setError(null);
 
-            const fetchPromise = fetcher(paramsRef.current)
+            const fetchPromise = (
+                fetchAll
+                    ? fetchAllPages(fetcher, paramsRef.current)
+                    : fetcher(paramsRef.current)
+            )
                 .then((result) => {
                     cache.set(cacheKey, {
                         data: result as unknown as ListResponse<unknown>,
@@ -133,7 +206,7 @@ function useListResource<TParams, TRow>(
                 setLoading(false);
             }
         },
-        [cacheKey, enabled, fetcher],
+        [cacheKey, enabled, fetchAll, fetcher],
     );
 
     const refetch = useCallback(async () => {
@@ -150,37 +223,40 @@ function useListResource<TParams, TRow>(
 
 export function useIncidents(
     params: IncidentListParams = {},
-    options: { enabled?: boolean } = {},
+    options: { enabled?: boolean; fetchAll?: boolean } = {},
 ): UseOpsDashboardResult<TicketRow> {
     return useListResource<IncidentListParams, TicketRow>(
         fetchIncidents,
         'ops:incidents',
         params,
         options.enabled ?? true,
+        options.fetchAll ?? false,
     );
 }
 
 export function useRequests(
     params: RequestListParams = {},
-    options: { enabled?: boolean } = {},
+    options: { enabled?: boolean; fetchAll?: boolean } = {},
 ): UseOpsDashboardResult<TicketRow> {
     return useListResource<RequestListParams, TicketRow>(
         fetchRequests,
         'ops:requests',
         params,
         options.enabled ?? true,
+        options.fetchAll ?? false,
     );
 }
 
 export function useHardwares(
     params: HardwareListParams = {},
-    options: { enabled?: boolean } = {},
+    options: { enabled?: boolean; fetchAll?: boolean } = {},
 ): UseOpsDashboardResult<HardwareRow> {
     return useListResource<HardwareListParams, HardwareRow>(
         fetchHardwares,
         'ops:hardwares',
         params,
         options.enabled ?? true,
+        options.fetchAll ?? false,
     );
 }
 

@@ -74,10 +74,29 @@ export function OpsDashboardHub() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
+    // Default the opened-date window to the last 3 months for dashboard
+    // pulls. Pinned via useState so the same value is reused across renders
+    // (stable cache key for useOpsDashboard).
+    const [threeMonthsAgoIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    );
+
     // ── Three concurrent fetches ─────────────────────────────────
-    const incidentQuery = useIncidents({ limit: 1000, oit_only: true, view: 'slim' });
-    const requestQuery = useRequests({ limit: 1000, oit_only: true, view: 'slim' });
-    const hardwareQuery = useHardwares({ limit: 1000, is_active: true, view: 'slim' });
+    // fetchAll: true pages through skip/limit so we don't hit the 1000-row
+    // silent cutoff. created_at_from narrows the server fetch to ~3 months
+    // — covers the trend chart horizon without pulling unbounded history.
+    const incidentQuery = useIncidents(
+        { limit: 1000, oit_only: true, view: 'slim', created_at_from: threeMonthsAgoIso },
+        { fetchAll: true },
+    );
+    const requestQuery = useRequests(
+        { limit: 1000, oit_only: true, view: 'slim', created_at_from: threeMonthsAgoIso },
+        { fetchAll: true },
+    );
+    const hardwareQuery = useHardwares(
+        { limit: 1000, is_active: true, view: 'slim' },
+        { fetchAll: true },
+    );
 
     const loading = incidentQuery.loading || requestQuery.loading || hardwareQuery.loading;
     const partial =

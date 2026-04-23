@@ -93,7 +93,16 @@ export function IncidentAnalysisDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useIncidents({ limit: 1000 });
+    // 3-month default horizon on page load + page-through to avoid the
+    // 1000-row silent cutoff. created_at_from pins the window so server
+    // payload stays bounded.
+    const [threeMonthsAgoIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    );
+    const { data, loading, error, refetch } = useIncidents(
+        { limit: 1000, created_at_from: threeMonthsAgoIso },
+        { fetchAll: true },
+    );
     const rows: TicketRow[] = useMemo(() => data?.items ?? [], [data]);
     const partial = data?.partial === true;
 

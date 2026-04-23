@@ -72,7 +72,13 @@ export function CatalogDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useRequests({ limit: 1000 });
+    const [threeMonthsAgoIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    );
+    const { data, loading, error, refetch } = useRequests(
+        { limit: 1000, created_at_from: threeMonthsAgoIso },
+        { fetchAll: true },
+    );
     const partial = data?.partial === true;
 
     // Stable aging clock.
