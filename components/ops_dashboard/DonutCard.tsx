@@ -47,7 +47,7 @@ export function DonutCard({
     subtitle,
     data,
     palette = DEFAULT_PALETTE,
-    height = 480,
+    height = 500,
     onSliceClick,
     actionSlot,
     emptyText = 'No data',
