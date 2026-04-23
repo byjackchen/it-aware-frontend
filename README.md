@@ -114,6 +114,10 @@ Uses `console.log` with structured prefixes for traceability.
 - Include relevant context: `username`, `status`, `duration`
 - Avoid logging sensitive data (passwords, full tokens)
 
+## Ops Dashboard (Phase 1)
+
+10 operations-focused pages at `/operation-teams/ops-dashboard/*` backed by client-side aggregation over the existing activity + hardware list endpoints. See [`docs/ops-dashboard.md`](docs/ops-dashboard.md) for the route map, key architectural notes (slim view / partial responses / actor eager-load), smoke-test checklist, and Phase 2 follow-ups.
+
 ## Docker
 
 Build and run the image:
