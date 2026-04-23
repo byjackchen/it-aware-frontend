@@ -47,7 +47,7 @@ export function DonutCard({
     subtitle,
     data,
     palette = DEFAULT_PALETTE,
-    height = 320,
+    height = 420,
     onSliceClick,
     actionSlot,
     emptyText = 'No data',
@@ -85,8 +85,8 @@ export function DonutCard({
                             data={nonZero}
                             cx="50%"
                             cy="42%"
-                            innerRadius="52%"
-                            outerRadius="78%"
+                            innerRadius="58%"
+                            outerRadius="90%"
                             paddingAngle={2}
                             dataKey="value"
                             cursor={onSliceClick ? 'pointer' : undefined}
