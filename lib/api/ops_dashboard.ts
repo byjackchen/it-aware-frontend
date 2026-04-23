@@ -136,8 +136,13 @@ export interface ActivityListParams extends BaseListParams {
     priority?: string;
     stable_id?: string;
     assigned_group?: string[];
-    /** True = filter to AMER/APAC/EMEA OIT Support groups on the server. */
-    oit_only?: boolean;
+    /**
+     * Multi-value state filter. Matches ``state = ANY(states_list)`` on the
+     * server. Pass ``ACTIVE_STATES`` from ``lib/ops_dashboard/aggregate`` to
+     * narrow a fetch to open tickets only — aligned with the
+     * backend's ``states_list`` FilterSpec.
+     */
+    states_list?: readonly string[];
     /** Joins to caller worker. */
     is_vip?: boolean;
     /** Base64 OID strings — backs the "Location" sidebar slicer. */
@@ -203,7 +208,7 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'priority', params.priority);
     appendParam(q, 'stable_id', params.stable_id);
     appendParam(q, 'assigned_group', params.assigned_group);
-    appendParam(q, 'oit_only', params.oit_only);
+    appendParam(q, 'states_list', params.states_list);
     appendParam(q, 'is_vip', params.is_vip);
     appendParam(q, 'actor_location_oid', params.actor_location_oid);
     appendParam(q, 'actor_org_oid', params.actor_org_oid);
@@ -284,14 +289,3 @@ export async function fetchHardwares(
     return fetchJson<ListResponse<HardwareRow>>(buildOpsDashboardUrl('hardwares', qs));
 }
 
-// =============================================================================
-// Shared constants
-// =============================================================================
-
-/** The three OIT Support assignment groups the dashboard filters to when `oit_only=true`. */
-export const OIT_SUPPORT_GROUPS = [
-    'AMER OIT Support',
-    'APAC OIT Support',
-    'EMEA OIT Support',
-] as const;
-export type OitSupportGroup = (typeof OIT_SUPPORT_GROUPS)[number];

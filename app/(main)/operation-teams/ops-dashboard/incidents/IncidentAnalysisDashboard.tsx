@@ -21,6 +21,7 @@ import {
     groupBy,
     isActiveState,
     daysSinceUpdated,
+    monthsFromRange,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -28,10 +29,10 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 
 /**
  * Priority palette keyed by the prototype's ServiceNow labels
@@ -93,9 +94,12 @@ export function IncidentAnalysisDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useIncidents({ limit: 1000 });
-    const rows: TicketRow[] = useMemo(() => data?.items ?? [], [data]);
-    const partial = data?.partial === true;
+    // 3-month default horizon on page load. Seeded into the user-facing
+    // filter state so the date picker shows it — otherwise the default is
+    // invisible and users mistake it for a data cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    );
 
     // Capture "now" at mount so aging math is stable across re-renders
     // (react-hooks/purity rejects Date.now() inside useMemo).
@@ -105,9 +109,24 @@ export function IncidentAnalysisDashboard() {
         assigned_group: [],
         priority: [],
         department: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
     });
+
+    // Drive the server fetch from the user-visible date range so the
+    // picker and the payload stay in sync. fetchAll: true pages through
+    // skip/limit to avoid the 1000-row silent cutoff.
+    const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    const { data, loading, error, refetch } = useIncidents(
+        {
+            limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const rows: TicketRow[] = useMemo(() => data?.items ?? [], [data]);
+    const partial = data?.partial === true;
 
     const slicers: SlicerConfig[] = useMemo(() => {
         const groups = groupBy(rows, (r) => r.assigned_group).map((g) => g.key);
@@ -118,7 +137,13 @@ export function IncidentAnalysisDashboard() {
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
             { type: 'multi', param: 'priority', label: t('filters.priority'), options: priorities },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
     }, [rows, t]);
@@ -183,7 +208,14 @@ export function IncidentAnalysisDashboard() {
 
     const groupBar = useMemo(() => groupBy(activeRows, (r) => r.assigned_group), [activeRows]);
 
-    const trend = useMemo(() => trendByMonth(filtered, 10, now), [filtered, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(dateRange.from, dateRange.to, now),
+        [dateRange.from, dateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
+        [filtered, trendMonths, now],
+    );
 
     const onPrioritySliceClick = (slice: { name: string }) => {
         const cur = (filters.priority as string[]) ?? [];
@@ -201,39 +233,50 @@ export function IncidentAnalysisDashboard() {
     });
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            {/* Main content */}
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-red-100 text-red-600' : 'bg-red-500/20 text-red-400'}`}>
-                            <AlertTriangle className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.incidentsTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.incidentsSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-red-100 text-red-600' : 'bg-red-500/20 text-red-400'}`}>
+                        <AlertTriangle className="w-5 h-5" />
                     </div>
-                    <div className="flex items-center gap-3">
-                        {hasFilters && (
-                            <span className="text-xs text-blue-400">
-                                {t('pages.filteredIncidents', {
-                                    filtered: filtered.length.toLocaleString(),
-                                    total: rows.length.toLocaleString(),
-                                })}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => void refetch()}
-                            className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                            title={t('empty.retry')}
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                        </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.incidentsTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.incidentsSubtitle')}</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredIncidents', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: rows.length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
 
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={setFilters}
+                storageKey="ops-dashboard:incidents:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -295,18 +338,13 @@ export function IncidentAnalysisDashboard() {
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <TrendLineCard
-                        title={t('charts.monthlyOpenedTrend')}
+                        title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
                         data={trend}
                         color="#ef4444"
                         height={260}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
-            </div>
-
-            {/* Right sidebar */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters slicers={slicers} value={filters} onChange={setFilters} />
             </div>
         </div>
     );

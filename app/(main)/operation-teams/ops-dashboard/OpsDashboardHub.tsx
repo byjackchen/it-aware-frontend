@@ -5,8 +5,8 @@
  * monitoring with the hardware-fleet overview in a single page.
  *
  * Data sources (three concurrent fetches):
- *   - useIncidents({ oit_only, limit: 1000 })
- *   - useRequests({ oit_only, limit: 1000 })
+ *   - useIncidents({ limit: 1000 })
+ *   - useRequests({ limit: 1000 })
  *   - useHardwares({ is_active, limit: 1000 })
  *
  * Incidents + requests are merged into one "tickets" array for
@@ -32,15 +32,16 @@ import {
     inferDeviceType,
     isActiveState,
     isInStock,
+    monthsFromRange,
     summarizeAssets,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 import { TicketsPanel, type TicketKpis } from './TicketsPanel';
 import { AssetsPanel, type SupportGroupMatrixRow } from './AssetsPanel';
 
@@ -74,10 +75,60 @@ export function OpsDashboardHub() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
+    // Default the opened-date window to the last 3 months. Seeded into
+    // the user-visible filter state so the date picker reflects it —
+    // otherwise the default is invisible and users mistake it for a
+    // server-side cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    );
+
+    // ── Filter state ────────────────────────────────────────────
+    // Declared before the API fetches so the ticket query can read the
+    // current date range off ticketFilters.
+    const [ticketFilters, setTicketFilters] = useState<FilterState>({
+        assigned_group: [],
+        location: [],
+        priority: [],
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
+    });
+    const [assetFilters, setAssetFilters] = useState<FilterState>({
+        support_group: [],
+        procured_by: [],
+        department: [],
+    });
+
+    const ticketDateRange =
+        (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
+        { from: null, to: null };
+
     // ── Three concurrent fetches ─────────────────────────────────
-    const incidentQuery = useIncidents({ limit: 1000, oit_only: true, view: 'slim' });
-    const requestQuery = useRequests({ limit: 1000, oit_only: true, view: 'slim' });
-    const hardwareQuery = useHardwares({ limit: 1000, is_active: true, view: 'slim' });
+    // fetchAll: true pages through skip/limit so we don't hit the 1000-row
+    // silent cutoff. created_at_from/to are read off ticketFilters so the
+    // picker and the payload stay in sync.
+    const incidentQuery = useIncidents(
+        {
+            limit: 1000,
+            view: 'slim',
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const requestQuery = useRequests(
+        {
+            limit: 1000,
+            view: 'slim',
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const hardwareQuery = useHardwares(
+        { limit: 1000, is_active: true, view: 'slim' },
+        { fetchAll: true },
+    );
 
     const loading = incidentQuery.loading || requestQuery.loading || hardwareQuery.loading;
     const partial =
@@ -103,20 +154,6 @@ export function OpsDashboardHub() {
         return rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category));
     }, [hardwareQuery.data]);
 
-    // ── Filter state ────────────────────────────────────────────
-    const [ticketFilters, setTicketFilters] = useState<FilterState>({
-        assigned_group: [],
-        location: [],
-        priority: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
-    });
-    const [assetFilters, setAssetFilters] = useState<FilterState>({
-        support_group: [],
-        procured_by: [],
-        department: [],
-    });
-
     const ticketSlicers: SlicerConfig[] = useMemo(() => {
         const groups = groupBy(allTickets, (r) => r.assigned_group).map((g) => g.key);
         const locations = groupBy(allTickets, locationOf).map((g) => g.key);
@@ -125,7 +162,13 @@ export function OpsDashboardHub() {
             .sort();
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            { type: 'multi', param: 'location', label: t('filters.location'), options: locations },
+            {
+                type: 'multi',
+                param: 'location',
+                label: t('filters.location'),
+                options: locations,
+                clientSide: true,
+            },
             { type: 'multi', param: 'priority', label: t('filters.priority'), options: priorities },
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
@@ -136,9 +179,27 @@ export function OpsDashboardHub() {
         const procured = groupBy(allAssets, procuredByOf).map((g) => g.key);
         const departments = groupBy(allAssets, (r) => r.department).map((g) => g.key);
         return [
-            { type: 'multi', param: 'support_group', label: t('filters.supportGroup'), options: supportGroups },
-            { type: 'multi', param: 'procured_by', label: t('filters.procuredBy'), options: procured },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
         ];
     }, [allAssets, t]);
 
@@ -232,7 +293,14 @@ export function OpsDashboardHub() {
         [activeTickets],
     );
 
-    const trend = useMemo(() => trendByMonth(filteredTickets, 10, now), [filteredTickets, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(ticketDateRange.from, ticketDateRange.to, now),
+        [ticketDateRange.from, ticketDateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filteredTickets, trendMonths, now),
+        [filteredTickets, trendMonths, now],
+    );
 
     const regionData: RegionBubble[] = useMemo(() => {
         const counts: Record<Region, number> = { AMER: 0, EMEA: 0, APAC: 0, OTHER: 0 };
@@ -310,29 +378,51 @@ export function OpsDashboardHub() {
     );
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            {/* Main content */}
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                            <BarChart3 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.hubTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                        <BarChart3 className="w-5 h-5" />
                     </div>
-                    <button
-                        onClick={() => void refetchAll()}
-                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                        title={t('empty.retry')}
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.hubTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => void refetchAll()}
+                    className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                    title={t('empty.retry')}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                </button>
+            </div>
 
+            {/* Single combined filter bar with subtitled sections for tickets + assets. */}
+            <TopFilterBar
+                sections={[
+                    {
+                        subtitle: t('pages.hubTicketsSection'),
+                        slicers: ticketSlicers,
+                        value: ticketFilters,
+                        onChange: setTicketFilters,
+                    },
+                    {
+                        subtitle: t('pages.hubAssetsSection'),
+                        slicers: assetSlicers,
+                        value: assetFilters,
+                        onChange: setAssetFilters,
+                    },
+                ]}
+                storageKey="ops-dashboard:hub:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -351,6 +441,7 @@ export function OpsDashboardHub() {
                     kpis={ticketKpis}
                     groupDonut={groupDonut}
                     trend={trend}
+                    trendMonths={trendMonths}
                     regionData={regionData}
                     loading={loading}
                     filteredCount={activeTickets.length}
@@ -370,19 +461,6 @@ export function OpsDashboardHub() {
                     onProcuredSliceClick={onProcuredSliceClick}
                     onSupportGroupSliceClick={onSupportGroupSliceClick}
                 />
-            </div>
-
-            {/* Right sidebar — two stacked panels */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <p className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textMuted}`}>
-                    {t('pages.hubTicketsSection')}
-                </p>
-                <SidebarFilters slicers={ticketSlicers} value={ticketFilters} onChange={setTicketFilters} />
-                <div className={`my-4 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`} />
-                <p className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${textMuted}`}>
-                    {t('pages.hubAssetsSection')}
-                </p>
-                <SidebarFilters slicers={assetSlicers} value={assetFilters} onChange={setAssetFilters} />
             </div>
         </div>
     );

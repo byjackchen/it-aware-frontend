@@ -82,6 +82,30 @@ export function TopBar() {
       ]),
     },
     {
+      href: '/operation-teams',
+      label: t('operationTeams'),
+      icon: Wrench,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
+      ]),
+    },
+    {
+      href: '/ssc-cockpit',
+      label: t('sscCockpit'),
+      icon: Headset,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_SSC,
+      ]),
+    },
+    {
+      href: '/agent-ops',
+      label: t('agentOps'),
+      icon: KanbanSquare,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+      ]),
+    },
+    {
       href: '/application',
       label: t('application'),
       icon: Layers,
@@ -90,26 +114,8 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
-        PERMISSIONS.UI.NAVIGATION_SSC,
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
       children: [
-        {
-          href: '/operation-teams',
-          label: t('operationTeams'),
-          icon: Wrench,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_OPERATION,
-          ]),
-        },
-        {
-          href: '/ssc-cockpit',
-          label: t('sscCockpit'),
-          icon: Headset,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_SSC,
-          ]),
-        },
         {
           href: '/dashboard/data-overview',
           label: t('dashboard'),
@@ -143,14 +149,6 @@ export function TopBar() {
           ]),
         },
       ],
-    },
-    {
-      href: '/agent-ops',
-      label: t('agentOps'),
-      icon: KanbanSquare,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-      ]),
     },
   ];
 

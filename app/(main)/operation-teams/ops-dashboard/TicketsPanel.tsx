@@ -34,6 +34,7 @@ export interface TicketsPanelProps {
     kpis: TicketKpis;
     groupDonut: Array<{ name: string; value: number }>;
     trend: TrendPoint[];
+    trendMonths: number;
     regionData: RegionBubble[];
     loading: boolean;
     filteredCount: number;
@@ -45,6 +46,7 @@ export function TicketsPanel({
     kpis,
     groupDonut,
     trend,
+    trendMonths,
     regionData,
     loading,
     filteredCount,
@@ -100,7 +102,7 @@ export function TicketsPanel({
                     emptyText={emptyText}
                 />
                 <TrendLineCard
-                    title={t('charts.monthlyOpenedTrend')}
+                    title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
                     data={trend}
                     color="#3b82f6"
                     height={200}

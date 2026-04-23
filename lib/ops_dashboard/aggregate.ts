@@ -19,7 +19,13 @@ import type { HardwareRow, TicketRow } from '@/lib/api/ops_dashboard';
  * intentionally permissive — anything else (Resolved / Closed /
  * Cancelled / etc.) counts as inactive.
  */
-const ACTIVE_STATES = new Set<string>([
+/**
+ * Canonical business-wise active state list. Exported so dashboard pages
+ * that want an "open tickets only" fetch can pass it directly to the
+ * backend's multi-value `states_list` filter — keeping frontend and
+ * backend aligned on exactly which states count as active.
+ */
+export const ACTIVE_STATES: readonly string[] = [
     'New',
     'In Progress',
     'On Hold',
@@ -27,11 +33,13 @@ const ACTIVE_STATES = new Set<string>([
     'Open',
     'Work in Progress',
     'Pending',
-]);
+] as const;
+
+const ACTIVE_STATES_SET = new Set<string>(ACTIVE_STATES);
 
 export function isActiveState(state: string | null | undefined): boolean {
     if (!state) return false;
-    return ACTIVE_STATES.has(state);
+    return ACTIVE_STATES_SET.has(state);
 }
 
 // =============================================================================
@@ -172,6 +180,29 @@ function monthStart(iso: string): string | null {
 
 function addMonthsUtc(base: Date, delta: number): Date {
     return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + delta, 1));
+}
+
+/**
+ * Derive a month-bucket count from a date-range filter so the trend
+ * chart horizon matches whatever window the user is looking at. Falls
+ * back to ``fallback`` when no ``from`` is set.
+ */
+export function monthsFromRange(
+    from: string | null | undefined,
+    to: string | null | undefined,
+    now: number = Date.now(),
+    fallback: number = 3,
+): number {
+    if (!from) return fallback;
+    const fromMs = Date.parse(from);
+    if (!Number.isFinite(fromMs)) return fallback;
+    const toMs = to ? Date.parse(to) : now;
+    const endMs = Number.isFinite(toMs) ? toMs : now;
+    const diffDays = Math.max(0, (endMs - fromMs) / (1000 * 60 * 60 * 24));
+    // Round up so a 3-month window covers 3 full buckets including the
+    // current month. Clamp to 1..36 for chart readability.
+    const months = Math.ceil(diffDays / 30.436875) + 1;
+    return Math.min(36, Math.max(1, months));
 }
 
 /**

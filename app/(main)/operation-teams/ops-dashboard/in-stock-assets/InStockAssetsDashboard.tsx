@@ -18,7 +18,7 @@ import { groupBy, inferDeviceType, isInStock } from '@/lib/ops_dashboard/aggrega
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
-import { SidebarFilters, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/SidebarFilters';
+import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 
 const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 const DONUT_PALETTE = ['#118DFF', '#0B72D7', '#098BF5', '#54B5FB', '#71C0A7', '#57B956', '#478F48', '#326633'];
@@ -76,10 +76,10 @@ export function InStockAssetsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useHardwares({
-        limit: 1000,
-        is_active: true,
-    });
+    const { data, loading, error, refetch } = useHardwares(
+        { limit: 1000, is_active: true },
+        { fetchAll: true },
+    );
     const rows: HardwareRow[] = useMemo(() => data?.items ?? [], [data]);
     const partial = data?.partial === true;
 
@@ -102,7 +102,13 @@ export function InStockAssetsDashboard() {
         const stockrooms = groupBy(base, (r) => r.stock_room).map((g) => g.key);
         return [
             { type: 'multi', param: 'model_category', label: t('filters.modelCategory'), options: categories },
-            { type: 'multi', param: 'stock_room', label: t('filters.stockroom'), options: stockrooms },
+            {
+                type: 'multi',
+                param: 'stock_room',
+                label: t('filters.stockroom'),
+                options: stockrooms,
+                clientSide: true,
+            },
         ];
     }, [base, t]);
 
@@ -210,80 +216,87 @@ export function InStockAssetsDashboard() {
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            <div className="flex-1 flex flex-col overflow-hidden p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-3 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
-                            <PackageCheck className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.inStockTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.inStockSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
+                        <PackageCheck className="w-5 h-5" />
                     </div>
-                    <button
-                        onClick={() => void refetch()}
-                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                        title={t('empty.retry')}
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.inStockTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.inStockSubtitle')}</p>
+                    </div>
                 </div>
-
-                {/* KPI + donut row */}
-                <div className="grid grid-cols-6 gap-3 mb-3 shrink-0">
-                    <KpiCard label={t('kpis.inStock')} value={kpis.count} icon={PackageCheck} />
-                    <KpiCard label={t('pages.totalResidual')} value={kpis.residual} icon={DollarSign} />
-                    <KpiCard label={t('pages.avgAge')} value={kpis.avgAge} icon={Calendar} />
-                    <DonutCard
-                        title={t('charts.inStockLocation')}
-                        data={locationSlices}
-                        palette={DONUT_PALETTE}
-                        height={150}
-                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                    />
-                    <DonutCard
-                        title={t('charts.byCategory')}
-                        data={categorySlices}
-                        palette={DONUT_PALETTE}
-                        height={150}
-                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                    />
-                    <DonutCard
-                        title={t('charts.deviceType')}
-                        data={deviceTypeSlices}
-                        palette={DONUT_PALETTE}
-                        height={150}
-                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                    />
-                </div>
-
-                {/* Table */}
-                <div className="flex-1 min-h-0">
-                    <DataTable<TableRow>
-                        rows={pageRows}
-                        cols={cols}
-                        searchKeys={['serial_number', 'model_display_name', 'model_name', 'stock_room', 'model_category'] as (keyof TableRow)[]}
-                        total={enriched.length}
-                        skip={page.skip}
-                        limit={page.limit}
-                        onPageChange={setPage}
-                        loading={loading}
-                        partial={partial}
-                        error={error}
-                        onRetry={() => void refetch()}
-                        emptyText={t('empty.noData')}
-                        loadingText={t('empty.loading')}
-                        partialText={t('empty.partialResult')}
-                    />
-                </div>
+                <button
+                    onClick={() => void refetch()}
+                    className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                    title={t('empty.retry')}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                </button>
             </div>
 
-            {/* Sidebar */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters slicers={slicers} value={filters} onChange={(next) => { setFilters(next); setPage({ skip: 0, limit: PAGE_SIZE }); }} />
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={(next) => {
+                    setFilters(next);
+                    setPage({ skip: 0, limit: PAGE_SIZE });
+                }}
+                storageKey="ops-dashboard:in-stock-assets:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* KPI + donut row */}
+            <div className="grid grid-cols-6 gap-3 shrink-0">
+                <KpiCard label={t('kpis.inStock')} value={kpis.count} icon={PackageCheck} />
+                <KpiCard label={t('pages.totalResidual')} value={kpis.residual} icon={DollarSign} />
+                <KpiCard label={t('pages.avgAge')} value={kpis.avgAge} icon={Calendar} />
+                <DonutCard
+                    title={t('charts.inStockLocation')}
+                    data={locationSlices}
+                    palette={DONUT_PALETTE}
+                    height={150}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                />
+                <DonutCard
+                    title={t('charts.byCategory')}
+                    data={categorySlices}
+                    palette={DONUT_PALETTE}
+                    height={150}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                />
+                <DonutCard
+                    title={t('charts.deviceType')}
+                    data={deviceTypeSlices}
+                    palette={DONUT_PALETTE}
+                    height={150}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                />
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 min-h-0">
+                <DataTable<TableRow>
+                    rows={pageRows}
+                    cols={cols}
+                    searchKeys={['serial_number', 'model_display_name', 'model_name', 'stock_room', 'model_category'] as (keyof TableRow)[]}
+                    total={enriched.length}
+                    skip={page.skip}
+                    limit={page.limit}
+                    onPageChange={setPage}
+                    loading={loading}
+                    partial={partial}
+                    error={error}
+                    onRetry={() => void refetch()}
+                    emptyText={t('empty.noData')}
+                    loadingText={t('empty.loading')}
+                    partialText={t('empty.partialResult')}
+                />
             </div>
         </div>
     );

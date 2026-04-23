@@ -25,6 +25,7 @@ import {
     daysSinceUpdated,
     groupBy,
     isActiveState,
+    monthsFromRange,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -33,10 +34,10 @@ import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import { ClassifierCaveatFooter } from '@/components/ops_dashboard/ClassifierCaveatFooter';
 import {
-    SidebarFilters,
+    TopFilterBar,
     type FilterState,
     type SlicerConfig,
-} from '@/components/ops_dashboard/filters/SidebarFilters';
+} from '@/components/ops_dashboard/filters/TopFilterBar';
 
 /** Catalog tasks use the prototype's blue-family palette to distinguish them from incidents. */
 const CATALOG_PALETTE = [
@@ -72,8 +73,12 @@ export function CatalogDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const { data, loading, error, refetch } = useRequests({ limit: 1000 });
-    const partial = data?.partial === true;
+    // 3-month default seeded into the user-visible filter so the picker
+    // reflects what's actually being fetched. Otherwise users see a date
+    // gap and mistake it for a server-side cutoff.
+    const [defaultFromIso] = useState<string>(
+        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    );
 
     // Stable aging clock.
     const [now] = useState<number>(() => Date.now());
@@ -82,9 +87,20 @@ export function CatalogDashboard() {
         assigned_group: [],
         department: [],
         location: [],
-        created_at_from: { from: null, to: null },
-        created_at_to: { from: null, to: null },
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
     });
+
+    const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    const { data, loading, error, refetch } = useRequests(
+        {
+            limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const partial = data?.partial === true;
 
     // Narrow to catalog tasks (Phase 1 heuristic).
     const catalogRows: TicketRow[] = useMemo(() => {
@@ -98,8 +114,20 @@ export function CatalogDashboard() {
         const locations = groupBy(catalogRows, locationOf).map((g) => g.key);
         return [
             { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            { type: 'multi', param: 'department', label: t('filters.department'), options: departments },
-            { type: 'multi', param: 'location', label: t('filters.location'), options: locations },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'location',
+                label: t('filters.location'),
+                options: locations,
+                clientSide: true,
+            },
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
     }, [catalogRows, t]);
@@ -154,7 +182,14 @@ export function CatalogDashboard() {
         return ranked.map((g) => ({ key: trimLabel(g.key), count: g.count }));
     }, [activeRows]);
 
-    const trend = useMemo(() => trendByMonth(filtered, 10, now), [filtered, now]);
+    const trendMonths = useMemo(
+        () => monthsFromRange(dateRange.from, dateRange.to, now),
+        [dateRange.from, dateRange.to, now],
+    );
+    const trend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
+        [filtered, trendMonths, now],
+    );
 
     const onGroupSliceClick = useCallback(
         (slice: { name: string }) => {
@@ -177,38 +212,50 @@ export function CatalogDashboard() {
     });
 
     return (
-        <div className={`flex h-[calc(100vh-4rem)] ${isLight ? 'bg-slate-50' : ''}`}>
-            <div className="flex-1 overflow-auto p-4 min-w-0">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-sky-100 text-sky-600' : 'bg-sky-500/20 text-sky-400'}`}>
-                            <ShoppingCart className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.catalogTitle')}</h1>
-                            <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.catalogSubtitle')}</p>
-                        </div>
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-sky-100 text-sky-600' : 'bg-sky-500/20 text-sky-400'}`}>
+                        <ShoppingCart className="w-5 h-5" />
                     </div>
-                    <div className="flex items-center gap-3">
-                        {hasFilters && (
-                            <span className="text-xs text-blue-400">
-                                {t('pages.filteredCatalog', {
-                                    filtered: filtered.length.toLocaleString(),
-                                    total: catalogRows.length.toLocaleString(),
-                                })}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => void refetch()}
-                            className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                            title={t('empty.retry')}
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                        </button>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.catalogTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.catalogSubtitle')}</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredCatalog', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: catalogRows.length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
 
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={setFilters}
+                storageKey="ops-dashboard:catalog:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
                 {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
@@ -277,13 +324,8 @@ export function CatalogDashboard() {
                 </div>
             </div>
 
-            {/* Right sidebar with filters + classifier caveat */}
-            <div className={`w-60 shrink-0 border-l p-4 overflow-auto flex flex-col gap-4 ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
-                <SidebarFilters slicers={slicers} value={filters} onChange={setFilters} />
-                <div className="mt-auto">
-                    <ClassifierCaveatFooter />
-                </div>
-            </div>
+            {/* Classifier caveat — bottom of page */}
+            <ClassifierCaveatFooter />
         </div>
     );
 }
