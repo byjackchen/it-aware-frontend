@@ -26,6 +26,7 @@ import {
     Route,
     LayoutDashboard,
     BarChart3,
+    BarChart2,
     Bot,
     TicketCheck,
     KanbanSquare,
@@ -349,6 +350,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.UI.NAVIGATION_SSC,
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                     PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+            {
+                href: '/ssc-cockpit/faq-report',
+                labelKey: 'faqReport',
+                icon: BarChart2,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                 ]),
             },
         ],

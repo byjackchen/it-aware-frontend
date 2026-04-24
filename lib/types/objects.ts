@@ -1761,3 +1761,38 @@ export interface TicketCommentListResponse {
     skip: number;
     limit: number;
 }
+
+// ── FAQ Monthly Report ────────────────────────────────────────────────────────
+
+export interface CodeBreakdownItem {
+    code: string;
+    display: string;
+    count: number;
+    percentage: number;
+}
+
+export interface MonthStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    breakdown: CodeBreakdownItem[];
+    grand_total: number;
+    unique_visitors: number;
+    faq_resolution_rate: number;
+    ok_rate: number;
+    imp_rate: number;
+    human_escalation_rate: number;
+}
+
+export interface FAQEnquiryItem {
+    code: string;
+    name: string;
+    count: number;
+    percentage: number;
+}
+
+export interface InteractionFAQReport {
+    current: MonthStats;
+    previous: MonthStats;
+    top5_faq: FAQEnquiryItem[];
+}

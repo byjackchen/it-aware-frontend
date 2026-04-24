@@ -941,3 +941,11 @@ export async function createTicketComment(ticketOid: string, data: TicketComment
 export async function deleteTicketComment(ticketOid: string, commentOid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
 }
+
+export async function getFAQMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').InteractionFAQReport> {
+    const params = new URLSearchParams();
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+    const qs = params.toString();
+    return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
+}
