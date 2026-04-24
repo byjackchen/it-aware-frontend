@@ -37,6 +37,7 @@ import type {
     IncidentListResponse,
     IncidentCreate,
     IncidentUpdate,
+    IncidentSlaListResponse,
     Inquiry,
     InquiryListParams,
     InquiryListResponse,
@@ -615,6 +616,12 @@ export async function getIncidentsPage(params: IncidentListParams = {}): Promise
 
 export async function getIncident(oid: string): Promise<Incident> {
     return fetchApi<Incident>(`${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}`);
+}
+
+export async function getIncidentSlas(oid: string): Promise<IncidentSlaListResponse> {
+    return fetchApi<IncidentSlaListResponse>(
+        `${OBJECTS_BASE}/activities/incidents/${encodeURIComponent(oid)}/slas`,
+    );
 }
 
 export async function getRequests(): Promise<Request[]> {

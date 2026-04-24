@@ -20,9 +20,16 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { ObjectGraph } from '@/components/data';
+import { IncidentSlasCard, ObjectGraph, Phase2FieldsCard } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { Incident, GlobalEdge, Organization, Worker, ServiceCatalog } from '@/lib/types/objects';
+import type {
+    GlobalEdge,
+    Incident,
+    IncidentSla,
+    Organization,
+    ServiceCatalog,
+    Worker,
+} from '@/lib/types/objects';
 import { updateIncidentAction, deleteIncidentAction } from '@/app/actions/objects';
 
 interface IncidentDetailPageProps {
@@ -31,13 +38,14 @@ interface IncidentDetailPageProps {
     organizations: Organization[];
     workers: Worker[];
     serviceCatalogs: ServiceCatalog[];
+    slas: IncidentSla[];
 }
 
 const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const STATE_OPTIONS = ['New', 'In Progress', 'On Hold', 'Resolved', 'Closed', 'Canceled'];
 
-export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs }: IncidentDetailPageProps) {
+export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs, slas }: IncidentDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useRouter();
@@ -682,6 +690,12 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                         </div>
                     )}
                 </div>
+
+                {/* Phase 2 — ServiceNow-authoritative fields (read-only). */}
+                <Phase2FieldsCard data={incident} variant="incident" />
+
+                {/* Incident SLAs. */}
+                <IncidentSlasCard slas={slas} />
 
                 {/* Graph */}
                 <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
