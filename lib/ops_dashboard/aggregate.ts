@@ -64,9 +64,25 @@ export function classifyRequestType(row: TicketRow): RequestType {
 // Aging helpers
 // =============================================================================
 
-/** Whole days between `updated_at` and now, floored. Returns 0 for unparseable input. */
-export function daysSinceUpdated(row: { updated_at: string }, now: number = Date.now()): number {
-    const t = Date.parse(row.updated_at);
+/**
+ * Days since the upstream system (ServiceNow) last updated the row.
+ *
+ * Phase 2 aging clock: prefer ``source_updated_at`` — that mirrors SN's
+ * ``sys_updated_on`` and bumps only when the upstream record actually
+ * changes. Fall back to ``updated_at`` (the DB-row lifecycle timestamp)
+ * only when ``source_updated_at`` is null — a pre-backfill row or a
+ * non-SN activity source (inquiry / interaction from chat).
+ *
+ * Never aging off ``updated_at`` alone: after Phase 2 that field bumps
+ * on every DB mutation (``onupdate=func.now()``) including internal
+ * edits that do not reflect upstream activity.
+ */
+export function daysSinceUpdated(
+    row: { source_updated_at?: string | null; updated_at: string },
+    now: number = Date.now(),
+): number {
+    const iso = row.source_updated_at ?? row.updated_at;
+    const t = Date.parse(iso);
     if (!Number.isFinite(t)) return 0;
     const diff = now - t;
     if (diff <= 0) return 0;

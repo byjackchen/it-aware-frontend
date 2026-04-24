@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { ObjectGraph } from '@/components/data';
+import { ObjectGraph, Phase2FieldsCard } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Request, GlobalEdge, Worker, ServiceCatalog } from '@/lib/types/objects';
 import { updateRequestAction, deleteRequestAction } from '@/app/actions/objects';
@@ -662,6 +662,9 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                         </div>
                     )}
                 </div>
+
+                {/* Phase 2 — ServiceNow-authoritative fields (read-only). */}
+                <Phase2FieldsCard data={request} variant="request" />
 
                 <div className={`rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <h2 className={`text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('common.edgeRelationships')}</h2>

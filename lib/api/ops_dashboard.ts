@@ -81,11 +81,47 @@ export interface TicketRow {
     caller_name: string | null;
     assigned_to_name: string | null;
 
-    /** ISO datetime. */
+    /** ISO datetime — DB-row create time (Phase 2: server-managed). */
     created_at: string;
-    /** Mirrors ServiceNow sys_updated_on — use this for aging math. */
+    /** ISO datetime — DB-row last mutation (Phase 2: server-managed via onupdate). */
     updated_at: string;
     effective_at: string;
+
+    // ----- Phase 2 — upstream (ServiceNow) authoritative timestamps ---------
+    /** SN sys_created_on — upstream create time. Nullable on pre-backfill rows. */
+    source_created_at?: string | null;
+    /**
+     * SN sys_updated_on — the ops-dashboard aging clock. Prefer this for
+     * ``daysSinceUpdated``; fall back to ``updated_at`` only when null
+     * (non-SN activity source).
+     */
+    source_updated_at?: string | null;
+    source_opened_at?: string | null;
+    /** Incidents only — SN resolved timestamp. */
+    source_resolved_at?: string | null;
+    source_closed_at?: string | null;
+    /** Incidents only. */
+    source_last_reopened_at?: string | null;
+    source_sla_due?: string | null;
+    source_due_date?: string | null;
+    source_expected_start?: string | null;
+    /** Requests only — SN agent_updated. */
+    source_agent_updated_at?: string | null;
+
+    // ----- Phase 2 — SLA / escalation ---------------------------------------
+    made_sla?: boolean | null;
+    /** Incidents only. */
+    escalation?: number | null;
+    /** Incidents only. */
+    severity?: string | null;
+    /** Incidents only. */
+    reopen_count?: number | null;
+    reassignment_count?: number | null;
+
+    // ----- Phase 2 — ticket-anchored dimensions (vs. actor-derived) ---------
+    location?: string | null;
+    department?: string | null;
+    company?: string | null;
 
     /** Eager-loaded actor from the ops-dashboard 1.1.4 join. */
     actor: ActorRef | null;
@@ -155,6 +191,22 @@ export interface ActivityListParams extends BaseListParams {
     updated_at_to?: string;
     effective_at_from?: string;
     effective_at_to?: string;
+    // ----- Phase 2 — source_* timestamp + SLA / escalation filters ---------
+    source_updated_at_from?: string;
+    source_updated_at_to?: string;
+    source_opened_at_from?: string;
+    source_opened_at_to?: string;
+    /** Incidents only. */
+    source_resolved_at_from?: string;
+    /** Incidents only. */
+    source_resolved_at_to?: string;
+    /** Requests only. */
+    source_closed_at_from?: string;
+    /** Requests only. */
+    source_closed_at_to?: string;
+    made_sla?: boolean;
+    /** Incidents only — filter rows with ``COALESCE(escalation, 0) >= N``. */
+    escalation_min?: number;
 }
 
 export type IncidentListParams = ActivityListParams;
@@ -218,6 +270,17 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'updated_at_to', params.updated_at_to);
     appendParam(q, 'effective_at_from', params.effective_at_from);
     appendParam(q, 'effective_at_to', params.effective_at_to);
+    // Phase 2 — source_* timestamp + SLA / escalation filters.
+    appendParam(q, 'source_updated_at_from', params.source_updated_at_from);
+    appendParam(q, 'source_updated_at_to', params.source_updated_at_to);
+    appendParam(q, 'source_opened_at_from', params.source_opened_at_from);
+    appendParam(q, 'source_opened_at_to', params.source_opened_at_to);
+    appendParam(q, 'source_resolved_at_from', params.source_resolved_at_from);
+    appendParam(q, 'source_resolved_at_to', params.source_resolved_at_to);
+    appendParam(q, 'source_closed_at_from', params.source_closed_at_from);
+    appendParam(q, 'source_closed_at_to', params.source_closed_at_to);
+    appendParam(q, 'made_sla', params.made_sla);
+    appendParam(q, 'escalation_min', params.escalation_min);
     if (params.skip !== undefined) q.set('skip', String(params.skip));
     if (params.limit !== undefined) q.set('limit', String(params.limit));
     return q.toString();
