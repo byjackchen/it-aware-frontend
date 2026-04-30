@@ -84,7 +84,7 @@ export function DonutCard({
                         <Pie
                             data={nonZero}
                             cx="50%"
-                            cy="42%"
+                            cy="48%"
                             innerRadius="60%"
                             outerRadius="92%"
                             paddingAngle={2}

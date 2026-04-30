@@ -1789,6 +1789,7 @@ export interface FAQEnquiryItem {
     name: string;
     count: number;
     percentage: number;
+    sample_question?: string | null;
 }
 
 export interface InteractionFAQReport {
