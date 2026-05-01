@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Link from 'next/link';
+import { NavLink } from '@/components/navigation/NavLink';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { MenuItem } from '@/lib/types/menu';
 
@@ -46,7 +46,7 @@ export function SidebarSection({ labelKey, items, pathname, t, isLight, checkMen
                             (item.href !== '/' && pathname.startsWith(item.href));
 
                         return (
-                            <Link
+                            <NavLink
                                 key={item.href}
                                 href={item.href}
                                 className={`
@@ -61,7 +61,7 @@ export function SidebarSection({ labelKey, items, pathname, t, isLight, checkMen
                             >
                                 {Icon && <Icon className="w-4 h-4" />}
                                 <span>{t(item.labelKey!)}</span>
-                            </Link>
+                            </NavLink>
                         );
                     })}
                 </div>
