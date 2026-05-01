@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import {
     ArrowLeft,
@@ -89,7 +89,7 @@ function emptyTopicItem(): WorkerProfileTopicItem {
 export function WorkerDetailPage({ worker, workerProfile, edges, organizations, locations }: WorkerDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const { hasPermission } = usePermissions();
     const canReadSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_READ_SENSITIVE);

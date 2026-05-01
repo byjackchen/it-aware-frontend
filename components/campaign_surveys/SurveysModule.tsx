@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import Image from 'next/image';
 import { ClipboardCheck, Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -194,7 +195,7 @@ export function SurveysModule() {
     const t = useTranslations('CampaignSurvey');
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const router = useRouter();
+    const router = useTransitionRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { hasPermission } = usePermissions();

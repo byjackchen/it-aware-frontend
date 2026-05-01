@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { MessageCircle, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
@@ -12,7 +12,7 @@ import type { Inquiry, InquiryListResponse, Worker } from '@/lib/types/objects';
 
 export function InquiriesListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
 

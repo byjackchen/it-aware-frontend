@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { MousePointerClick, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -25,7 +25,7 @@ function getCreatedAtTimestamp(value: string): number {
 export function InteractionsListPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
 

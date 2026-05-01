@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
     Bot,
@@ -29,7 +29,7 @@ interface AgentDetailPageProps {
 export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);

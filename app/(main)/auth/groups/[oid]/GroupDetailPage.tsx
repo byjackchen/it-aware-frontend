@@ -5,7 +5,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Trash2, Pencil, Loader2, Users, Save } from 'lucide-react';
 import { AssignmentManager } from '@/components/security';
@@ -42,7 +42,7 @@ export function GroupDetailPage({
     allRoles,
 }: GroupDetailPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(group.name);

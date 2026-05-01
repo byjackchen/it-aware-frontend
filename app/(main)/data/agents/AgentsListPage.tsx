@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Bot, Plus, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
@@ -10,7 +10,7 @@ import type { Agent, AgentListResponse } from '@/lib/types/objects';
 
 export function AgentsListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);

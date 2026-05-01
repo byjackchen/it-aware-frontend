@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import {
     HardDrive,
@@ -46,7 +46,7 @@ function getStatusColor(status: string | null): string {
 
 export function HardwaresListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');

@@ -4,7 +4,7 @@
  * Survey detail page client component. Read-only.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -60,7 +60,7 @@ function renderAnswer(answer: SurveyAnswer, questions: Survey['survey_questions'
 export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
 

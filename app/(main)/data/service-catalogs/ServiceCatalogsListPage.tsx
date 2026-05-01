@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Layers, Plus, RefreshCw, Search, X, ChevronsUpDown, ChevronsDownUp, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { HierarchyTree } from '@/components/data';
@@ -48,7 +48,7 @@ function filterTree(nodes: HierarchyTreeNode[], query: string, showDeactivated: 
 
 export function ServiceCatalogsListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
     const [showDeactivated, setShowDeactivated] = useState(false);

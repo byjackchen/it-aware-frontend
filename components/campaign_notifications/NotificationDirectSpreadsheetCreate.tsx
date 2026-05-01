@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Download, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -34,7 +34,7 @@ export function NotificationDirectSpreadsheetCreate({
 }: NotificationDirectSpreadsheetCreateProps) {
     const t = useTranslations('Campaign');
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
 
     const [name, setName] = useState('');

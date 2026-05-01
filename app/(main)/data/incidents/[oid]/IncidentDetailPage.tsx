@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -48,7 +48,7 @@ const STATE_OPTIONS = ['New', 'In Progress', 'On Hold', 'Resolved', 'Closed', 'C
 export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs, slas }: IncidentDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
     const [isEditing, setIsEditing] = useState(false);

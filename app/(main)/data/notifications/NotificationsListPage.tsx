@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Bell, RefreshCw, Search, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
@@ -26,7 +26,7 @@ function contentPreview(notification: Notification): string {
 
 export function NotificationsListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
 

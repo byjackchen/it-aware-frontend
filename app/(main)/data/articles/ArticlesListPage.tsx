@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { FileText, Plus, RefreshCw, Search, Layers, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -20,7 +20,7 @@ import type { Article, ServiceCatalog } from '@/lib/types/objects';
 export function ArticlesListPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data.articles');
     const commonT = useTranslations('Data.common');
     const isLight = theme === 'light';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import type { GraphGeometry, GraphHoverPayload, NodePosition, EdgePath } from './types';
 import { ARROW_SIZE, DOT_GRID_SIZE, DOT_GRID_RADIUS, HOVER_TOOLTIP_MAX_WIDTH } from './constants';
 import { getTypeColor, getObjectPath, truncateEdgeLabel, formatCompactDate } from './utils';
@@ -23,7 +23,7 @@ export function GraphCanvas({
     onEdgeHover,
     onClearHover,
 }: GraphCanvasProps) {
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const handleNodeClick = useCallback(
         (node: NodePosition) => {

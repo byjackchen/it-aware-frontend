@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Building2, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -310,7 +310,7 @@ function OrgTreeNode({
 export function PersonaOrgWorkerSidebar({ currentWorker }: PersonaOrgWorkerSidebarProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Persona');
 
     const [searchInput, setSearchInput] = useState(() => SIDEBAR_STATE_CACHE.query);

@@ -5,7 +5,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import {
     ArrowLeft,
@@ -50,7 +50,7 @@ export function AccountDetailPage({
     allGroups,
 }: AccountDetailPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [isLinkingWorker, setIsLinkingWorker] = useState(false);

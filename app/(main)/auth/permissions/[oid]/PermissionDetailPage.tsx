@@ -4,7 +4,7 @@
  * Permission detail page client component.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Trash2, Loader2, Lock } from 'lucide-react';
@@ -21,7 +21,7 @@ export function PermissionDetailPage({
     assignedGroups,
 }: PermissionDetailPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
 
     const handleDelete = () => {

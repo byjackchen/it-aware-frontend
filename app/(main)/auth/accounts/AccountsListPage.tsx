@@ -4,7 +4,7 @@
  * Accounts list page with navigation to detail and create pages.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Plus, User, Check, X } from 'lucide-react';
 import type { Account, Worker, AccountWorker } from '@/lib/types/security';
@@ -21,7 +21,7 @@ export function AccountsListPage({
     accountWorkers,
 }: AccountsListPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const getLinkedWorker = (accountOid: string): Worker | null => {
         const link = accountWorkers.find((aw) => aw.account_oid === accountOid);
