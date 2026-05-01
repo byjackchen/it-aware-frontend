@@ -1,17 +1,20 @@
 'use client';
 
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
-import { MessageCircle, Loader2, Download } from 'lucide-react';
+import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { InteractionRow } from '@/components/ssc/InteractionRow';
-import type {
-    Interaction,
-    InteractionListResponse,
-    WorkerContext,
+import {
+    REVIEW_CODES,
+    REVIEW_CODE_LABELS,
+    type Interaction,
+    type InteractionListResponse,
+    type ReviewCode,
+    type WorkerContext,
 } from '@/lib/types/objects';
 
 // ---------------------------------------------------------------------------
@@ -61,6 +64,62 @@ export function InteractionsPanel({
     const t = useTranslations('SSCDashboard');
     const [isDownloading, setIsDownloading] = useState(false);
 
+    // Panel-level filters
+    const [showFilters, setShowFilters] = useState(true);
+    const [localUserFilter, setLocalUserFilter] = useState('');
+    const [selectedAiCodes, setSelectedAiCodes] = useState<Set<ReviewCode | 'NA'>>(new Set());
+    const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
+    const [selectedCountries, setSelectedCountries] = useState<Set<string>>(new Set());
+    const [selectedDepts, setSelectedDepts] = useState<Set<string>>(new Set());
+    const [showCodeDropdown, setShowCodeDropdown] = useState(false);
+    const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+    const codeDropdownRef = useRef<HTMLDivElement>(null);
+    const regionDropdownRef = useRef<HTMLDivElement>(null);
+    const countryDropdownRef = useRef<HTMLDivElement>(null);
+    const deptDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Compute unique values for region/country/dept from workerMap
+    const { regionOptions, countryOptions, deptOptions } = useMemo(() => {
+        const regions = new Set<string>();
+        const countries = new Set<string>();
+        const depts = new Set<string>();
+        for (const wc of Object.values(workerMap)) {
+            if (wc.region) regions.add(wc.region);
+            if (wc.country) countries.add(wc.country);
+            if (wc.department) depts.add(wc.department);
+        }
+        return {
+            regionOptions: [...regions].sort(),
+            countryOptions: [...countries].sort(),
+            deptOptions: [...depts].sort(),
+        };
+    }, [workerMap]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (codeDropdownRef.current && !codeDropdownRef.current.contains(e.target as Node)) {
+                setShowCodeDropdown(false);
+            }
+            if (regionDropdownRef.current && !regionDropdownRef.current.contains(e.target as Node)) {
+                setShowRegionDropdown(false);
+            }
+            if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
+                setShowCountryDropdown(false);
+            }
+            if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
+                setShowDeptDropdown(false);
+            }
+        }
+        const anyOpen = showCodeDropdown || showRegionDropdown || showCountryDropdown || showDeptDropdown;
+        if (anyOpen) {
+            document.addEventListener('mousedown', handleClick);
+            return () => document.removeEventListener('mousedown', handleClick);
+        }
+    }, [showCodeDropdown, showRegionDropdown, showCountryDropdown, showDeptDropdown]);
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
@@ -108,20 +167,64 @@ export function InteractionsPanel({
         onItemsChange?.(interactions);
     }, [interactions, onItemsChange]);
 
+    // Client-side filtering
+    const filteredInteractions = useMemo(() => {
+        let items = interactions;
+        if (localUserFilter.trim()) {
+            const q = localUserFilter.trim().toLowerCase();
+            items = items.filter(i => i.actor_stable_id?.toLowerCase().includes(q));
+        }
+        if (selectedAiCodes.size > 0) {
+            items = items.filter(i => {
+                const code = i.ai_code ?? 'NA';
+                return selectedAiCodes.has(code as ReviewCode | 'NA');
+            });
+        }
+        if (selectedRegions.size > 0) {
+            items = items.filter(i => {
+                const worker = workerByStableId[i.actor_stable_id];
+                const region = worker?.region || '—';
+                return selectedRegions.has(region);
+            });
+        }
+        if (selectedCountries.size > 0) {
+            items = items.filter(i => {
+                const worker = workerByStableId[i.actor_stable_id];
+                const country = worker?.country || '—';
+                return selectedCountries.has(country);
+            });
+        }
+        if (selectedDepts.size > 0) {
+            items = items.filter(i => {
+                const worker = workerByStableId[i.actor_stable_id];
+                const dept = worker?.department || '—';
+                return selectedDepts.has(dept);
+            });
+        }
+        return items;
+    }, [interactions, localUserFilter, selectedAiCodes, selectedRegions, selectedCountries, selectedDepts, workerByStableId]);
+
     const totalCount = total ?? interactions.length;
-    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const filteredCount = filteredInteractions.length;
+    const hasActiveFilters = localUserFilter.trim() !== '' || selectedAiCodes.size > 0 || selectedRegions.size > 0 || selectedCountries.size > 0 || selectedDepts.size > 0;
+    const effectiveTotal = hasActiveFilters ? filteredCount : totalCount;
+    const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
     const localStartIdx = (currentPage - 1) * pageSize;
-    const isLocalPage = localStartIdx < interactions.length;
+    const isLocalPage = hasActiveFilters || localStartIdx < interactions.length;
 
     const displayedInteractions = useMemo(() => {
-        if (isLocalPage) {
+        if (hasActiveFilters) {
+            // When panel filters are active, paginate over filtered results locally
+            return filteredInteractions.slice(localStartIdx, localStartIdx + pageSize);
+        }
+        if (localStartIdx < interactions.length) {
             return interactions.slice(localStartIdx, localStartIdx + pageSize);
         }
         if (remotePage?.page === currentPage) {
             return remotePage.items;
         }
         return [];
-    }, [interactions, localStartIdx, isLocalPage, remotePage, currentPage, pageSize]);
+    }, [interactions, filteredInteractions, localStartIdx, hasActiveFilters, remotePage, currentPage, pageSize]);
 
     // Remote page fetcher (for pages whose start index exceeds the loaded batch)
     const fetchRemotePage = useCallback(
@@ -162,16 +265,16 @@ export function InteractionsPanel({
     );
 
     useEffect(() => {
-        if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
+        if (!hasActiveFilters && !isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
             fetchRemotePage(currentPage);
         }
-    }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
+    }, [currentPage, isLocalPage, hasActiveFilters, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
     // Reset pagination when filters or pageSize change
     useEffect(() => {
         setCurrentPage(1);
         setRemotePage(null);
-    }, [pageSize, dateFrom, dateTo, workerFilter]);
+    }, [pageSize, dateFrom, dateTo, workerFilter, localUserFilter, selectedAiCodes, selectedRegions, selectedCountries, selectedDepts]);
 
     // When alignedRowOid changes, switch to the page that contains it (if found in loaded data)
     useEffect(() => {
@@ -271,8 +374,35 @@ export function InteractionsPanel({
                 </div>
                 <div className="flex items-center gap-2">
                     <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                        {totalCount.toLocaleString()} records
+                        {hasActiveFilters
+                            ? `${filteredCount.toLocaleString()} / ${totalCount.toLocaleString()} records`
+                            : `${totalCount.toLocaleString()} records`
+                        }
                     </span>
+                    <button
+                        type="button"
+                        onClick={() => setShowFilters(f => !f)}
+                        title="Toggle filters"
+                        className={`px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors ${
+                            showFilters || hasActiveFilters
+                                ? isLight
+                                    ? 'bg-indigo-100 text-indigo-700'
+                                    : 'bg-indigo-500/20 text-indigo-300'
+                                : isLight
+                                    ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                    : 'bg-white/10 text-gray-200 hover:bg-white/20'
+                        }`}
+                    >
+                        <Filter className="w-3 h-3" />
+                        Filter
+                        {hasActiveFilters && (
+                            <span className={`ml-0.5 w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${
+                                isLight ? 'bg-indigo-600 text-white' : 'bg-indigo-400 text-black'
+                            }`}>
+                                {(localUserFilter.trim() ? 1 : 0) + (selectedAiCodes.size > 0 ? 1 : 0) + (selectedRegions.size > 0 ? 1 : 0) + (selectedCountries.size > 0 ? 1 : 0) + (selectedDepts.size > 0 ? 1 : 0)}
+                            </span>
+                        )}
+                    </button>
                     <button
                         type="button"
                         onClick={() => void handleDownload()}
@@ -293,6 +423,318 @@ export function InteractionsPanel({
                     </button>
                 </div>
             </div>
+
+            {/* Panel Filters */}
+            {showFilters && (
+                <div
+                    className={`flex items-center gap-3 px-3 py-2 border-b ${
+                        isLight ? 'bg-indigo-50/50 border-slate-200' : 'bg-indigo-950/20 border-white/10'
+                    }`}
+                >
+                    {/* User search */}
+                    <div className="flex items-center gap-1.5">
+                        <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            User:
+                        </span>
+                        <input
+                            type="text"
+                            value={localUserFilter}
+                            onChange={e => setLocalUserFilter(e.target.value)}
+                            placeholder="Search user..."
+                            className={`w-36 text-xs px-2 py-1 rounded border ${
+                                isLight
+                                    ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-indigo-400'
+                                    : 'bg-white/5 border-white/15 text-white placeholder:text-gray-500 focus:border-indigo-400'
+                            } outline-none transition-colors`}
+                        />
+                        {localUserFilter && (
+                            <button
+                                type="button"
+                                onClick={() => setLocalUserFilter('')}
+                                className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Code (AI) multi-select */}
+                    <div className="flex items-center gap-1.5 relative" ref={codeDropdownRef}>
+                        <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Code (AI):
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowCodeDropdown(v => !v)}
+                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${
+                                selectedAiCodes.size > 0
+                                    ? isLight
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                        : 'bg-indigo-500/10 border-indigo-400/40 text-indigo-300'
+                                    : isLight
+                                        ? 'bg-white border-slate-200 text-slate-600'
+                                        : 'bg-white/5 border-white/15 text-gray-300'
+                            } transition-colors`}
+                        >
+                            {selectedAiCodes.size > 0
+                                ? `${selectedAiCodes.size} selected`
+                                : 'All'
+                            }
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {selectedAiCodes.size > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setSelectedAiCodes(new Set())}
+                                className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+
+                        {/* Dropdown */}
+                        {showCodeDropdown && (
+                            <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg border shadow-lg py-1 min-w-[160px] ${
+                                isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-white/15'
+                            }`}>
+                                {/* NA option */}
+                                <label className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${
+                                    isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'
+                                }`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedAiCodes.has('NA')}
+                                        onChange={() => {
+                                            setSelectedAiCodes(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has('NA')) next.delete('NA');
+                                                else next.add('NA');
+                                                return next;
+                                            });
+                                        }}
+                                        className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>NA</span>
+                                    <span className={`ml-auto ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>(empty)</span>
+                                </label>
+                                {REVIEW_CODES.map(code => (
+                                    <label
+                                        key={code}
+                                        className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${
+                                            isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedAiCodes.has(code)}
+                                            onChange={() => {
+                                                setSelectedAiCodes(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(code)) next.delete(code);
+                                                    else next.add(code);
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{code}</span>
+                                        <span className={`ml-auto ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {REVIEW_CODE_LABELS[code].en}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Region multi-select */}
+                    <div className="flex items-center gap-1.5 relative" ref={regionDropdownRef}>
+                        <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Region:
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowRegionDropdown(v => !v)}
+                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${
+                                selectedRegions.size > 0
+                                    ? isLight
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                        : 'bg-indigo-500/10 border-indigo-400/40 text-indigo-300'
+                                    : isLight
+                                        ? 'bg-white border-slate-200 text-slate-600'
+                                        : 'bg-white/5 border-white/15 text-gray-300'
+                            } transition-colors`}
+                        >
+                            {selectedRegions.size > 0 ? `${selectedRegions.size} selected` : 'All'}
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {selectedRegions.size > 0 && (
+                            <button type="button" onClick={() => setSelectedRegions(new Set())} className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}>
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                        {showRegionDropdown && (
+                            <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg border shadow-lg py-1 min-w-[140px] max-h-[240px] overflow-y-auto ${
+                                isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-white/15'
+                            }`}>
+                                {regionOptions.map(r => (
+                                    <label key={r} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRegions.has(r)}
+                                            onChange={() => {
+                                                setSelectedRegions(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(r)) next.delete(r); else next.add(r);
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{r}</span>
+                                    </label>
+                                ))}
+                                {regionOptions.length === 0 && (
+                                    <div className={`px-3 py-2 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>No options</div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Country multi-select */}
+                    <div className="flex items-center gap-1.5 relative" ref={countryDropdownRef}>
+                        <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Country:
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowCountryDropdown(v => !v)}
+                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${
+                                selectedCountries.size > 0
+                                    ? isLight
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                        : 'bg-indigo-500/10 border-indigo-400/40 text-indigo-300'
+                                    : isLight
+                                        ? 'bg-white border-slate-200 text-slate-600'
+                                        : 'bg-white/5 border-white/15 text-gray-300'
+                            } transition-colors`}
+                        >
+                            {selectedCountries.size > 0 ? `${selectedCountries.size} selected` : 'All'}
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {selectedCountries.size > 0 && (
+                            <button type="button" onClick={() => setSelectedCountries(new Set())} className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}>
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                        {showCountryDropdown && (
+                            <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg border shadow-lg py-1 min-w-[160px] max-h-[240px] overflow-y-auto ${
+                                isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-white/15'
+                            }`}>
+                                {countryOptions.map(c => (
+                                    <label key={c} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCountries.has(c)}
+                                            onChange={() => {
+                                                setSelectedCountries(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(c)) next.delete(c); else next.add(c);
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{c}</span>
+                                    </label>
+                                ))}
+                                {countryOptions.length === 0 && (
+                                    <div className={`px-3 py-2 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>No options</div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Dept multi-select */}
+                    <div className="flex items-center gap-1.5 relative" ref={deptDropdownRef}>
+                        <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Dept:
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowDeptDropdown(v => !v)}
+                            className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${
+                                selectedDepts.size > 0
+                                    ? isLight
+                                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                        : 'bg-indigo-500/10 border-indigo-400/40 text-indigo-300'
+                                    : isLight
+                                        ? 'bg-white border-slate-200 text-slate-600'
+                                        : 'bg-white/5 border-white/15 text-gray-300'
+                            } transition-colors`}
+                        >
+                            {selectedDepts.size > 0 ? `${selectedDepts.size} selected` : 'All'}
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {selectedDepts.size > 0 && (
+                            <button type="button" onClick={() => setSelectedDepts(new Set())} className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}>
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                        {showDeptDropdown && (
+                            <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg border shadow-lg py-1 min-w-[180px] max-h-[240px] overflow-y-auto ${
+                                isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-white/15'
+                            }`}>
+                                {deptOptions.map(d => (
+                                    <label key={d} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedDepts.has(d)}
+                                            onChange={() => {
+                                                setSelectedDepts(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(d)) next.delete(d); else next.add(d);
+                                                    return next;
+                                                });
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{d}</span>
+                                    </label>
+                                ))}
+                                {deptOptions.length === 0 && (
+                                    <div className={`px-3 py-2 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>No options</div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Clear all filters */}
+                    <button
+                        type="button"
+                        disabled={!hasActiveFilters}
+                        onClick={() => {
+                            setLocalUserFilter('');
+                            setSelectedAiCodes(new Set());
+                            setSelectedRegions(new Set());
+                            setSelectedCountries(new Set());
+                            setSelectedDepts(new Set());
+                        }}
+                        className={`ml-auto flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+                            hasActiveFilters
+                                ? isLight
+                                    ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 shadow-sm'
+                                    : 'bg-red-500/15 text-red-300 hover:bg-red-500/25 border border-red-400/30'
+                                : isLight
+                                    ? 'bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed'
+                                    : 'bg-white/5 text-gray-600 border border-white/10 cursor-not-allowed'
+                        }`}
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Clear All
+                    </button>
+                </div>
+            )}
 
             {/* Column Headers */}
             <div
@@ -392,7 +834,7 @@ export function InteractionsPanel({
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalItems={totalCount}
+                    totalItems={effectiveTotal}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
                     onPageSizeChange={setPageSize}
