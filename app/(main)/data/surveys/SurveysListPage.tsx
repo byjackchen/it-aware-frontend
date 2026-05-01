@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -66,8 +66,14 @@ export function SurveysListPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // Fetch ALL surveys (paginated) when batch changes
-    const fetchAllSurveys = useCallback(async (batchOid: string) => {
+    // useRef so the abort controller survives re-renders without invalidating
+    // the useCallback identity.
+    const surveysAbortRef = useRef<AbortController | null>(null);
+
+    // Fetch ALL surveys (paginated) when batch changes. Coalesces setState
+    // calls across pages to avoid cascading re-renders on large batches, and
+    // aborts in-flight fetches when the batch selection changes mid-load.
+    const fetchAllSurveys = useCallback(async (batchOid: string, signal: AbortSignal) => {
         if (!batchOid) {
             setSurveys([]);
             setTotalSurveys(null);
@@ -78,39 +84,53 @@ export function SurveysListPage() {
         setSurveys([]);
         setTotalSurveys(null);
 
-        try {
-            const allItems: Survey[] = [];
-            let skip = 0;
-            let total = 0;
+        const allItems: Survey[] = [];
+        let skip = 0;
+        let total = 0;
+        const COALESCE_PAGES = 4;
+        let pagesSinceFlush = 0;
 
+        try {
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 const res = await fetch(
-                    `/api/campaigns/survey_batchs/${encodeURIComponent(batchOid)}/surveys?limit=${PAGE_SIZE}&skip=${skip}`
+                    `/api/campaigns/survey_batchs/${encodeURIComponent(batchOid)}/surveys?limit=${PAGE_SIZE}&skip=${skip}`,
+                    { signal },
                 );
                 if (!res.ok) throw new Error('Failed to load surveys');
                 const data: SurveyListResponse = await res.json();
                 total = data.total;
                 allItems.push(...(data.items || []));
-                setSurveys([...allItems]);
-                setTotalSurveys(total);
+                pagesSinceFlush += 1;
 
-                if (allItems.length >= total || (data.items?.length ?? 0) < PAGE_SIZE) {
-                    break;
+                const isLastPage =
+                    allItems.length >= total || (data.items?.length ?? 0) < PAGE_SIZE;
+
+                if (isLastPage || pagesSinceFlush >= COALESCE_PAGES) {
+                    setSurveys([...allItems]);
+                    setTotalSurveys(total);
+                    pagesSinceFlush = 0;
                 }
+
+                if (isLastPage) break;
                 skip += PAGE_SIZE;
             }
         } catch (err) {
+            // AbortError = stale fetch superseded by a newer one; not user-visible.
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
-            setIsLoadingSurveys(false);
+            if (!signal.aborted) setIsLoadingSurveys(false);
         }
     }, []);
 
     useEffect(() => {
-        if (selectedBatchOid) {
-            void fetchAllSurveys(selectedBatchOid);
-        }
+        if (!selectedBatchOid) return;
+        surveysAbortRef.current?.abort();
+        const controller = new AbortController();
+        surveysAbortRef.current = controller;
+        void fetchAllSurveys(selectedBatchOid, controller.signal);
+        return () => controller.abort();
     }, [selectedBatchOid, fetchAllSurveys]);
 
     const filteredSurveys = useMemo(() => {
@@ -151,7 +171,11 @@ export function SurveysListPage() {
     const selectedBatch = batches.find(b => b.oid === selectedBatchOid);
 
     const handleRefresh = () => {
-        if (selectedBatchOid) void fetchAllSurveys(selectedBatchOid);
+        if (!selectedBatchOid) return;
+        surveysAbortRef.current?.abort();
+        const controller = new AbortController();
+        surveysAbortRef.current = controller;
+        void fetchAllSurveys(selectedBatchOid, controller.signal);
     };
 
     // Guard: only enable export when ALL data the exporter depends on has resolved.
