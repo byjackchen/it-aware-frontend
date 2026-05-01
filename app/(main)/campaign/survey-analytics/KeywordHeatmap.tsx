@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import type { KeywordHeatmapResponse, GroupedKeywordHeatmapResponse } from '@/lib/types/survey-analytics';
-import { KeywordTreemap } from './charts/KeywordTreemap';
+import { DeferredKeywordTreemap as KeywordTreemap } from '@/components/charts/DeferredKeywordTreemap';
 
 interface KeywordHeatmapProps {
     batchOid: string;
