@@ -25,6 +25,11 @@ export function RouteProgressBar() {
     const [progress, setProgress] = useState(0);
     const [visible, setVisible] = useState(false);
 
+    // The setState calls inside this effect are intentional: this effect
+    // synchronizes a *timer-driven* animation with an external signal
+    // (router transition pending / not pending). The cascading-render rule
+    // doesn't apply because the renders are bounded by the RAMP timeline.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (isPending) {
             setVisible(true);
@@ -45,6 +50,7 @@ export function RouteProgressBar() {
             return () => clearTimeout(hide);
         }
     }, [isPending, visible]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (!visible) return null;
 
