@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { downloadXlsx } from '@/lib/utils/export-xlsx';
+import { OverlaySpinner } from '@/components/layout/skeletons';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { useAllActiveWorkers } from '@/components/campaign_surveys/useAllActiveWorkers';
 import { useAllLocations } from '@/components/campaign_surveys/useAllLocations';
@@ -33,6 +33,8 @@ export function SurveysListPage() {
     const [isLoadingBatches, setIsLoadingBatches] = useState(true);
     const [isLoadingSurveys, setIsLoadingSurveys] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [exportProgress, setExportProgress] = useState<number | null>(null);
+    const exportAbortRef = useRef<AbortController | null>(null);
 
     // Workers — fetched on mount in parallel with batches/surveys; provides denormalized
     // country_name/region_name for the export. is_active=true is intentional: departed
@@ -182,83 +184,29 @@ export function SurveysListPage() {
     // Prevents partial-row and blank-geo exports that silently diverge from the UI.
     const isExportReady = !isLoadingSurveys && !isLoadingWorkers && !isLoadingLocations && filteredSurveys.length > 0;
 
-    const handleExportExcel = useCallback(() => {
+    const handleExportExcel = useCallback(async () => {
         if (!isExportReady) return;
 
-        // Each survey carries its own question schema, so we compute the maximum
-        // question count across the filtered set and pad shorter rows with empty
-        // cells. This avoids dropping columns when the first survey lacks a schema
-        // or when individual surveys diverge from the batch's typical shape.
-        const maxQuestionCount = filteredSurveys.reduce(
-            (max, s) => Math.max(max, s.survey_questions?.questions?.length ?? 0),
-            0,
-        );
+        exportAbortRef.current?.abort();
+        const controller = new AbortController();
+        exportAbortRef.current = controller;
+        setExportProgress(0);
 
-        const headers: string[] = [
-            'Receiver Stable ID', 'Country', 'Region', 'Location', 'Status', 'Submitted At', 'Created At', 'Updated At',
-        ];
-        for (let i = 1; i <= maxQuestionCount; i++) {
-            headers.push(`Question ${i}`, `Answer ${i}`);
+        try {
+            const { exportSurveysXlsx } = await import('./exportSurveysXlsx');
+            await exportSurveysXlsx({
+                surveys: filteredSurveys,
+                batchName: selectedBatch?.name ?? 'batch',
+                workerGeoMap,
+                signal: controller.signal,
+                onProgress: (pct) => setExportProgress(pct),
+            });
+        } catch (err) {
+            console.error('Export failed:', err);
+            setError(err instanceof Error ? err.message : 'Export failed');
+        } finally {
+            setExportProgress(null);
         }
-
-        const resolveAnswerText = (
-            question: (typeof filteredSurveys)[number]['survey_questions']['questions'][number],
-            answer: NonNullable<(typeof filteredSurveys)[number]['survey_answer']>['answers'][number] | undefined,
-        ): string => {
-            if (!answer) return '';
-            if (answer.type === 'single_select') {
-                if (question.type === 'single_select' || question.type === 'multi_select') {
-                    const opt = question.options.find((o) => o.option_id === answer.selected_option_id);
-                    return opt?.label ?? answer.selected_option_id;
-                }
-                return answer.selected_option_id;
-            }
-            if (answer.type === 'multi_select') {
-                if (question.type === 'single_select' || question.type === 'multi_select') {
-                    return answer.selected_option_ids
-                        .map((id) => {
-                            const opt = question.options.find((o) => o.option_id === id);
-                            return opt?.label ?? id;
-                        })
-                        .join(', ');
-                }
-                return answer.selected_option_ids.join(', ');
-            }
-            if (answer.type === 'text') return answer.text;
-            return '';
-        };
-
-        const rows = filteredSurveys.map((survey) => {
-            const questions = survey.survey_questions?.questions ?? [];
-            const answers = survey.survey_answer?.answers ?? [];
-
-            const qaCells: string[] = [];
-            for (let i = 0; i < maxQuestionCount; i++) {
-                const q = questions[i];
-                if (!q) {
-                    qaCells.push('', '');
-                    continue;
-                }
-                const a = answers.find((x) => x.question_id === q.question_id);
-                qaCells.push(q.title, resolveAnswerText(q, a));
-            }
-
-            const geo = workerGeoMap.get(survey.receiver_oid);
-            return [
-                survey.receiver_stable_id,
-                geo?.country ?? '',
-                geo?.region ?? '',
-                geo?.location ?? '',
-                survey.status,
-                survey.submitted_at ?? '',
-                survey.created_at,
-                survey.updated_at,
-                ...qaCells,
-            ];
-        });
-
-        const batchName = selectedBatch?.name?.replace(/[^a-zA-Z0-9_-]/g, '_') ?? 'batch';
-        downloadXlsx('Surveys', headers, rows, `surveys_${batchName}_export.xlsx`);
     }, [isExportReady, filteredSurveys, selectedBatch, workerGeoMap]);
 
     return (
@@ -404,6 +352,9 @@ export function SurveysListPage() {
                     )}
                 </div>
             </div>
+            {exportProgress !== null && (
+                <OverlaySpinner text="Exporting surveys..." progress={exportProgress} />
+            )}
         </div>
     );
 }
