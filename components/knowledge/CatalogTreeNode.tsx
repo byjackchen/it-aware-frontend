@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { HierarchyTreeNode } from '@/lib/types/objects';
@@ -18,7 +19,7 @@ interface CatalogTreeNodeProps {
 }
 
 export function CatalogTreeNode({ node, level, forceExpand }: CatalogTreeNodeProps) {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const pathname = usePathname();
     const { theme } = useTheme();
     const isLight = theme === 'light';

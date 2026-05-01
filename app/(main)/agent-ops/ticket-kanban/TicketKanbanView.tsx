@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { KanbanBoard } from '@/components/agentops/KanbanBoard';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Flag, Calendar } from 'lucide-react';
 import type { Ticket, TicketListResponse } from '@/lib/types/objects';
 
 export function TicketKanbanView() {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');

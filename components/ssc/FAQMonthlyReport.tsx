@@ -21,7 +21,8 @@ import {
     TrendingUp,
     Users,
 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -160,7 +161,7 @@ function SectionHeading({ title, subtitle, tooltip, isLight }: { title: string; 
 }
 
 function DateRangeControls({ startDate, endDate }: { startDate: string; endDate: string }) {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const searchParams = useSearchParams();
     const [draftStart, setDraftStart] = useState(startDate);
     const [draftEnd, setDraftEnd] = useState(endDate);

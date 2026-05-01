@@ -4,7 +4,7 @@
  * Permissions list page with navigation to detail and create pages.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Plus, Lock } from 'lucide-react';
 import type { Permission } from '@/lib/types/security';
@@ -15,7 +15,7 @@ interface PermissionsListPageProps {
 
 export function PermissionsListPage({ permissions }: PermissionsListPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const handleRowClick = (permission: Permission) => {
         router.push(`/auth/permissions/${permission.oid}`);

@@ -5,7 +5,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import type { ScopeType } from '@/lib/types/security';
@@ -14,7 +14,7 @@ import { createGroup } from '@/app/actions/security';
 
 export function GroupCreatePage() {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [name, setName] = useState('');
     const [scopeType, setScopeType] = useState<ScopeType>('unconstrained');

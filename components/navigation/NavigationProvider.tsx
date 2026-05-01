@@ -9,10 +9,13 @@
 import { createContext, useContext, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Mirrors next/navigation's NavigateOptions (not exported by the public API).
+type NavigateOptions = { scroll?: boolean };
+
 type NavigationContextValue = {
     isPending: boolean;
-    push: (href: string) => void;
-    replace: (href: string) => void;
+    push: (href: string, options?: NavigateOptions) => void;
+    replace: (href: string, options?: NavigateOptions) => void;
     back: () => void;
     refresh: () => void;
 };
@@ -25,8 +28,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
     const value: NavigationContextValue = {
         isPending,
-        push: (href) => startTransition(() => router.push(href)),
-        replace: (href) => startTransition(() => router.replace(href)),
+        push: (href, options) => startTransition(() => router.push(href, options)),
+        replace: (href, options) => startTransition(() => router.replace(href, options)),
         back: () => startTransition(() => router.back()),
         refresh: () => startTransition(() => router.refresh()),
     };

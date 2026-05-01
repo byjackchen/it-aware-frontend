@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
     Ticket as TicketIcon,
@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
 

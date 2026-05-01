@@ -9,7 +9,8 @@ import { TimezoneSelect } from '@/components/data/TimezoneSelect';
 import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/session';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -24,7 +25,7 @@ interface NavMenuItem extends MenuItem {
 
 export function TopBar() {
   const t = useTranslations('TopBar');
-  const router = useRouter();
+  const router = useTransitionRouter();
   const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
   const { theme } = useTheme();

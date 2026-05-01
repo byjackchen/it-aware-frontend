@@ -4,7 +4,7 @@
  * Groups list page with navigation to detail and create pages.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Plus, Users } from 'lucide-react';
 import type { Group } from '@/lib/types/security';
@@ -21,7 +21,7 @@ const scopeTypeColors: Record<string, string> = {
 
 export function GroupsListPage({ groups }: GroupsListPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const handleRowClick = (group: Group) => {
         router.push(`/auth/groups/${group.oid}`);

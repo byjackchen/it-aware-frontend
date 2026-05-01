@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, MapPin, Save, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -19,7 +19,7 @@ interface LocationCreatePageProps {
 
 export function LocationCreatePage({ locations }: LocationCreatePageProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
 

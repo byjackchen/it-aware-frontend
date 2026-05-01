@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Building2, Save, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -19,7 +19,7 @@ interface OrganizationCreatePageProps {
 
 export function OrganizationCreatePage({ organizations }: OrganizationCreatePageProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
 

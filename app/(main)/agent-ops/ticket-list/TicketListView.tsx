@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Flag, Plus, Calendar } from 'lucide-react';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
@@ -28,7 +28,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export function TicketListView() {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const { timezone } = useTimezone();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [flaggedOnly, setFlaggedOnly] = useState(false);

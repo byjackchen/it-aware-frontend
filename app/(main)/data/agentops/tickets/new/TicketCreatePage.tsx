@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ArrowLeft, Ticket as TicketIcon, Loader2, Save } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { createTicketAction } from '@/app/actions/objects';
@@ -17,7 +17,7 @@ interface TicketCreatePageProps {
 
 export function TicketCreatePage({ accounts }: TicketCreatePageProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<string | null>(null);

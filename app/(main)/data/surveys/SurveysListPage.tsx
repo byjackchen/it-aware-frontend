@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function SurveysListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
 
