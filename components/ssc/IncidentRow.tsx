@@ -6,7 +6,13 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { LinkIcon, BookOpen, Crosshair } from 'lucide-react';
 import { updateIncidentReview } from '@/lib/api/exports';
-import type { Incident, WorkerContext } from '@/lib/types/objects';
+import {
+    INCIDENT_CATEGORIES,
+    INCIDENT_CATEGORY_LABELS,
+    type Incident,
+    type IncidentCategory,
+    type WorkerContext,
+} from '@/lib/types/objects';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,7 +96,7 @@ function ToggleButton({
 // ---------------------------------------------------------------------------
 
 export const INCIDENT_GRID_COLS =
-    'grid-cols-[40px_90px_90px_1fr_90px_80px_70px_70px_50px_120px_60px_140px_60px]';
+    'grid-cols-[40px_90px_90px_1fr_90px_80px_75px_80px_70px_70px_50px_120px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Main row component
@@ -148,6 +154,7 @@ export function IncidentRow({
             review_summary: string | null;
             review_needs_optimization: boolean | null;
             review_optimization_notes: string | null;
+            review_category: string | null;
             pre_ticket_interaction_oids: string[] | null;
             related_kb_article_oids: string[] | null;
             mark_completed: boolean | null;
@@ -246,7 +253,37 @@ export function IncidentRow({
                 {worker?.stable_id ?? incident.actor_oid}
             </div>
 
-            {/* 7. Pre-FAQ button */}
+            {/* 7. AI Category — read-only label */}
+            <div className={`text-xs truncate ${isLight ? 'text-slate-600' : 'text-gray-400'}`}
+                 title={incident.ai_category_reason ?? undefined}>
+                {incident.ai_category
+                    ? <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                        isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'
+                    }`}>{INCIDENT_CATEGORY_LABELS[incident.ai_category as IncidentCategory]?.en ?? incident.ai_category}</span>
+                    : '—'}
+            </div>
+
+            {/* 8. Review Category — editable select (human override) */}
+            <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                <select
+                    value={incident.review_category ?? ''}
+                    onChange={e => {
+                        const val = e.target.value || null;
+                        persist({ review_category: val } as Parameters<typeof persist>[0]);
+                    }}
+                    disabled={isPending}
+                    className="w-full text-[10px] px-1 py-0.5 rounded border border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 text-slate-700 dark:text-gray-200 hover:border-slate-400 dark:hover:border-white/30 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors cursor-pointer"
+                >
+                    <option value="" className="bg-white dark:bg-slate-800">—</option>
+                    {INCIDENT_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat} className="bg-white dark:bg-slate-800">
+                            {INCIDENT_CATEGORY_LABELS[cat].en}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* 9. Pre-FAQ button */}
             <div className="flex items-center justify-center">
                 <button
                     type="button"
@@ -345,7 +382,7 @@ export function IncidentRow({
 
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-13 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-15 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}

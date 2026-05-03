@@ -608,6 +608,24 @@ export const REVIEW_CODE_LABELS: Record<ReviewCode, { en: string; zh: string }> 
 };
 
 // ============================================================================
+// Incident AI Category Codes (escalation reason classification)
+// ============================================================================
+
+export const INCIDENT_CATEGORIES = ['KB_GAP', 'USER_HABIT', 'AGENT_ERR', 'MANUAL_SSC', 'ONSITE', 'SECURITY', 'MONITORING', 'OUT_OF_SCOPE'] as const;
+export type IncidentCategory = typeof INCIDENT_CATEGORIES[number];
+
+export const INCIDENT_CATEGORY_LABELS: Record<IncidentCategory, { en: string; zh: string }> = {
+    KB_GAP:       { en: 'KB Gap',       zh: 'KB缺失' },
+    USER_HABIT:   { en: 'User Habit',   zh: '用户习惯' },
+    AGENT_ERR:    { en: 'Agent Error',  zh: 'Agent错误' },
+    MANUAL_SSC:   { en: 'Manual SSC',   zh: '需人工处理' },
+    ONSITE:       { en: 'Onsite',       zh: '升级Onsite' },
+    SECURITY:     { en: 'Security',     zh: '升级安全' },
+    MONITORING:   { en: 'Monitoring',   zh: '系统监控' },
+    OUT_OF_SCOPE: { en: 'Out of Scope', zh: '非OIT范围' },
+};
+
+// ============================================================================
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
@@ -663,6 +681,13 @@ export interface Incident {
     // SSC dashboard — CSAT
     csat_score?: number | null;
     csat_text?: string | null;
+
+    // AI classification — escalation reason
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category
+    review_category?: string | null;
 
     // ---------------------------------------------------------------------
     // Phase 2 — ServiceNow authoritative fields.
