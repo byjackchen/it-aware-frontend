@@ -1338,6 +1338,13 @@
             "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
             "ticketTitle": "Ticket Dashboard (Incidents)"
         },
+        "categoryFilter": {
+            "label": "AI Category:",
+            "allLabel": "All",
+            "selectedCount": "{count} selected",
+            "unclassified": "Unclassified",
+            "reviewPlaceholder": "—"
+        },
         "preFaqButton": "Highlight {count} pre-ticket FAQ interaction(s) in the left panel",
         "preFaqEmpty": "No pre-ticket FAQ interactions identified",
         "kbButton": "Open {count} related KB article(s)",

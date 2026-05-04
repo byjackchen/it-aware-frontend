@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
@@ -10,7 +10,7 @@ import { Pagination } from '@/components/data/Pagination';
 import { IncidentRow, INCIDENT_GRID_COLS } from '@/components/ssc/IncidentRow';
 import {
     INCIDENT_CATEGORIES,
-    INCIDENT_CATEGORY_LABELS,
+    getIncidentCategoryLabel,
     type Incident,
     type IncidentListResponse,
     type IncidentCategory,
@@ -41,6 +41,7 @@ export function IncidentsPanel({
     const { theme } = useTheme();
     const isLight = theme === 'light';
     const t = useTranslations('SSCDashboard');
+    const locale = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
@@ -231,7 +232,7 @@ export function IncidentsPanel({
                 <div className="flex items-center gap-1.5 relative" ref={categoryDropdownRef}>
                     <Filter className={`w-3 h-3 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                     <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                        Category:
+                        {t('categoryFilter.label')}
                     </span>
                     <button
                         type="button"
@@ -246,7 +247,7 @@ export function IncidentsPanel({
                                     : 'bg-white/5 border-white/15 text-gray-300'
                         } transition-colors`}
                     >
-                        {hasCategoryFilter ? `${selectedCategories.size} selected` : 'All'}
+                        {hasCategoryFilter ? t('categoryFilter.selectedCount', { count: selectedCategories.size }) : t('categoryFilter.allLabel')}
                         <ChevronDown className="w-3 h-3" />
                     </button>
                     {hasCategoryFilter && (
@@ -273,7 +274,7 @@ export function IncidentsPanel({
                                     className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>—</span>
-                                <span className={`ml-auto text-[10px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>(unclassified)</span>
+                                <span className={`ml-auto text-[10px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>({t('categoryFilter.unclassified')})</span>
                             </label>
                             {INCIDENT_CATEGORIES.map(cat => (
                                 <label key={cat} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
@@ -289,7 +290,7 @@ export function IncidentsPanel({
                                         }}
                                         className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                     />
-                                    <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{INCIDENT_CATEGORY_LABELS[cat].en}</span>
+                                    <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{getIncidentCategoryLabel(cat, locale)}</span>
                                 </label>
                             ))}
                         </div>

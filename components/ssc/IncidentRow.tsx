@@ -1,16 +1,15 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { LinkIcon, BookOpen, Crosshair } from 'lucide-react';
 import { updateIncidentReview } from '@/lib/api/exports';
 import {
     INCIDENT_CATEGORIES,
-    INCIDENT_CATEGORY_LABELS,
+    getIncidentCategoryLabel,
     type Incident,
-    type IncidentCategory,
     type WorkerContext,
 } from '@/lib/types/objects';
 
@@ -125,6 +124,7 @@ export function IncidentRow({
     const { timezone } = useTimezone();
     const isLight = theme === 'light';
     const t = useTranslations('SSCDashboard');
+    const locale = useLocale();
 
     const [draft, setDraft] = useState({
         review_summary: incident.review_summary ?? '',
@@ -259,7 +259,7 @@ export function IncidentRow({
                 {incident.ai_category
                     ? <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                         isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'
-                    }`}>{INCIDENT_CATEGORY_LABELS[incident.ai_category as IncidentCategory]?.en ?? incident.ai_category}</span>
+                    }`}>{getIncidentCategoryLabel(incident.ai_category, locale)}</span>
                     : '—'}
             </div>
 
@@ -269,7 +269,7 @@ export function IncidentRow({
                     value={incident.review_category ?? ''}
                     onChange={e => {
                         const val = e.target.value || null;
-                        persist({ review_category: val } as Parameters<typeof persist>[0]);
+                        persist({ review_category: val });
                     }}
                     disabled={isPending}
                     className="w-full text-[10px] px-1 py-0.5 rounded border border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 text-slate-700 dark:text-gray-200 hover:border-slate-400 dark:hover:border-white/30 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors cursor-pointer"
@@ -277,7 +277,7 @@ export function IncidentRow({
                     <option value="" className="bg-white dark:bg-slate-800">—</option>
                     {INCIDENT_CATEGORIES.map(cat => (
                         <option key={cat} value={cat} className="bg-white dark:bg-slate-800">
-                            {INCIDENT_CATEGORY_LABELS[cat].en}
+                            {getIncidentCategoryLabel(cat, locale)}
                         </option>
                     ))}
                 </select>

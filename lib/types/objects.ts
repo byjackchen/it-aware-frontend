@@ -625,6 +625,12 @@ export const INCIDENT_CATEGORY_LABELS: Record<IncidentCategory, { en: string; zh
     OUT_OF_SCOPE: { en: 'Out of Scope', zh: '非OIT范围' },
 };
 
+export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale: string): string {
+    const entry = INCIDENT_CATEGORY_LABELS[cat as IncidentCategory];
+    if (!entry) return cat;
+    return locale.startsWith('zh') ? entry.zh : entry.en;
+}
+
 // ============================================================================
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
@@ -954,6 +960,10 @@ export interface IncidentListParams {
     updated_at_to?: string;
     effective_at_from?: string;
     effective_at_to?: string;
+    // AI classification — single-value backend filter (frontend dashboard
+    // does multi-select client-side; this exists for typed callers
+    // such as MCP, scripts, or future pages that want server-side filtering).
+    ai_category?: string;
     skip?: number;
     limit?: number;
 }
@@ -1063,6 +1073,12 @@ export interface IncidentUpdate {
     created_at?: string;
     updated_at?: string;
     effective_at?: string;
+    // AI classification — DAG-written; included so internal tools can post-correct.
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category — also writable via PATCH /incidents/{oid}/review.
+    review_category?: string | null;
 }
 
 export interface RequestUpdate {
