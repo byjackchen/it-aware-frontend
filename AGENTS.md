@@ -86,24 +86,6 @@ docker stop it-aware-frontend && docker rm it-aware-frontend
 docker run -d -p 3007:3000 --network dev-net --env-file ./.env.docker --name it-aware-frontend it-aware-frontend:latest
 ```
 
-## 10) SSC Dashboard — Incident AI Classification (`ai_category`)
-
-The `ai_category` field on incidents represents LLM-classified escalation reasons.
-It is populated by the `digest_incidents` Airflow DAG via a Knot Workflow call.
-
-**Valid codes:** `KB_GAP` | `USER_HABIT` | `AGENT_ERR` | `MANUAL_SSC` | `ONSITE` | `SECURITY` | `MONITORING` | `OUT_OF_SCOPE`
-
-**Related fields:**
-- `ai_category: string | null` — the classification code
-- `ai_category_reason: string | null` — short LLM-generated explanation
-- `ai_category_at: string | null` — ISO timestamp of classification
-
-**Frontend constants:** `INCIDENT_CATEGORIES` and `INCIDENT_CATEGORY_LABELS` in `lib/types/objects.ts`
-
-**Components:**
-- `components/ssc/IncidentsPanel.tsx` — displays Category filter dropdown
-- The field appears in the incident list API response (slim view includes it)
-
 After start, verify with:
 - `docker ps --filter name=it-aware-frontend`
 - `docker logs --tail 20 it-aware-frontend`
