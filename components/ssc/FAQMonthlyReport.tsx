@@ -446,7 +446,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title="Review Code — Current"
                     subtitle={current.label}
-                    data={current.breakdown.map((item) => ({
+                    data={current.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
                         value: item.count,
                         color: CODE_COLORS[item.code] || '#94a3b8',
@@ -456,7 +456,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title="Review Code — Previous"
                     subtitle={previous.label}
-                    data={previous.breakdown.map((item) => ({
+                    data={previous.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
                         value: item.count,
                         color: CODE_COLORS[item.code] || '#94a3b8',
