@@ -139,10 +139,14 @@ export interface HardwareRow {
     substatus: string | null;
     stock_room: string | null;
     region: string | null;
+    /** Uppercased region code resolved from the office hierarchy (AMER / EMEA / APAC). */
+    office_region: string | null;
     office_id: string | null;
     region_code: string | null;
     department: string | null;
     company: string | null;
+    /** Procurement-side ownership (e.g. "OIT", "Studio") — surfaced in the Procured By donut. */
+    asset_owner: string | null;
     residual_value: string | number | null;
     cost: string | number | null;
     assigned_to_display_name: string | null;

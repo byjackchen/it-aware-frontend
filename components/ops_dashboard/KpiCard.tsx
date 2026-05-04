@@ -7,9 +7,16 @@
  * rendering accepts both a computed sign (+/-/flat) so colour can be
  * picked in-component and a free-form subtitle for the prototype's
  * "vs. last 7 days" style copy.
+ *
+ * Pass `linkHref` to surface a small chevron-arrow on the right edge
+ * of the card; clicking it navigates to that route via Next.js Link.
+ * Used on the Active Monitoring Hub so KPI tiles like "Aging Incidents"
+ * jump straight into the corresponding drill-in dashboard.
  */
 
 import type { LucideIcon } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useTheme } from '@/lib/contexts/theme-context';
 
 export interface KpiCardProps {
@@ -26,9 +33,36 @@ export interface KpiCardProps {
     onClick?: () => void;
     /** Optional right-aligned ribbon (e.g. aging bucket count). */
     accent?: React.ReactNode;
+    /**
+     * Optional drill-in target — renders a chevron-right arrow on the
+     * card's right edge that navigates to this route on click.
+     */
+    linkHref?: string;
+    /** Tooltip / aria-label for the drill-in arrow. */
+    linkLabel?: string;
+    /** Extra Tailwind classes for the root card div (e.g. `h-full` for grid stretch). */
+    className?: string;
+    /**
+     * Headline number size — defaults to `md` (text-2xl). Pass `lg`
+     * (text-4xl) or `xl` (text-5xl) for big-number tiles that share a
+     * row with taller charts.
+     */
+    valueSize?: 'md' | 'lg' | 'xl';
 }
 
-export function KpiCard({ label, value, subtitle, delta, icon: Icon, onClick, accent }: KpiCardProps) {
+export function KpiCard({
+    label,
+    value,
+    subtitle,
+    delta,
+    icon: Icon,
+    onClick,
+    accent,
+    linkHref,
+    linkLabel,
+    className,
+    valueSize = 'md',
+}: KpiCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -37,20 +71,31 @@ export function KpiCard({ label, value, subtitle, delta, icon: Icon, onClick, ac
     const labelCls = isLight ? 'text-slate-500' : 'text-gray-400';
     const valueCls = isLight ? 'text-slate-800' : 'text-white';
     const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-500';
+    const arrowCls = isLight
+        ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+        : 'text-gray-500 hover:text-gray-200 hover:bg-white/10';
 
+    // Delta colour follows the ops-dashboard "rising = warning, falling
+    // = good" convention used by tickets / aging metrics:
+    //   ▲ up    → orange (volume / aging is growing — heads-up)
+    //   ▼ down  → green  (volume / aging shrinking — good)
+    //   flat    → muted slate / gray
     const deltaCls =
         delta?.trend === 'up'
-            ? 'text-green-500'
+            ? 'text-orange-500'
             : delta?.trend === 'down'
-                ? 'text-red-500'
+                ? 'text-green-500'
                 : isLight
                     ? 'text-slate-500'
                     : 'text-gray-400';
 
+    const valueSizeCls =
+        valueSize === 'xl' ? 'text-5xl' : valueSize === 'lg' ? 'text-4xl' : 'text-2xl';
+
     return (
         <div
             onClick={onClick}
-            className={`rounded-xl border p-4 transition-colors ${cardBase} ${hover}`}
+            className={`relative rounded-xl border p-4 transition-colors ${cardBase} ${hover} ${className ?? ''}`}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -67,6 +112,17 @@ export function KpiCard({ label, value, subtitle, delta, icon: Icon, onClick, ac
                     {delta && <span className={`text-xs font-medium ${deltaCls}`}>{delta.value}</span>}
                     {subtitle && <span className={`text-xs ${subtitleCls}`}>{subtitle}</span>}
                 </div>
+            )}
+            {linkHref && (
+                <Link
+                    href={linkHref}
+                    aria-label={linkLabel ?? `Open ${label}`}
+                    title={linkLabel ?? `Open ${label}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={`absolute top-1/2 right-2 -translate-y-1/2 inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors ${arrowCls}`}
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </Link>
             )}
         </div>
     );

@@ -183,6 +183,10 @@ export interface TrendPoint {
     /** ISO date string for the month's first day (e.g. "2026-03-01"). */
     bucket: string;
     count: number;
+    // Index signature so this type is assignable to the chart's loose
+    // `TrendChartRow` shape — useful when the same chart component
+    // accepts both single-series and multi-series payloads.
+    [key: string]: string | number;
 }
 
 function monthStart(iso: string): string | null {
@@ -221,6 +225,86 @@ export function monthsFromRange(
     return Math.min(36, Math.max(1, months));
 }
 
+/** Cumulative-trend data point — paired opened + closed totals through the bucket month. */
+export interface CumulativeTrendPoint {
+    /** ISO date string for the month's first day. */
+    bucket: string;
+    /** Cumulative tickets created up to and including this month. */
+    opened: number;
+    /** Cumulative tickets closed up to and including this month. */
+    closed: number;
+    // Index signature for chart-component assignability — see TrendPoint.
+    [key: string]: string | number;
+}
+
+/**
+ * Trailing `monthCount`-month *cumulative* trend bucketed by month.
+ * Returns paired (opened, closed) running totals so each point reflects
+ * the lifetime-to-date of the row set as of that month-end.
+ *
+ * Properties:
+ *   - Both series are non-decreasing.
+ *   - `closed[i] <= opened[i]` always (the gap is the active count at
+ *     that point in time).
+ *   - The first displayed month already includes all rows opened /
+ *     closed BEFORE the window — we don't reset the cumulative count
+ *     when the user narrows the date range.
+ *
+ * `closedAtFor` extracts the closure timestamp from a row — typically
+ * `source_closed_at ?? source_resolved_at` for incidents, or just
+ * `source_closed_at` for requests. Rows whose extractor returns null
+ * are treated as still open.
+ */
+export function cumulativeTrendByMonth<T extends { created_at: string }>(
+    rows: T[],
+    closedAtFor: (row: T) => string | null | undefined,
+    monthCount: number = 10,
+    now: number = Date.now(),
+): CumulativeTrendPoint[] {
+    if (monthCount <= 0) return [];
+
+    // Per-month deltas — how many tickets opened / closed in each month.
+    const openedDelta = new Map<string, number>();
+    const closedDelta = new Map<string, number>();
+    for (const row of rows) {
+        const oBucket = monthStart(row.created_at);
+        if (oBucket) openedDelta.set(oBucket, (openedDelta.get(oBucket) ?? 0) + 1);
+        const cAt = closedAtFor(row);
+        if (cAt) {
+            const cBucket = monthStart(cAt);
+            if (cBucket) closedDelta.set(cBucket, (closedDelta.get(cBucket) ?? 0) + 1);
+        }
+    }
+
+    // Build the list of bucket strings for the visible window.
+    const nowDate = new Date(now);
+    const currentMonth = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), 1));
+    const buckets: string[] = [];
+    for (let i = monthCount - 1; i >= 0; i -= 1) {
+        const d = addMonthsUtc(currentMonth, -i);
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+        buckets.push(`${y}-${m}-01`);
+    }
+
+    // Pre-window cumulative starting point — count rows whose bucket is
+    // before the first displayed bucket so the chart begins at the
+    // running lifetime total, not zero.
+    const firstBucket = buckets[0];
+    let openedCumul = 0;
+    let closedCumul = 0;
+    for (const [b, c] of openedDelta) if (b < firstBucket) openedCumul += c;
+    for (const [b, c] of closedDelta) if (b < firstBucket) closedCumul += c;
+
+    const out: CumulativeTrendPoint[] = [];
+    for (const bucket of buckets) {
+        openedCumul += openedDelta.get(bucket) ?? 0;
+        closedCumul += closedDelta.get(bucket) ?? 0;
+        out.push({ bucket, opened: openedCumul, closed: closedCumul });
+    }
+    return out;
+}
+
 /**
  * Trailing `monthCount`-month trend (inclusive of the current month),
  * bucketed by `created_at`. Months with zero rows are filled in so the
@@ -254,6 +338,125 @@ export function trendByMonth(
 }
 
 // =============================================================================
+// Month-over-month delta
+// =============================================================================
+
+const DAY_MS = 86_400_000;
+
+export interface MoMResult {
+    /** Count in the current rolling 30-day window (now − 30d, now]. */
+    current: number;
+    /** Count in the prior rolling 30-day window (now − 60d, now − 30d]. */
+    previous: number;
+}
+
+export interface DeltaInfo {
+    /** Rounded percentage change from previous → current. */
+    pct: number;
+    trend: 'up' | 'down' | 'flat';
+    /** Pre-formatted label, e.g. "▲ 12% vs last mo". */
+    formatted: string;
+}
+
+function isoInRangeMs(iso: string | null | undefined, fromMs: number, toMs: number): boolean {
+    if (!iso) return false;
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return false;
+    return t > fromMs && t <= toMs;
+}
+
+/**
+ * Volume MoM — count of rows whose `getDate(row)` timestamp falls in
+ * the trailing 30-day window vs the 30-day window before that. Useful
+ * for "tickets opened" style KPIs.
+ */
+export function momByDate<T>(
+    rows: T[],
+    getDate: (row: T) => string | null | undefined,
+    now: number = Date.now(),
+): MoMResult {
+    const lastMo = now - 30 * DAY_MS;
+    const prevMo = now - 60 * DAY_MS;
+    let current = 0;
+    let previous = 0;
+    for (const row of rows) {
+        const iso = getDate(row);
+        if (!iso) continue;
+        if (isoInRangeMs(iso, lastMo, now)) current += 1;
+        else if (isoInRangeMs(iso, prevMo, lastMo)) previous += 1;
+    }
+    return { current, previous };
+}
+
+/**
+ * Was a ticket open at the snapshot time `atMs`? Combines created_at
+ * (must be ≤ atMs) with whichever closure timestamp the row carries.
+ *
+ * The dump can be missing `source_closed_at` / `source_resolved_at`
+ * even when the state is "Closed Complete"; in that case we fall back
+ * to `source_updated_at`/`updated_at` as a closure-time proxy. Same
+ * heuristic the cumulative-trend chart uses.
+ */
+function wasActiveAt(row: TicketRow, atMs: number): boolean {
+    const createdMs = Date.parse(row.created_at);
+    if (!Number.isFinite(createdMs) || createdMs > atMs) return false;
+    let closedMs: number | null = null;
+    const realClosed = row.source_resolved_at ?? row.source_closed_at;
+    if (realClosed) {
+        const t = Date.parse(realClosed);
+        if (Number.isFinite(t)) closedMs = t;
+    } else if (!isActiveState(row.state)) {
+        const ts = row.source_updated_at ?? row.updated_at;
+        const t = Date.parse(ts);
+        if (Number.isFinite(t)) closedMs = t;
+    }
+    if (closedMs !== null && closedMs <= atMs) return false;
+    return true;
+}
+
+/**
+ * Snapshot MoM for active counts — current active count vs how many
+ * rows in the same set were active 30 days ago. The optional
+ * `predicate` narrows to a sub-cohort (e.g. VIP only).
+ */
+export function momActiveSnapshot<T extends TicketRow>(
+    rows: T[],
+    now: number = Date.now(),
+    predicate: (row: T) => boolean = () => true,
+): MoMResult {
+    const previousAtMs = now - 30 * DAY_MS;
+    let current = 0;
+    let previous = 0;
+    for (const row of rows) {
+        if (!predicate(row)) continue;
+        if (isActiveState(row.state)) current += 1;
+        if (wasActiveAt(row, previousAtMs)) previous += 1;
+    }
+    return { current, previous };
+}
+
+/**
+ * Format a {current, previous} pair as a short delta string with an
+ * arrow + percentage. Returns `null` when the previous bucket is 0
+ * (no meaningful comparison) — callers should skip rendering the
+ * delta in that case.
+ */
+export function formatMoM({ current, previous }: MoMResult): DeltaInfo | null {
+    if (previous === 0) return null;
+    const pctRaw = ((current - previous) / previous) * 100;
+    const pct = Math.round(pctRaw);
+    if (pct === 0) {
+        return { pct: 0, trend: 'flat', formatted: 'flat vs last mo' };
+    }
+    const arrow = pct > 0 ? '▲' : '▼';
+    return {
+        pct,
+        trend: pct > 0 ? 'up' : 'down',
+        formatted: `${arrow} ${Math.abs(pct)}% vs last mo`,
+    };
+}
+
+// =============================================================================
 // Asset helpers
 // =============================================================================
 
@@ -268,8 +471,13 @@ export function inferDeviceType(modelName: string | null | undefined): DeviceTyp
 }
 
 export function isInStock(row: HardwareRow): boolean {
+    // Match the family of in-stock statuses ("In stock", "In stock -
+    // available", etc.) rather than the bare string. The dump from
+    // ServiceNow surfaces "In stock - available" — the strict equality
+    // check used previously dropped 1k+ rows from the In-Stock
+    // Location donut, KPI tiles and bar chart.
     const s = row.asset_status?.toLowerCase() ?? '';
-    return s === 'in stock' || s === '(60)';
+    return s.startsWith('in stock') || s === '(60)';
 }
 
 export function isPendingReturn(row: HardwareRow): boolean {
