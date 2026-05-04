@@ -28,10 +28,12 @@ import type { HardwareRow, TicketRow } from '@/lib/api/ops_dashboard';
 import {
     classifyRequestType,
     daysSinceUpdated,
+    formatMoM,
     groupBy,
     inferDeviceType,
     isActiveState,
     isInStock,
+    momActiveSnapshot,
     monthsFromRange,
     summarizeAssets,
     trendByMonth,
@@ -42,13 +44,35 @@ import {
     type FilterState,
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
-import { TicketsPanel, type TicketKpis } from './TicketsPanel';
+import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
+import {
+    countryToRegion,
+    extractCountry,
+    matchesRegionCountry,
+    normalizeRegion,
+} from '@/lib/ops_dashboard/region';
+import { TicketsPanel, type TicketKpiDeltas, type TicketKpis } from './TicketsPanel';
 import { AssetsPanel, type SupportGroupMatrixRow } from './AssetsPanel';
 
 const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || 'Unknown';
+}
+
+/** Country/location string used by RegionCountryFilter — null when unresolved. */
+function locationForFilter(row: TicketRow): string | null {
+    return row.actor?.location?.descriptor?.trim() || null;
+}
+
+/**
+ * Asset-side equivalent of locationForFilter. The hardware row's
+ * `location` column is populated for ~99.9% of assets in the same
+ * "Country-City-…" format the tickets use, so RegionCountryFilter +
+ * countryToRegion light up automatically.
+ */
+function assetLocationForFilter(row: HardwareRow): string | null {
+    return row.location?.trim() || null;
 }
 
 function regionOf(row: TicketRow): Region {
@@ -63,11 +87,33 @@ function regionOf(row: TicketRow): Region {
 }
 
 function procuredByOf(row: HardwareRow): string {
-    return row.company?.trim() || 'Unknown';
+    // `asset_owner` carries the procurement-side ownership label
+    // (typically "OIT" or "Studio"). The earlier implementation used
+    // `company`, which is the legal entity that bought the device —
+    // not the same concept.
+    return row.asset_owner?.trim() || 'Unknown';
 }
 
 function supportGroupOf(row: HardwareRow): string {
-    return row.department?.trim() || 'Unknown';
+    // Hardware doesn't have a dedicated `support_group` column. Mirror
+    // the ticket assignment-group convention by deriving it from
+    // whichever region-shaped field on the row resolves first:
+    //   1. office_region  ("AMER" / "APAC" / "EMEA" — canonical)
+    //   2. region          (lowercase "amer" / "apac" / "eurp")
+    //   3. region_code     ("APAC 2" / "AMER-1" — leading token)
+    //   4. location as a region label  ("Europe", "APAC")
+    //   5. location-derived country  ("US-California-…" → AMER)
+    //   6. stock_room-derived country  ("Singapore TWP Office" → APAC)
+    // Only assets with no resolvable region anywhere land in
+    // "Unassigned".
+    const r =
+        normalizeRegion(row.office_region) ??
+        normalizeRegion(row.region) ??
+        normalizeRegion(row.region_code) ??
+        normalizeRegion(row.location) ??
+        countryToRegion(extractCountry(row.location)) ??
+        countryToRegion(row.stock_room);
+    return r ? `${r} OIT Support` : 'Unassigned';
 }
 
 export function OpsDashboardHub() {
@@ -86,6 +132,12 @@ export function OpsDashboardHub() {
     // ── Filter state ────────────────────────────────────────────
     // Declared before the API fetches so the ticket query can read the
     // current date range off ticketFilters.
+    //
+    // Mirrors the IncidentAnalysis design: assigned_group / priority /
+    // location (tickets) and support_group / procured_by / department
+    // (assets) are all donut-driven now — they keep their FilterState
+    // keys but no longer get panel slicers. Region/Country live in
+    // their own slot.
     const [ticketFilters, setTicketFilters] = useState<FilterState>({
         assigned_group: [],
         location: [],
@@ -97,7 +149,18 @@ export function OpsDashboardHub() {
         support_group: [],
         procured_by: [],
         department: [],
+        // Chart-only — driven by the In-Stock Location donut.
+        stock_room: [],
     });
+
+    // Two-level Region/Country slicer state — geographic. Region AND
+    // Country both apply to tickets *and* assets: the asset's
+    // `location` column carries the same "Country-City-…" vocabulary as
+    // the ticket's caller location (~99.9% fill rate), so the filter
+    // narrows both data sets in lockstep.
+    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
     const ticketDateRange =
         (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
@@ -154,56 +217,27 @@ export function OpsDashboardHub() {
         return rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category));
     }, [hardwareQuery.data]);
 
-    const ticketSlicers: SlicerConfig[] = useMemo(() => {
-        const groups = groupBy(allTickets, (r) => r.assigned_group).map((g) => g.key);
-        const locations = groupBy(allTickets, locationOf).map((g) => g.key);
-        const priorities = groupBy(allTickets, (r) => r.priority)
-            .map((g) => g.key)
-            .sort();
-        return [
-            { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            {
-                type: 'multi',
-                param: 'location',
-                label: t('filters.location'),
-                options: locations,
-                clientSide: true,
-            },
-            { type: 'multi', param: 'priority', label: t('filters.priority'), options: priorities },
+    // Combined ticket+asset rows fed to RegionCountryFilter so the
+    // Country + Location dropdowns surface every place that exists in
+    // either data set. Each entry exposes a single `location` field —
+    // the filter's `getLocation` extractor reads it directly.
+    const regionCountryRows = useMemo(() => {
+        const out: Array<{ location: string | null }> = [];
+        for (const t of allTickets) out.push({ location: locationForFilter(t) });
+        for (const a of allAssets) out.push({ location: assetLocationForFilter(a) });
+        return out;
+    }, [allTickets, allAssets]);
+
+    // Open Date is the only panel slicer; everything else is donut-driven
+    // or lives in the Region/Country headerSlot.
+    const ticketSlicers: SlicerConfig[] = useMemo(
+        () => [
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
-        ];
-    }, [allTickets, t]);
+        ],
+        [t],
+    );
 
-    const assetSlicers: SlicerConfig[] = useMemo(() => {
-        const supportGroups = groupBy(allAssets, supportGroupOf).map((g) => g.key);
-        const procured = groupBy(allAssets, procuredByOf).map((g) => g.key);
-        const departments = groupBy(allAssets, (r) => r.department).map((g) => g.key);
-        return [
-            {
-                type: 'multi',
-                param: 'support_group',
-                label: t('filters.supportGroup'),
-                options: supportGroups,
-                clientSide: true,
-            },
-            {
-                type: 'multi',
-                param: 'procured_by',
-                label: t('filters.procuredBy'),
-                options: procured,
-                clientSide: true,
-            },
-            {
-                type: 'multi',
-                param: 'department',
-                label: t('filters.department'),
-                options: departments,
-                clientSide: true,
-            },
-        ];
-    }, [allAssets, t]);
-
-    // ── Filtered tickets (sidebar + date range) ─────────────────
+    // ── Filtered tickets (Region/Country + donut filters + date) ─
     const filteredTickets = useMemo(() => {
         const groupSel = (ticketFilters.assigned_group as string[]) ?? [];
         const locSel = (ticketFilters.location as string[]) ?? [];
@@ -212,6 +246,7 @@ export function OpsDashboardHub() {
             (ticketFilters.created_at_from as { from: string | null; to: string | null }) ??
             { from: null, to: null };
         return allTickets.filter((r) => {
+            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (locSel.length && !locSel.includes(locationOf(r))) return false;
             if (prioSel.length && !prioSel.includes(r.priority)) return false;
@@ -222,7 +257,7 @@ export function OpsDashboardHub() {
             }
             return true;
         });
-    }, [allTickets, ticketFilters]);
+    }, [allTickets, ticketFilters, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeTickets = useMemo(
         () => filteredTickets.filter((r) => isActiveState(r.state)),
@@ -230,17 +265,25 @@ export function OpsDashboardHub() {
     );
 
     // ── Filtered assets ─────────────────────────────────────────
+    // Region + Country + Location apply via the asset's `location`
+    // column. The donut-driven chart filters are independent of those
+    // and live on `assetFilters` (procured_by / support_group /
+    // stock_room). stock_room is what the In-Stock Location donut
+    // toggles now (was "region"; the stockroom name reads cleaner).
     const filteredAssets = useMemo(() => {
         const supportGroupSel = (assetFilters.support_group as string[]) ?? [];
         const procuredSel = (assetFilters.procured_by as string[]) ?? [];
         const deptSel = (assetFilters.department as string[]) ?? [];
+        const stockRoomSel = (assetFilters.stock_room as string[]) ?? [];
         return allAssets.filter((r) => {
+            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, assetLocationForFilter)) return false;
             if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
+            if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
             return true;
         });
-    }, [allAssets, assetFilters]);
+    }, [allAssets, assetFilters, selectedRegions, selectedCountries, selectedLocations]);
 
     // ── Ticket KPIs ─────────────────────────────────────────────
     const ticketKpis: TicketKpis = useMemo(() => {
@@ -284,6 +327,29 @@ export function OpsDashboardHub() {
 
     const assetKpis = useMemo(() => summarizeAssets(filteredAssets), [filteredAssets]);
 
+    // Month-over-month deltas — snapshot replays based on created_at +
+    // closure timestamps. Skipped for the four aging KPIs since their
+    // "snapshot at past time" depends on `source_updated_at`, which is
+    // a moving target (no per-row history available).
+    const ticketKpiDeltas: TicketKpiDeltas = useMemo(() => {
+        const isVip = (r: TicketRow) =>
+            (r as unknown as { is_vip?: boolean }).is_vip === true ||
+            (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
+        const isCatalog = (r: TicketRow) =>
+            r.object_type === 'request' && classifyRequestType(r) === 'catalog_task';
+        const isAssetTask = (r: TicketRow) =>
+            r.object_type === 'request' && classifyRequestType(r) === 'asset_task';
+        return {
+            totalActive: formatMoM(momActiveSnapshot(filteredTickets, now)),
+            activeIncident: formatMoM(
+                momActiveSnapshot(filteredTickets, now, (r) => r.object_type === 'incident'),
+            ),
+            activeCatalog: formatMoM(momActiveSnapshot(filteredTickets, now, isCatalog)),
+            activeAsset: formatMoM(momActiveSnapshot(filteredTickets, now, isAssetTask)),
+            vipActive: formatMoM(momActiveSnapshot(filteredTickets, now, isVip)),
+        };
+    }, [filteredTickets, now]);
+
     // ── Chart data ──────────────────────────────────────────────
     const groupDonut = useMemo(
         () =>
@@ -310,7 +376,11 @@ export function OpsDashboardHub() {
 
     const inStockLocationSlices = useMemo(() => {
         const inStockRows = filteredAssets.filter(isInStock);
-        return groupBy(inStockRows, (r) => r.region)
+        // Group by the physical stock-room name ("Singapore SKY L6 IT
+        // Stockroom", "Canada Office", …). Top-N keeps the donut
+        // readable when the long tail of small rooms would otherwise
+        // dominate the slice list.
+        return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
             .slice(0, 8)
             .map((g) => ({ name: g.key, value: g.count }));
     }, [filteredAssets]);
@@ -351,23 +421,35 @@ export function OpsDashboardHub() {
     }, [filteredAssets]);
 
     // ── Cross-filter handlers ───────────────────────────────────
-    const onGroupSliceClick = (slice: { name: string }) => {
-        const cur = (ticketFilters.assigned_group as string[]) ?? [];
-        const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
-        setTicketFilters({ ...ticketFilters, assigned_group: next });
+    // Generic toggle helpers — donut slice click and interactive
+    // legend toggle both feed through these so the two stay in sync.
+    const toggleTicketFilter = (param: string, name: string) => {
+        const cur = (ticketFilters[param] as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setTicketFilters({ ...ticketFilters, [param]: next });
     };
+    const toggleAssetFilter = (param: string, name: string) => {
+        const cur = (assetFilters[param] as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setAssetFilters({ ...assetFilters, [param]: next });
+    };
+    const onGroupSliceClick = (slice: { name: string }) => toggleTicketFilter('assigned_group', slice.name);
+    const onGroupLegendToggle = (name: string) => toggleTicketFilter('assigned_group', name);
+    const onProcuredSliceClick = (slice: { name: string }) => toggleAssetFilter('procured_by', slice.name);
+    const onProcuredLegendToggle = (name: string) => toggleAssetFilter('procured_by', name);
+    const onSupportGroupSliceClick = (slice: { name: string }) => toggleAssetFilter('support_group', slice.name);
+    const onSupportGroupLegendToggle = (name: string) => toggleAssetFilter('support_group', name);
+    const onLocationSliceClick = (slice: { name: string }) => toggleAssetFilter('stock_room', slice.name);
+    const onLocationLegendToggle = (name: string) => toggleAssetFilter('stock_room', name);
 
-    const onProcuredSliceClick = (slice: { name: string }) => {
-        const cur = (assetFilters.procured_by as string[]) ?? [];
-        const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
-        setAssetFilters({ ...assetFilters, procured_by: next });
-    };
-
-    const onSupportGroupSliceClick = (slice: { name: string }) => {
-        const cur = (assetFilters.support_group as string[]) ?? [];
-        const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
-        setAssetFilters({ ...assetFilters, support_group: next });
-    };
+    const selectedAssignedGroups = (ticketFilters.assigned_group as string[]) ?? [];
+    const selectedProcured = (assetFilters.procured_by as string[]) ?? [];
+    const selectedSupportGroups = (assetFilters.support_group as string[]) ?? [];
+    // Selected slices on the In-Stock Location donut — distinct from
+    // the page-level `selectedLocations` (geographic filter). Tracks
+    // the asset's `stock_room` field directly so the donut and its
+    // legend display the chosen rooms by their full name.
+    const selectedDonutLocations = (assetFilters.stock_room as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
@@ -376,6 +458,52 @@ export function OpsDashboardHub() {
         () => allTickets.filter((r) => isActiveState(r.state)).length,
         [allTickets],
     );
+
+    // ── Consolidated Clear All: covers every dimension across tickets +
+    //   assets, including the donut-driven chart filters and Region/Country.
+    const extraActiveFilterCount = useMemo(() => {
+        let n = 0;
+        const arr = (s: FilterState, k: string) => (Array.isArray(s[k]) ? (s[k] as string[]).length : 0);
+        n += arr(ticketFilters, 'assigned_group');
+        n += arr(ticketFilters, 'priority');
+        n += arr(ticketFilters, 'location');
+        n += arr(assetFilters, 'support_group');
+        n += arr(assetFilters, 'procured_by');
+        n += arr(assetFilters, 'department');
+        n += arr(assetFilters, 'region');
+        const r = ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined;
+        if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
+        return n;
+    }, [ticketFilters, assetFilters, defaultFromIso]);
+
+    function resetAllParentFilters() {
+        setTicketFilters({
+            assigned_group: [],
+            location: [],
+            priority: [],
+            created_at_from: { from: defaultFromIso, to: null },
+            created_at_to: { from: defaultFromIso, to: null },
+        });
+        setAssetFilters({
+            support_group: [],
+            procured_by: [],
+            department: [],
+            stock_room: [],
+        });
+    }
+
+    const totalActiveFilterCount =
+        selectedRegions.length +
+        selectedCountries.length +
+        selectedLocations.length +
+        extraActiveFilterCount;
+    const hasAnyActiveFilter = totalActiveFilterCount > 0;
+    function clearEveryFilter() {
+        setSelectedRegions([]);
+        setSelectedCountries([]);
+        setSelectedLocations([]);
+        resetAllParentFilters();
+    }
 
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
@@ -399,26 +527,58 @@ export function OpsDashboardHub() {
                 </button>
             </div>
 
-            {/* Single combined filter bar with subtitled sections for tickets + assets. */}
+            {/* Filter panel — Region/Country in headerSlot applies to
+                tickets (full geographic match) + assets (Region only via
+                r.region). Open Date applies to tickets. Everything else
+                is donut-driven (chart filters). Single Clear All button
+                at the top-right. */}
             <TopFilterBar
-                sections={[
-                    {
-                        subtitle: t('pages.hubTicketsSection'),
-                        slicers: ticketSlicers,
-                        value: ticketFilters,
-                        onChange: setTicketFilters,
-                    },
-                    {
-                        subtitle: t('pages.hubAssetsSection'),
-                        slicers: assetSlicers,
-                        value: assetFilters,
-                        onChange: setAssetFilters,
-                    },
-                ]}
+                slicers={ticketSlicers}
+                value={ticketFilters}
+                onChange={setTicketFilters}
                 storageKey="ops-dashboard:hub:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
+                hideHeaderClear
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={hasAnyActiveFilter ? clearEveryFilter : undefined}
+                        disabled={!hasAnyActiveFilter}
+                        className={`text-xs rounded-lg px-3 py-1 border transition-colors ${
+                            hasAnyActiveFilter
+                                ? isLight
+                                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 cursor-pointer'
+                                    : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25 cursor-pointer'
+                                : isLight
+                                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        Clear All Filters
+                    </button>
+                }
+                headerSlot={
+                    <RegionCountryFilter
+                        // Union of tickets + assets so the Country and
+                        // Location dropdowns surface every place that
+                        // exists in either data set. Each unified row
+                        // carries a single `location` field — exactly
+                        // what `getLocation` reads.
+                        rows={regionCountryRows}
+                        getLocation={(r) => r.location}
+                        selectedRegions={selectedRegions}
+                        selectedCountries={selectedCountries}
+                        selectedLocations={selectedLocations}
+                        onRegionsChange={setSelectedRegions}
+                        onCountriesChange={setSelectedCountries}
+                        onLocationsChange={setSelectedLocations}
+                        extraActiveCount={extraActiveFilterCount}
+                        onClearAll={resetAllParentFilters}
+                        showClearButton={false}
+                    />
+                }
             />
 
             {/* Scrollable main content */}
@@ -439,6 +599,7 @@ export function OpsDashboardHub() {
 
                 <TicketsPanel
                     kpis={ticketKpis}
+                    kpiDeltas={ticketKpiDeltas}
                     groupDonut={groupDonut}
                     trend={trend}
                     trendMonths={trendMonths}
@@ -447,6 +608,8 @@ export function OpsDashboardHub() {
                     filteredCount={activeTickets.length}
                     totalActiveCount={allTicketsActive}
                     onGroupSliceClick={onGroupSliceClick}
+                    selectedGroups={selectedAssignedGroups}
+                    onGroupLegendToggle={onGroupLegendToggle}
                 />
 
                 <AssetsPanel
@@ -460,6 +623,13 @@ export function OpsDashboardHub() {
                     totalCount={allAssets.length}
                     onProcuredSliceClick={onProcuredSliceClick}
                     onSupportGroupSliceClick={onSupportGroupSliceClick}
+                    onLocationSliceClick={onLocationSliceClick}
+                    selectedLocations={selectedDonutLocations}
+                    onLocationLegendToggle={onLocationLegendToggle}
+                    selectedProcured={selectedProcured}
+                    onProcuredLegendToggle={onProcuredLegendToggle}
+                    selectedSupportGroups={selectedSupportGroups}
+                    onSupportGroupLegendToggle={onSupportGroupLegendToggle}
                 />
             </div>
         </div>

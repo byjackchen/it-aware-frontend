@@ -15,7 +15,7 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import { RegionMap, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
-import type { TrendPoint } from '@/lib/ops_dashboard/aggregate';
+import type { DeltaInfo, TrendPoint } from '@/lib/ops_dashboard/aggregate';
 
 const DONUT_PALETTE = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#94a3b8'];
 
@@ -30,6 +30,14 @@ export interface TicketKpis {
     agingAssetGt30d: number;
 }
 
+export interface TicketKpiDeltas {
+    totalActive?: DeltaInfo | null;
+    activeIncident?: DeltaInfo | null;
+    activeCatalog?: DeltaInfo | null;
+    activeAsset?: DeltaInfo | null;
+    vipActive?: DeltaInfo | null;
+}
+
 export interface TicketsPanelProps {
     kpis: TicketKpis;
     groupDonut: Array<{ name: string; value: number }>;
@@ -40,6 +48,12 @@ export interface TicketsPanelProps {
     filteredCount: number;
     totalActiveCount: number;
     onGroupSliceClick: (slice: { name: string }) => void;
+    /** Selected slice names for the assignment-group donut. */
+    selectedGroups?: string[];
+    /** Legend toggle handler for the assignment-group donut. */
+    onGroupLegendToggle?: (name: string) => void;
+    /** Optional MoM deltas — rendered as the small "▲ X% vs last mo" footer on each tile. */
+    kpiDeltas?: TicketKpiDeltas;
 }
 
 export function TicketsPanel({
@@ -52,7 +66,13 @@ export function TicketsPanel({
     filteredCount,
     totalActiveCount,
     onGroupSliceClick,
+    selectedGroups,
+    onGroupLegendToggle,
+    kpiDeltas,
 }: TicketsPanelProps) {
+    function deltaProp(d?: DeltaInfo | null) {
+        return d ? { value: d.formatted, trend: d.trend } : undefined;
+    }
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -77,17 +97,59 @@ export function TicketsPanel({
 
             {/* KPI row 1 */}
             <div className="grid grid-cols-4 gap-2 mb-2">
-                <KpiCard label={t('kpis.totalActive')} value={kpis.totalActive} icon={Activity} />
-                <KpiCard label={t('kpis.activeIncident')} value={kpis.activeIncident} icon={AlertTriangle} />
-                <KpiCard label={t('kpis.activeCatalog')} value={kpis.activeCatalog} icon={Briefcase} />
-                <KpiCard label={t('kpis.activeAsset')} value={kpis.activeAsset} icon={Boxes} />
+                <KpiCard
+                    label={t('kpis.totalActive')}
+                    value={kpis.totalActive}
+                    icon={Activity}
+                    delta={deltaProp(kpiDeltas?.totalActive)}
+                />
+                <KpiCard
+                    label={t('kpis.activeIncident')}
+                    value={kpis.activeIncident}
+                    icon={AlertTriangle}
+                    delta={deltaProp(kpiDeltas?.activeIncident)}
+                />
+                <KpiCard
+                    label={t('kpis.activeCatalog')}
+                    value={kpis.activeCatalog}
+                    icon={Briefcase}
+                    delta={deltaProp(kpiDeltas?.activeCatalog)}
+                />
+                <KpiCard
+                    label={t('kpis.activeAsset')}
+                    value={kpis.activeAsset}
+                    icon={Boxes}
+                    delta={deltaProp(kpiDeltas?.activeAsset)}
+                />
             </div>
-            {/* KPI row 2 */}
+            {/* KPI row 2 — each tile drills into its dedicated dashboard via the right-side arrow. */}
             <div className="grid grid-cols-4 gap-2 mb-3">
-                <KpiCard label={t('kpis.vipActive')} value={kpis.vipActive} icon={Star} />
-                <KpiCard label={t('kpis.agingIncidentsGt2d')} value={kpis.agingIncidentGt2d} />
-                <KpiCard label={t('kpis.agingCatalogGt30d')} value={kpis.agingCatalogGt30d} />
-                <KpiCard label={t('kpis.agingAsset30d')} value={kpis.agingAssetGt30d} />
+                <KpiCard
+                    label={t('kpis.vipActive')}
+                    value={kpis.vipActive}
+                    icon={Star}
+                    delta={deltaProp(kpiDeltas?.vipActive)}
+                    linkHref="/operation-teams/ops-dashboard/vip-tickets"
+                    linkLabel="Open VIP Tickets dashboard"
+                />
+                <KpiCard
+                    label={t('kpis.agingIncidentsGt2d')}
+                    value={kpis.agingIncidentGt2d}
+                    linkHref="/operation-teams/ops-dashboard/aging-incidents"
+                    linkLabel="Open Aging Incidents dashboard"
+                />
+                <KpiCard
+                    label={t('kpis.agingCatalogGt30d')}
+                    value={kpis.agingCatalogGt30d}
+                    linkHref="/operation-teams/ops-dashboard/aging-sc-tasks"
+                    linkLabel="Open Aging Catalog Tasks dashboard"
+                />
+                <KpiCard
+                    label={t('kpis.agingAsset30d')}
+                    value={kpis.agingAssetGt30d}
+                    linkHref="/operation-teams/ops-dashboard/aging-asset-tasks"
+                    linkLabel="Open Aging Asset Tasks dashboard"
+                />
             </div>
 
             {/* Charts row */}
@@ -99,6 +161,8 @@ export function TicketsPanel({
                     palette={DONUT_PALETTE}
                     height={200}
                     onSliceClick={onGroupSliceClick}
+                    selectedSlices={selectedGroups}
+                    onLegendToggle={onGroupLegendToggle}
                     emptyText={emptyText}
                 />
                 <TrendLineCard

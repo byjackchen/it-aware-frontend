@@ -19,7 +19,6 @@ import {
     ACTIVE_STATES,
     classifyRequestType,
     daysSinceUpdated,
-    groupBy,
     isActiveState,
 } from '@/lib/ops_dashboard/aggregate';
 import {
@@ -32,6 +31,9 @@ import {
     type FilterState,
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
+import type { Region } from '@/components/ops_dashboard/RegionMap';
+import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 
 const PAGE_SIZE = 100;
 
@@ -43,6 +45,11 @@ interface Row extends AgingTableRow {
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || '—';
+}
+
+/** RegionCountryFilter wants null on missing locations. */
+function locationForFilter(row: TicketRow): string | null {
+    return row.actor?.location?.descriptor?.trim() || null;
 }
 
 function openedByOf(row: TicketRow): string {
@@ -70,11 +77,12 @@ export function AgingScTasksDashboard() {
 
     const [now] = useState<number>(() => Date.now());
 
-    const [filters, setFilters] = useState<FilterState>({
-        assigned_group: [],
-        location: [],
-    });
+    const [filters, setFilters] = useState<FilterState>({});
+    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
+    const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
     // Base: catalog tasks + active + aging > 30d.
     const base: TicketRow[] = useMemo(() => {
@@ -87,30 +95,23 @@ export function AgingScTasksDashboard() {
         );
     }, [data, now]);
 
-    const slicers: SlicerConfig[] = useMemo(() => {
-        const groups = groupBy(base, (r) => r.assigned_group).map((g) => g.key);
-        const locations = groupBy(base, locationOf).map((g) => g.key);
-        return [
-            { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            {
-                type: 'multi',
-                param: 'location',
-                label: t('filters.location'),
-                options: locations,
-                clientSide: true,
-            },
-        ];
-    }, [base, t]);
+    const slicers: SlicerConfig[] = useMemo(() => [], []);
 
     const filtered = useMemo(() => {
-        const groupSel = (filters.assigned_group as string[]) ?? [];
-        const locSel = (filters.location as string[]) ?? [];
-        return base.filter((r) => {
-            if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
-            if (locSel.length && !locSel.includes(locationOf(r))) return false;
-            return true;
-        });
-    }, [base, filters]);
+        return base.filter((r) =>
+            matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter),
+        );
+    }, [base, selectedRegions, selectedCountries, selectedLocations]);
+
+    const totalActiveFilterCount =
+        selectedRegions.length + selectedCountries.length + selectedLocations.length;
+    const hasAnyActiveFilter = totalActiveFilterCount > 0;
+    function clearEveryFilter() {
+        setSelectedRegions([]);
+        setSelectedCountries([]);
+        setSelectedLocations([]);
+        resetPage();
+    }
 
     const enriched: Row[] = useMemo(
         () =>
@@ -165,14 +166,53 @@ export function AgingScTasksDashboard() {
             <TopFilterBar
                 slicers={slicers}
                 value={filters}
-                onChange={(next) => {
-                    setFilters(next);
-                    setPage({ skip: 0, limit: PAGE_SIZE });
-                }}
+                onChange={setFilters}
                 storageKey="ops-dashboard:aging-sc-tasks:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
+                hideHeaderClear
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={hasAnyActiveFilter ? clearEveryFilter : undefined}
+                        disabled={!hasAnyActiveFilter}
+                        className={`text-xs rounded-lg px-3 py-1 border transition-colors ${
+                            hasAnyActiveFilter
+                                ? isLight
+                                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 cursor-pointer'
+                                    : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25 cursor-pointer'
+                                : isLight
+                                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        Clear All Filters
+                    </button>
+                }
+                headerSlot={
+                    <RegionCountryFilter
+                        rows={base}
+                        getLocation={locationForFilter}
+                        selectedRegions={selectedRegions}
+                        selectedCountries={selectedCountries}
+                        selectedLocations={selectedLocations}
+                        onRegionsChange={(next) => {
+                            setSelectedRegions(next);
+                            resetPage();
+                        }}
+                        onCountriesChange={(next) => {
+                            setSelectedCountries(next);
+                            resetPage();
+                        }}
+                        onLocationsChange={(next) => {
+                            setSelectedLocations(next);
+                            resetPage();
+                        }}
+                        onClearAll={resetPage}
+                        showClearButton={false}
+                    />
+                }
             />
 
             <div className="flex-1 min-h-0">

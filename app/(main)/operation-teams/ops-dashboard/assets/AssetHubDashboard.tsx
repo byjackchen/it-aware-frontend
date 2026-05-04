@@ -23,6 +23,11 @@ import {
     inferDeviceType,
     isInStock,
 } from '@/lib/ops_dashboard/aggregate';
+import {
+    countryToRegion,
+    extractCountry,
+    normalizeRegion,
+} from '@/lib/ops_dashboard/region';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
@@ -35,16 +40,25 @@ const DONUT_PALETTE = ['#1d4ed8', '#0ea5e9', '#06b6d4', '#0891b2', '#0284c7', '#
 const TOP_LOCATIONS = 8;
 
 function procuredByOf(row: HardwareRow): string {
-    // The backend HardwareRow doesn't carry `procured_cost_center` or
-    // `erp_created_by` in the slim view. `company` is the closest field
-    // (ownership / billing entity) — fall back to Unknown.
-    return row.company?.trim() || 'Unknown';
+    // `asset_owner` is the procurement-side ownership label (typically
+    // "OIT" or "Studio"). Earlier code used `company` which is the
+    // legal-entity buyer — not the same concept.
+    return row.asset_owner?.trim() || 'Unknown';
 }
 
 function supportGroupOf(row: HardwareRow): string {
-    // No dedicated support_group field on HardwareRow — `department`
-    // is the closest populated field.
-    return row.department?.trim() || 'Unknown';
+    // Region fallback chain: office_region → region → region_code →
+    // location as region label → location-derived country → stock_room
+    // -derived country. Only assets with nothing identifiable land
+    // in "Unassigned".
+    const r =
+        normalizeRegion(row.office_region) ??
+        normalizeRegion(row.region) ??
+        normalizeRegion(row.region_code) ??
+        normalizeRegion(row.location) ??
+        countryToRegion(extractCountry(row.location)) ??
+        countryToRegion(row.stock_room);
+    return r ? `${r} OIT Support` : 'Unassigned';
 }
 
 export function AssetHubDashboard() {
@@ -59,11 +73,14 @@ export function AssetHubDashboard() {
     const rows: HardwareRow[] = useMemo(() => data?.items ?? [], [data]);
     const partial = data?.partial === true;
 
-    // Sidebar filter state — all three slicers are controlled here.
+    // Sidebar filter state — three slicers + a chart-only
+    // `stock_room` dimension driven exclusively by the In-Stock
+    // Location donut (no panel slicer for it).
     const [filters, setFilters] = useState<FilterState>({
         support_group: [],
         procured_by: [],
         department: [],
+        stock_room: [],
     });
 
     // Option pools derive from the fetched data.
@@ -101,11 +118,13 @@ export function AssetHubDashboard() {
         const supportGroupSel = (filters.support_group as string[]) ?? [];
         const procuredSel = (filters.procured_by as string[]) ?? [];
         const deptSel = (filters.department as string[]) ?? [];
+        const stockRoomSel = (filters.stock_room as string[]) ?? [];
         return rows.filter((r) => {
             if (!r.model_category || !DASHBOARD_ASSET_CATEGORIES.has(r.model_category)) return false;
             if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
+            if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
             return true;
         });
     }, [rows, filters]);
@@ -120,7 +139,9 @@ export function AssetHubDashboard() {
 
     const inStockLocationSlices = useMemo(() => {
         const inStockRows = filtered.filter(isInStock);
-        return groupBy(inStockRows, (r) => r.region)
+        // Group by physical stock-room name. Top-N caps the long tail
+        // of small rooms so the donut stays readable.
+        return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
             .slice(0, TOP_LOCATIONS)
             .map((g) => ({ name: g.key, value: g.count }));
     }, [filtered]);
@@ -144,11 +165,19 @@ export function AssetHubDashboard() {
             }));
     }, [filtered]);
 
-    const onProcuredSliceClick = (slice: { name: string }) => {
-        const cur = (filters.procured_by as string[]) ?? [];
-        const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
-        setFilters({ ...filters, procured_by: next });
+    // Generic toggle helper — both donut slice clicks and interactive
+    // legend toggles plumb through here so the two stay in sync.
+    const toggleFilter = (param: string, name: string) => {
+        const cur = (filters[param] as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, [param]: next });
     };
+    const onProcuredSliceClick = (slice: { name: string }) => toggleFilter('procured_by', slice.name);
+    const onProcuredLegendToggle = (name: string) => toggleFilter('procured_by', name);
+    const onLocationSliceClick = (slice: { name: string }) => toggleFilter('stock_room', slice.name);
+    const onLocationLegendToggle = (name: string) => toggleFilter('stock_room', name);
+    const selectedProcured = (filters.procured_by as string[]) ?? [];
+    const selectedStockRooms = (filters.stock_room as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
@@ -218,13 +247,25 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: Total + In Stock Rate + donuts */}
+                {/* Row 1: Total + In Stock Rate + donuts.
+                    Column 1 uses `grid-rows-2` + `h-full` so the two
+                    big-number tiles each fill half the column height
+                    and the row visually matches the taller donut
+                    cards on the right (no empty padding below). */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div className="flex flex-col gap-3">
-                        <KpiCard label={t('kpis.totalAssets')} value={kpis.total} icon={HardDrive} />
-                        <div className={`rounded-xl border p-4 ${cardBg}`}>
+                    <div className="grid grid-rows-2 gap-3">
+                        <KpiCard
+                            label={t('kpis.totalAssets')}
+                            value={kpis.total}
+                            icon={HardDrive}
+                            valueSize="lg"
+                            className="h-full flex flex-col justify-center"
+                        />
+                        <div
+                            className={`rounded-xl border p-4 h-full flex flex-col justify-center ${cardBg}`}
+                        >
                             <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>{t('kpis.inStockRate')}</p>
-                            <p className={`text-3xl font-bold mt-1.5 ${inStockPctCritical ? 'text-red-400' : textMain}`}>
+                            <p className={`text-4xl font-bold mt-1.5 ${inStockPctCritical ? 'text-red-400' : textMain}`}>
                                 {kpis.total > 0 ? `${inStockPct}%` : '—'}
                             </p>
                         </div>
@@ -237,6 +278,8 @@ export function AssetHubDashboard() {
                         palette={DONUT_PALETTE}
                         height={200}
                         onSliceClick={onProcuredSliceClick}
+                        selectedSlices={selectedProcured}
+                        onLegendToggle={onProcuredLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
 
@@ -245,6 +288,9 @@ export function AssetHubDashboard() {
                         data={inStockLocationSlices}
                         palette={DONUT_PALETTE}
                         height={200}
+                        onSliceClick={onLocationSliceClick}
+                        selectedSlices={selectedStockRooms}
+                        onLegendToggle={onLocationLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
