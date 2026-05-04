@@ -608,6 +608,30 @@ export const REVIEW_CODE_LABELS: Record<ReviewCode, { en: string; zh: string }> 
 };
 
 // ============================================================================
+// Incident AI Category Codes (escalation reason classification)
+// ============================================================================
+
+export const INCIDENT_CATEGORIES = ['KB_GAP', 'USER_HABIT', 'AGENT_ERR', 'MANUAL_SSC', 'ONSITE', 'SECURITY', 'MONITORING', 'OUT_OF_SCOPE'] as const;
+export type IncidentCategory = typeof INCIDENT_CATEGORIES[number];
+
+export const INCIDENT_CATEGORY_LABELS: Record<IncidentCategory, { en: string; zh: string }> = {
+    KB_GAP:       { en: 'KB Gap',       zh: 'KB缺失' },
+    USER_HABIT:   { en: 'User Habit',   zh: '用户习惯' },
+    AGENT_ERR:    { en: 'Agent Error',  zh: 'Agent错误' },
+    MANUAL_SSC:   { en: 'Manual SSC',   zh: '需人工处理' },
+    ONSITE:       { en: 'Onsite',       zh: '升级Onsite' },
+    SECURITY:     { en: 'Security',     zh: '升级安全' },
+    MONITORING:   { en: 'Monitoring',   zh: '系统监控' },
+    OUT_OF_SCOPE: { en: 'Out of Scope', zh: '非OIT范围' },
+};
+
+export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale: string): string {
+    const entry = INCIDENT_CATEGORY_LABELS[cat as IncidentCategory];
+    if (!entry) return cat;
+    return locale.startsWith('zh') ? entry.zh : entry.en;
+}
+
+// ============================================================================
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
@@ -663,6 +687,13 @@ export interface Incident {
     // SSC dashboard — CSAT
     csat_score?: number | null;
     csat_text?: string | null;
+
+    // AI classification — escalation reason
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category
+    review_category?: string | null;
 
     // ---------------------------------------------------------------------
     // Phase 2 — ServiceNow authoritative fields.
@@ -929,6 +960,10 @@ export interface IncidentListParams {
     updated_at_to?: string;
     effective_at_from?: string;
     effective_at_to?: string;
+    // AI classification — single-value backend filter (frontend dashboard
+    // does multi-select client-side; this exists for typed callers
+    // such as MCP, scripts, or future pages that want server-side filtering).
+    ai_category?: string;
     skip?: number;
     limit?: number;
 }
@@ -1038,6 +1073,12 @@ export interface IncidentUpdate {
     created_at?: string;
     updated_at?: string;
     effective_at?: string;
+    // AI classification — DAG-written; included so internal tools can post-correct.
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category — also writable via PATCH /incidents/{oid}/review.
+    review_category?: string | null;
 }
 
 export interface RequestUpdate {

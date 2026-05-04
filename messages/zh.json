@@ -1330,6 +1330,13 @@
             "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
             "ticketTitle": "Ticket Dashboard (Incidents)"
         },
+        "categoryFilter": {
+            "label": "AI 分类：",
+            "allLabel": "全部",
+            "selectedCount": "已选 {count}",
+            "unclassified": "未分类",
+            "reviewPlaceholder": "—"
+        },
         "preFaqButton": "高亮显示左侧 {count} 条提工单前的 FAQ 交互",
         "preFaqEmpty": "未识别到提工单前的 FAQ 交互",
         "kbButton": "打开 {count} 篇相关 KB 文章",
