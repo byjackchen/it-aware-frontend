@@ -357,7 +357,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
     if (error) {
         return (
             <div className={`rounded-xl border p-6 ${isLight ? 'border-red-200 bg-red-50' : 'border-red-500/20 bg-red-500/10'}`}>
-                <p className={`text-sm font-medium ${isLight ? 'text-red-900' : 'text-red-200'}`}>Failed to load FAQ report</p>
+                <p className={`text-sm font-medium ${isLight ? 'text-red-900' : 'text-red-200'}`}>{tFaq('error.title')}</p>
                 <p className={`mt-1 text-xs ${isLight ? 'text-red-700' : 'text-red-300'}`}>{error}</p>
             </div>
         );
@@ -368,7 +368,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
             <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                     <Eye className="mx-auto h-8 w-8 text-gray-500 animate-pulse" />
-                    <p className="mt-3 text-sm text-gray-400">Loading report...</p>
+                    <p className="mt-3 text-sm text-gray-400">{tFaq('error.loading')}</p>
                 </div>
             </div>
         );
@@ -399,7 +399,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                         <BarChart2 className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>FAQ Analyst Report</h1>
+                        <h1 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{tFaq('title')}</h1>
                         <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                             {current.label} vs {previous.label}
                         </p>
@@ -411,28 +411,28 @@ export function FAQMonthlyReport({ report, error }: Props) {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <KpiCard
-                    label="Total Interactions"
+                    label={tFaq('kpi.totalInteractions')}
                     value={current.grand_total.toLocaleString()}
                     delta={formatCountDelta(current.grand_total, previous.grand_total)}
                     icon={MessageCircle}
                     tooltip={tFaq('kpiTooltip.totalInteractions')}
                 />
                 <KpiCard
-                    label="Unique Visitors"
+                    label={tFaq('kpi.uniqueVisitors')}
                     value={current.unique_visitors.toLocaleString()}
                     delta={formatCountDelta(current.unique_visitors, previous.unique_visitors)}
                     icon={Users}
                     tooltip={tFaq('kpiTooltip.uniqueVisitors')}
                 />
                 <KpiCard
-                    label="FAQ Resolution Rate"
+                    label={tFaq('kpi.faqResolutionRate')}
                     value={pct(current.faq_resolution_rate)}
                     delta={formatRateDelta(current.faq_resolution_rate, previous.faq_resolution_rate)}
                     icon={CheckCircle2}
                     tooltip={tFaq('kpiTooltip.faqResolutionRate')}
                 />
                 <KpiCard
-                    label="Human Escalation Rate"
+                    label={tFaq('kpi.humanEscalationRate')}
                     value={pct(current.human_escalation_rate)}
                     delta={formatRateDelta(current.human_escalation_rate, previous.human_escalation_rate, true)}
                     icon={PhoneCall}
@@ -450,7 +450,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
             {/* Charts: 2 Donuts + Top FAQ bar */}
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <DonutCard
-                    title="Review Code — Current"
+                    title={tFaq('charts.reviewCodeCurrent')}
                     subtitle={current.label}
                     data={current.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
@@ -460,7 +460,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                     height={350}
                 />
                 <DonutCard
-                    title="Review Code — Previous"
+                    title={tFaq('charts.reviewCodePrevious')}
                     subtitle={previous.label}
                     data={previous.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
@@ -473,8 +473,8 @@ export function FAQMonthlyReport({ report, error }: Props) {
 
             {/* Top FAQ bar chart — full width so labels aren't truncated */}
             <GroupBarCard
-                title="Top FAQ Categories"
-                subtitle="Most queried service items"
+                title={tFaq('charts.topFaqCategories')}
+                subtitle={tFaq('charts.topFaqSubtitle')}
                 data={topFaqBarData}
                 topN={5}
                 color={['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']}
@@ -483,8 +483,8 @@ export function FAQMonthlyReport({ report, error }: Props) {
             {/* Code Comparison Table */}
             <div className={`p-4 ${sectionBg}`}>
                 <SectionHeading
-                    title="Code Comparison by Period"
-                    subtitle="Current vs previous period breakdown with deltas"
+                    title={tFaq('sections.codeComparison')}
+                    subtitle={tFaq('sections.codeComparisonSubtitle')}
                     isLight={isLight}
                 />
                 <div className="mt-4">
@@ -495,8 +495,8 @@ export function FAQMonthlyReport({ report, error }: Props) {
             {/* Top 5 FAQ detail list */}
             <div className={`p-4 ${sectionBg}`}>
                 <SectionHeading
-                    title="Top 5 FAQ Enquiries"
-                    tooltip="Based on ai_ci codes with service catalog names, excluding NA-coded interactions."
+                    title={tFaq('sections.top5Faq')}
+                    tooltip={tFaq('sections.top5FaqTooltip')}
                     isLight={isLight}
                 />
                 <div className="mt-4">
@@ -506,27 +506,24 @@ export function FAQMonthlyReport({ report, error }: Props) {
 
             {/* Operational Guidance */}
             <div className={`p-4 ${sectionBg}`}>
-                <SectionHeading title="Operational Guidance" isLight={isLight} />
+                <SectionHeading title={tFaq('sections.operationalGuidance')} isLight={isLight} />
                 <div className={`mt-3 space-y-3 text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
                     <div className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500 mt-0.5" />
                         <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>Outcome Quality:</strong> Higher ACCT rates and lower ERR rates indicate good FAQ content
-                            quality. IMP codes suggest room for optimization.
+                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.outcomeQuality')}</strong> {tFaq('guidance.outcomeQualityDetail')}
                         </p>
                     </div>
                     <div className="flex items-start gap-2">
                         <PhoneCall className="h-4 w-4 flex-shrink-0 text-amber-500 mt-0.5" />
                         <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>Focus Areas:</strong> Monitor human escalation rate — high transfer sessions may indicate
-                            questions outside FAQ scope or complex scenarios requiring human intervention.
+                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.focusAreas')}</strong> {tFaq('guidance.focusAreasDetail')}
                         </p>
                     </div>
                     <div className="flex items-start gap-2">
                         <HelpCircle className="h-4 w-4 flex-shrink-0 text-blue-500 mt-0.5" />
                         <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>NA Share:</strong> A large NA share suggests incoming traffic doesn&apos;t match FAQ patterns. Review
-                            the top-5 FAQ list to identify demand trends and potential new content areas.
+                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.naShare')}</strong> {tFaq('guidance.naShareDetail')}
                         </p>
                     </div>
                 </div>

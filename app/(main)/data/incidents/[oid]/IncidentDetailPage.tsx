@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { IncidentSlasCard, ObjectGraph, Phase2FieldsCard } from '@/components/data';
+import { IncidentSlasCard, ObjectGraph, Phase2FieldsCard, QAScoreCard } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type {
     GlobalEdge,
@@ -693,6 +693,9 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                 {/* Phase 2 — ServiceNow-authoritative fields (read-only). */}
                 <Phase2FieldsCard data={incident} variant="incident" />
+
+                {/* QA Score — LLM quality assessment. */}
+                <QAScoreCard score={incident.qa_score} detail={incident.qa_score_detail} scoredAt={incident.qa_scored_at} />
 
                 {/* Incident SLAs. */}
                 <IncidentSlasCard slas={slas} />

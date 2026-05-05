@@ -383,6 +383,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                 ]),
             },
+            {
+                href: '/ssc-cockpit/incident-report',
+                labelKey: 'incidentReport',
+                icon: AlertCircle,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
         ],
     },
     '/operation-teams': {

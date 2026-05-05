@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { AlertCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
+import { AlertCircle, Loader2, Download, Filter, X, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -28,6 +28,8 @@ interface IncidentsPanelProps {
     onFocusInteractions: (interactionOids: string[]) => void;
 }
 
+type SortDirection = 'asc' | 'desc' | null;
+
 export function IncidentsPanel({
     dateFrom,
     dateTo,
@@ -53,6 +55,9 @@ export function IncidentsPanel({
     const [selectedCategories, setSelectedCategories] = useState<Set<IncidentCategory | 'NONE'>>(new Set());
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+    // optimization_needs sort state
+    const [optimizationSort, setOptimizationSort] = useState<SortDirection>(null);
 
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -85,7 +90,7 @@ export function IncidentsPanel({
         inferHasMore: () => false,
     });
 
-    // Client-side worker filter + ai_category filter
+    // Client-side worker filter + ai_category filter + sort
     const filteredIncidents = useMemo(() => {
         let result = incidents;
         if (workerFilter) {
@@ -101,8 +106,18 @@ export function IncidentsPanel({
                 return selectedCategories.has(cat as IncidentCategory | 'NONE');
             });
         }
+        
+        // Apply sorting by review_needs_optimization if active
+        if (optimizationSort) {
+            result = [...result].sort((a, b) => {
+                const aVal = a.review_needs_optimization ? 1 : 0;
+                const bVal = b.review_needs_optimization ? 1 : 0;
+                return optimizationSort === 'desc' ? bVal - aVal : aVal - bVal;
+            });
+        }
+        
         return result;
-    }, [incidents, workerFilter, workerMap, selectedCategories]);
+    }, [incidents, workerFilter, workerMap, selectedCategories, optimizationSort]);
 
     const hasCategoryFilter = selectedCategories.size > 0;
     const hasAnyFilter = !!workerFilter || hasCategoryFilter;
@@ -314,7 +329,29 @@ export function IncidentsPanel({
                 <div className={columnHeaderClass}>{t('headers.kb')}</div>
                 <div className={columnHeaderClass}>{t('headers.csatScore')}</div>
                 <div className={columnHeaderClass}>{t('headers.csatText')}</div>
-                <div className={columnHeaderClass}>{t('headers.needsOptimization')}</div>
+                <div className={`${columnHeaderClass} flex items-center justify-between`}>
+                    <span>{t('headers.needsOptimization')}</span>
+                    <button
+                        type="button"
+                        onClick={() => setOptimizationSort(opt => 
+                            opt === null ? 'desc' : opt === 'desc' ? 'asc' : null
+                        )}
+                        className={`ml-1 p-0.5 rounded transition-colors ${
+                            optimizationSort
+                                ? isLight ? 'bg-indigo-100 text-indigo-600' : 'bg-indigo-500/20 text-indigo-300'
+                                : isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-600 hover:text-gray-400'
+                        }`}
+                        title={optimizationSort === 'desc' ? 'Sort by needs optimization (high to low)' : optimizationSort === 'asc' ? 'Sort by needs optimization (low to high)' : 'Click to sort'}
+                    >
+                        {optimizationSort === 'desc' ? (
+                            <ArrowDown className="w-3 h-3" />
+                        ) : optimizationSort === 'asc' ? (
+                            <ArrowUp className="w-3 h-3" />
+                        ) : (
+                            <div className="w-3 h-3" />
+                        )}
+                    </button>
+                </div>
                 <div className={columnHeaderClass}>{t('headers.optimizationNotes')}</div>
                 <div className={columnHeaderClass}>{t('headers.completed')}</div>
             </div>
@@ -336,17 +373,23 @@ export function IncidentsPanel({
                 ) : (
                     displayedIncidents.map((incident) => {
                         const effective = overlay.get(incident.oid) ?? incident;
+                        const needsOptimization = effective.review_needs_optimization === true;
+                        const rowHighlight = needsOptimization 
+                            ? isLight ? 'bg-yellow-50/50' : 'bg-yellow-500/5 border-l-2 border-yellow-500/50'
+                            : '';
+                        
                         return (
-                            <IncidentRow
-                                key={effective.oid}
-                                incident={effective}
-                                worker={workerMap[effective.actor_oid]}
-                                catalogName={catalogMap[effective.service_catalog_oid ?? '']}
-                                isAligned={effective.oid === alignedIncidentOid}
-                                onAlign={() => onAlign(effective)}
-                                onFocusInteractions={onFocusInteractions}
-                                onChange={handleRowChange}
-                            />
+                            <div key={effective.oid} className={rowHighlight}>
+                                <IncidentRow
+                                    incident={effective}
+                                    worker={workerMap[effective.actor_oid]}
+                                    catalogName={catalogMap[effective.service_catalog_oid ?? '']}
+                                    isAligned={effective.oid === alignedIncidentOid}
+                                    onAlign={() => onAlign(effective)}
+                                    onFocusInteractions={onFocusInteractions}
+                                    onChange={handleRowChange}
+                                />
+                            </div>
                         );
                     })
                 )}

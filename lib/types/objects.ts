@@ -635,6 +635,26 @@ export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale:
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
+// QA Scoring types
+export interface QAScoreItem {
+    score: number;
+    reason: string;
+}
+
+export interface QACategoryScore {
+    score: number;
+    max: number;
+    [key: string]: number | QAScoreItem;
+}
+
+export interface QAScoreDetail {
+    total_score: number;
+    ticket_management: QACategoryScore;
+    policies_procedures: QACategoryScore;
+    problem_determination: QACategoryScore;
+    soft_skills: QACategoryScore;
+}
+
 export interface Incident {
     oid: string;
     stable_id: string | null;
@@ -694,6 +714,11 @@ export interface Incident {
     ai_category_at?: string | null;
     // Human review override of ai_category
     review_category?: string | null;
+
+    // QA Scoring — populated by score_incidents_qa DAG
+    qa_score?: number | null;
+    qa_score_detail?: QAScoreDetail | null;
+    qa_scored_at?: string | null;
 
     // ---------------------------------------------------------------------
     // Phase 2 — ServiceNow authoritative fields.
@@ -1837,4 +1862,60 @@ export interface InteractionFAQReport {
     current: MonthStats;
     previous: MonthStats;
     top5_faq: FAQEnquiryItem[];
+}
+
+// ── Incident Monthly Report ─────────────────────────────────────────────────
+
+export interface IncidentCategoryBreakdownItem {
+    code: string;
+    display: string;
+    count: number;
+    percentage: number;
+}
+
+export interface IncidentMonthStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    breakdown: IncidentCategoryBreakdownItem[];
+    grand_total: number;
+    resolved_count: number;
+    high_priority_count: number;
+    overdue_count: number;
+    state_breakdown: IncidentCategoryBreakdownItem[];
+    priority_breakdown: IncidentCategoryBreakdownItem[];
+}
+
+export interface IncidentTop5Item {
+    name: string;
+    count: number;
+    percentage: number;
+}
+
+export interface ChatbotEscalationStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    total_sessions: number;
+    meaningful_sessions: number;
+    escalated_sessions: number;
+    bot_handled_sessions: number;
+    direct_escalation_sessions: number;
+    after_bot_escalation_sessions: number;
+    escalation_rate: number;
+    bot_handled_rate: number;
+    direct_escalation_rate: number;
+    after_bot_rate: number;
+    adjusted_bot_failure_rate: number;
+    avg_interactions_before_escalation: number;
+    repeat_escalator_count: number;
+}
+
+export interface IncidentMonthlyReportData {
+    current: IncidentMonthStats;
+    previous: IncidentMonthStats;
+    top5_assigned_group: IncidentTop5Item[];
+    top5_service_catalog: IncidentTop5Item[];
+    chatbot_escalation: ChatbotEscalationStats | null;
+    chatbot_escalation_previous: ChatbotEscalationStats | null;
 }

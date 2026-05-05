@@ -949,3 +949,11 @@ export async function getFAQMonthlyReport(startDate?: string, endDate?: string):
     const qs = params.toString();
     return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
 }
+
+export async function getIncidentMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
+    const params = new URLSearchParams();
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+    const qs = params.toString();
+    return fetchApi(`${OBJECTS_BASE}/activities/incidents/report/incident-monthly${qs ? `?${qs}` : ''}`);
+}
