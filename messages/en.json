@@ -1483,5 +1483,49 @@
             "faqResolutionRate": "(ACCT + IMP + QNC) ÷ (total − NA) × 100%",
             "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷ (total − NA) × 100%"
         }
+    },
+    "Ohla": {
+        "common": {
+            "noData": "No data",
+            "retry": "Retry",
+            "refresh": "Refresh"
+        },
+        "filters": {
+            "dateRange": "Date range",
+            "rowCount": "{count} rows"
+        },
+        "behaviour": {
+            "enter_chat": "Enter chat",
+            "query": "Query",
+            "click": "Click"
+        },
+        "overview": {
+            "title": "Ohla · Overview",
+            "subtitle": "Overseas IT Support Bot — overall health and trends"
+        },
+        "kpis": {
+            "totalInteractions": "Total interactions",
+            "distinctUsers": "Distinct users",
+            "tier0Supported": "Tier 0 supported",
+            "faqMatchRate": "FAQ match rate",
+            "overallMatchRate": "Overall match rate",
+            "avgSurveyRate": "Avg survey rate",
+            "avgSurveyRateHint": "Mean of −1 / 0 / +1 helpful score",
+            "totalActionChain": "Total action chain",
+            "nonAutoSupport": "Non-auto support",
+            "dataLagDays": "Data lag (days)",
+            "dataLagDaysHint": "Latest: {date}"
+        },
+        "charts": {
+            "businessGroup": "By Business Group",
+            "region": "By Region",
+            "behaviour": "By Behaviour",
+            "behaviourTrend": "Monthly behaviour mix",
+            "behaviourTrendSubtitle": "enter_chat / query / click stacked",
+            "volumeTrend": "Monthly volume",
+            "volumeTrendSubtitle": "Total interactions per month",
+            "distinctUserTrend": "Monthly active users",
+            "distinctUserTrendSubtitle": "Distinct WeCom IDs per month"
+        }
     }
 }
