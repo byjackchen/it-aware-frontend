@@ -24,7 +24,7 @@
  * materially change; in-memory cache keeps sibling Ohla pages snappy.
  */
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
     Sparkles,
     Users,
@@ -38,6 +38,7 @@ import {
     Headphones,
     Clock,
     RefreshCw,
+    X,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
@@ -85,30 +86,97 @@ export function OhlaOverviewDashboard() {
     const [{ from, to }, setRange] = useState(defaultDateRange)
     const { rows, loading, error, refetch } = useOhla({ from, to })
 
+    // Cross-filter state — each donut slice click toggles membership in the
+    // matching selection set. Multiple picks within a donut are OR; different
+    // donuts combine with AND ("Region=APAC" AND "BG=CSIG"). Empty set = no
+    // filter for that facet. Matches the PBI cross-filter semantics.
+    const [bgSel, setBgSel] = useState<string[]>([])
+    const [regionSel, setRegionSel] = useState<string[]>([])
+    const [behaviourSel, setBehaviourSel] = useState<string[]>([])
+
+    const toggle = useCallback(
+        (setter: React.Dispatch<React.SetStateAction<string[]>>) =>
+            (name: string) =>
+                setter((prev) =>
+                    prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+                ),
+        [],
+    )
+
+    const clearAllFilters = useCallback(() => {
+        setBgSel([])
+        setRegionSel([])
+        setBehaviourSel([])
+    }, [])
+
     // Defensive: while the hook is loading the cached/stale rows stay
     // visible, but we still want filterByDateRange to work on the current
     // `from/to` so we re-filter on the client — the server call may have
     // returned a wider window because the user only nudged a boundary.
-    const filtered: OhlaRow[] = useMemo(
+    const dateFiltered: OhlaRow[] = useMemo(
         () => filterByDateRange(rows, from, to),
         [rows, from, to],
+    )
+
+    /**
+     * Apply cross-filter facets. `exclude` lets each donut compute its own
+     * slice data ignoring its own selection — otherwise picking a BG slice
+     * would collapse the BG donut to a single wedge. PBI does the same.
+     */
+    const applyCrossFilter = useCallback(
+        (
+            base: OhlaRow[],
+            exclude?: 'bg' | 'region' | 'behaviour',
+        ): OhlaRow[] => {
+            return base.filter((r) => {
+                if (exclude !== 'bg' && bgSel.length > 0) {
+                    if (r.businessGroup === null || !bgSel.includes(r.businessGroup)) return false
+                }
+                if (exclude !== 'region' && regionSel.length > 0) {
+                    if (r.region === null || !regionSel.includes(r.region)) return false
+                }
+                if (exclude !== 'behaviour' && behaviourSel.length > 0) {
+                    if (!behaviourSel.includes(r.behaviour)) return false
+                }
+                return true
+            })
+        },
+        [bgSel, regionSel, behaviourSel],
+    )
+
+    /** Fully cross-filtered set — powers KPIs, line charts, and combo. */
+    const filtered: OhlaRow[] = useMemo(
+        () => applyCrossFilter(dateFiltered),
+        [dateFiltered, applyCrossFilter],
+    )
+
+    /** Per-donut data excludes that donut's own facet so the user can see
+     * the full distribution along the axis they're currently selecting. */
+    const bgBase = useMemo(() => applyCrossFilter(dateFiltered, 'bg'), [dateFiltered, applyCrossFilter])
+    const regionBase = useMemo(
+        () => applyCrossFilter(dateFiltered, 'region'),
+        [dateFiltered, applyCrossFilter],
+    )
+    const behaviourBase = useMemo(
+        () => applyCrossFilter(dateFiltered, 'behaviour'),
+        [dateFiltered, applyCrossFilter],
     )
 
     const kpis = useMemo(() => computeKpis(filtered, new Date()), [filtered])
 
     const behaviourSlices = useMemo(
-        () => topN(countBy(filtered, (r) => r.behaviour), 4),
-        [filtered],
+        () => topN(countBy(behaviourBase, (r) => r.behaviour), 4),
+        [behaviourBase],
     )
 
     const regionSlices = useMemo(
-        () => topN(countBy(filtered, (r) => r.region), 6),
-        [filtered],
+        () => topN(countBy(regionBase, (r) => r.region), 6),
+        [regionBase],
     )
 
     const bgSlices = useMemo(
-        () => topN(countBy(filtered, (r) => r.businessGroup), 8),
-        [filtered],
+        () => topN(countBy(bgBase, (r) => r.businessGroup), 8),
+        [bgBase],
     )
 
     const monthly = useMemo(() => groupByMonth(filtered), [filtered])
@@ -241,6 +309,59 @@ export function OhlaOverviewDashboard() {
                     </div>
                 )}
 
+                {/* Active cross-filter chips — mirrors the donut selection
+                 *  state. Each chip removes one slice from its facet; the
+                 *  "Clear all" pill on the right nukes every facet at once.
+                 */}
+                {(bgSel.length > 0 || regionSel.length > 0 || behaviourSel.length > 0) && (
+                    <div
+                        className={`flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 mb-3 text-xs ${
+                            isLight
+                                ? 'bg-white border-slate-200'
+                                : 'bg-white/5 border-white/10'
+                        }`}
+                    >
+                        <span className={textMuted}>{t('filters.active')}</span>
+                        {bgSel.map((name) => (
+                            <FilterChip
+                                key={`bg-${name}`}
+                                isLight={isLight}
+                                label={`${t('charts.businessGroup')}: ${name}`}
+                                color="#3b82f6"
+                                onClear={() => toggle(setBgSel)(name)}
+                            />
+                        ))}
+                        {regionSel.map((name) => (
+                            <FilterChip
+                                key={`region-${name}`}
+                                isLight={isLight}
+                                label={`${t('charts.region')}: ${name}`}
+                                color="#22c55e"
+                                onClear={() => toggle(setRegionSel)(name)}
+                            />
+                        ))}
+                        {behaviourSel.map((name) => (
+                            <FilterChip
+                                key={`beh-${name}`}
+                                isLight={isLight}
+                                label={`${t('charts.behaviour')}: ${name}`}
+                                color="#f59e0b"
+                                onClear={() => toggle(setBehaviourSel)(name)}
+                            />
+                        ))}
+                        <button
+                            onClick={clearAllFilters}
+                            className={`ml-auto px-2 py-0.5 rounded text-[11px] font-medium ${
+                                isLight
+                                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                    : 'bg-white/10 hover:bg-white/20 text-gray-200'
+                            }`}
+                        >
+                            {t('filters.clearAll')}
+                        </button>
+                    </div>
+                )}
+
                 {/* Row 1 — 5 headline KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
                     <KpiCard
@@ -307,18 +428,27 @@ export function OhlaOverviewDashboard() {
                         data={bgSlices}
                         height={220}
                         emptyText={t('common.noData')}
+                        selectedSlices={bgSel}
+                        onLegendToggle={toggle(setBgSel)}
+                        onSliceClick={(s) => toggle(setBgSel)(s.name)}
                     />
                     <DonutCard
                         title={t('charts.region')}
                         data={regionSlices}
                         height={220}
                         emptyText={t('common.noData')}
+                        selectedSlices={regionSel}
+                        onLegendToggle={toggle(setRegionSel)}
+                        onSliceClick={(s) => toggle(setRegionSel)(s.name)}
                     />
                     <DonutCard
                         title={t('charts.behaviour')}
                         data={behaviourSlices}
                         height={220}
                         emptyText={t('common.noData')}
+                        selectedSlices={behaviourSel}
+                        onLegendToggle={toggle(setBehaviourSel)}
+                        onSliceClick={(s) => toggle(setBehaviourSel)(s.name)}
                     />
                 </div>
 
@@ -359,5 +489,45 @@ export function OhlaOverviewDashboard() {
                 </div>
             </div>
         </div>
+    )
+}
+
+/** Compact filter chip shown in the active-filters bar. */
+function FilterChip({
+    label,
+    color,
+    onClear,
+    isLight,
+}: {
+    label: string
+    color: string
+    onClear: () => void
+    isLight: boolean
+}) {
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${
+                isLight
+                    ? 'bg-slate-50 border-slate-200 text-slate-700'
+                    : 'bg-white/10 border-white/10 text-gray-100'
+            }`}
+        >
+            <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: color }}
+                aria-hidden
+            />
+            <span className="text-[11px]">{label}</span>
+            <button
+                type="button"
+                onClick={onClear}
+                className={`ml-0.5 p-0.5 rounded hover:opacity-80 ${
+                    isLight ? 'text-slate-500' : 'text-gray-400'
+                }`}
+                aria-label="remove filter"
+            >
+                <X className="w-3 h-3" />
+            </button>
+        </span>
     )
 }
