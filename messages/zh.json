@@ -1482,5 +1482,49 @@
             "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
             "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷（总数 − NA）× 100%"
         }
+    },
+    "Ohla": {
+        "common": {
+            "noData": "暂无数据",
+            "retry": "重试",
+            "refresh": "刷新"
+        },
+        "filters": {
+            "dateRange": "时间范围",
+            "rowCount": "{count} 条记录"
+        },
+        "behaviour": {
+            "enter_chat": "进入会话",
+            "query": "提问",
+            "click": "点击"
+        },
+        "overview": {
+            "title": "Ohla · 概览",
+            "subtitle": "Overseas IT Support Bot 的整体健康度与趋势"
+        },
+        "kpis": {
+            "totalInteractions": "总交互数",
+            "distinctUsers": "独立用户",
+            "tier0Supported": "Tier 0 自助率",
+            "faqMatchRate": "FAQ 命中率",
+            "overallMatchRate": "整体命中率",
+            "avgSurveyRate": "满意度均分",
+            "avgSurveyRateHint": "−1 / 0 / +1 的平均",
+            "totalActionChain": "动作链总数",
+            "nonAutoSupport": "需人工支持",
+            "dataLagDays": "数据延迟（天）",
+            "dataLagDaysHint": "最新数据：{date}"
+        },
+        "charts": {
+            "businessGroup": "按 Business Group",
+            "region": "按 Region",
+            "behaviour": "按 Behaviour",
+            "behaviourTrend": "月度 Behaviour 构成",
+            "behaviourTrendSubtitle": "enter_chat / query / click 叠加",
+            "volumeTrend": "月度交互量",
+            "volumeTrendSubtitle": "按月聚合的总交互数",
+            "distinctUserTrend": "月度活跃用户",
+            "distinctUserTrendSubtitle": "每月独立 WeCom ID 数"
+        }
     }
 }
