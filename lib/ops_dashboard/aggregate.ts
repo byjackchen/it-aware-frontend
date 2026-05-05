@@ -354,7 +354,7 @@ export interface DeltaInfo {
     /** Rounded percentage change from previous → current. */
     pct: number;
     trend: 'up' | 'down' | 'flat';
-    /** Pre-formatted label, e.g. "▲ 12% vs last mo". */
+    /** Locale-neutral compact fallback; UI components should format via i18n. */
     formatted: string;
 }
 
@@ -446,13 +446,13 @@ export function formatMoM({ current, previous }: MoMResult): DeltaInfo | null {
     const pctRaw = ((current - previous) / previous) * 100;
     const pct = Math.round(pctRaw);
     if (pct === 0) {
-        return { pct: 0, trend: 'flat', formatted: 'flat vs last mo' };
+        return { pct: 0, trend: 'flat', formatted: '0%' };
     }
     const arrow = pct > 0 ? '▲' : '▼';
     return {
         pct,
         trend: pct > 0 ? 'up' : 'down',
-        formatted: `${arrow} ${Math.abs(pct)}% vs last mo`,
+        formatted: `${arrow} ${Math.abs(pct)}%`,
     };
 }
 

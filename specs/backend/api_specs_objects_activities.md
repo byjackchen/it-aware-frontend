@@ -314,15 +314,29 @@ class IncidentReviewUpdate(BaseModel):
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `state` | string | null | Exact state filter |
+| `states_list` | string[] | null | Multi-value active-state filter; repeated query params match `state = ANY(states_list)` |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
+| `assigned_group` | string[] | null | Multi-value assignment-group filter |
+| `actor_location_oid` | OID string[] | null | Multi-value caller location filter |
+| `actor_org_oid` | OID string[] | null | Multi-value caller organization filter |
+| `is_vip` | boolean | null | Join caller worker and filter VIP callers |
+| `view` | `full` \| `slim` | `full` | `slim` omits heavy text/review fields and enables short cache + partial-response behavior for dashboard reads |
 | `created_at_from` | ISO8601 datetime | null | Created-at lower bound (inclusive) |
 | `created_at_to` | ISO8601 datetime | null | Created-at upper bound (inclusive) |
 | `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound (inclusive) |
 | `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
 | `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
 | `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `source_updated_at_from` | ISO8601 datetime | null | ServiceNow `sys_updated_on` lower bound; preferred aging clock for Ops Dashboard |
+| `source_updated_at_to` | ISO8601 datetime | null | ServiceNow `sys_updated_on` upper bound |
+| `source_opened_at_from` | ISO8601 datetime | null | ServiceNow opened timestamp lower bound |
+| `source_opened_at_to` | ISO8601 datetime | null | ServiceNow opened timestamp upper bound |
+| `source_resolved_at_from` | ISO8601 datetime | null | Incident resolved timestamp lower bound |
+| `source_resolved_at_to` | ISO8601 datetime | null | Incident resolved timestamp upper bound |
+| `made_sla` | boolean | null | Filter by SLA-met incidents |
+| `escalation_min` | integer | null | Filter incidents with `COALESCE(escalation, 0) >= escalation_min` |
 | `needs_optimization` | boolean | null | SSC dashboard: `true` → only incidents flagged `review_needs_optimization=true`; `false` → only incidents flagged `false`; `null` → no filter (includes both flagged and unset rows) |
 | `completed` | boolean | null | SSC dashboard: `true` → only reviews where `review_completed_at IS NOT NULL`; `false` → only reviews where `review_completed_at IS NULL` |
 | `skip` | integer | 0 | Records to skip |
@@ -438,15 +452,28 @@ class RequestListResponse(BaseModel):
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `state` | string | null | Exact state filter |
+| `states_list` | string[] | null | Multi-value active-state filter; repeated query params match `state = ANY(states_list)` |
 | `priority` | string | null | Exact priority filter |
 | `stable_id` | string | null | Exact stable id filter |
 | `actor_oid` | OID string | null | Exact actor worker OID filter |
+| `assigned_group` | string[] | null | Multi-value assignment-group filter |
+| `actor_location_oid` | OID string[] | null | Multi-value requester location filter |
+| `actor_org_oid` | OID string[] | null | Multi-value requester organization filter |
+| `is_vip` | boolean | null | Join requester worker and filter VIP callers |
+| `view` | `full` \| `slim` | `full` | `slim` omits heavy text fields and enables short cache + partial-response behavior for dashboard reads |
 | `created_at_from` | ISO8601 datetime | null | Created-at lower bound (inclusive) |
 | `created_at_to` | ISO8601 datetime | null | Created-at upper bound (inclusive) |
 | `updated_at_from` | ISO8601 datetime | null | Updated-at lower bound (inclusive) |
 | `updated_at_to` | ISO8601 datetime | null | Updated-at upper bound (inclusive) |
 | `effective_at_from` | ISO8601 datetime | null | Effective-at lower bound (inclusive) |
 | `effective_at_to` | ISO8601 datetime | null | Effective-at upper bound (inclusive) |
+| `source_updated_at_from` | ISO8601 datetime | null | ServiceNow `sys_updated_on` lower bound; preferred aging clock for Ops Dashboard |
+| `source_updated_at_to` | ISO8601 datetime | null | ServiceNow `sys_updated_on` upper bound |
+| `source_opened_at_from` | ISO8601 datetime | null | ServiceNow opened timestamp lower bound |
+| `source_opened_at_to` | ISO8601 datetime | null | ServiceNow opened timestamp upper bound |
+| `source_closed_at_from` | ISO8601 datetime | null | Request closed timestamp lower bound |
+| `source_closed_at_to` | ISO8601 datetime | null | Request closed timestamp upper bound |
+| `made_sla` | boolean | null | Filter by SLA-met requests when populated |
 | `skip` | integer | 0 | Records to skip |
 | `limit` | integer | 100 | Max records (1-1000) |
 

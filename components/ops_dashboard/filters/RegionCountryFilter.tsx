@@ -35,6 +35,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import {
     REGIONS,
@@ -86,10 +87,11 @@ export function RegionCountryFilter<T>({
     onLocationsChange,
     extraActiveCount = 0,
     onClearAll,
-    countrySearchPlaceholder = 'Search country…',
-    locationSearchPlaceholder = 'Search location…',
+    countrySearchPlaceholder,
+    locationSearchPlaceholder,
     showClearButton = true,
 }: RegionCountryFilterProps<T>) {
+    const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -208,14 +210,19 @@ export function RegionCountryFilter<T>({
     }
 
     function regionsLabel(): string {
-        if (selectedRegions.length === 0) return 'across all regions';
-        return `in ${selectedRegions.join(', ')}`;
+        if (selectedRegions.length === 0) return t('filters.scopeAllRegions');
+        return t('filters.scopeInItems', { items: selectedRegions.join(', ') });
     }
 
     function countriesLabel(): string {
         if (selectedCountries.length === 0) return regionsLabel();
-        if (selectedCountries.length <= 3) return `in ${selectedCountries.join(', ')}`;
-        return `in ${selectedCountries.slice(0, 2).join(', ')} +${selectedCountries.length - 2}`;
+        if (selectedCountries.length <= 3) {
+            return t('filters.scopeInItems', { items: selectedCountries.join(', ') });
+        }
+        return t('filters.scopeInItemsPlus', {
+            items: selectedCountries.slice(0, 2).join(', '),
+            count: selectedCountries.length - 2,
+        });
     }
 
     // ----- Theme -----
@@ -225,7 +232,7 @@ export function RegionCountryFilter<T>({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {/* Region dropdown */}
             <MultiSelect
-                label="Region"
+                label={t('filters.region')}
                 options={regionOptions}
                 value={regionSelectedAsStrings}
                 onChange={onRegionMultiChange}
@@ -236,16 +243,18 @@ export function RegionCountryFilter<T>({
             {hasAnyCountry && (
                 <div className="flex flex-col gap-1">
                     <MultiSelect
-                        label="Country"
+                        label={t('filters.country')}
                         options={countryOptions}
                         value={selectedCountries}
                         onChange={onCountriesChange}
                         searchable
-                        searchPlaceholder={countrySearchPlaceholder}
+                        searchPlaceholder={countrySearchPlaceholder ?? t('filters.searchCountry')}
                     />
                     <span className={`text-[11px] ${subtleCls}`}>
-                        Showing {visibleCountries.length}{' '}
-                        {visibleCountries.length === 1 ? 'country' : 'countries'} {regionsLabel()}
+                        {t('filters.showingCountries', {
+                            count: visibleCountries.length,
+                            scope: regionsLabel(),
+                        })}
                     </span>
                 </div>
             )}
@@ -254,16 +263,18 @@ export function RegionCountryFilter<T>({
             {hasAnyLocation && (
                 <div className="flex flex-col gap-1">
                     <MultiSelect
-                        label="Location"
+                        label={t('filters.location')}
                         options={locationOptions}
                         value={selectedLocations}
                         onChange={onLocationsChange}
                         searchable
-                        searchPlaceholder={locationSearchPlaceholder}
+                        searchPlaceholder={locationSearchPlaceholder ?? t('filters.searchLocation')}
                     />
                     <span className={`text-[11px] ${subtleCls}`}>
-                        Showing {visibleLocations.length}{' '}
-                        {visibleLocations.length === 1 ? 'location' : 'locations'} {countriesLabel()}
+                        {t('filters.showingLocations', {
+                            count: visibleLocations.length,
+                            scope: countriesLabel(),
+                        })}
                     </span>
                 </div>
             )}
@@ -284,7 +295,7 @@ export function RegionCountryFilter<T>({
                                   : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
                         }`}
                     >
-                        Clear All Filters
+                        {t('filters.clearAllFilters')}
                     </button>
                 </div>
             )}

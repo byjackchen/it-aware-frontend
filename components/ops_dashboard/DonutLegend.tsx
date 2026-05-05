@@ -18,6 +18,7 @@
  * slice name. The parent owns the `selected` state.
  */
 
+import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 
 export interface DonutLegendItem {
@@ -44,6 +45,7 @@ export function DonutLegend({
     total,
     dimOpacity = 0.25,
 }: DonutLegendProps) {
+    const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
     const labelCls = isLight ? 'text-slate-600' : 'text-gray-300';
@@ -54,7 +56,7 @@ export function DonutLegend({
     return (
         <div
             role="group"
-            aria-label="Chart filter legend"
+            aria-label={t('charts.filterLegend')}
             className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center pt-2"
         >
             {items.map((item) => {

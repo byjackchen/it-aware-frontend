@@ -185,7 +185,7 @@ export function AgingAssetTasksDashboard() {
                                   : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
                         }`}
                     >
-                        Clear All Filters
+                        {t('filters.clearAllFilters')}
                     </button>
                 }
                 headerSlot={

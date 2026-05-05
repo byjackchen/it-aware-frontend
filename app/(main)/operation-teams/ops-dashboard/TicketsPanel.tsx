@@ -52,7 +52,7 @@ export interface TicketsPanelProps {
     selectedGroups?: string[];
     /** Legend toggle handler for the assignment-group donut. */
     onGroupLegendToggle?: (name: string) => void;
-    /** Optional MoM deltas — rendered as the small "▲ X% vs last mo" footer on each tile. */
+    /** Optional MoM deltas — rendered as the small localized delta footer on each tile. */
     kpiDeltas?: TicketKpiDeltas;
 }
 
@@ -70,10 +70,14 @@ export function TicketsPanel({
     onGroupLegendToggle,
     kpiDeltas,
 }: TicketsPanelProps) {
-    function deltaProp(d?: DeltaInfo | null) {
-        return d ? { value: d.formatted, trend: d.trend } : undefined;
-    }
     const t = useTranslations('OpsDashboard');
+    function deltaProp(d?: DeltaInfo | null) {
+        if (!d) return undefined;
+        const value = d.trend === 'flat'
+            ? t('kpis.momFlat')
+            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
+        return { value, trend: d.trend };
+    }
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -130,25 +134,25 @@ export function TicketsPanel({
                     icon={Star}
                     delta={deltaProp(kpiDeltas?.vipActive)}
                     linkHref="/operation-teams/ops-dashboard/vip-tickets"
-                    linkLabel="Open VIP Tickets dashboard"
+                    linkLabel={t('links.openVipTickets')}
                 />
                 <KpiCard
                     label={t('kpis.agingIncidentsGt2d')}
                     value={kpis.agingIncidentGt2d}
                     linkHref="/operation-teams/ops-dashboard/aging-incidents"
-                    linkLabel="Open Aging Incidents dashboard"
+                    linkLabel={t('links.openAgingIncidents')}
                 />
                 <KpiCard
                     label={t('kpis.agingCatalogGt30d')}
                     value={kpis.agingCatalogGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-sc-tasks"
-                    linkLabel="Open Aging Catalog Tasks dashboard"
+                    linkLabel={t('links.openAgingCatalogTasks')}
                 />
                 <KpiCard
                     label={t('kpis.agingAsset30d')}
                     value={kpis.agingAssetGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-asset-tasks"
-                    linkLabel="Open Aging Asset Tasks dashboard"
+                    linkLabel={t('links.openAgingAssetTasks')}
                 />
             </div>
 

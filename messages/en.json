@@ -1135,7 +1135,11 @@
             "agingGt30d": "Aging > 30d",
             "resolvedRate": "Resolved Rate",
             "resolved": "Resolved",
-            "totalCatalogTasks": "Total Catalog Tasks"
+            "totalCatalogTasks": "Total Catalog Tasks",
+            "highPriority": "High Priority",
+            "mediumPriority": "Medium Priority",
+            "momDelta": "{arrow} {pct}% vs last mo",
+            "momFlat": "flat vs last mo"
         },
         "charts": {
             "ticketsByAssignmentGroup": "Tickets by Assignment Group",
@@ -1173,7 +1177,9 @@
             "worldMap": "Region Distribution",
             "worldMapSubtitle": "Active tickets by caller region",
             "supportGroup": "Support Group",
-            "supportGroupSubtitle": "Assets by support group"
+            "supportGroupSubtitle": "Assets by support group",
+            "cumulativeOpenedClosed": "Cumulative opened vs. closed",
+            "filterLegend": "Chart filter legend"
         },
         "filters": {
             "title": "Filters",
@@ -1195,7 +1201,16 @@
             "supportGroup": "Support Group",
             "procuredBy": "Procured By",
             "stockroom": "Stockroom",
-            "modelCategory": "Model Category"
+            "modelCategory": "Model Category",
+            "country": "Country",
+            "clearAllFilters": "Clear All Filters",
+            "searchCountry": "Search country…",
+            "searchLocation": "Search location…",
+            "showingCountries": "Showing {count, plural, one {# country} other {# countries}} {scope}",
+            "showingLocations": "Showing {count, plural, one {# location} other {# locations}} {scope}",
+            "scopeAllRegions": "across all regions",
+            "scopeInItems": "in {items}",
+            "scopeInItemsPlus": "in {items} +{count}"
         },
         "tables": {
             "number": "Number",
@@ -1276,6 +1291,16 @@
             "hubFilteredAssets": "Filtered: {filtered} of {total} assets"
         },
         "classifierCaveat": "Catalog vs Asset classification is heuristic in Phase 1 (client-side). Phase 2 uses a server-side discriminator.",
+        "links": {
+            "openLabel": "Open {label}",
+            "openAssetHub": "Open Asset Hub",
+            "openInStockAssets": "Open In-Stock Assets dashboard",
+            "openPendingAssets": "Open Pending Assets dashboard",
+            "openVipTickets": "Open VIP Tickets dashboard",
+            "openAgingIncidents": "Open Aging Incidents dashboard",
+            "openAgingCatalogTasks": "Open Aging Catalog Tasks dashboard",
+            "openAgingAssetTasks": "Open Aging Asset Tasks dashboard"
+        },
         "empty": {
             "noData": "No data",
             "loading": "Loading...",

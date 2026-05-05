@@ -106,48 +106,48 @@ export function AssetsPanel({
                     value={kpis.total}
                     icon={HardDrive}
                     linkHref="/operation-teams/ops-dashboard/assets"
-                    linkLabel="Open Asset Hub"
+                    linkLabel={t('links.openAssetHub')}
                 />
                 <KpiCard
                     label={t('kpis.inStockRate')}
                     value={kpis.total > 0 ? `${kpis.inStockRatePct}%` : '—'}
                     linkHref="/operation-teams/ops-dashboard/in-stock-assets"
-                    linkLabel="Open In-Stock Assets dashboard"
+                    linkLabel={t('links.openInStockAssets')}
                 />
                 <KpiCard
                     label={t('kpis.inStock')}
                     value={kpis.inStock}
                     icon={PackageCheck}
                     linkHref="/operation-teams/ops-dashboard/in-stock-assets"
-                    linkLabel="Open In-Stock Assets dashboard"
+                    linkLabel={t('links.openInStockAssets')}
                 />
                 <KpiCard
                     label={t('kpis.pendingReturn')}
                     value={kpis.pendingReturn}
                     icon={Truck}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
-                    linkLabel="Open Pending Assets dashboard"
+                    linkLabel={t('links.openPendingAssets')}
                 />
                 <KpiCard
                     label={t('kpis.pendingRepair')}
                     value={kpis.pendingRepair}
                     icon={Wrench}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
-                    linkLabel="Open Pending Assets dashboard"
+                    linkLabel={t('links.openPendingAssets')}
                 />
                 <KpiCard
                     label={t('kpis.unconfirmed')}
                     value={kpis.unconfirmed}
                     icon={HelpCircle}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
-                    linkLabel="Open Pending Assets dashboard"
+                    linkLabel={t('links.openPendingAssets')}
                 />
                 <KpiCard
                     label={t('kpis.zeroResidual')}
                     value={kpis.zeroResidual}
                     icon={DollarSign}
                     linkHref="/operation-teams/ops-dashboard/assets"
-                    linkLabel="Open Asset Hub"
+                    linkLabel={t('links.openAssetHub')}
                 />
             </div>
 

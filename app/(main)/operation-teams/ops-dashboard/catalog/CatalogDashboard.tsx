@@ -30,6 +30,7 @@ import {
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
@@ -79,6 +80,10 @@ export function CatalogDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const deltaLabel = (d: DeltaInfo) =>
+        d.trend === 'flat'
+            ? t('kpis.momFlat')
+            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // 3-month default seeded into the user-visible filter so the picker
     // reflects what's actually being fetched. Otherwise users see a date
@@ -348,7 +353,7 @@ export function CatalogDashboard() {
                                   : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
                         }`}
                     >
-                        Clear All Filters
+                        {t('filters.clearAllFilters')}
                     </button>
                 }
                 headerSlot={
@@ -394,12 +399,12 @@ export function CatalogDashboard() {
                         label={t('kpis.totalCatalogTasks')}
                         value={kpis.total}
                         icon={ShoppingCart}
-                        delta={totalMoM ? { value: totalMoM.formatted, trend: totalMoM.trend } : undefined}
+                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
                     />
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
-                        delta={activeMoM ? { value: activeMoM.formatted, trend: activeMoM.trend } : undefined}
+                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
                     />
                     <KpiCard label={t('kpis.resolved')} value={kpis.resolved} />
                     <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
@@ -444,7 +449,7 @@ export function CatalogDashboard() {
                     />
                     <TrendLineCard
                         title={t('charts.volumeTrend')}
-                        subtitle="Cumulative opened vs. closed"
+                        subtitle={t('charts.cumulativeOpenedClosed')}
                         data={trend}
                         height={260}
                         series={[

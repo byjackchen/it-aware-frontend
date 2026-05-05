@@ -26,6 +26,7 @@ import {
     momByDate,
     momActiveSnapshot,
     formatMoM,
+    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
@@ -104,6 +105,10 @@ export function IncidentAnalysisDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const deltaLabel = (d: DeltaInfo) =>
+        d.trend === 'flat'
+            ? t('kpis.momFlat')
+            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // 3-month default horizon on page load. Seeded into the user-facing
     // filter state so the date picker shows it — otherwise the default is
@@ -427,7 +432,7 @@ export function IncidentAnalysisDashboard() {
                                   : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
                         }`}
                     >
-                        Clear All Filters
+                        {t('filters.clearAllFilters')}
                     </button>
                 }
                 headerSlot={
@@ -473,16 +478,16 @@ export function IncidentAnalysisDashboard() {
                         label={t('kpis.totalIncidents')}
                         value={kpis.total}
                         icon={AlertTriangle}
-                        delta={totalMoM ? { value: totalMoM.formatted, trend: totalMoM.trend } : undefined}
+                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
                     />
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
                         icon={Activity}
-                        delta={activeMoM ? { value: activeMoM.formatted, trend: activeMoM.trend } : undefined}
+                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
                     />
-                    <KpiCard label="High Priority" value={kpis.high} />
-                    <KpiCard label="Medium Priority" value={kpis.medium} />
+                    <KpiCard label={t('kpis.highPriority')} value={kpis.high} />
+                    <KpiCard label={t('kpis.mediumPriority')} value={kpis.medium} />
                 </div>
                 <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard label={t('kpis.agingGt2d')} value={kpis.aging2d} />
@@ -491,7 +496,7 @@ export function IncidentAnalysisDashboard() {
                         label={t('kpis.vipActive')}
                         value={kpis.vipActive}
                         icon={Star}
-                        delta={vipMoM ? { value: vipMoM.formatted, trend: vipMoM.trend } : undefined}
+                        delta={vipMoM ? { value: deltaLabel(vipMoM), trend: vipMoM.trend } : undefined}
                     />
                     <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
                 </div>
@@ -537,7 +542,7 @@ export function IncidentAnalysisDashboard() {
                     />
                     <TrendLineCard
                         title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
-                        subtitle="Cumulative opened vs. closed"
+                        subtitle={t('charts.cumulativeOpenedClosed')}
                         data={trend}
                         height={260}
                         series={[

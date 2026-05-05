@@ -17,6 +17,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 
 export interface KpiCardProps {
@@ -63,6 +64,7 @@ export function KpiCard({
     className,
     valueSize = 'md',
 }: KpiCardProps) {
+    const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -104,7 +106,7 @@ export function KpiCard({
                 </div>
                 {accent}
             </div>
-            <p className={`text-2xl font-bold mt-1.5 ${valueCls}`}>
+            <p className={`${valueSizeCls} font-bold mt-1.5 ${valueCls}`}>
                 {typeof value === 'number' ? value.toLocaleString() : value}
             </p>
             {(delta || subtitle) && (
@@ -116,8 +118,8 @@ export function KpiCard({
             {linkHref && (
                 <Link
                     href={linkHref}
-                    aria-label={linkLabel ?? `Open ${label}`}
-                    title={linkLabel ?? `Open ${label}`}
+                    aria-label={linkLabel ?? t('links.openLabel', { label })}
+                    title={linkLabel ?? t('links.openLabel', { label })}
                     onClick={(e) => e.stopPropagation()}
                     className={`absolute top-1/2 right-2 -translate-y-1/2 inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors ${arrowCls}`}
                 >
