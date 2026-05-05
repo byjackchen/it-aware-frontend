@@ -1480,5 +1480,13 @@
         "sscCockpit": "SSC Team",
         "operationTeams": "Ops Team",
         "agentOps": "AgentOps"
+    },
+    "SSCFAQReport": {
+        "kpiTooltip": {
+            "totalInteractions": "All sessions in the period (all codes including NA).",
+            "uniqueVisitors": "COUNT(DISTINCT actor_stable_id) across all sessions.",
+            "faqResolutionRate": "(ACCT + IMP + QNC) ÷ (total − NA) × 100%",
+            "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷ (total − NA) × 100%"
+        }
     }
 }

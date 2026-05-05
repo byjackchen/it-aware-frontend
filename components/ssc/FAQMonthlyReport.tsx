@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
     ArrowRight,
     BarChart2,
@@ -351,6 +352,7 @@ function TopFaqList({ items, isLight }: { items: FAQEnquiryItem[]; isLight: bool
 export function FAQMonthlyReport({ report, error }: Props) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const tFaq = useTranslations('SSCFAQReport');
 
     if (error) {
         return (
@@ -413,24 +415,28 @@ export function FAQMonthlyReport({ report, error }: Props) {
                     value={current.grand_total.toLocaleString()}
                     delta={formatCountDelta(current.grand_total, previous.grand_total)}
                     icon={MessageCircle}
+                    tooltip={tFaq('kpiTooltip.totalInteractions')}
                 />
                 <KpiCard
                     label="Unique Visitors"
                     value={current.unique_visitors.toLocaleString()}
                     delta={formatCountDelta(current.unique_visitors, previous.unique_visitors)}
                     icon={Users}
+                    tooltip={tFaq('kpiTooltip.uniqueVisitors')}
                 />
                 <KpiCard
                     label="FAQ Resolution Rate"
                     value={pct(current.faq_resolution_rate)}
                     delta={formatRateDelta(current.faq_resolution_rate, previous.faq_resolution_rate)}
                     icon={CheckCircle2}
+                    tooltip={tFaq('kpiTooltip.faqResolutionRate')}
                 />
                 <KpiCard
                     label="Human Escalation Rate"
                     value={pct(current.human_escalation_rate)}
                     delta={formatRateDelta(current.human_escalation_rate, previous.human_escalation_rate, true)}
                     icon={PhoneCall}
+                    tooltip={tFaq('kpiTooltip.humanEscalationRate')}
                 />
             </div>
 

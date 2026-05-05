@@ -15,7 +15,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -43,6 +43,8 @@ export interface KpiCardProps {
     linkLabel?: string;
     /** Extra Tailwind classes for the root card div (e.g. `h-full` for grid stretch). */
     className?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the label. */
+    tooltip?: string;
     /**
      * Headline number size — defaults to `md` (text-2xl). Pass `lg`
      * (text-4xl) or `xl` (text-5xl) for big-number tiles that share a
@@ -63,6 +65,7 @@ export function KpiCard({
     linkLabel,
     className,
     valueSize = 'md',
+    tooltip,
 }: KpiCardProps) {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -101,8 +104,16 @@ export function KpiCard({
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-1.5 min-w-0">
-                    {Icon && <Icon className={`w-3.5 h-3.5 ${labelCls}`} />}
+                    {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${labelCls}`} />}
                     <p className={`text-[10px] uppercase tracking-wide truncate ${labelCls}`}>{label}</p>
+                    {tooltip && (
+                        <span className="group relative inline-flex shrink-0 items-center">
+                            <HelpCircle className={`h-3 w-3 transition-colors ${isLight ? 'text-slate-400 group-hover:text-slate-700' : 'text-gray-500 group-hover:text-white'}`} />
+                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-56 -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
+                                {tooltip}
+                            </span>
+                        </span>
+                    )}
                 </div>
                 {accent}
             </div>
