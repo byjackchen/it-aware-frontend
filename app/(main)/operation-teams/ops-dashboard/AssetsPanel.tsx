@@ -41,6 +41,14 @@ export interface AssetsPanelProps {
     totalCount: number;
     onProcuredSliceClick: (slice: { name: string }) => void;
     onSupportGroupSliceClick: (slice: { name: string }) => void;
+    /** Optional click + legend wiring for the In-Stock Location donut. */
+    onLocationSliceClick?: (slice: { name: string }) => void;
+    selectedLocations?: string[];
+    onLocationLegendToggle?: (name: string) => void;
+    selectedProcured?: string[];
+    onProcuredLegendToggle?: (name: string) => void;
+    selectedSupportGroups?: string[];
+    onSupportGroupLegendToggle?: (name: string) => void;
 }
 
 export function AssetsPanel({
@@ -54,6 +62,13 @@ export function AssetsPanel({
     totalCount,
     onProcuredSliceClick,
     onSupportGroupSliceClick,
+    onLocationSliceClick,
+    selectedLocations,
+    onLocationLegendToggle,
+    selectedProcured,
+    onProcuredLegendToggle,
+    selectedSupportGroups,
+    onSupportGroupLegendToggle,
 }: AssetsPanelProps) {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -80,18 +95,60 @@ export function AssetsPanel({
                 </span>
             </div>
 
-            {/* KPI row */}
+            {/* KPI row — each tile drills into its dedicated dashboard
+                via the right-side arrow:
+                  Total Assets / Zero Residual → Asset Hub
+                  In Stock Rate / In Stock     → In-Stock Assets
+                  Pending Return / Repair / Unconfirmed → Pending Assets */}
             <div className="grid grid-cols-7 gap-2 mb-3">
-                <KpiCard label={t('kpis.totalAssets')} value={kpis.total} icon={HardDrive} />
+                <KpiCard
+                    label={t('kpis.totalAssets')}
+                    value={kpis.total}
+                    icon={HardDrive}
+                    linkHref="/operation-teams/ops-dashboard/assets"
+                    linkLabel={t('links.openAssetHub')}
+                />
                 <KpiCard
                     label={t('kpis.inStockRate')}
                     value={kpis.total > 0 ? `${kpis.inStockRatePct}%` : '—'}
+                    linkHref="/operation-teams/ops-dashboard/in-stock-assets"
+                    linkLabel={t('links.openInStockAssets')}
                 />
-                <KpiCard label={t('kpis.inStock')} value={kpis.inStock} icon={PackageCheck} />
-                <KpiCard label={t('kpis.pendingReturn')} value={kpis.pendingReturn} icon={Truck} />
-                <KpiCard label={t('kpis.pendingRepair')} value={kpis.pendingRepair} icon={Wrench} />
-                <KpiCard label={t('kpis.unconfirmed')} value={kpis.unconfirmed} icon={HelpCircle} />
-                <KpiCard label={t('kpis.zeroResidual')} value={kpis.zeroResidual} icon={DollarSign} />
+                <KpiCard
+                    label={t('kpis.inStock')}
+                    value={kpis.inStock}
+                    icon={PackageCheck}
+                    linkHref="/operation-teams/ops-dashboard/in-stock-assets"
+                    linkLabel={t('links.openInStockAssets')}
+                />
+                <KpiCard
+                    label={t('kpis.pendingReturn')}
+                    value={kpis.pendingReturn}
+                    icon={Truck}
+                    linkHref="/operation-teams/ops-dashboard/pending-assets"
+                    linkLabel={t('links.openPendingAssets')}
+                />
+                <KpiCard
+                    label={t('kpis.pendingRepair')}
+                    value={kpis.pendingRepair}
+                    icon={Wrench}
+                    linkHref="/operation-teams/ops-dashboard/pending-assets"
+                    linkLabel={t('links.openPendingAssets')}
+                />
+                <KpiCard
+                    label={t('kpis.unconfirmed')}
+                    value={kpis.unconfirmed}
+                    icon={HelpCircle}
+                    linkHref="/operation-teams/ops-dashboard/pending-assets"
+                    linkLabel={t('links.openPendingAssets')}
+                />
+                <KpiCard
+                    label={t('kpis.zeroResidual')}
+                    value={kpis.zeroResidual}
+                    icon={DollarSign}
+                    linkHref="/operation-teams/ops-dashboard/assets"
+                    linkLabel={t('links.openAssetHub')}
+                />
             </div>
 
             {/* Charts row 1 — three donuts */}
@@ -101,6 +158,9 @@ export function AssetsPanel({
                     data={inStockLocationSlices}
                     palette={ASSET_PALETTE}
                     height={180}
+                    onSliceClick={onLocationSliceClick}
+                    selectedSlices={selectedLocations}
+                    onLegendToggle={onLocationLegendToggle}
                     emptyText={emptyText}
                 />
                 <DonutCard
@@ -110,6 +170,8 @@ export function AssetsPanel({
                     palette={ASSET_PALETTE}
                     height={180}
                     onSliceClick={onProcuredSliceClick}
+                    selectedSlices={selectedProcured}
+                    onLegendToggle={onProcuredLegendToggle}
                     emptyText={emptyText}
                 />
                 <DonutCard
@@ -119,6 +181,8 @@ export function AssetsPanel({
                     palette={ASSET_PALETTE}
                     height={180}
                     onSliceClick={onSupportGroupSliceClick}
+                    selectedSlices={selectedSupportGroups}
+                    onLegendToggle={onSupportGroupLegendToggle}
                     emptyText={emptyText}
                 />
             </div>

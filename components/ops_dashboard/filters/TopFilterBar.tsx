@@ -103,6 +103,26 @@ export interface TopFilterBarProps {
      * string — falls back to an English default.
      */
     clientSideTooltip?: string;
+    /**
+     * Optional content rendered inside the expanded body, ABOVE the
+     * slicer grid. Used to inject extra filter controls (e.g.
+     * `RegionCountryFilter`) into the same panel without giving
+     * TopFilterBar any opinion on what they are.
+     */
+    headerSlot?: React.ReactNode;
+    /**
+     * Hide the header-level "Clear all" link. Useful when a child
+     * component (typically `headerSlot`) provides its own consolidated
+     * clear-all button so the panel doesn't show two of them.
+     */
+    hideHeaderClear?: boolean;
+    /**
+     * Optional content rendered in the top-right of the panel header,
+     * to the LEFT of the collapse / expand toggle. Page-level controls
+     * (e.g. a consolidated "Clear All Filters" button) live here so
+     * they're always visible regardless of expanded/collapsed state.
+     */
+    headerActions?: React.ReactNode;
 }
 
 function readPersisted(storageKey: string | undefined, fallback: boolean): boolean {
@@ -226,6 +246,9 @@ export function TopFilterBar({
     title = 'Filters',
     clearLabel = 'Clear all',
     clientSideTooltip = 'Filters the currently loaded window. Widen the date range or clear other filters to see more options.',
+    headerSlot,
+    hideHeaderClear = false,
+    headerActions,
 }: TopFilterBarProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -287,7 +310,7 @@ export function TopFilterBar({
                     )}
                 </button>
                 <div className="flex items-center gap-2">
-                    {activeCount > 0 && (
+                    {activeCount > 0 && !hideHeaderClear && (
                         <button
                             onClick={clearAll}
                             className={`text-xs underline decoration-dotted ${mutedCls}`}
@@ -295,6 +318,7 @@ export function TopFilterBar({
                             {clearLabel}
                         </button>
                     )}
+                    {headerActions}
                     <button
                         type="button"
                         onClick={() => setExpanded((v) => !v)}
@@ -312,6 +336,7 @@ export function TopFilterBar({
 
             {expanded && (
                 <div className="px-4 pb-4 pt-0 space-y-4">
+                    {headerSlot}
                     {resolvedSections.map((section, idx) => (
                         <div key={section.subtitle || `section-${idx}`}>
                             {section.subtitle && (

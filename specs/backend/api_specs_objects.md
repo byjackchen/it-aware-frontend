@@ -543,7 +543,8 @@ class HardwareReconcileResponse(BaseModel):
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `skip` | integer | 0 | Records to skip |
-| `limit` | integer | 50 | Max records (1-500) |
+| `limit` | integer | 50 | Max records (1-1000) |
+| `view` | `full` \| `slim` | `full` | `slim` is accepted for dashboard parity; hardware currently returns the same field shape but adds short cache/partial-response behavior |
 | `worker_oid` | string | null | Filter by assigned worker OID |
 | `assigned_to_username` | string | null | Filter by ERP username |
 | `serial_number` | string | null | Filter by serial number (exact) |
@@ -551,6 +552,7 @@ class HardwareReconcileResponse(BaseModel):
 | `model_category` | string | null | Filter by model category (e.g. "Laptop") |
 | `main_category` | string | null | Filter by main category |
 | `asset_status` | string | null | Filter by status (e.g. "In use", "Retired") |
+| `substatus` | string[] | null | Multi-value substatus filter; repeated query params match `substatus IN (...)` |
 | `office_id` | string | null | Filter by office |
 | `region` | string | null | Filter by region |
 | `is_active` | boolean | null | Filter by active status |

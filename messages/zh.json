@@ -1127,7 +1127,11 @@
             "agingGt30d": "老化 > 30 天",
             "resolvedRate": "解决率",
             "resolved": "已解决",
-            "totalCatalogTasks": "服务目录任务总数"
+            "totalCatalogTasks": "服务目录任务总数",
+            "highPriority": "高优先级",
+            "mediumPriority": "中优先级",
+            "momDelta": "{arrow} 较上月 {pct}%",
+            "momFlat": "较上月持平"
         },
         "charts": {
             "ticketsByAssignmentGroup": "按分配组划分的工单",
@@ -1165,7 +1169,9 @@
             "worldMap": "区域分布",
             "worldMapSubtitle": "按报修人所在区域统计的活动工单",
             "supportGroup": "支持组",
-            "supportGroupSubtitle": "按支持组统计的资产"
+            "supportGroupSubtitle": "按支持组统计的资产",
+            "cumulativeOpenedClosed": "累计开单 vs 关闭",
+            "filterLegend": "图表筛选图例"
         },
         "filters": {
             "title": "筛选器",
@@ -1187,7 +1193,16 @@
             "supportGroup": "支持组",
             "procuredBy": "采购方",
             "stockroom": "库房",
-            "modelCategory": "型号类别"
+            "modelCategory": "型号类别",
+            "country": "国家/地区",
+            "clearAllFilters": "清除全部筛选",
+            "searchCountry": "搜索国家/地区…",
+            "searchLocation": "搜索地点…",
+            "showingCountries": "显示 {count} 个国家/地区（{scope}）",
+            "showingLocations": "显示 {count} 个地点（{scope}）",
+            "scopeAllRegions": "所有区域",
+            "scopeInItems": "{items}",
+            "scopeInItemsPlus": "{items} +{count}"
         },
         "tables": {
             "number": "编号",
@@ -1268,6 +1283,16 @@
             "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产"
         },
         "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
+        "links": {
+            "openLabel": "打开 {label}",
+            "openAssetHub": "打开资产总览",
+            "openInStockAssets": "打开库存资产仪表盘",
+            "openPendingAssets": "打开待处理资产仪表盘",
+            "openVipTickets": "打开 VIP 工单仪表盘",
+            "openAgingIncidents": "打开老化事件仪表盘",
+            "openAgingCatalogTasks": "打开老化服务目录任务仪表盘",
+            "openAgingAssetTasks": "打开老化资产任务仪表盘"
+        },
         "empty": {
             "noData": "暂无数据",
             "loading": "加载中...",

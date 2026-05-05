@@ -22,11 +22,15 @@ import { useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
     classifyRequestType,
+    cumulativeTrendByMonth,
     daysSinceUpdated,
+    formatMoM,
     groupBy,
     isActiveState,
+    momActiveSnapshot,
+    momByDate,
     monthsFromRange,
-    trendByMonth,
+    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
@@ -38,6 +42,9 @@ import {
     type FilterState,
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
+import type { Region } from '@/components/ops_dashboard/RegionMap';
+import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 
 /** Catalog tasks use the prototype's blue-family palette to distinguish them from incidents. */
 const CATALOG_PALETTE = [
@@ -51,8 +58,9 @@ const CATALOG_PALETTE = [
     '#0369a1',
 ];
 
-function locationOf(row: TicketRow): string {
-    return row.actor?.location?.descriptor?.trim() || 'Unknown';
+/** Country/location string used by RegionCountryFilter — null when unresolved. */
+function locationForFilter(row: TicketRow): string | null {
+    return row.actor?.location?.descriptor?.trim() || null;
 }
 
 function departmentOf(row: TicketRow): string {
@@ -72,6 +80,10 @@ export function CatalogDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const deltaLabel = (d: DeltaInfo) =>
+        d.trend === 'flat'
+            ? t('kpis.momFlat')
+            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // 3-month default seeded into the user-visible filter so the picker
     // reflects what's actually being fetched. Otherwise users see a date
@@ -84,12 +96,18 @@ export function CatalogDashboard() {
     const [now] = useState<number>(() => Date.now());
 
     const [filters, setFilters] = useState<FilterState>({
+        // assigned_group / state are donut-driven chart filters now;
+        // department / location dropped (replaced by Region/Country).
         assigned_group: [],
-        department: [],
-        location: [],
+        state: [],
         created_at_from: { from: defaultFromIso, to: null },
         created_at_to: { from: defaultFromIso, to: null },
     });
+
+    // Three-level Region / Country / Location slicer state — geographic.
+    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
     const { data, loading, error, refetch } = useRequests(
@@ -108,39 +126,23 @@ export function CatalogDashboard() {
         return rows.filter((r) => classifyRequestType(r) === 'catalog_task');
     }, [data]);
 
-    const slicers: SlicerConfig[] = useMemo(() => {
-        const groups = groupBy(catalogRows, (r) => r.assigned_group).map((g) => g.key);
-        const departments = groupBy(catalogRows, departmentOf).map((g) => g.key);
-        const locations = groupBy(catalogRows, locationOf).map((g) => g.key);
-        return [
-            { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            {
-                type: 'multi',
-                param: 'department',
-                label: t('filters.department'),
-                options: departments,
-                clientSide: true,
-            },
-            {
-                type: 'multi',
-                param: 'location',
-                label: t('filters.location'),
-                options: locations,
-                clientSide: true,
-            },
+    // Region/Country live in the panel headerSlot; donut clicks drive
+    // assigned_group + state. Open Date is the only remaining slicer.
+    const slicers: SlicerConfig[] = useMemo(
+        () => [
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
-        ];
-    }, [catalogRows, t]);
+        ],
+        [t],
+    );
 
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
-        const deptSel = (filters.department as string[]) ?? [];
-        const locSel = (filters.location as string[]) ?? [];
+        const stateSel = (filters.state as string[]) ?? [];
         const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return catalogRows.filter((r) => {
+            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
-            if (deptSel.length && !deptSel.includes(departmentOf(r))) return false;
-            if (locSel.length && !locSel.includes(locationOf(r))) return false;
+            if (stateSel.length && !stateSel.includes(r.state)) return false;
             if (range.from || range.to) {
                 const opened = openedDateStr(r);
                 if (range.from && opened && opened < range.from) return false;
@@ -148,9 +150,19 @@ export function CatalogDashboard() {
             }
             return true;
         });
-    }, [catalogRows, filters]);
+    }, [catalogRows, filters, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
+
+    // Month-over-month delta for the volume + active KPIs.
+    const totalMoM = useMemo(
+        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        [filtered, now],
+    );
+    const activeMoM = useMemo(
+        () => formatMoM(momActiveSnapshot(filtered, now)),
+        [filtered, now],
+    );
 
     const kpis = useMemo(() => {
         const total = filtered.length;
@@ -186,8 +198,23 @@ export function CatalogDashboard() {
         () => monthsFromRange(dateRange.from, dateRange.to, now),
         [dateRange.from, dateRange.to, now],
     );
+    // Cumulative opened + closed by month. Requests don't have
+    // `source_resolved_at` (incidents-only); prefer `source_closed_at`
+    // when the upstream sync filled it, then fall back to the row's
+    // last-update timestamp when the state already says it's closed
+    // (the request dump in dev has source_closed_at empty even on
+    // 7800+ "Closed Complete" rows — without this fallback the closed
+    // line would flatline at zero).
     const trend = useMemo(
-        () => trendByMonth(filtered, trendMonths, now),
+        () =>
+            cumulativeTrendByMonth(
+                filtered,
+                (r) =>
+                    r.source_closed_at ??
+                    (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null),
+                trendMonths,
+                now,
+            ),
         [filtered, trendMonths, now],
     );
 
@@ -201,6 +228,26 @@ export function CatalogDashboard() {
         },
         [filters],
     );
+    const onGroupLegendToggle = useCallback(
+        (name: string) => onGroupSliceClick({ name }),
+        [onGroupSliceClick],
+    );
+    const onStateSliceClick = useCallback(
+        (slice: { name: string }) => {
+            const cur = (filters.state as string[]) ?? [];
+            const next = cur.includes(slice.name)
+                ? cur.filter((x) => x !== slice.name)
+                : [...cur, slice.name];
+            setFilters({ ...filters, state: next });
+        },
+        [filters],
+    );
+    const onStateLegendToggle = useCallback(
+        (name: string) => onStateSliceClick({ name }),
+        [onStateSliceClick],
+    );
+    const selectedAssignedGroups = (filters.assigned_group as string[]) ?? [];
+    const selectedStates = (filters.state as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
@@ -210,6 +257,42 @@ export function CatalogDashboard() {
         const range = v as { from: string | null; to: string | null } | undefined;
         return !!(range?.from || range?.to);
     });
+
+    // Active count of *non-Region/Country* filters — drives the
+    // RegionCountryFilter Clear All button visibility (it consolidates
+    // every dimension, not just its own).
+    const extraActiveFilterCount = useMemo(() => {
+        let n = 0;
+        const grp = filters.assigned_group;
+        if (Array.isArray(grp)) n += grp.length;
+        const st = filters.state;
+        if (Array.isArray(st)) n += st.length;
+        const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
+        if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
+        return n;
+    }, [filters, defaultFromIso]);
+
+    function resetAllParentFilters() {
+        setFilters({
+            assigned_group: [],
+            state: [],
+            created_at_from: { from: defaultFromIso, to: null },
+            created_at_to: { from: defaultFromIso, to: null },
+        });
+    }
+
+    const totalActiveFilterCount =
+        selectedRegions.length +
+        selectedCountries.length +
+        selectedLocations.length +
+        extraActiveFilterCount;
+    const hasAnyActiveFilter = totalActiveFilterCount > 0;
+    function clearEveryFilter() {
+        setSelectedRegions([]);
+        setSelectedCountries([]);
+        setSelectedLocations([]);
+        resetAllParentFilters();
+    }
 
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
@@ -243,7 +326,9 @@ export function CatalogDashboard() {
                 </div>
             </div>
 
-            {/* Filters */}
+            {/* Filter panel — Region/Country in headerSlot, Open Date in
+                the slicer grid, consolidated Clear All in headerActions.
+                Mirrors the IncidentAnalysis design. */}
             <TopFilterBar
                 slicers={slicers}
                 value={filters}
@@ -252,6 +337,40 @@ export function CatalogDashboard() {
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
+                hideHeaderClear
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={hasAnyActiveFilter ? clearEveryFilter : undefined}
+                        disabled={!hasAnyActiveFilter}
+                        className={`text-xs rounded-lg px-3 py-1 border transition-colors ${
+                            hasAnyActiveFilter
+                                ? isLight
+                                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 cursor-pointer'
+                                    : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25 cursor-pointer'
+                                : isLight
+                                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {t('filters.clearAllFilters')}
+                    </button>
+                }
+                headerSlot={
+                    <RegionCountryFilter
+                        rows={catalogRows}
+                        getLocation={locationForFilter}
+                        selectedRegions={selectedRegions}
+                        selectedCountries={selectedCountries}
+                        selectedLocations={selectedLocations}
+                        onRegionsChange={setSelectedRegions}
+                        onCountriesChange={setSelectedCountries}
+                        onLocationsChange={setSelectedLocations}
+                        extraActiveCount={extraActiveFilterCount}
+                        onClearAll={resetAllParentFilters}
+                        showClearButton={false}
+                    />
+                }
             />
 
             {/* Scrollable main content */}
@@ -276,8 +395,17 @@ export function CatalogDashboard() {
 
                 {/* Row 1: KPIs */}
                 <div className="grid grid-cols-6 gap-3 mb-3">
-                    <KpiCard label={t('kpis.totalCatalogTasks')} value={kpis.total} icon={ShoppingCart} />
-                    <KpiCard label={t('kpis.active')} value={kpis.active} />
+                    <KpiCard
+                        label={t('kpis.totalCatalogTasks')}
+                        value={kpis.total}
+                        icon={ShoppingCart}
+                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
+                    />
+                    <KpiCard
+                        label={t('kpis.active')}
+                        value={kpis.active}
+                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
+                    />
                     <KpiCard label={t('kpis.resolved')} value={kpis.resolved} />
                     <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
                     <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />
@@ -291,6 +419,9 @@ export function CatalogDashboard() {
                         data={stateDonut}
                         palette={CATALOG_PALETTE}
                         height={220}
+                        onSliceClick={onStateSliceClick}
+                        selectedSlices={selectedStates}
+                        onLegendToggle={onStateLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <DonutCard
@@ -300,6 +431,8 @@ export function CatalogDashboard() {
                         palette={CATALOG_PALETTE}
                         height={220}
                         onSliceClick={onGroupSliceClick}
+                        selectedSlices={selectedAssignedGroups}
+                        onLegendToggle={onGroupLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
@@ -316,9 +449,13 @@ export function CatalogDashboard() {
                     />
                     <TrendLineCard
                         title={t('charts.volumeTrend')}
+                        subtitle={t('charts.cumulativeOpenedClosed')}
                         data={trend}
-                        color="#0ea5e9"
                         height={260}
+                        series={[
+                            { key: 'opened', label: 'Opened (cumulative)', color: '#0ea5e9' },
+                            { key: 'closed', label: 'Closed (cumulative)', color: '#22c55e' },
+                        ]}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>

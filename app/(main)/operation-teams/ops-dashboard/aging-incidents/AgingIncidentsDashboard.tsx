@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, groupBy, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -25,6 +25,9 @@ import {
     type FilterState,
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
+import type { Region } from '@/components/ops_dashboard/RegionMap';
+import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 
 const PAGE_SIZE = 100;
 
@@ -36,6 +39,11 @@ interface Row extends AgingTableRow {
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || '—';
+}
+
+/** RegionCountryFilter wants null on missing locations (vs the table's '—'). */
+function locationForFilter(row: TicketRow): string | null {
+    return row.actor?.location?.descriptor?.trim() || null;
 }
 
 function openedByOf(row: TicketRow): string {
@@ -66,11 +74,15 @@ export function AgingIncidentsDashboard() {
     // Capture "now" at mount so aging math is stable across re-renders.
     const [now] = useState<number>(() => Date.now());
 
-    const [filters, setFilters] = useState<FilterState>({
-        assigned_group: [],
-        location: [],
-    });
+    // FilterState kept for TopFilterBar's controlled-shell contract;
+    // no slicers live here anymore — Region/Country/Location filter
+    // owns the only filter state (held in dedicated useStates below).
+    const [filters, setFilters] = useState<FilterState>({});
+    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
+    const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
     // Base: active + aging > 2d.
     const base: TicketRow[] = useMemo(() => {
@@ -78,30 +90,25 @@ export function AgingIncidentsDashboard() {
         return rows.filter((r) => isActiveState(r.state) && daysSinceUpdated(r, now) > 2);
     }, [data, now]);
 
-    const slicers: SlicerConfig[] = useMemo(() => {
-        const groups = groupBy(base, (r) => r.assigned_group).map((g) => g.key);
-        const locations = groupBy(base, locationOf).map((g) => g.key);
-        return [
-            { type: 'multi', param: 'assigned_group', label: t('filters.assignmentGroup'), options: groups },
-            {
-                type: 'multi',
-                param: 'location',
-                label: t('filters.location'),
-                options: locations,
-                clientSide: true,
-            },
-        ];
-    }, [base, t]);
+    // No panel slicers — the Region/Country/Location filter lives in
+    // TopFilterBar's headerSlot.
+    const slicers: SlicerConfig[] = useMemo(() => [], []);
 
     const filtered = useMemo(() => {
-        const groupSel = (filters.assigned_group as string[]) ?? [];
-        const locSel = (filters.location as string[]) ?? [];
-        return base.filter((r) => {
-            if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
-            if (locSel.length && !locSel.includes(locationOf(r))) return false;
-            return true;
-        });
-    }, [base, filters]);
+        return base.filter((r) =>
+            matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter),
+        );
+    }, [base, selectedRegions, selectedCountries, selectedLocations]);
+
+    const totalActiveFilterCount =
+        selectedRegions.length + selectedCountries.length + selectedLocations.length;
+    const hasAnyActiveFilter = totalActiveFilterCount > 0;
+    function clearEveryFilter() {
+        setSelectedRegions([]);
+        setSelectedCountries([]);
+        setSelectedLocations([]);
+        resetPage();
+    }
 
     const enriched: Row[] = useMemo(
         () =>
@@ -155,18 +162,59 @@ export function AgingIncidentsDashboard() {
                 </button>
             </div>
 
-            {/* Filters */}
+            {/* Filter panel — Region/Country/Location only. Aging is
+                already a snapshot of active+stale rows, so there's no
+                Open Date / assigned_group / sub-filter beyond geography. */}
             <TopFilterBar
                 slicers={slicers}
                 value={filters}
-                onChange={(next) => {
-                    setFilters(next);
-                    setPage({ skip: 0, limit: PAGE_SIZE });
-                }}
+                onChange={setFilters}
                 storageKey="ops-dashboard:aging-incidents:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
+                hideHeaderClear
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={hasAnyActiveFilter ? clearEveryFilter : undefined}
+                        disabled={!hasAnyActiveFilter}
+                        className={`text-xs rounded-lg px-3 py-1 border transition-colors ${
+                            hasAnyActiveFilter
+                                ? isLight
+                                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 cursor-pointer'
+                                    : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25 cursor-pointer'
+                                : isLight
+                                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {t('filters.clearAllFilters')}
+                    </button>
+                }
+                headerSlot={
+                    <RegionCountryFilter
+                        rows={base}
+                        getLocation={locationForFilter}
+                        selectedRegions={selectedRegions}
+                        selectedCountries={selectedCountries}
+                        selectedLocations={selectedLocations}
+                        onRegionsChange={(next) => {
+                            setSelectedRegions(next);
+                            resetPage();
+                        }}
+                        onCountriesChange={(next) => {
+                            setSelectedCountries(next);
+                            resetPage();
+                        }}
+                        onLocationsChange={(next) => {
+                            setSelectedLocations(next);
+                            resetPage();
+                        }}
+                        onClearAll={resetPage}
+                        showClearButton={false}
+                    />
+                }
             />
 
             {/* Table */}

@@ -3,25 +3,52 @@
 /**
  * TrendLineCard — titled card with a recharts line chart.
  *
- * Default is the prototype's 10-month trailing trend. The `data` prop
- * can come straight from `trendByMonth()` in `lib/ops_dashboard/aggregate`.
+ * Two render modes:
+ *   - **Single series (default)**: pass `data: TrendPoint[]` and the
+ *     card draws one line off the `count` field. Works as before.
+ *   - **Multi series**: pass `series: TrendSeries[]` plus matching
+ *     `data` rows that carry each `series[i].key` as a numeric field.
+ *     The card draws one `<Line>` per series and surfaces a small
+ *     legend at the top of the chart so users can tell them apart.
+ *     Used for cumulative opened/closed trends on the Incidents and
+ *     Catalog dashboards.
  */
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
-import type { TrendPoint } from '@/lib/ops_dashboard/aggregate';
+export interface TrendSeries {
+    /** Field name on each data point (e.g. "opened", "closed"). */
+    key: string;
+    /** Legend / tooltip label. */
+    label: string;
+    /** Stroke colour. */
+    color: string;
+}
+
+/**
+ * Loose row type for the chart — accepts the canonical `TrendPoint`
+ * (`{bucket, count}`), the cumulative variant (`{bucket, opened,
+ * closed}`), and any other `{bucket, ...numericFields}` shape an
+ * extra series might need.
+ */
+export interface TrendChartRow {
+    bucket: string;
+    [key: string]: string | number;
+}
 
 export interface TrendLineCardProps {
     title: string;
     subtitle?: string;
-    data: TrendPoint[];
+    data: TrendChartRow[];
     height?: number;
-    /** Line colour — defaults to blue-500. */
+    /** Single-series stroke colour — defaults to blue-500. Ignored when `series` is set. */
     color?: string;
     /** X-axis tick formatter — default formats the bucket ISO to "Mar". */
     formatXTick?: (bucket: string) => string;
     emptyText?: string;
     actionSlot?: React.ReactNode;
+    /** Optional multi-series config; when set, replaces the single `count` line. */
+    series?: TrendSeries[];
 }
 
 function defaultXFormat(bucket: string): string {
@@ -39,6 +66,7 @@ export function TrendLineCard({
     formatXTick = defaultXFormat,
     emptyText = 'No data',
     actionSlot,
+    series,
 }: TrendLineCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -50,6 +78,8 @@ export function TrendLineCard({
 
     const axisStroke = isLight ? '#94a3b8' : '#64748b';
     const gridStroke = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.08)';
+
+    const multi = Array.isArray(series) && series.length > 0;
 
     return (
         <div className={`rounded-xl border p-4 ${cardBase}`}>
@@ -88,14 +118,41 @@ export function TrendLineCard({
                             }}
                             labelFormatter={(label) => formatXTick(String(label))}
                         />
-                        <Line
-                            type="monotone"
-                            dataKey="count"
-                            stroke={color}
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: color }}
-                            activeDot={{ r: 5 }}
-                        />
+                        {multi && (
+                            <Legend
+                                verticalAlign="top"
+                                align="right"
+                                height={24}
+                                iconType="line"
+                                wrapperStyle={{
+                                    fontSize: '11px',
+                                    color: isLight ? '#475569' : '#94a3b8',
+                                }}
+                            />
+                        )}
+                        {multi ? (
+                            series!.map((s) => (
+                                <Line
+                                    key={s.key}
+                                    type="monotone"
+                                    dataKey={s.key}
+                                    name={s.label}
+                                    stroke={s.color}
+                                    strokeWidth={2}
+                                    dot={{ r: 3, fill: s.color }}
+                                    activeDot={{ r: 5 }}
+                                />
+                            ))
+                        ) : (
+                            <Line
+                                type="monotone"
+                                dataKey="count"
+                                stroke={color}
+                                strokeWidth={2}
+                                dot={{ r: 3, fill: color }}
+                                activeDot={{ r: 5 }}
+                            />
+                        )}
                     </LineChart>
                 </ResponsiveContainer>
             )}

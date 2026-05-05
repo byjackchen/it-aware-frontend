@@ -83,9 +83,13 @@ export function InStockAssetsDashboard() {
     const rows: HardwareRow[] = useMemo(() => data?.items ?? [], [data]);
     const partial = data?.partial === true;
 
+    // model_category + stock_room come from both the panel slicers
+    // AND the matching donut chart filters (the donut click toggles
+    // the same filter param). device_type is donut-only.
     const [filters, setFilters] = useState<FilterState>({
         model_category: [],
         stock_room: [],
+        device_type: [],
     });
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     // Capture "now" at mount so age math is stable across re-renders.
@@ -115,9 +119,11 @@ export function InStockAssetsDashboard() {
     const filtered = useMemo(() => {
         const catSel = (filters.model_category as string[]) ?? [];
         const stockSel = (filters.stock_room as string[]) ?? [];
+        const deviceSel = (filters.device_type as string[]) ?? [];
         return base.filter((r) => {
             if (catSel.length && (!r.model_category || !catSel.includes(r.model_category))) return false;
             if (stockSel.length && !stockSel.includes(r.stock_room ?? 'Unknown')) return false;
+            if (deviceSel.length && !deviceSel.includes(inferDeviceType(r.model_name))) return false;
             return true;
         });
     }, [base, filters]);
@@ -153,7 +159,10 @@ export function InStockAssetsDashboard() {
     // Chart slices
     const locationSlices = useMemo(
         () =>
-            groupBy(filtered, (r) => r.region)
+            // Group by physical stock-room name (e.g. "Singapore SKY
+            // L6 IT Stockroom"). The donut and the existing
+            // stock_room slicer share the same filter dimension.
+            groupBy(filtered, (r) => r.stock_room ?? 'Unknown')
                 .slice(0, 8)
                 .map((g) => ({ name: g.key, value: g.count })),
         [filtered],
@@ -167,6 +176,21 @@ export function InStockAssetsDashboard() {
         for (const r of filtered) counts[inferDeviceType(r.model_name)] += 1;
         return (Object.entries(counts) as [string, number][]).map(([name, value]) => ({ name, value }));
     }, [filtered]);
+
+    // Donut click / legend toggle helpers — both feed the same filter
+    // state so slice click and legend click stay in sync.
+    const toggleFilter = (param: string, name: string) => {
+        const cur = (filters[param] as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, [param]: next });
+        setPage({ skip: 0, limit: PAGE_SIZE });
+    };
+    // Donut/legend selection state — these read from the same filter
+    // params the panel slicers and `filtered` predicate use, so the
+    // two stay in sync.
+    const selectedStockRooms = (filters.stock_room as string[]) ?? [];
+    const selectedCategories = (filters.model_category as string[]) ?? [];
+    const selectedDeviceTypes = (filters.device_type as string[]) ?? [];
 
     // Table page
     const pageRows = useMemo(
@@ -251,30 +275,45 @@ export function InStockAssetsDashboard() {
                 clientSideTooltip={t('filters.clientSideTooltip')}
             />
 
-            {/* KPI + donut row */}
-            <div className="grid grid-cols-6 gap-3 shrink-0">
+            {/* KPI row — three big-number tiles. */}
+            <div className="grid grid-cols-3 gap-3 shrink-0">
                 <KpiCard label={t('kpis.inStock')} value={kpis.count} icon={PackageCheck} />
                 <KpiCard label={t('pages.totalResidual')} value={kpis.residual} icon={DollarSign} />
                 <KpiCard label={t('pages.avgAge')} value={kpis.avgAge} icon={Calendar} />
+            </div>
+
+            {/* Donut row — three interactive donuts on their own line so
+                the slices and legends have room to breathe (used to be
+                squeezed into a 6-col row with the KPI tiles). */}
+            <div className="grid grid-cols-3 gap-3 shrink-0">
                 <DonutCard
                     title={t('charts.inStockLocation')}
                     data={locationSlices}
                     palette={DONUT_PALETTE}
-                    height={150}
+                    height={220}
+                    onSliceClick={(s) => toggleFilter('stock_room', s.name)}
+                    selectedSlices={selectedStockRooms}
+                    onLegendToggle={(name) => toggleFilter('stock_room', name)}
                     emptyText={loading ? t('empty.loading') : t('empty.noData')}
                 />
                 <DonutCard
                     title={t('charts.byCategory')}
                     data={categorySlices}
                     palette={DONUT_PALETTE}
-                    height={150}
+                    height={220}
+                    onSliceClick={(s) => toggleFilter('model_category', s.name)}
+                    selectedSlices={selectedCategories}
+                    onLegendToggle={(name) => toggleFilter('model_category', name)}
                     emptyText={loading ? t('empty.loading') : t('empty.noData')}
                 />
                 <DonutCard
                     title={t('charts.deviceType')}
                     data={deviceTypeSlices}
                     palette={DONUT_PALETTE}
-                    height={150}
+                    height={220}
+                    onSliceClick={(s) => toggleFilter('device_type', s.name)}
+                    selectedSlices={selectedDeviceTypes}
+                    onLegendToggle={(name) => toggleFilter('device_type', name)}
                     emptyText={loading ? t('empty.loading') : t('empty.noData')}
                 />
             </div>
