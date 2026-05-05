@@ -376,7 +376,7 @@ export function OhlaOverviewDashboard() {
                     />
                     <KpiCard
                         label={t('kpis.tier0Supported')}
-                        value={pct(kpis.tier0Supported)}
+                        value={fmtNum(kpis.tier0Supported)}
                         icon={ShieldCheck}
                     />
                     <KpiCard

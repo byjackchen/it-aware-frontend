@@ -75,7 +75,10 @@ export interface OhlaKpis {
     // Quality / coverage
     faqMatchRate: number       // 0..1, of queries with shown_faqs
     overallMatchRate: number   // 0..1, broader match (faq OR ticket OR non-empty response)
-    tier0Supported: number     // 0..1, queries with is_helpful true OR helpful_score >= 1
+    tier0Supported: number     // COUNT of queries self-served by the bot
+                               // (is_helpful = true OR helpful_score >= 1).
+                               // Matches PBIX "Tier 0 Supported v2" which is
+                               // a count — not a ratio.
     avgSurveyRate: number | null // mean helpful_score (−1..+1), null if no scores
 
     // Flow
@@ -156,7 +159,7 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
 
     const faqMatchRate = queryCount > 0 ? faqMatch / queryCount : 0
     const overallMatchRate = queryCount > 0 ? overallMatch / queryCount : 0
-    const tier0Supported = queryCount > 0 ? tier0 / queryCount : 0
+    const tier0Supported = tier0 // PBIX-parity: report the raw count, not a ratio
     const avgSurveyRate = helpfulN > 0 ? helpfulSum / helpfulN : null
     const autoVsAskRatio = queryCount > 0 ? clickCount / queryCount : null
 
