@@ -515,11 +515,6 @@
             }
         }
     },
-    "Chatbot": {
-        "title": "Ohla IT-Aware Assistant",
-        "placeholder": "How can I help you today?",
-        "inputPlaceholder": "Type a message..."
-    },
     "Dashboard": {
         "title": "Data Overview",
         "subtitle": "Live high-level metrics across all data object resources.",
