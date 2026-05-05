@@ -509,11 +509,6 @@
             }
         }
     },
-    "Chatbot": {
-        "title": "Ohla IT-Aware 助手",
-        "placeholder": "今天我能为您做什么？",
-        "inputPlaceholder": "输入消息..."
-    },
     "Dashboard": {
         "title": "数据概览",
         "subtitle": "跨所有数据对象资源的实时汇总指标。",
