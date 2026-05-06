@@ -1,20 +1,17 @@
 /**
  * Server-side API client for the iOA scan domain (Networks module).
  *
- * Server-rendered functions (`listIoaScans`, `getIoaScan`,
- * `getLatestIoaScanForWorker`) call the backend directly via fetchApi —
- * matches the lib/api/objects.ts convention.
- *
- * The mutation `triggerIoaScan()` is intended for client components and
- * goes through the Next.js proxy at /api/networks/ioa_scans/scan/{oid}.
+ * These functions call the backend directly via fetchApi (uses
+ * `next/headers` cookies) — matches the lib/api/objects.ts convention.
+ * They are server-only; importing this module from a client component
+ * pulls cookies()/redirect() into the client bundle and Turbopack fails
+ * the build. The trigger mutation is inlined inside ScanTriggerButton.tsx.
  */
 import { fetchApi } from '@/lib/api/core';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import type { IoaScanList, IoaScanRead } from '@/lib/types/networks/ioa_scans';
 
 const IOA_SCANS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/networks/ioa_scans`;
-
-// ── Server-side reads (RSC) ──────────────────────────────────────────
 
 export async function listIoaScans(
     params: { worker_oid?: string; page?: number; limit?: number } = {}
@@ -42,23 +39,4 @@ export async function getLatestIoaScanForWorker(
         if ((e as { status?: number })?.status === 404) return null;
         throw e;
     }
-}
-
-// ── Client-side mutation (browser → /api proxy → backend) ────────────
-
-export async function triggerIoaScan(workerOid: string): Promise<IoaScanRead> {
-    const res = await fetch(
-        `/api/networks/ioa_scans/scan/${encodeURIComponent(workerOid)}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}),
-            credentials: 'include',
-        },
-    );
-    if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        throw new Error(`scan failed: ${res.status} ${body}`);
-    }
-    return res.json();
 }
