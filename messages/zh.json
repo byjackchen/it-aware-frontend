@@ -915,7 +915,9 @@
             "jobInfo": "岗位信息",
             "profileInfo": "画像信息",
             "activitiesTimeline": "活动时间线",
-            "graphLinks": "图关系"
+            "graphLinks": "图关系",
+            "experimental": "实验性功能",
+            "experimentalHint": "画像和聚类分析仍在开发中，点击展开。"
         },
         "fields": {
             "workerType": "员工类型",
@@ -1035,6 +1037,8 @@
         "settings": "设置",
         "articles": "文章",
         "hardwares": "硬件",
+        "networks": "网络",
+        "ioaScans": "iOA 扫描",
         "activities": "活动",
         "incidents": "事件",
         "requests": "请求",

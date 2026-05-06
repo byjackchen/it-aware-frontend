@@ -19,6 +19,7 @@ const RESOURCE_PATHS = {
     roles: '/auth/config/roles',
     agents: '/objects/agents',
     tickets: '/objects/agentops/tickets',
+    'ioa-scan-workers': '/objects/networks/ioa_scans/workers-with-latest',
 } as const;
 
 type ResourceName = keyof typeof RESOURCE_PATHS;

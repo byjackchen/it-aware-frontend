@@ -923,7 +923,9 @@
             "jobInfo": "Job Info",
             "profileInfo": "Profile Info",
             "activitiesTimeline": "Activities Timeline",
-            "graphLinks": "Graph Links"
+            "graphLinks": "Graph Links",
+            "experimental": "Experimental Features",
+            "experimentalHint": "Profile and cluster analysis are still in development. Click to expand."
         },
         "fields": {
             "workerType": "Worker Type",
@@ -1043,6 +1045,8 @@
         "settings": "Settings",
         "articles": "Articles",
         "hardwares": "Hardwares",
+        "networks": "Networks",
+        "ioaScans": "iOA Scans",
         "activities": "Activities",
         "incidents": "Incidents",
         "requests": "Requests",

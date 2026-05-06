@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarClock, Network, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
+import { CalendarClock, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { usePermissions } from '@/lib/contexts/user-context';
@@ -13,6 +13,7 @@ import type { GlobalEdge, Location, Organization, Worker, WorkerProfile, WorkerC
 import { PersonaOrgWorkerSidebar } from './PersonaOrgWorkerSidebar';
 import { PersonaActivitiesTimeline } from './PersonaActivitiesTimeline';
 import { ClusterProfileCard } from './ClusterProfileCard';
+import { PersonaIoaScanWidget } from '@/components/ioa_scan/PersonaIoaScanWidget';
 
 interface PersonaProfilePageProps {
     currentWorker: Worker;
@@ -85,31 +86,9 @@ export function PersonaProfilePage({
                                     <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                                         {currentWorker.stable_id}
                                     </p>
-                                    {workerCluster && (
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                workerCluster.cluster_label === -1
-                                                    ? (isLight ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-slate-700 text-slate-400 border border-slate-600')
-                                                    : (isLight ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30')
-                                            }`}>
-                                                <Network className="w-3 h-3 mr-1" />
-                                                {workerCluster.cluster_label === -1
-                                                    ? t('cluster.noise')
-                                                    : (workerCluster.cluster_name || `Cluster ${workerCluster.cluster_label}`)}
-                                            </span>
-                                            {workerCluster.cluster_label !== -1 && (
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                    workerCluster.cluster_probability >= 0.8
-                                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                                        : workerCluster.cluster_probability >= 0.5
-                                                            ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                                                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                                                }`}>
-                                                    {t('cluster.probability')}: {(workerCluster.cluster_probability * 100).toFixed(0)}%
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
+                                    {/* Cluster chip removed from the header — cluster analysis
+                                        lives in the collapsed Experimental Features section
+                                        at the bottom of the page. */}
                                 </div>
                             </div>
                         </section>
@@ -211,106 +190,9 @@ export function PersonaProfilePage({
                             </section>
                         </div>
 
-                        {/* Profile Info - full width */}
                         <section className={cardClass}>
-                            <div className="flex items-center gap-2 mb-4">
-                                <ShieldCheck className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-slate-300'}`} />
-                                <h2 className={sectionTitleClass}>{t('sections.profileInfo')}</h2>
-                            </div>
-                            {!workerProfile ? (
-                                <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{t('profile.empty')}</p>
-                            ) : (
-                                <div className="space-y-5">
-                                    {/* Summary */}
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <div className={labelClass}>{t('profile.summary')}</div>
-                                            {workerProfile.summary_updated_at && (
-                                                <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                    {formatDateTime(workerProfile.summary_updated_at, timezone)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className={`${valueClass} whitespace-pre-wrap`}>{workerProfile.summary || t('status.notSet')}</div>
-                                    </div>
-
-                                    {/* Topics */}
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <div className={labelClass}>{t('profile.topics')}</div>
-                                            {workerProfile.topics_updated_at && (
-                                                <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                    {formatDateTime(workerProfile.topics_updated_at, timezone)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {workerProfile.topics && workerProfile.topics.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2 mt-1">
-                                                {workerProfile.topics.map((item, i) => (
-                                                    <div
-                                                        key={`${item.topic}-${i}`}
-                                                        className={`p-2.5 rounded-lg border min-w-[200px] max-w-[320px] ${isLight ? 'border-slate-100 bg-slate-50' : 'border-white/5 bg-white/5'}`}
-                                                    >
-                                                        <div className="flex items-center gap-2 mb-0.5">
-                                                            <span className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.topic}</span>
-                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${item.status === 'resolved'
-                                                                ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                                                : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                                                            }`}>
-                                                                {item.status}
-                                                            </span>
-                                                        </div>
-                                                        <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{item.need}</p>
-                                                        {item.notes && (
-                                                            <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{item.notes}</p>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className={valueClass}>{t('status.notSet')}</div>
-                                        )}
-                                    </div>
-
-                                    {/* Tags */}
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <div className={labelClass}>{t('profile.tags')}</div>
-                                            {workerProfile.tags_updated_at && (
-                                                <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                    {formatDateTime(workerProfile.tags_updated_at, timezone)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {workerProfile.tags && workerProfile.tags.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2 mt-1">
-                                                {workerProfile.tags.map((tag, i) => (
-                                                    <span
-                                                        key={`${tag}-${i}`}
-                                                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${isLight ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-blue-500/10 text-blue-300 border border-blue-500/20'}`}
-                                                    >
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className={valueClass}>{t('status.notSet')}</div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                            <PersonaIoaScanWidget workerOid={currentWorker.oid} />
                         </section>
-
-                        <ClusterProfileCard
-                            currentWorker={currentWorker}
-                            workerCluster={workerCluster}
-                            clusterSummary={clusterSummary}
-                            isLight={isLight}
-                            cardClass={cardClass}
-                            sectionTitleClass={sectionTitleClass}
-                            labelClass={labelClass}
-                            valueClass={valueClass}
-                        />
 
                         <section className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
@@ -335,6 +217,132 @@ export function PersonaProfilePage({
                                 selectedFilter={edgeFilter}
                             />
                         </section>
+
+                        {/* ── Experimental Features ────────────────────────────
+                            Profile Info (LLM-derived summary/topics/tags) and
+                            Cluster Info are still in development; collapsed by
+                            default to keep the main page focused. */}
+                        <details className={cardClass}>
+                            <summary className="cursor-pointer list-none flex items-center gap-2 select-none">
+                                <span
+                                    className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+                                        isLight
+                                            ? 'border-amber-300 bg-amber-50 text-amber-700'
+                                            : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                                    }`}
+                                >
+                                    Beta
+                                </span>
+                                <h2 className={sectionTitleClass}>{t('sections.experimental')}</h2>
+                                <span className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'} ml-auto`}>
+                                    {t('sections.experimentalHint')}
+                                </span>
+                            </summary>
+
+                            <div className="mt-4 space-y-6">
+                                {/* Profile Info */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <ShieldCheck className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-slate-300'}`} />
+                                        <h3 className={sectionTitleClass}>{t('sections.profileInfo')}</h3>
+                                    </div>
+                                    {!workerProfile ? (
+                                        <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{t('profile.empty')}</p>
+                                    ) : (
+                                        <div className="space-y-5">
+                                            {/* Summary */}
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <div className={labelClass}>{t('profile.summary')}</div>
+                                                    {workerProfile.summary_updated_at && (
+                                                        <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                                            {formatDateTime(workerProfile.summary_updated_at, timezone)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className={`${valueClass} whitespace-pre-wrap`}>{workerProfile.summary || t('status.notSet')}</div>
+                                            </div>
+
+                                            {/* Topics */}
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <div className={labelClass}>{t('profile.topics')}</div>
+                                                    {workerProfile.topics_updated_at && (
+                                                        <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                                            {formatDateTime(workerProfile.topics_updated_at, timezone)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {workerProfile.topics && workerProfile.topics.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 mt-1">
+                                                        {workerProfile.topics.map((item, i) => (
+                                                            <div
+                                                                key={`${item.topic}-${i}`}
+                                                                className={`p-2.5 rounded-lg border min-w-[200px] max-w-[320px] ${isLight ? 'border-slate-100 bg-slate-50' : 'border-white/5 bg-white/5'}`}
+                                                            >
+                                                                <div className="flex items-center gap-2 mb-0.5">
+                                                                    <span className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.topic}</span>
+                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${item.status === 'resolved'
+                                                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
+                                                                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                                                                    }`}>
+                                                                        {item.status}
+                                                                    </span>
+                                                                </div>
+                                                                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{item.need}</p>
+                                                                {item.notes && (
+                                                                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{item.notes}</p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className={valueClass}>{t('status.notSet')}</div>
+                                                )}
+                                            </div>
+
+                                            {/* Tags */}
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <div className={labelClass}>{t('profile.tags')}</div>
+                                                    {workerProfile.tags_updated_at && (
+                                                        <span className={`text-[11px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                                            {formatDateTime(workerProfile.tags_updated_at, timezone)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {workerProfile.tags && workerProfile.tags.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 mt-1">
+                                                        {workerProfile.tags.map((tag, i) => (
+                                                            <span
+                                                                key={`${tag}-${i}`}
+                                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${isLight ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-blue-500/10 text-blue-300 border border-blue-500/20'}`}
+                                                            >
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className={valueClass}>{t('status.notSet')}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Cluster Info — uses its own internal card styling */}
+                                <ClusterProfileCard
+                                    currentWorker={currentWorker}
+                                    workerCluster={workerCluster}
+                                    clusterSummary={clusterSummary}
+                                    isLight={isLight}
+                                    cardClass={cardClass}
+                                    sectionTitleClass={sectionTitleClass}
+                                    labelClass={labelClass}
+                                    valueClass={valueClass}
+                                />
+                            </div>
+                        </details>
                     </div>
                 </main>
             </div>
