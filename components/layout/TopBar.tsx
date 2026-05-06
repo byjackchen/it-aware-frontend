@@ -83,6 +83,14 @@ export function TopBar() {
       ]),
     },
     {
+      href: '/persona',
+      label: t('persona'),
+      icon: UserCircle,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_PERSONA
+      ]),
+    },
+    {
       href: '/operation-teams',
       label: t('operationTeams'),
       icon: Wrench,
@@ -112,7 +120,6 @@ export function TopBar() {
       icon: Layers,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
-        PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
       ]),
@@ -131,14 +138,6 @@ export function TopBar() {
           icon: BookOpen,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-          ]),
-        },
-        {
-          href: '/persona',
-          label: t('persona'),
-          icon: UserCircle,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_PERSONA
           ]),
         },
         {

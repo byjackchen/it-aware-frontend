@@ -55,7 +55,12 @@ export function PersonaIoaScanWidget({ workerOid }: { workerOid: string }) {
         <section className="my-6">
             <div className="flex items-center justify-between mb-2">
                 <h2 className="text-lg font-semibold">iOA Snapshot</h2>
-                <ScanTriggerButton workerOid={workerOid} />
+                {/* Persona-page click should not navigate away — apply the
+                    fresh scan into our own state so the card refreshes in place. */}
+                <ScanTriggerButton
+                    workerOid={workerOid}
+                    onSuccess={(scan) => setState({ kind: 'loaded', scan })}
+                />
             </div>
 
             {state.kind === 'loading' && (

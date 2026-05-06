@@ -1,6 +1,10 @@
 /**
- * "Run iOA scan now" button — calls the trigger endpoint and routes
- * to the new scan's detail page on success.
+ * "Run iOA scan now" button.
+ *
+ * Default behavior: navigate to the new scan's detail page on success.
+ * Pass `onSuccess` to override — used by PersonaIoaScanWidget so a
+ * Persona-page click refreshes the inline card in place instead of
+ * navigating the user away from the worker they were looking at.
  */
 'use client';
 
@@ -8,10 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { IoaScanRead } from '@/lib/types/networks/ioa_scans';
 
-async function triggerIoaScan(workerOid: string): Promise<IoaScanRead> {
-    // Inlined here (not imported from lib/api/networks/ioa_scans) so this
-    // client component's bundle never touches lib/api/core.ts, which uses
-    // next/headers and blows up Turbopack's client build.
+async function postScan(workerOid: string): Promise<IoaScanRead> {
     const res = await fetch(
         `/api/networks/ioa_scans/scan/${encodeURIComponent(workerOid)}`,
         {
@@ -28,7 +29,13 @@ async function triggerIoaScan(workerOid: string): Promise<IoaScanRead> {
     return res.json();
 }
 
-export function ScanTriggerButton({ workerOid }: { workerOid: string }) {
+export function ScanTriggerButton({
+    workerOid,
+    onSuccess,
+}: {
+    workerOid: string;
+    onSuccess?: (scan: IoaScanRead) => void | Promise<void>;
+}) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,9 +44,13 @@ export function ScanTriggerButton({ workerOid }: { workerOid: string }) {
         setLoading(true);
         setError(null);
         try {
-            const scan = await triggerIoaScan(workerOid);
-            router.push(`/data/networks/ioa-scans/${scan.oid}`);
-            router.refresh();
+            const scan = await postScan(workerOid);
+            if (onSuccess) {
+                await onSuccess(scan);
+            } else {
+                router.push(`/data/networks/ioa-scans/${scan.oid}`);
+                router.refresh();
+            }
         } catch (e) {
             setError(e instanceof Error ? e.message : 'scan failed');
         } finally {
