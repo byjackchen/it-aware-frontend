@@ -5,6 +5,10 @@
  * history) joined with their latest scan summary. Each row links into
  * the worker's persona page where the user can drill into details or
  * trigger a fresh scan.
+ *
+ * UX: only fields a non-technical operator needs to glance at — name,
+ * last-scan timestamp, and a few high-signal metrics. Internal
+ * identifiers and dev-y fields stay on the detail page.
  */
 
 import Link from 'next/link';
@@ -21,6 +25,14 @@ function fmtPct(n: number | null | undefined): string {
     if (n === null || n === undefined) return '—';
     return `${(n * 100).toFixed(1)}%`;
 }
+function fmtRelative(iso: string): string {
+    const then = new Date(iso).getTime();
+    const diffSec = Math.max(0, (Date.now() - then) / 1000);
+    if (diffSec < 60) return `${Math.round(diffSec)}s ago`;
+    if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
+    if (diffSec < 86400) return `${Math.round(diffSec / 3600)}h ago`;
+    return `${Math.round(diffSec / 86400)}d ago`;
+}
 
 export default async function IoaScansListPage() {
     const data = await listWorkersWithLatestScan({ limit: 200 });
@@ -30,16 +42,13 @@ export default async function IoaScansListPage() {
         <div className="p-6">
             <header className="mb-4">
                 <h1 className="text-2xl font-semibold mb-1">iOA Scans</h1>
-                <p className="text-sm text-slate-500">
-                    Per-worker iOA telemetry summaries — Network KPI (1h),
-                    Trend (3d), and Device snapshots. Refreshed daily by the
-                    <code className="mx-1 px-1 rounded bg-slate-100 dark:bg-slate-800">
-                        ioa_scan_periodic
-                    </code>
-                    DAG (retention 7 days), or on demand from any row below.
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Per-worker iOA telemetry summaries. Scans run daily and stay
+                    available for 7 days. Click a worker to drill in or run an
+                    on-demand scan.
                 </p>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                    {data.total} active workers · {withScan} with a scan · {data.total - withScan} unscanned
+                    {data.total} workers · {withScan} with a recent scan
                 </div>
             </header>
 
@@ -48,13 +57,11 @@ export default async function IoaScansListPage() {
                     <thead className="bg-slate-50 dark:bg-slate-800/50">
                         <tr className="text-left">
                             <th className="py-2 px-3 font-medium">Worker</th>
-                            <th className="py-2 px-3 font-medium">Stable ID</th>
-                            <th className="py-2 px-3 font-medium">Latest scan</th>
-                            <th className="py-2 px-3 font-medium text-right">Records (1h)</th>
-                            <th className="py-2 px-3 font-medium text-right">Connections</th>
+                            <th className="py-2 px-3 font-medium">Last scan</th>
+                            <th className="py-2 px-3 font-medium text-right">Connections (1h)</th>
                             <th className="py-2 px-3 font-medium text-right">Failure rate</th>
                             <th className="py-2 px-3 font-medium text-right">Devices</th>
-                            <th className="py-2 px-3 font-medium">Action</th>
+                            <th className="py-2 px-3 font-medium"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,26 +80,18 @@ export default async function IoaScansListPage() {
                                             {row.worker_fullname}
                                         </Link>
                                     </td>
-                                    <td className="py-2 px-3 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                        {row.worker_stable_id ?? '—'}
-                                    </td>
-                                    <td className="py-2 px-3">
+                                    <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
                                         {scan ? (
                                             <Link
-                                                className="text-slate-700 dark:text-slate-200 hover:underline"
+                                                className="hover:underline"
                                                 href={`/data/networks/ioa-scans/${scan.oid}`}
+                                                title={new Date(scan.scanned_at).toLocaleString()}
                                             >
-                                                {new Date(scan.scanned_at).toLocaleString()}
-                                                <span className="ml-2 inline-block text-[10px] uppercase tracking-wide text-slate-500">
-                                                    {scan.trigger_source}
-                                                </span>
+                                                {fmtRelative(scan.scanned_at)}
                                             </Link>
                                         ) : (
                                             <span className="text-slate-400 italic">never</span>
                                         )}
-                                    </td>
-                                    <td className="py-2 px-3 text-right font-mono">
-                                        {fmtNum(scan?.kpi_total_records)}
                                     </td>
                                     <td className="py-2 px-3 text-right font-mono">
                                         {fmtNum(scan?.kpi_total_connections)}
