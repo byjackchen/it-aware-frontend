@@ -31,8 +31,6 @@ import {
     MessagesSquare,
     TrendingUp,
     ShieldCheck,
-    FileCheck2,
-    Percent,
     Stars,
     ListChecks,
     Headphones,
@@ -44,7 +42,6 @@ import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
 import { useOhla } from '@/lib/hooks/useOhla'
 import {
-    computeAskKpis,
     computeKpis,
     countBy,
     filterByDateRange,
@@ -162,9 +159,6 @@ export function OhlaOverviewDashboard() {
     )
 
     const kpis = useMemo(() => computeKpis(filtered, new Date()), [filtered])
-    // PBIX-parity Match Rates — same DAX as User Ask Analysis page so the
-    // two pages always agree.
-    const askKpis = useMemo(() => computeAskKpis(filtered), [filtered])
 
     const behaviourSlices = useMemo(
         () => topN(countBy(behaviourBase, (r) => r.behaviour), 4),
@@ -364,8 +358,9 @@ export function OhlaOverviewDashboard() {
                     </div>
                 )}
 
-                {/* Row 1 — 5 headline KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                {/* Row 1 — 3 headline KPIs (FAQ / Overall Match Rate moved
+                 *  to User Ask Analysis page per PBIX layout). */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalInteractions')}
                         value={fmtNum(kpis.totalInteractions)}
@@ -380,16 +375,6 @@ export function OhlaOverviewDashboard() {
                         label={t('kpis.tier0Supported')}
                         value={fmtNum(kpis.tier0Supported)}
                         icon={ShieldCheck}
-                    />
-                    <KpiCard
-                        label={t('kpis.faqMatchRate')}
-                        value={pct(askKpis.faqMatchRate)}
-                        icon={FileCheck2}
-                    />
-                    <KpiCard
-                        label={t('kpis.overallMatchRate')}
-                        value={pct(askKpis.overallMatchRate)}
-                        icon={Percent}
                     />
                 </div>
 

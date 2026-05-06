@@ -182,42 +182,36 @@ export function UserAskAnalysisDashboard() {
                     </div>
                 )}
 
-                {/* Row 1 — big User Ask# tile + 2 mini rates + Behaviour donut */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div className="md:col-span-1">
-                        <KpiCard
-                            label={t('userAsk.kpis.userAsk')}
-                            value={fmtNum(kpis.userAsk)}
-                            valueSize="xl"
-                            className="h-full"
-                        />
-                    </div>
-                    <div className={`md:col-span-1 rounded-xl border p-4 flex flex-col justify-center gap-4 ${mutedCardCls}`}>
-                        <div>
-                            <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>
-                                {t('userAsk.kpis.faqMatchRate')}
-                            </p>
-                            <p className={`text-3xl font-bold ${textMain}`}>
-                                {pct(kpis.faqMatchRate)}
-                            </p>
-                        </div>
-                        <div>
-                            <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>
-                                {t('userAsk.kpis.overallMatchRate')}
-                            </p>
-                            <p className={`text-3xl font-bold ${textMain}`}>
-                                {pct(kpis.overallMatchRate)}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="md:col-span-1">
-                        <DonutCard
-                            title={t('userAsk.charts.behaviourDistribution')}
-                            data={behaviourSlices}
-                            height={220}
-                            emptyText={t('common.noData')}
-                        />
-                    </div>
+                {/* Row 1 — User Ask# big tile, FAQ Match Rate card,
+                 *  Overall Match Rate card, Behaviour donut (4 cols).
+                 *  Match Rate cards are independent visuals per Jason's
+                 *  PBIX layout (they are not on the Overview page).
+                 */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={t('userAsk.kpis.userAsk')}
+                        value={fmtNum(kpis.userAsk)}
+                        valueSize="xl"
+                        className="h-full"
+                    />
+                    <KpiCard
+                        label={t('userAsk.kpis.faqMatchRate')}
+                        value={pct(kpis.faqMatchRate)}
+                        valueSize="xl"
+                        className="h-full"
+                    />
+                    <KpiCard
+                        label={t('userAsk.kpis.overallMatchRate')}
+                        value={pct(kpis.overallMatchRate)}
+                        valueSize="xl"
+                        className="h-full"
+                    />
+                    <DonutCard
+                        title={t('userAsk.charts.behaviourDistribution')}
+                        data={behaviourSlices}
+                        height={220}
+                        emptyText={t('common.noData')}
+                    />
                 </div>
 
                 {/* Row 2 — 4 category KPIs */}
