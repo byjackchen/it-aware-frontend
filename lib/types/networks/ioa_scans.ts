@@ -106,10 +106,3 @@ export type WorkerWithLatestScan = {
   worker_email: string | null;
   latest_scan: IoaScanRead | null;
 };
-
-export type WorkerWithLatestScanList = {
-  items: WorkerWithLatestScan[];
-  total: number;
-  page: number;
-  limit: number;
-};
