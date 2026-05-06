@@ -4,8 +4,11 @@
  */
 
 export type TrendBucket = {
-  ts: string; // ISO-8601 UTC
-  count: number;
+  ts: string;                       // ISO-8601 UTC
+  connections: number;              // network.metrics records that hour
+  failures: number;                 // statusCode != 200 within network.metrics
+  blocked: number;                  // client.errorPage records that hour
+  avg_latency_ms: number | null;    // mean connect time; null when no sample
 };
 
 export type DeviceMachine = {
@@ -67,7 +70,7 @@ export type IoaScanRead = {
 
   // Network KPI Trend (last 3 days)
   trend_window_hours: number;
-  trend_hourly_counts: TrendBucket[] | null;
+  trend_hourly_buckets: TrendBucket[] | null;
   trend_peak_hour_count: number | null;
   trend_peak_hour_ts: string | null;
   trend_busy_hours_avg: number | null;
