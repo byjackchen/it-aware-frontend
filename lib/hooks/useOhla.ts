@@ -46,7 +46,8 @@ interface ListEnvelope<T> {
 }
 
 const PAGE_SIZE = 1000
-const MAX_PAGES = 25 // hard cap to avoid infinite paging on bad data
+const MAX_PAGES = 200 // 200k-row safety ceiling — backend caps limit at 1000/page;
+                     // Jan-Apr 2026 has ~46k rows, so we need 46+ pages.
 
 const interactionCache = new Map<string, Interaction[]>()
 let workersPromise: Promise<Worker[]> | null = null

@@ -1,24 +1,37 @@
 /**
- * User Ask / Other Case classification helpers.
+ * User Ask / Other Case classification helpers — PBIX DAX parity.
  *
- * PBIX classifies each `action_type='query'` row into a bucket based on
- * the response templates surfaced by the bot. This module mirrors the
- * "Total FAQ Matched / Action Chain / KB / Interactions / Irrelevant"
- * DAX measures (the sub-measures feeding FAQ Match Rate and Overall
- * Match Rate) using the local `allResponseTemplates` on each row.
+ * Implements the `Behaviour` calculated column from the PBIX report
+ * (shared by Jason 2026-05-06):
  *
- * Bucket priority (first match wins):
- *   1. FaqResponseTemplate                                 → faqMatched
- *   2. ArticleResponseTemplate                             → kbMatched
- *   3. ActionChainCardTemplate, GuestWifiTemplate,
- *      TencentWifiTemplate, FunctionCallTicketTemplate     → actionChain
- *   4. AgentSupportConfirmTemplate                         → agentSupport (routed to Live Agent)
- *   5. Any other non-idle template                         → interaction
- *   6. No non-idle template (only AiIdleTemplate or empty) → irrelevant
+ *   SWITCH(TRUE(),
+ *     Action Chain = "Yes",                                       "Action Chain Matched"
+ *     Response contains "our live agent is on their way..." OR
+ *                       "正在联系我们的海外IT工程师为您提供协助",   "Triggered Tickets"
+ *     Flow States contains "faq_answer" OR
+ *     Response contains "Here's what I know regarding your query" OR
+ *                       "Fetch Guest WiFi" OR
+ *                       "Fetch Site Engineer Information",        "FAQ Matched"
+ *     Flow States contains "article_answer",                      "KB Matched"
+ *     Flow States contains "unmatched",                           "unmatched_anywhere"
+ *     Flow States contains "interrupted",                         "Interrupted"
+ *     User Action contains "chat",                                "Enter Chat Only"
+ *     [Irrelevant response-text patterns],                        "Irrelevant"
+ *     default,                                                    "Interaction"
+ *   )
  *
- * The User Ask Analysis donut collapses faqMatched + kbMatched into a
- * single "FAQ Matched" slice and agentSupport into "Interaction" per PBIX.
- * The 4 KPI cards split them back out.
+ * Backing data:
+ *   - `Response` → OhlaRow.responseText (the `response_text` column,
+ *     already a concatenation of rendered_text across the response
+ *     array).
+ *   - `Flow States` has no direct backing column locally. We proxy
+ *     `faq_answer` via FaqResponseTemplate, `article_answer` via
+ *     ArticleResponseTemplate. `unmatched` maps to ai_code in {OOS, NA}.
+ *     `interrupted` has no local proxy — that clause falls through.
+ *   - `Action Chain = "Yes"` → row's response templates include any
+ *     ActionChainCard / GuestWifi / TencentWifi / FunctionCallTicket
+ *     response template.
+ *   - `User Action` → OhlaRow.userAction (rec.request_action).
  */
 
 import type { OhlaRow } from './types'
@@ -27,12 +40,22 @@ export type AskCategory =
     | 'faqMatched'
     | 'actionChain'
     | 'kbMatched'
-    | 'other' // catch-all for Interaction + Irrelevant + AgentSupport
+    | 'other' // catch-all for Interaction / Irrelevant / Triggered / Interrupted / EnterChatOnly / unmatched
 
-export type AskBehaviour = 'faqMatched' | 'actionChainMatched' | 'interaction' | 'irrelevant'
+export type AskBehaviour =
+    | 'faqMatched'
+    | 'actionChainMatched'
+    | 'triggeredTickets'
+    | 'kbMatched'
+    | 'unmatchedAnywhere'
+    | 'interrupted'
+    | 'enterChatOnly'
+    | 'interaction'
+    | 'irrelevant'
 
 export type OtherCategory = 'interaction' | 'irrelevant' | 'unmatched_anywhere'
 
+// --- Response templates per bucket ---
 const FAQ_TEMPLATES = new Set(['FaqResponseTemplate'])
 const KB_TEMPLATES = new Set(['ArticleResponseTemplate'])
 const ACTION_CHAIN_TEMPLATES = new Set([
@@ -50,45 +73,120 @@ function hasTemplate(row: OhlaRow, set: Set<string>): boolean {
     return false
 }
 
-function hasAnyNonIdle(row: OhlaRow): boolean {
-    return row.primaryResponseTemplate !== null
-}
+// --- Irrelevant response-text patterns (from DAX) ---
+const IRRELEVANT_PATTERNS = [
+    'failed to',
+    'agent support confirmed',
+    '【FAQ 菜单/共8条】',
+    'ActionChain is Cencelled',
+    'ActionChain is Cancelled',
+    '任务链已取消',
+    'Add a Notification Schedule',
+    'Could you please clarify',
+    'Could you please provide more details',
+    'Error at index',
+    'Sorry',
+    'Thank you',
+    "That's encouraging",
+    'There is no active ActionChain',
+    'Unrecognized command',
+    '为了更好的帮助您',
+    '已更新语言设置',
+    '提交机器人反馈',
+    '提交照片工单',
+    'please specify your purpose',
+    '没有正在运行的任务链',
+    '谢谢鼓励',
+    '问卷',
+]
 
-/** Fine-grained 4-bucket classification (User Ask Analysis KPI cards). */
-export function classifyAsk(row: OhlaRow): AskCategory {
-    if (hasTemplate(row, FAQ_TEMPLATES)) return 'faqMatched'
-    if (hasTemplate(row, KB_TEMPLATES)) return 'kbMatched'
-    if (hasTemplate(row, ACTION_CHAIN_TEMPLATES)) return 'actionChain'
-    return 'other'
-}
-
-/** Donut 4-bucket classification (User Ask Analysis Behaviour Distribution). */
-export function classifyAskBehaviour(row: OhlaRow): AskBehaviour {
-    if (hasTemplate(row, FAQ_TEMPLATES) || hasTemplate(row, KB_TEMPLATES)) return 'faqMatched'
-    if (hasTemplate(row, ACTION_CHAIN_TEMPLATES)) return 'actionChainMatched'
-    if (hasAnyNonIdle(row)) return 'interaction'
-    return 'irrelevant'
+function hasAny(haystack: string, needles: string[]): boolean {
+    for (const n of needles) if (haystack.includes(n)) return true
+    return false
 }
 
 /**
- * Other Case Analysis 3-bucket donut.
- *
- * Per PBIX screenshots: Interaction 57.7% / Irrelevant 37.68% / unmatched_anywhere 4.62%.
- * Heuristic (pending exact DAX from Jason):
- *   - unmatched_anywhere: ai_code in {OOS, NA} — "out of scope" / "not available"
- *   - irrelevant: no non-idle response templates
- *   - interaction: everything else in the "other" set
- *
- * Only applies to rows where classifyAsk == 'other'.
+ * PBIX `Behaviour` calculated column, ported to TS. Evaluates each
+ * row through the PBIX SWITCH clauses in order and returns the first
+ * match.
+ */
+export function classifyAskBehaviour(row: OhlaRow): AskBehaviour {
+    const response = row.responseText ?? ''
+    const lowerResponse = response.toLowerCase()
+    const userAction = row.userAction ?? ''
+
+    // 1. Action Chain Matched
+    if (hasTemplate(row, ACTION_CHAIN_TEMPLATES)) return 'actionChainMatched'
+
+    // 2. Triggered Tickets — live-agent hand-off strings
+    if (
+        lowerResponse.includes('our live agent is on their way to help you') ||
+        response.includes('正在联系我们的海外IT工程师为您提供协助')
+    ) {
+        return 'triggeredTickets'
+    }
+
+    // 3. FAQ Matched — Flow States ~ "faq_answer" OR several response hints
+    if (
+        hasTemplate(row, FAQ_TEMPLATES) ||
+        response.includes("Here's what I know regarding your query : ") ||
+        response.includes('Fetch Guest WiFi') ||
+        response.includes('Fetch Site Engineer Information')
+    ) {
+        return 'faqMatched'
+    }
+
+    // 4. KB Matched — Flow States ~ "article_answer"
+    if (hasTemplate(row, KB_TEMPLATES)) return 'kbMatched'
+
+    // 5. unmatched_anywhere — Flow States ~ "unmatched"
+    //    (local proxy: ai_code in {OOS, NA} since we have no flow_states)
+    if (row.userActionCorrected === 'OOS' || row.userActionCorrected === 'NA') {
+        return 'unmatchedAnywhere'
+    }
+
+    // 6. Interrupted — Flow States ~ "interrupted"
+    //    (no local proxy — falls through)
+
+    // 7. Enter Chat Only
+    if (userAction.includes('chat')) return 'enterChatOnly'
+
+    // 8. Irrelevant
+    if (!response || hasAny(response, IRRELEVANT_PATTERNS)) {
+        return 'irrelevant'
+    }
+
+    // default — Interaction
+    return 'interaction'
+}
+
+/**
+ * Fine-grained 4-bucket classification for the User Ask Analysis KPI
+ * cards (FAQ Matched# / Action Chain# / KB Matched# / Other#).
+ */
+export function classifyAsk(row: OhlaRow): AskCategory {
+    const b = classifyAskBehaviour(row)
+    if (b === 'faqMatched') return 'faqMatched'
+    if (b === 'kbMatched') return 'kbMatched'
+    if (b === 'actionChainMatched') return 'actionChain'
+    return 'other'
+}
+
+/**
+ * Other Case Analysis 3-bucket donut. Applies only to rows where
+ * classifyAsk == 'other'. Matches PBIX Other# 3 slices:
+ * Interaction / Irrelevant / unmatched_anywhere.
  */
 export function classifyOther(row: OhlaRow): OtherCategory {
-    const code = row.userActionCorrected
-    if (code === 'OOS' || code === 'NA') return 'unmatched_anywhere'
-    if (!hasAnyNonIdle(row)) return 'irrelevant'
+    const b = classifyAskBehaviour(row)
+    if (b === 'unmatchedAnywhere') return 'unmatched_anywhere'
+    if (b === 'irrelevant') return 'irrelevant'
     return 'interaction'
 }
 
 /** Does this query row qualify as an Agent Support (Live Agent) hand-off? */
 export function isAgentSupport(row: OhlaRow): boolean {
-    return row.behaviour === 'query' && hasTemplate(row, AGENT_SUPPORT_TEMPLATES)
+    if (row.behaviour !== 'query') return false
+    if (classifyAskBehaviour(row) === 'triggeredTickets') return true
+    return hasTemplate(row, AGENT_SUPPORT_TEMPLATES)
 }
