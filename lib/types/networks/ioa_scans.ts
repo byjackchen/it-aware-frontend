@@ -97,3 +97,19 @@ export type IoaScanList = {
   items: IoaScanRead[];
   total: number;
 };
+
+/** Master-list row: every active worker, joined with their latest scan (or null). */
+export type WorkerWithLatestScan = {
+  worker_oid: string;
+  worker_fullname: string;
+  worker_stable_id: string | null;
+  worker_email: string | null;
+  latest_scan: IoaScanRead | null;
+};
+
+export type WorkerWithLatestScanList = {
+  items: WorkerWithLatestScan[];
+  total: number;
+  page: number;
+  limit: number;
+};

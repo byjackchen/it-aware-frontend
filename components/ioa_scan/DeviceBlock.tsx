@@ -19,7 +19,7 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
             </div>
 
             {machines.length === 0 ? (
-                <div className="text-sm text-slate-500 border rounded p-3">
+                <div className="text-sm text-slate-500 border border-slate-200 dark:border-slate-700 rounded p-3">
                     No heartbeats found in the window.
                 </div>
             ) : (
@@ -40,7 +40,11 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
 function DeviceCard({ machine, primary }: { machine: DeviceMachine; primary: boolean }) {
     return (
         <article
-            className={`border rounded p-3 ${primary ? 'border-blue-300 bg-blue-50/40' : ''}`}
+            className={`border rounded p-3 ${
+                primary
+                    ? 'border-blue-300 dark:border-blue-500/50 bg-blue-50/40 dark:bg-blue-900/20'
+                    : 'border-slate-200 dark:border-slate-700'
+            }`}
         >
             <header className="flex items-baseline justify-between mb-2">
                 <div className="font-mono text-sm">

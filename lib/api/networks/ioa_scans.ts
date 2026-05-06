@@ -9,7 +9,11 @@
  */
 import { fetchApi } from '@/lib/api/core';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import type { IoaScanList, IoaScanRead } from '@/lib/types/networks/ioa_scans';
+import type {
+    IoaScanList,
+    IoaScanRead,
+    WorkerWithLatestScanList,
+} from '@/lib/types/networks/ioa_scans';
 
 const IOA_SCANS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects/networks/ioa_scans`;
 
@@ -26,6 +30,16 @@ export async function listIoaScans(
 
 export async function getIoaScan(oid: string): Promise<IoaScanRead> {
     return fetchApi<IoaScanRead>(`${IOA_SCANS_BASE}/${encodeURIComponent(oid)}`);
+}
+
+export async function listWorkersWithLatestScan(
+    params: { page?: number; limit?: number } = {}
+): Promise<WorkerWithLatestScanList> {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const url = `${IOA_SCANS_BASE}/workers-with-latest${qs.toString() ? `?${qs}` : ''}`;
+    return fetchApi<WorkerWithLatestScanList>(url);
 }
 
 export async function getLatestIoaScanForWorker(

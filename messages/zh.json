@@ -1035,6 +1035,8 @@
         "settings": "设置",
         "articles": "文章",
         "hardwares": "硬件",
+        "networks": "网络",
+        "ioaScans": "iOA 扫描",
         "activities": "活动",
         "incidents": "事件",
         "requests": "请求",

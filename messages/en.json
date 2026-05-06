@@ -1043,6 +1043,8 @@
         "settings": "Settings",
         "articles": "Articles",
         "hardwares": "Hardwares",
+        "networks": "Networks",
+        "ioaScans": "iOA Scans",
         "activities": "Activities",
         "incidents": "Incidents",
         "requests": "Requests",

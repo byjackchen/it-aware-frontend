@@ -74,7 +74,7 @@ export function KpiBlock({ scan }: { scan: IoaScanRead }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
     return (
-        <div className="border rounded p-2">
+        <div className="border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/40 rounded p-2">
             <div className="text-xs text-slate-500">{label}</div>
             <div className="text-lg font-mono">{value}</div>
         </div>
