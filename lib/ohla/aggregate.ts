@@ -84,10 +84,10 @@ export interface OhlaKpis {
     // Quality / coverage
     faqMatchRate: number       // 0..1, of queries with shown_faqs
     overallMatchRate: number   // 0..1, broader match (faq OR ticket OR non-empty response)
-    tier0Supported: number     // COUNT of queries self-served by the bot
-                               // (is_helpful = true OR helpful_score >= 1).
-                               // Matches PBIX "Tier 0 Supported v2" which is
-                               // a count — not a ratio.
+    tier0Supported: number     // PBIX 'Tier 0 Supported v2' =
+                               //   [Total KB & FAQ Matched (v3)] + [Total Action Chain_2]
+                               // i.e. COUNT of queries classified as
+                               // faqMatched (KB+FAQ) or actionChainMatched.
     avgSurveyRate: number | null // mean helpful_score (−1..+1), null if no scores
 
     // Flow
@@ -145,7 +145,12 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             if (r.shownFaqCount > 0 || r.recommendedFaqCount > 0 || r.ticketId || hasKbResponse) {
                 overallMatch += 1
             }
-            if (r.isHelpful === true || (typeof r.helpfulScore === 'number' && r.helpfulScore >= 1)) {
+            // PBIX DAX:
+            //   Tier 0 Supported v2 = [Total KB & FAQ Matched (v3)] + [Total Action Chain_2]
+            // i.e. query rows whose behaviour classification is faqMatched
+            // (KB+FAQ collapsed) or actionChainMatched.
+            const b = classifyAskBehaviour(r)
+            if (b === 'faqMatched' || b === 'actionChainMatched') {
                 tier0 += 1
             }
             if (!r.isHelpful && !r.ticketId && r.shownFaqCount === 0 && r.recommendedFaqCount === 0) {
