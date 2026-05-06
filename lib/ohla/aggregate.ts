@@ -147,10 +147,10 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             }
             // PBIX DAX:
             //   Tier 0 Supported v2 = [Total KB & FAQ Matched (v3)] + [Total Action Chain_2]
-            // i.e. query rows whose behaviour classification is faqMatched
-            // (KB+FAQ collapsed) or actionChainMatched.
+            // i.e. query rows whose Behaviour is FAQ Matched, KB Matched,
+            // or Action Chain Matched.
             const b = classifyAskBehaviour(r)
-            if (b === 'faqMatched' || b === 'actionChainMatched') {
+            if (b === 'faqMatched' || b === 'kbMatched' || b === 'actionChainMatched') {
                 tier0 += 1
             }
             if (!r.isHelpful && !r.ticketId && r.shownFaqCount === 0 && r.recommendedFaqCount === 0) {
