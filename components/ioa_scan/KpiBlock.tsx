@@ -1,9 +1,15 @@
 /**
- * Network KPI block — focused on what a non-technical operator needs:
- * "did your connections work and were they fast?". Deeper stats are
- * tucked behind a collapsed "Advanced" details summary.
+ * Network KPI block — four key metrics in comparable units:
+ *   - Connections / hour (rate)
+ *   - Failure rate (% of connections)
+ *   - Blocked rate (% of connections)
+ *   - Avg latency (ms)
+ *
+ * Throughput + sample-level details live behind the Advanced disclosure.
  */
 import type { IoaScanRead } from '@/lib/types/networks/ioa_scans';
+
+const KPI_WINDOW_HOURS = 24;
 
 function fmtNum(n: number | null | undefined, digits = 0): string {
     if (n === null || n === undefined) return '—';
@@ -13,24 +19,26 @@ function fmtPct(n: number | null | undefined): string {
     if (n === null || n === undefined) return '—';
     return `${(n * 100).toFixed(2)}%`;
 }
+function rate(num: number | null | undefined, denom: number | null | undefined): number | null {
+    if (num === null || num === undefined || !denom) return null;
+    return num / denom;
+}
 
 export function KpiBlock({ scan }: { scan: IoaScanRead }) {
+    const connectionsPerHour =
+        scan.kpi_total_connections != null
+            ? scan.kpi_total_connections / KPI_WINDOW_HOURS
+            : null;
+    const blockedRate = rate(scan.kpi_blocked_count, scan.kpi_total_connections);
+
     return (
         <section>
             <h2 className="text-lg font-semibold mb-2">Network · Last 24 Hours</h2>
 
-            {/* Headline stats — what users actually want to see at a glance */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Stat label="Connections" value={fmtNum(scan.kpi_total_connections)} />
+                <Stat label="Connections / h" value={fmtNum(connectionsPerHour, 1)} />
                 <Stat label="Failure rate" value={fmtPct(scan.kpi_failure_rate)} />
-                <Stat
-                    label="Download speed"
-                    value={`${fmtNum(scan.kpi_throughput_download_kbps, 1)} KB/s`}
-                />
-                <Stat
-                    label="Upload speed"
-                    value={`${fmtNum(scan.kpi_throughput_upload_kbps, 1)} KB/s`}
-                />
+                <Stat label="Blocked rate" value={fmtPct(blockedRate)} />
                 <Stat
                     label="Avg latency"
                     value={
@@ -39,7 +47,6 @@ export function KpiBlock({ scan }: { scan: IoaScanRead }) {
                             : '—'
                     }
                 />
-                <Stat label="Blocked" value={fmtNum(scan.kpi_blocked_count)} />
             </div>
 
             <details className="mt-3">
@@ -48,13 +55,20 @@ export function KpiBlock({ scan }: { scan: IoaScanRead }) {
                 </summary>
                 <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <Stat label="Total records" value={fmtNum(scan.kpi_total_records)} />
+                    <Stat label="Total connections" value={fmtNum(scan.kpi_total_connections)} />
                     <Stat label="Failed connections" value={fmtNum(scan.kpi_failed_connections)} />
+                    <Stat label="Blocked count" value={fmtNum(scan.kpi_blocked_count)} />
+                    <Stat
+                        label="Download speed"
+                        value={`${fmtNum(scan.kpi_throughput_download_kbps, 1)} KB/s`}
+                    />
+                    <Stat
+                        label="Upload speed"
+                        value={`${fmtNum(scan.kpi_throughput_upload_kbps, 1)} KB/s`}
+                    />
                     <Stat label="P50 connect (ms)" value={fmtNum(scan.kpi_p50_connect_ms)} />
                     <Stat label="P95 connect (ms)" value={fmtNum(scan.kpi_p95_connect_ms)} />
-                    <Stat
-                        label="Avg establish (ms)"
-                        value={fmtNum(scan.kpi_avg_establish_ms, 1)}
-                    />
+                    <Stat label="Avg establish (ms)" value={fmtNum(scan.kpi_avg_establish_ms, 1)} />
                     <Stat label="P95 establish (ms)" value={fmtNum(scan.kpi_p95_establish_ms)} />
                     <Stat label="Sample size" value={fmtNum(scan.kpi_sample_size)} />
                 </div>

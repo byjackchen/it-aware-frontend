@@ -1,13 +1,18 @@
 /**
  * Per-device list with MAC + agent runtime health, for troubleshooting.
  */
+'use client';
+
 import type {
     DeviceMachine,
     IoaScanRead,
 } from '@/lib/types/networks/ioa_scans';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
     const machines = scan.device_machines ?? [];
+    const { timezone } = useTimezone();
 
     return (
         <section>
@@ -29,6 +34,7 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
                             key={`${m.machine_name}-${m.mac ?? i}`}
                             machine={m}
                             primary={i === 0}
+                            timezone={timezone}
                         />
                     ))}
                 </div>
@@ -37,7 +43,15 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
     );
 }
 
-function DeviceCard({ machine, primary }: { machine: DeviceMachine; primary: boolean }) {
+function DeviceCard({
+    machine,
+    primary,
+    timezone,
+}: {
+    machine: DeviceMachine;
+    primary: boolean;
+    timezone: string;
+}) {
     return (
         <article
             className={`border rounded p-3 ${
@@ -71,7 +85,7 @@ function DeviceCard({ machine, primary }: { machine: DeviceMachine; primary: boo
                     label="Last seen"
                     value={
                         machine.last_heartbeat_at
-                            ? new Date(machine.last_heartbeat_at).toLocaleString()
+                            ? formatDateTime(machine.last_heartbeat_at, timezone)
                             : null
                     }
                 />
