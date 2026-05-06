@@ -73,6 +73,16 @@ function hasTemplate(row: OhlaRow, set: Set<string>): boolean {
     return false
 }
 
+/**
+ * Post-2025-11 ground-truth signal for KB Matched. Every KB-grounded
+ * LLM answer embeds the source ServiceNow article URL, so the KB link
+ * substring is a reliable classifier even when the response text itself
+ * is free-form.
+ */
+function hasKbLink(response: string): boolean {
+    return response.includes('kb_knowledge') || response.includes('sysparm_article')
+}
+
 // --- Irrelevant response-text patterns (from DAX) ---
 const IRRELEVANT_PATTERNS = [
     'failed to',
@@ -118,16 +128,21 @@ export function classifyAskBehaviour(row: OhlaRow): AskBehaviour {
     // 1. Action Chain Matched
     if (hasTemplate(row, ACTION_CHAIN_TEMPLATES)) return 'actionChainMatched'
 
-    // 2. Triggered Tickets — live-agent hand-off strings
+    // 2. Triggered Tickets — live-agent hand-off (text or a created ticket)
     if (
         lowerResponse.includes('our live agent is on their way to help you') ||
-        response.includes('正在联系我们的海外IT工程师为您提供协助')
+        response.includes('正在联系我们的海外IT工程师为您提供协助') ||
+        row.ticketId !== null
     ) {
         return 'triggeredTickets'
     }
 
-    // 3. FAQ Matched — Flow States ~ "faq_answer" OR several response hints
+    // 3. FAQ Matched — structural signal: the response carries FAQ
+    //    recommendations in its template_data (post-2025-11 AI answers),
+    //    OR any of the legacy response-text markers from the original
+    //    PBIX DAX (older template-generated responses).
     if (
+        row.recommendedFaqCount > 0 ||
         hasTemplate(row, FAQ_TEMPLATES) ||
         response.includes("Here's what I know regarding your query : ") ||
         response.includes('Fetch Guest WiFi') ||
@@ -136,8 +151,12 @@ export function classifyAskBehaviour(row: OhlaRow): AskBehaviour {
         return 'faqMatched'
     }
 
-    // 4. KB Matched — Flow States ~ "article_answer"
-    if (hasTemplate(row, KB_TEMPLATES)) return 'kbMatched'
+    // 4. KB Matched — response embeds a ServiceNow KB link (post-2025-11
+    //    LLM answers ground on KB articles via URL), or the legacy
+    //    ArticleResponseTemplate.
+    if (hasTemplate(row, KB_TEMPLATES) || hasKbLink(response)) {
+        return 'kbMatched'
+    }
 
     // 5. unmatched_anywhere — Flow States ~ "unmatched"
     //    (local proxy: ai_code in {OOS, NA} since we have no flow_states)
