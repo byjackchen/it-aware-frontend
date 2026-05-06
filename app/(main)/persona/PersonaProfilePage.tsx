@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarClock, Network, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
+import { CalendarClock, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { usePermissions } from '@/lib/contexts/user-context';
@@ -86,31 +86,9 @@ export function PersonaProfilePage({
                                     <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                                         {currentWorker.stable_id}
                                     </p>
-                                    {workerCluster && (
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                workerCluster.cluster_label === -1
-                                                    ? (isLight ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-slate-700 text-slate-400 border border-slate-600')
-                                                    : (isLight ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30')
-                                            }`}>
-                                                <Network className="w-3 h-3 mr-1" />
-                                                {workerCluster.cluster_label === -1
-                                                    ? t('cluster.noise')
-                                                    : (workerCluster.cluster_name || `Cluster ${workerCluster.cluster_label}`)}
-                                            </span>
-                                            {workerCluster.cluster_label !== -1 && (
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                    workerCluster.cluster_probability >= 0.8
-                                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                                        : workerCluster.cluster_probability >= 0.5
-                                                            ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                                                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                                                }`}>
-                                                    {t('cluster.probability')}: {(workerCluster.cluster_probability * 100).toFixed(0)}%
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
+                                    {/* Cluster chip removed from the header — cluster analysis
+                                        lives in the collapsed Experimental Features section
+                                        at the bottom of the page. */}
                                 </div>
                             </div>
                         </section>
