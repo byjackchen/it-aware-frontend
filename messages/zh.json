@@ -1487,7 +1487,8 @@
     "common": {
       "noData": "暂无数据",
       "retry": "重试",
-      "refresh": "刷新"
+      "refresh": "刷新",
+      "all": "全部"
     },
     "filters": {
       "dateRange": "时间范围",
@@ -1527,6 +1528,110 @@
       "volumeTrendSubtitle": "按月聚合的总交互数",
       "distinctUserTrend": "月度活跃用户",
       "distinctUserTrendSubtitle": "每月独立 WeCom ID 数"
+    },
+    "userAsk": {
+      "title": "User Ask Analysis",
+      "subtitle": "用户向 Ohla 的提问分析 — FAQ 命中与 Behaviour 分布",
+      "kpis": {
+        "userAsk": "提问数 (User Ask#)",
+        "faqMatchRate": "FAQ 命中率",
+        "overallMatchRate": "整体命中率",
+        "faqMatched": "FAQ 命中",
+        "actionChain": "动作链",
+        "kbMatched": "KB 命中",
+        "other": "其他"
+      },
+      "charts": {
+        "behaviourDistribution": "Behaviour 分布",
+        "behaviourAndMatchRateTrend": "Behaviour 与命中率趋势",
+        "countOfBehaviour": "Behaviour 数",
+        "matchRateLabel": "FAQ 命中率 / 整体命中率"
+      },
+      "behaviour": {
+        "faqMatched": "FAQ Matched",
+        "actionChainMatched": "Action Chain Matched",
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant"
+      }
+    },
+    "agentSupport": {
+      "title": "Agent Support",
+      "subtitle": "由人工客服接手的会话",
+      "kpis": {
+        "agentSupport": "Agent Support"
+      },
+      "charts": {
+        "dailyTrend": "Agent Support 每日趋势",
+        "details": "Agent Support 详情"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "region": "地区",
+        "wecomId": "WeCom ID",
+        "ticketId": "工单号",
+        "ticketReason": "工单原因",
+        "response": "回复"
+      }
+    },
+    "otherCase": {
+      "title": "Other Case Analysis",
+      "subtitle": "未命中 FAQ / 动作链 / KB 的提问 — bot 止步之处",
+      "kpis": {
+        "other": "其他数"
+      },
+      "charts": {
+        "distribution": "Other#",
+        "dailyTrend": "Other# 每日",
+        "details": "详情"
+      },
+      "categories": {
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant",
+        "unmatchedAnywhere": "unmatched_anywhere"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "behaviour": "Behaviour",
+        "userActionCorrected": "User Action Corrected",
+        "wecomId": "WeCom ID",
+        "userContent": "用户内容",
+        "response": "回复"
+      }
+    },
+    "surveyDetails": {
+      "title": "Survey Details",
+      "subtitle": "来自评分按钮的用户反馈 (1-5 分)",
+      "kpis": {
+        "survey": "Survey",
+        "avgRate": "平均分"
+      },
+      "filters": {
+        "vip": "VIP 筛选",
+        "vipYes": "VIP",
+        "vipNo": "非 VIP",
+        "businessGroup": "Business Group",
+        "country": "Country",
+        "surveyRate": "Survey Rate"
+      },
+      "charts": {
+        "details": "Survey 详情"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "region": "地区",
+        "wecomId": "WeCom ID",
+        "userContent": "用户内容",
+        "surveyRate": "Survey Rate"
+      }
     }
   }
 }

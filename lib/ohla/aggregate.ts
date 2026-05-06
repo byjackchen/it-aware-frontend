@@ -22,6 +22,15 @@
  */
 
 import type { OhlaRow } from './types'
+import {
+    classifyAsk,
+    classifyAskBehaviour,
+    classifyOther,
+    isAgentSupport,
+    type AskCategory,
+    type AskBehaviour,
+    type OtherCategory,
+} from './classify'
 
 export function countBy<T extends string | number>(
     rows: OhlaRow[],
@@ -200,3 +209,227 @@ export function filterByDateRange(
         return true
     })
 }
+
+// ============================================================================
+// User Ask Analysis
+// ============================================================================
+
+export interface AskKpis {
+    /** Total queries (User Ask#). */
+    userAsk: number
+    /** 4-card buckets (mutually exclusive, sum == userAsk). */
+    faqMatched: number
+    kbMatched: number
+    actionChain: number
+    other: number
+    /** Donut 4 buckets (mutually exclusive, sum == userAsk). */
+    faqMatchedBehaviour: number
+    actionChainMatched: number
+    interaction: number
+    irrelevant: number
+    /** DAX-parity rates. */
+    faqMatchRate: number // FAQ Matched / (Queries - Action Chain - KB - Interactions)
+    overallMatchRate: number // (KB + FAQ + AC + Interactions) / Queries
+}
+
+export function computeAskKpis(allRows: OhlaRow[]): AskKpis {
+    const queries = allRows.filter((r) => r.behaviour === 'query')
+    let faqMatched = 0
+    let kbMatched = 0
+    let actionChain = 0
+    let other = 0
+    let interaction = 0
+    let irrelevant = 0
+    let actionChainMatchedB = 0
+    let faqMatchedB = 0
+    for (const q of queries) {
+        const c = classifyAsk(q)
+        if (c === 'faqMatched') faqMatched += 1
+        else if (c === 'kbMatched') kbMatched += 1
+        else if (c === 'actionChain') actionChain += 1
+        else other += 1
+
+        const b = classifyAskBehaviour(q)
+        if (b === 'faqMatched') faqMatchedB += 1
+        else if (b === 'actionChainMatched') actionChainMatchedB += 1
+        else if (b === 'interaction') interaction += 1
+        else irrelevant += 1
+    }
+    const userAsk = queries.length
+
+    // DAX Overall Match Rate = (KB + FAQ + Action Chain + Interactions) / Queries
+    // = 1 - irrelevant / userAsk (since buckets are exclusive and sum to userAsk).
+    const overallMatchRate =
+        userAsk > 0 ? (faqMatched + kbMatched + actionChain + interaction) / userAsk : 0
+    // DAX FAQ Match Rate = FAQ / (Queries - Action Chain - KB - Interactions)
+    //                    = FAQ / (FAQ + Irrelevant)   [algebraic rewrite]
+    const faqDenom = userAsk - actionChain - kbMatched - interaction
+    const faqMatchRate = faqDenom > 0 ? faqMatched / faqDenom : 0
+
+    return {
+        userAsk,
+        faqMatched,
+        kbMatched,
+        actionChain,
+        other,
+        faqMatchedBehaviour: faqMatchedB,
+        actionChainMatched: actionChainMatchedB,
+        interaction,
+        irrelevant,
+        faqMatchRate,
+        overallMatchRate,
+    }
+}
+
+/** Per-day rollup for the User Ask bottom combo chart. */
+export interface AskDayBucket {
+    day: string // YYYY-MM-DD
+    faqMatched: number
+    actionChainMatched: number
+    interaction: number
+    irrelevant: number
+    faqMatchRate: number // per-day, same DAX logic as global
+    overallMatchRate: number
+}
+
+export function groupAskByDay(allRows: OhlaRow[]): AskDayBucket[] {
+    const map = new Map<string, AskDayBucket>()
+    for (const r of allRows) {
+        if (r.behaviour !== 'query') continue
+        const day = r.createdDate
+        const b = classifyAskBehaviour(r)
+        let entry = map.get(day)
+        if (!entry) {
+            entry = {
+                day,
+                faqMatched: 0,
+                actionChainMatched: 0,
+                interaction: 0,
+                irrelevant: 0,
+                faqMatchRate: 0,
+                overallMatchRate: 0,
+            }
+            map.set(day, entry)
+        }
+        if (b === 'faqMatched') entry.faqMatched += 1
+        else if (b === 'actionChainMatched') entry.actionChainMatched += 1
+        else if (b === 'interaction') entry.interaction += 1
+        else entry.irrelevant += 1
+    }
+    const arr = [...map.values()].sort((a, b) => a.day.localeCompare(b.day))
+    for (const e of arr) {
+        const total = e.faqMatched + e.actionChainMatched + e.interaction + e.irrelevant
+        e.overallMatchRate = total > 0 ? (total - e.irrelevant) / total : 0
+        const denom = total - e.actionChainMatched - e.interaction // = faqMatched + irrelevant
+        e.faqMatchRate = denom > 0 ? e.faqMatched / denom : 0
+    }
+    return arr
+}
+
+// ============================================================================
+// Other Case Analysis
+// ============================================================================
+
+export interface OtherKpis {
+    /** rows classified into 'other' bucket from classifyAsk. */
+    other: number
+    interaction: number
+    irrelevant: number
+    unmatchedAnywhere: number
+}
+
+export function computeOtherKpis(allRows: OhlaRow[]): OtherKpis {
+    let interaction = 0
+    let irrelevant = 0
+    let unmatchedAnywhere = 0
+    for (const r of allRows) {
+        if (r.behaviour !== 'query') continue
+        if (classifyAsk(r) !== 'other') continue
+        const c = classifyOther(r)
+        if (c === 'interaction') interaction += 1
+        else if (c === 'irrelevant') irrelevant += 1
+        else unmatchedAnywhere += 1
+    }
+    return {
+        other: interaction + irrelevant + unmatchedAnywhere,
+        interaction,
+        irrelevant,
+        unmatchedAnywhere,
+    }
+}
+
+export interface OtherDayBucket {
+    day: string
+    interaction: number
+    irrelevant: number
+    unmatched_anywhere: number
+}
+
+export function groupOtherByDay(allRows: OhlaRow[]): OtherDayBucket[] {
+    const map = new Map<string, OtherDayBucket>()
+    for (const r of allRows) {
+        if (r.behaviour !== 'query') continue
+        if (classifyAsk(r) !== 'other') continue
+        const day = r.createdDate
+        let entry = map.get(day)
+        if (!entry) {
+            entry = { day, interaction: 0, irrelevant: 0, unmatched_anywhere: 0 }
+            map.set(day, entry)
+        }
+        const c = classifyOther(r)
+        if (c === 'interaction') entry.interaction += 1
+        else if (c === 'irrelevant') entry.irrelevant += 1
+        else entry.unmatched_anywhere += 1
+    }
+    return [...map.values()].sort((a, b) => a.day.localeCompare(b.day))
+}
+
+// ============================================================================
+// Agent Support
+// ============================================================================
+
+export interface AgentSupportKpis {
+    count: number
+}
+
+export function computeAgentSupportKpis(allRows: OhlaRow[]): AgentSupportKpis {
+    let n = 0
+    for (const r of allRows) if (isAgentSupport(r)) n += 1
+    return { count: n }
+}
+
+export function groupAgentSupportByDay(allRows: OhlaRow[]): Array<{ day: string; count: number }> {
+    const map = new Map<string, number>()
+    for (const r of allRows) {
+        if (!isAgentSupport(r)) continue
+        map.set(r.createdDate, (map.get(r.createdDate) ?? 0) + 1)
+    }
+    return [...map.entries()]
+        .map(([day, count]) => ({ day, count }))
+        .sort((a, b) => a.day.localeCompare(b.day))
+}
+
+// ============================================================================
+// Survey Details
+// ============================================================================
+
+export interface SurveyKpis {
+    surveyCount: number
+    avgRate: number | null // null if no rows
+}
+
+export function computeSurveyKpis(allRows: OhlaRow[]): SurveyKpis {
+    let sum = 0
+    let n = 0
+    for (const r of allRows) {
+        if (!r.surveyReceived) continue
+        if (typeof r.surveyRate !== 'number') continue
+        sum += r.surveyRate
+        n += 1
+    }
+    return { surveyCount: n, avgRate: n > 0 ? sum / n : null }
+}
+
+// Export re-used classify types so pages only need one import.
+export type { AskCategory, AskBehaviour, OtherCategory }
+

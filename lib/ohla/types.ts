@@ -78,6 +78,17 @@ export interface OhlaRow {
     ticketId: string | null;
     ticketReason: string | null;
 
+    // Response template decoding (for User Ask / Other Case classification)
+    allResponseTemplates: string[];        // in order, including AiIdleTemplate
+    primaryResponseTemplate: string | null; // first non-AiIdleTemplate, null if all idle or empty
+
+    // Survey (rate-ticket click events)
+    // surveyReceived ≈ PBIX 'Survey Received? = "Yes"':
+    //   action_type='click' AND request_action='actionchain-rateticket-naive'
+    // surveyRate: parsed from content_text, value in 1-5
+    surveyReceived: boolean;
+    surveyRate: number | null;
+
     // Enriched via workers lookup
     region: string | null;
     country: string | null;

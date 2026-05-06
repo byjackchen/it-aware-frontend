@@ -70,12 +70,30 @@ export function decodeInteraction(
 
     // Count total recommendations surfaced across all response entries.
     let recommendedFaqCount = 0
+    const allResponseTemplates: string[] = []
     for (const r of responses) {
         const recs = r.template_data?.recommendations
         if (Array.isArray(recs)) recommendedFaqCount += recs.length
+        if (r.template_name) allResponseTemplates.push(r.template_name)
     }
+    const primaryResponseTemplate =
+        allResponseTemplates.find((t) => t !== 'AiIdleTemplate') ?? null
 
     const shownFaqs = Array.isArray(rec.shown_faqs) ? rec.shown_faqs : null
+
+    // Survey detection — PBIX 'Survey Received? = "Yes"':
+    // click on the ratings ticket button. The content_text embeds the rating
+    // as "…-{rate}|{hash}" (e.g. "actionchain-rateticket-naive-INC0109583-5|687…").
+    const surveyReceived =
+        behaviour === 'click' && rec.request_action === 'actionchain-rateticket-naive'
+    let surveyRate: number | null = null
+    if (surveyReceived && typeof row.content_text === 'string') {
+        const m = row.content_text.match(/-(\d+)\|/)
+        if (m) {
+            const n = Number(m[1])
+            if (Number.isFinite(n) && n >= 1 && n <= 5) surveyRate = n
+        }
+    }
 
     return {
         oid: row.oid,
@@ -103,6 +121,12 @@ export function decodeInteraction(
 
         ticketId: rec.ticket?.id ?? null,
         ticketReason: rec.ticket?.reason ?? null,
+
+        allResponseTemplates,
+        primaryResponseTemplate,
+
+        surveyReceived,
+        surveyRate,
 
         region: worker?.region_name ?? null,
         country: worker?.country_name ?? null,

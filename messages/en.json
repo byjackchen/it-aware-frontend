@@ -1495,7 +1495,8 @@
     "common": {
       "noData": "No data",
       "retry": "Retry",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "all": "All"
     },
     "filters": {
       "dateRange": "Date range",
@@ -1535,6 +1536,110 @@
       "volumeTrendSubtitle": "Total interactions per month",
       "distinctUserTrend": "Monthly active users",
       "distinctUserTrendSubtitle": "Distinct WeCom IDs per month"
+    },
+    "userAsk": {
+      "title": "User Ask Analysis",
+      "subtitle": "What users ask Ohla - FAQ match performance and behaviour mix",
+      "kpis": {
+        "userAsk": "User Ask#",
+        "faqMatchRate": "FAQ Match Rate",
+        "overallMatchRate": "Overall Match Rate",
+        "faqMatched": "FAQ Matched#",
+        "actionChain": "Action Chain#",
+        "kbMatched": "KB Matched#",
+        "other": "Other#"
+      },
+      "charts": {
+        "behaviourDistribution": "Behaviour Distribution",
+        "behaviourAndMatchRateTrend": "Behaviour & Overall Match Rate Trend",
+        "countOfBehaviour": "Count of Behaviour",
+        "matchRateLabel": "FAQ Match Rate and Overall Match Rate"
+      },
+      "behaviour": {
+        "faqMatched": "FAQ Matched",
+        "actionChainMatched": "Action Chain Matched",
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant"
+      }
+    },
+    "agentSupport": {
+      "title": "Agent Support",
+      "subtitle": "Escalations picked up by live agents",
+      "kpis": {
+        "agentSupport": "Agent Support"
+      },
+      "charts": {
+        "dailyTrend": "Agent Support Daily Trend",
+        "details": "Agent Support Details"
+      },
+      "columns": {
+        "year": "Year",
+        "quarter": "Quarter",
+        "month": "Month",
+        "day": "Day",
+        "region": "Region Corrected",
+        "wecomId": "Masked WeComID",
+        "ticketId": "Ticket ID",
+        "ticketReason": "Ticket Reason",
+        "response": "Response"
+      }
+    },
+    "otherCase": {
+      "title": "Other Case Analysis",
+      "subtitle": "Queries outside FAQ / Action Chain / KB - where the bot stalled",
+      "kpis": {
+        "other": "Other#"
+      },
+      "charts": {
+        "distribution": "Other#",
+        "dailyTrend": "Other# Daily",
+        "details": "Details"
+      },
+      "categories": {
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant",
+        "unmatchedAnywhere": "unmatched_anywhere"
+      },
+      "columns": {
+        "year": "Year",
+        "quarter": "Quarter",
+        "month": "Month",
+        "day": "Day",
+        "behaviour": "Behaviour",
+        "userActionCorrected": "User Action Corrected",
+        "wecomId": "Masked WeComID",
+        "userContent": "User Content",
+        "response": "Response"
+      }
+    },
+    "surveyDetails": {
+      "title": "Survey Details",
+      "subtitle": "User feedback from the rate-ticket button (1-5 scale)",
+      "kpis": {
+        "survey": "Survey",
+        "avgRate": "Avg Rate"
+      },
+      "filters": {
+        "vip": "VIP Filter",
+        "vipYes": "VIP",
+        "vipNo": "Non-VIP",
+        "businessGroup": "Business Group Filter",
+        "country": "CountryFilter",
+        "surveyRate": "Survey Rate"
+      },
+      "charts": {
+        "details": "Survey Details"
+      },
+      "columns": {
+        "year": "Year",
+        "quarter": "Quarter",
+        "month": "Month",
+        "day": "Day",
+        "region": "Region Corrected",
+        "wecomId": "Masked WeComID",
+        "userContent": "User Content",
+        "surveyRate": "Survey Rate"
+      }
     }
   }
 }
