@@ -1632,6 +1632,38 @@
         "userContent": "用户内容",
         "surveyRate": "Survey Rate"
       }
+    },
+    "rawData": {
+      "title": "Raw Data",
+      "subtitle": "时间窗内全部 chatbot 交互 — 用于导出和排查的平铺表",
+      "charts": {
+        "details": "Raw Data"
+      },
+      "columns": {
+        "date": "日期",
+        "time": "时间",
+        "wecomId": "WeCom ID",
+        "behaviour": "Behaviour",
+        "userAction": "User Action",
+        "userActionCorrected": "ai_code",
+        "userContent": "用户内容",
+        "response": "回复",
+        "shownFaqs": "推荐 FAQ",
+        "ticketId": "工单号",
+        "ticketReason": "工单原因",
+        "isHelpful": "Helpful",
+        "helpfulScore": "评分",
+        "surveyReceived": "Survey?",
+        "surveyRate": "Rate",
+        "region": "地区",
+        "country": "国家",
+        "businessGroup": "BG",
+        "vip": "VIP",
+        "cycleId": "Cycle",
+        "sessionId": "Session",
+        "deviceType": "设备",
+        "primaryTemplate": "主响应模板"
+      }
     }
   }
 }

@@ -1640,6 +1640,38 @@
         "userContent": "User Content",
         "surveyRate": "Survey Rate"
       }
+    },
+    "rawData": {
+      "title": "Raw Data",
+      "subtitle": "Every chatbot interaction in the window — flat table for export and debugging",
+      "charts": {
+        "details": "Raw Data"
+      },
+      "columns": {
+        "date": "Date",
+        "time": "Time",
+        "wecomId": "Masked WeComID",
+        "behaviour": "Behaviour",
+        "userAction": "User Action",
+        "userActionCorrected": "ai_code",
+        "userContent": "User Content",
+        "response": "Response",
+        "shownFaqs": "Shown FAQs",
+        "ticketId": "Ticket ID",
+        "ticketReason": "Ticket Reason",
+        "isHelpful": "Helpful",
+        "helpfulScore": "Score",
+        "surveyReceived": "Survey?",
+        "surveyRate": "Rate",
+        "region": "Region",
+        "country": "Country",
+        "businessGroup": "Business Group",
+        "vip": "VIP",
+        "cycleId": "Cycle ID",
+        "sessionId": "Session ID",
+        "deviceType": "Device",
+        "primaryTemplate": "Primary Template"
+      }
     }
   }
 }
