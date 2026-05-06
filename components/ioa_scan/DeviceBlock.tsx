@@ -12,7 +12,7 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
     return (
         <section>
             <div className="flex items-baseline justify-between mb-2">
-                <h2 className="text-lg font-semibold">Devices · last 72 hours</h2>
+                <h2 className="text-lg font-semibold">Devices · Last 72 Hours</h2>
                 <div className="text-xs text-slate-500">
                     {scan.device_count ?? 0} machines · {scan.device_distinct_macs_count ?? 0} distinct MACs
                 </div>

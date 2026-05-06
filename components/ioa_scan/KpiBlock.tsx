@@ -17,7 +17,7 @@ function fmtPct(n: number | null | undefined): string {
 export function KpiBlock({ scan }: { scan: IoaScanRead }) {
     return (
         <section>
-            <h2 className="text-lg font-semibold mb-2">Network · last 1 hour</h2>
+            <h2 className="text-lg font-semibold mb-2">Network · Last 24 Hours</h2>
 
             {/* Headline stats — what users actually want to see at a glance */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

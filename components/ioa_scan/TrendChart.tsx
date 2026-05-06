@@ -22,7 +22,7 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
     return (
         <section>
             <h2 className="text-lg font-semibold mb-2">
-                Network KPI Trend · last {scan.trend_window_hours} hours
+                Network Trend · Last {scan.trend_window_hours} Hours
             </h2>
             <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
