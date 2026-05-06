@@ -13,7 +13,7 @@
  *   FAQ Match Rate_2  = FAQ / (Queries - Action Chain - KB - Interactions)
  *   Overall Match Rate_2 = (KB + FAQ + AC + Interactions) / Queries
  *
- * Date slicer default: 2025-07-13 → 2026-03-02 (PBIX hard-coded window).
+ * Date slicer default: from the 1st of the current month through today.
  */
 
 import { useMemo, useState } from 'react'
@@ -32,7 +32,10 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
 
 function defaultDateRange(): { from: string; to: string } {
-    return { from: '2025-07-13', to: '2026-03-02' }
+    const now = new Date()
+    const to = now.toISOString().slice(0, 10)
+    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    return { from, to }
 }
 
 function fmtNum(n: number): string {

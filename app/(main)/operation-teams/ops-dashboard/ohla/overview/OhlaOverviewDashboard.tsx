@@ -55,13 +55,11 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
 
-/** Default window: trailing 90 days, matching the other Ops dashboards. */
+/** Default window: from the 1st of the current month through today. */
 function defaultDateRange(): { from: string; to: string } {
     const now = new Date()
     const to = now.toISOString().slice(0, 10)
-    const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .slice(0, 10)
+    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
     return { from, to }
 }
 

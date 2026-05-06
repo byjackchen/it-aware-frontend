@@ -29,7 +29,10 @@ import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBar
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 
 function defaultDateRange(): { from: string; to: string } {
-    return { from: '2025-07-13', to: '2026-03-02' }
+    const now = new Date()
+    const to = now.toISOString().slice(0, 10)
+    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    return { from, to }
 }
 
 function fmtNum(n: number): string {
