@@ -13,6 +13,7 @@ import type { GlobalEdge, Location, Organization, Worker, WorkerProfile, WorkerC
 import { PersonaOrgWorkerSidebar } from './PersonaOrgWorkerSidebar';
 import { PersonaActivitiesTimeline } from './PersonaActivitiesTimeline';
 import { ClusterProfileCard } from './ClusterProfileCard';
+import { PersonaIoaScanWidget } from '@/components/ioa_scan/PersonaIoaScanWidget';
 
 interface PersonaProfilePageProps {
     currentWorker: Worker;
@@ -311,6 +312,10 @@ export function PersonaProfilePage({
                             labelClass={labelClass}
                             valueClass={valueClass}
                         />
+
+                        <section className={cardClass}>
+                            <PersonaIoaScanWidget workerOid={currentWorker.oid} />
+                        </section>
 
                         <section className={cardClass}>
                             <div className="flex items-center gap-2 mb-4">
