@@ -172,6 +172,20 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 ],
             },
             {
+                labelKey: 'networks',
+                items: [
+                    {
+                        href: '/data/networks/ioa-scans',
+                        labelKey: 'ioaScans',
+                        icon: Network,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.NETWORKS.IOA_SCANS_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
                 labelKey: 'activities',
                 items: [
                     {

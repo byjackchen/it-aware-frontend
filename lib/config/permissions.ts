@@ -60,6 +60,11 @@ export const PERMISSIONS = {
     WORKER_CLUSTERS_READ: 'objects:worker_clusters:read',
     WORKER_CLUSTERS_WRITE: 'objects:worker_clusters:write',
   },
+  // Networks domain permissions (iOA scans, future network telemetry)
+  NETWORKS: {
+    IOA_SCANS_READ: 'networks:ioa_scans:read',
+    IOA_SCANS_TRIGGER: 'networks:ioa_scans:trigger',
+  },
 } as const;
 
 // Type for all permission values
