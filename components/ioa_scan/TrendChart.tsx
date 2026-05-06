@@ -26,6 +26,8 @@ import {
     YAxis,
 } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { resolveTimezone } from '@/lib/utils/datetime';
 import type { IoaScanRead, TrendBucket } from '@/lib/types/networks/ioa_scans';
 
 const COLORS = {
@@ -44,7 +46,7 @@ type ChartRow = {
     avg_latency_ms: number | null;
 };
 
-function bucketToRow(b: TrendBucket): ChartRow {
+function bucketToRow(b: TrendBucket, tz: string): ChartRow {
     const fr = b.connections > 0 ? (b.failures / b.connections) * 100 : null;
     const br = b.connections > 0 ? (b.blocked / b.connections) * 100 : null;
     return {
@@ -53,6 +55,7 @@ function bucketToRow(b: TrendBucket): ChartRow {
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
+            timeZone: tz,
         }),
         connections: b.connections,
         failure_rate_pct: fr,
@@ -63,8 +66,10 @@ function bucketToRow(b: TrendBucket): ChartRow {
 
 export function TrendChart({ scan }: { scan: IoaScanRead }) {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const isLight = theme === 'light';
-    const rows: ChartRow[] = (scan.trend_hourly_buckets ?? []).map(bucketToRow);
+    const tz = resolveTimezone(timezone);
+    const rows: ChartRow[] = (scan.trend_hourly_buckets ?? []).map((b) => bucketToRow(b, tz));
 
     const tooltipContentStyle: React.CSSProperties = {
         background: isLight ? '#ffffff' : '#0f172a',           // slate-900
@@ -123,9 +128,11 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                         <YAxis
                             yAxisId="lat"
                             orientation="right"
+                            domain={[0, (dataMax: number) => Math.max(50, Math.ceil(dataMax * 1.1))]}
+                            allowDataOverflow={false}
                             tick={{ fontSize: 10, fill: COLORS.latency }}
-                            tickFormatter={(v) => `${v}ms`}
-                            width={48}
+                            tickFormatter={(v) => `${Math.round(v)}ms`}
+                            width={56}
                             stroke={COLORS.latency}
                         />
                         <Tooltip
@@ -145,6 +152,11 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                             }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
+                        {/* Draw order matters: later lines render on top.
+                            Failure (solid red) drawn first; blocked (dashed orange)
+                            on top so the dashes are always visible against the red
+                            when the two metrics overlap (blocked ⊆ failures).
+                            Latency last so it's never obscured. */}
                         <Line
                             yAxisId="conn"
                             type="monotone"
@@ -170,6 +182,7 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                             dataKey="blocked_rate_pct"
                             name="Blocked rate"
                             stroke={COLORS.blocked}
+                            strokeDasharray="5 3"
                             dot={false}
                             strokeWidth={1.5}
                             connectNulls={false}
@@ -181,7 +194,7 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                             name="Avg latency"
                             stroke={COLORS.latency}
                             dot={false}
-                            strokeWidth={1.5}
+                            strokeWidth={2}
                             connectNulls={false}
                         />
                     </LineChart>
