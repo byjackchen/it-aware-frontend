@@ -44,6 +44,7 @@ import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
 import { useOhla } from '@/lib/hooks/useOhla'
 import {
+    computeAskKpis,
     computeKpis,
     countBy,
     filterByDateRange,
@@ -161,6 +162,9 @@ export function OhlaOverviewDashboard() {
     )
 
     const kpis = useMemo(() => computeKpis(filtered, new Date()), [filtered])
+    // PBIX-parity Match Rates — same DAX as User Ask Analysis page so the
+    // two pages always agree.
+    const askKpis = useMemo(() => computeAskKpis(filtered), [filtered])
 
     const behaviourSlices = useMemo(
         () => topN(countBy(behaviourBase, (r) => r.behaviour), 4),
@@ -379,12 +383,12 @@ export function OhlaOverviewDashboard() {
                     />
                     <KpiCard
                         label={t('kpis.faqMatchRate')}
-                        value={pct(kpis.faqMatchRate)}
+                        value={pct(askKpis.faqMatchRate)}
                         icon={FileCheck2}
                     />
                     <KpiCard
                         label={t('kpis.overallMatchRate')}
-                        value={pct(kpis.overallMatchRate)}
+                        value={pct(askKpis.overallMatchRate)}
                         icon={Percent}
                     />
                 </div>

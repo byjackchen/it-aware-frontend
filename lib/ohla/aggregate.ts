@@ -140,19 +140,16 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
 
         if (r.behaviour === 'query') {
             queryCount += 1
-            if (r.shownFaqCount > 0 || r.recommendedFaqCount > 0) faqMatch += 1
-            const hasKbResponse = !!r.responseText && r.responseText.length > 20
-            if (r.shownFaqCount > 0 || r.recommendedFaqCount > 0 || r.ticketId || hasKbResponse) {
-                overallMatch += 1
-            }
-            // PBIX DAX:
-            //   Tier 0 Supported v2 = [Total KB & FAQ Matched (v3)] + [Total Action Chain_2]
-            // i.e. query rows whose Behaviour is FAQ Matched, KB Matched,
-            // or Action Chain Matched.
+            // Behaviour bucket drives Tier 0 *and* Match Rate accumulators
+            // (PBIX DAX). Doing it once keeps Overview KPIs in lock-step
+            // with the User Ask Analysis page.
             const b = classifyAskBehaviour(r)
+            if (b === 'faqMatched') faqMatch += 1
             if (b === 'faqMatched' || b === 'kbMatched' || b === 'actionChainMatched') {
                 tier0 += 1
             }
+            // PBIX Overall Match Rate denominator excludes Irrelevant.
+            if (b !== 'irrelevant') overallMatch += 1
             if (!r.isHelpful && !r.ticketId && r.shownFaqCount === 0 && r.recommendedFaqCount === 0) {
                 nonAuto += 1
             }
@@ -171,7 +168,13 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
         if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms
     }
 
-    const faqMatchRate = queryCount > 0 ? faqMatch / queryCount : 0
+    // PBIX DAX:
+    //   FAQ Match Rate_2     = FAQ / (FAQ + Irrelevant)
+    //   Overall Match Rate_2 = (Total - Irrelevant) / Total
+    // queryCount = total queries; (queryCount - overallMatch) = irrelevant.
+    const irrelevantCount = queryCount - overallMatch
+    const faqDenom = faqMatch + irrelevantCount
+    const faqMatchRate = faqDenom > 0 ? faqMatch / faqDenom : 0
     const overallMatchRate = queryCount > 0 ? overallMatch / queryCount : 0
     const tier0Supported = tier0 // PBIX-parity: report the raw count, not a ratio
     const avgSurveyRate = helpfulN > 0 ? helpfulSum / helpfulN : null
