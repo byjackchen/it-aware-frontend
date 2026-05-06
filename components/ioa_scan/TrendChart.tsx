@@ -1,10 +1,17 @@
 /**
- * 3-day trend chart — 4 overlaid lines (connections/h, failure %,
- * blocked %, avg latency ms). Two Y axes:
- *   - left  = % (0-100) → failure_rate, blocked_rate
- *   - right = count/ms  → connections, avg_latency_ms
+ * 3-day trend chart — 4 overlaid lines (connections, failure %, blocked %,
+ * avg latency ms) with **three Y axes** so each metric sits on a scale
+ * where its shape is readable:
+ *   - left          = % (0-100)        → failure_rate, blocked_rate
+ *   - right (inner) = connections      → connections per hour
+ *   - right (outer) = ms                → avg_latency_ms
  *
- * Recharts client component.
+ * Sharing one right axis squashed latency (~30 ms) flat against an axis
+ * that has to accommodate connections (~10K). Three axes let each line
+ * use its full vertical range.
+ *
+ * Tooltip styling is theme-aware (the default Recharts tooltip is white
+ * with low-contrast text — invisible against the dark UI).
  */
 'use client';
 
@@ -18,7 +25,15 @@ import {
     XAxis,
     YAxis,
 } from 'recharts';
+import { useTheme } from '@/lib/contexts/theme-context';
 import type { IoaScanRead, TrendBucket } from '@/lib/types/networks/ioa_scans';
+
+const COLORS = {
+    connections: '#3b82f6',  // blue-500
+    failure: '#ef4444',      // red-500
+    blocked: '#f59e0b',      // amber-500
+    latency: '#10b981',      // emerald-500
+};
 
 type ChartRow = {
     ts: string;
@@ -47,7 +62,28 @@ function bucketToRow(b: TrendBucket): ChartRow {
 }
 
 export function TrendChart({ scan }: { scan: IoaScanRead }) {
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
     const rows: ChartRow[] = (scan.trend_hourly_buckets ?? []).map(bucketToRow);
+
+    const tooltipContentStyle: React.CSSProperties = {
+        background: isLight ? '#ffffff' : '#0f172a',           // slate-900
+        border: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`, // slate-700
+        borderRadius: 6,
+        color: isLight ? '#0f172a' : '#e2e8f0',                 // slate-200
+        fontSize: 12,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    };
+    const tooltipItemStyle: React.CSSProperties = {
+        color: isLight ? '#0f172a' : '#e2e8f0',
+    };
+    const tooltipLabelStyle: React.CSSProperties = {
+        color: isLight ? '#475569' : '#cbd5e1',
+        marginBottom: 4,
+        fontWeight: 600,
+    };
+
+    const axisStroke = isLight ? '#94a3b8' : '#64748b';        // slate-400 / slate-500
 
     return (
         <section>
@@ -56,29 +92,47 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
             </h2>
             <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={rows} margin={{ top: 10, right: 24, bottom: 0, left: 0 }}>
+                    <LineChart data={rows} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
                         <CartesianGrid stroke="rgba(148,163,184,0.15)" strokeDasharray="3 3" />
                         <XAxis
                             dataKey="label"
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 10, fill: axisStroke }}
                             interval="preserveStartEnd"
                             minTickGap={32}
+                            stroke={axisStroke}
                         />
                         <YAxis
                             yAxisId="pct"
                             orientation="left"
                             domain={[0, 100]}
                             tickFormatter={(v) => `${v}%`}
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 10, fill: axisStroke }}
                             width={42}
+                            stroke={axisStroke}
                         />
                         <YAxis
-                            yAxisId="abs"
+                            yAxisId="conn"
                             orientation="right"
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 10, fill: COLORS.connections }}
+                            tickFormatter={(v) =>
+                                v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`
+                            }
+                            width={44}
+                            stroke={COLORS.connections}
+                        />
+                        <YAxis
+                            yAxisId="lat"
+                            orientation="right"
+                            tick={{ fontSize: 10, fill: COLORS.latency }}
+                            tickFormatter={(v) => `${v}ms`}
                             width={48}
+                            stroke={COLORS.latency}
                         />
                         <Tooltip
+                            contentStyle={tooltipContentStyle}
+                            itemStyle={tooltipItemStyle}
+                            labelStyle={tooltipLabelStyle}
+                            cursor={{ stroke: axisStroke, strokeDasharray: '3 3' }}
                             formatter={(value, name) => {
                                 if (value === null || value === undefined) return ['—', name];
                                 if (name === 'Failure rate' || name === 'Blocked rate') {
@@ -92,11 +146,11 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Line
-                            yAxisId="abs"
+                            yAxisId="conn"
                             type="monotone"
                             dataKey="connections"
                             name="Connections"
-                            stroke="#3b82f6"
+                            stroke={COLORS.connections}
                             dot={false}
                             strokeWidth={1.5}
                         />
@@ -105,7 +159,7 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                             type="monotone"
                             dataKey="failure_rate_pct"
                             name="Failure rate"
-                            stroke="#ef4444"
+                            stroke={COLORS.failure}
                             dot={false}
                             strokeWidth={1.5}
                             connectNulls={false}
@@ -115,17 +169,17 @@ export function TrendChart({ scan }: { scan: IoaScanRead }) {
                             type="monotone"
                             dataKey="blocked_rate_pct"
                             name="Blocked rate"
-                            stroke="#f59e0b"
+                            stroke={COLORS.blocked}
                             dot={false}
                             strokeWidth={1.5}
                             connectNulls={false}
                         />
                         <Line
-                            yAxisId="abs"
+                            yAxisId="lat"
                             type="monotone"
                             dataKey="avg_latency_ms"
                             name="Avg latency"
-                            stroke="#10b981"
+                            stroke={COLORS.latency}
                             dot={false}
                             strokeWidth={1.5}
                             connectNulls={false}
