@@ -23,6 +23,7 @@ import type { OhlaRow } from '@/lib/ohla/types'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
+import { ExpandableText } from '@/components/ohla/ExpandableText'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -62,12 +63,12 @@ export function RawDataDashboard() {
         {
             key: 'userContent',
             label: t('rawData.columns.userContent'),
-            render: (r) => truncate(r.userContent, 60),
+            render: (r) => <ExpandableText text={r.userContent} />,
         },
         {
             key: 'responseText',
             label: t('rawData.columns.response'),
-            render: (r) => truncate(r.responseText, 60),
+            render: (r) => <ExpandableText text={r.responseText} />,
         },
         {
             key: 'shownFaqCount',
@@ -75,7 +76,7 @@ export function RawDataDashboard() {
             alignRight: true,
         },
         { key: 'ticketId', label: t('rawData.columns.ticketId') },
-        { key: 'ticketReason', label: t('rawData.columns.ticketReason') },
+        { key: 'ticketReason', label: t('rawData.columns.ticketReason'), render: (r) => <ExpandableText text={r.ticketReason} /> },
         {
             key: 'isHelpful',
             label: t('rawData.columns.isHelpful'),

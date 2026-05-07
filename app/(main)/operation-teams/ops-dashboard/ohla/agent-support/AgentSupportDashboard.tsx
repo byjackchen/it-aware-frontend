@@ -31,6 +31,7 @@ import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
+import { ExpandableText } from '@/components/ohla/ExpandableText'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -97,8 +98,8 @@ export function AgentSupportDashboard() {
         { key: 'region', label: t('agentSupport.columns.region') },
         { key: 'actorStableId', label: t('agentSupport.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
         { key: 'ticketId', label: t('agentSupport.columns.ticketId') },
-        { key: 'ticketReason', label: t('agentSupport.columns.ticketReason') },
-        { key: 'response', label: t('agentSupport.columns.response') },
+        { key: 'ticketReason', label: t('agentSupport.columns.ticketReason'), render: (r) => <ExpandableText text={r.ticketReason} /> },
+        { key: 'response', label: t('agentSupport.columns.response'), render: (r) => <ExpandableText text={r.response} /> },
     ]
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'

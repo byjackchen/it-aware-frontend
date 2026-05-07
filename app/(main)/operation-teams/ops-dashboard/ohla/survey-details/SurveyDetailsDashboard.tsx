@@ -32,6 +32,7 @@ import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTable
 import { RangeSliderFilter } from '@/components/ohla/RangeSliderFilter'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
+import { ExpandableText } from '@/components/ohla/ExpandableText'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -129,14 +130,14 @@ export function SurveyDetailsDashboard() {
         { key: 'day', label: t('surveyDetails.columns.day'), alignRight: true },
         { key: 'region', label: t('surveyDetails.columns.region') },
         { key: 'actorStableId', label: t('surveyDetails.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
-        { key: 'userContent', label: t('surveyDetails.columns.userContent') },
+        { key: 'userContent', label: t('surveyDetails.columns.userContent'), render: (r) => <ExpandableText text={r.userContent} /> },
         {
             key: 'surveyRate',
             label: t('surveyDetails.columns.surveyRate'),
             alignRight: true,
             render: (r) => (typeof r.surveyRate === 'number' ? r.surveyRate.toFixed(2) : '—'),
         },
-        { key: 'userContent2', label: t('surveyDetails.columns.userContent') },
+        { key: 'userContent2', label: t('surveyDetails.columns.userContent'), render: (r) => <ExpandableText text={r.userContent2} /> },
     ]
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'

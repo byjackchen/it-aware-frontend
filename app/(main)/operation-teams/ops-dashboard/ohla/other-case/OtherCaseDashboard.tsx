@@ -29,6 +29,7 @@ import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBar
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
+import { ExpandableText } from '@/components/ohla/ExpandableText'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -129,8 +130,8 @@ export function OtherCaseDashboard() {
         { key: 'behaviour', label: t('otherCase.columns.behaviour') },
         { key: 'userActionCorrected', label: t('otherCase.columns.userActionCorrected') },
         { key: 'actorStableId', label: t('otherCase.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
-        { key: 'userContent', label: t('otherCase.columns.userContent') },
-        { key: 'response', label: t('otherCase.columns.response') },
+        { key: 'userContent', label: t('otherCase.columns.userContent'), render: (r) => <ExpandableText text={r.userContent} /> },
+        { key: 'response', label: t('otherCase.columns.response'), render: (r) => <ExpandableText text={r.response} /> },
     ]
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'
