@@ -89,6 +89,8 @@ export interface OhlaKpis {
                                // i.e. COUNT of queries classified as
                                // faqMatched (KB+FAQ) or actionChainMatched.
     avgSurveyRate: number | null // mean helpful_score (−1..+1), null if no scores
+    userSurvey: number           // PBIX 'User Survey#' = count of rows with survey received
+    liveAgentSupport: number     // PBIX 'Live Agent Support#' = queries that opened a ticket
 
     // Flow
     autoVsAskRatio: number | null  // click / query (null if query = 0)
@@ -113,6 +115,8 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             overallMatchRate: 0,
             tier0Supported: 0,
             avgSurveyRate: null,
+            userSurvey: 0,
+            liveAgentSupport: 0,
             autoVsAskRatio: null,
             totalActionChain: 0,
             nonAutoSupport: 0,
@@ -131,12 +135,15 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
     let tier0 = 0
     let helpfulSum = 0
     let helpfulN = 0
+    let userSurvey = 0
+    let liveAgentSupport = 0
     let nonAuto = 0
     let latestMs = 0
 
     for (const r of rows) {
         users.add(r.actorStableId)
         if (r.isVip) vipActive += 1
+        if (r.surveyReceived) userSurvey += 1
 
         if (r.behaviour === 'query') {
             queryCount += 1
@@ -150,6 +157,7 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             }
             // PBIX Overall Match Rate denominator excludes Irrelevant.
             if (b !== 'irrelevant') overallMatch += 1
+            if (r.ticketId !== null) liveAgentSupport += 1
             if (!r.isHelpful && !r.ticketId && r.shownFaqCount === 0 && r.recommendedFaqCount === 0) {
                 nonAuto += 1
             }
@@ -196,6 +204,8 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
         overallMatchRate,
         tier0Supported,
         avgSurveyRate,
+        userSurvey,
+        liveAgentSupport,
         autoVsAskRatio,
         totalActionChain: clickCount,
         nonAutoSupport: nonAuto,
@@ -337,6 +347,57 @@ export function groupAskByDay(allRows: OhlaRow[]): AskDayBucket[] {
 // ============================================================================
 // Other Case Analysis
 // ============================================================================
+
+/**
+ * Per-month rollup for the Overview "Auto Support vs Total Ask" combo chart.
+ * Stacked bars: Live Agent Support (top) + Ohla Auto Support (bottom).
+ * Line: auto support rate = autoSupport / (autoSupport + liveAgent).
+ */
+export interface AutoVsAskMonthBucket {
+    month: string // YYYY-MM
+    monthLabel: string // e.g. "January"
+    autoSupport: number // = tier0 (faqMatched + kbMatched + actionChainMatched) within queries
+    liveAgentSupport: number // queries with ticketId
+    autoRate: number // 0..1
+}
+
+const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+export function groupAutoVsAskByMonth(allRows: OhlaRow[]): AutoVsAskMonthBucket[] {
+    const map = new Map<string, { auto: number; live: number }>()
+    for (const r of allRows) {
+        if (r.behaviour !== 'query') continue
+        const month = r.createdDate.slice(0, 7) // YYYY-MM
+        let entry = map.get(month)
+        if (!entry) {
+            entry = { auto: 0, live: 0 }
+            map.set(month, entry)
+        }
+        const b = classifyAskBehaviour(r)
+        if (b === 'faqMatched' || b === 'kbMatched' || b === 'actionChainMatched') {
+            entry.auto += 1
+        }
+        if (r.ticketId !== null) {
+            entry.live += 1
+        }
+    }
+    return [...map.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([month, v]) => {
+            const idx = parseInt(month.slice(5, 7), 10) - 1
+            const total = v.auto + v.live
+            return {
+                month,
+                monthLabel: MONTH_NAMES[idx] ?? month,
+                autoSupport: v.auto,
+                liveAgentSupport: v.live,
+                autoRate: total > 0 ? v.auto / total : 0,
+            }
+        })
+}
 
 export interface OtherKpis {
     /** rows classified into 'other' bucket from classifyAsk. */

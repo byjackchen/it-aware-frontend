@@ -1507,6 +1507,8 @@
     },
     "kpis": {
       "totalInteractions": "Page Views#",
+      "userAsk": "User Ask#",
+      "userSurvey": "User Survey#",
       "distinctUsers": "Unique Visitors#",
       "tier0Supported": "Ohla Auto Support#",
       "faqMatchRate": "FAQ Match Rate",
@@ -1524,6 +1526,7 @@
       "behaviour": "Page Views by Action",
       "behaviourTrend": "Auto Support vs Total Ask",
       "behaviourTrendSubtitle": "按月 Auto / Live Agent 占比",
+      "autoRate": "Auto 占比",
       "volumeTrend": "Page Views Daily Trend",
       "volumeTrendSubtitle": "按日交互总数",
       "distinctUserTrend": "Unique Visitors Daily Trend",
@@ -1533,19 +1536,19 @@
       "title": "User Ask Analysis",
       "subtitle": "用户向 Ohla 的提问分析 — FAQ 命中与 Behaviour 分布",
       "kpis": {
-        "userAsk": "提问数 (User Ask#)",
-        "faqMatchRate": "FAQ 命中率",
-        "overallMatchRate": "整体命中率",
-        "faqMatched": "FAQ 命中",
-        "actionChain": "动作链",
-        "kbMatched": "KB 命中",
-        "other": "其他"
+        "userAsk": "User Ask#",
+        "faqMatchRate": "FAQ Match Rate",
+        "overallMatchRate": "Overall Match Rate",
+        "faqMatched": "FAQ Matched#",
+        "actionChain": "Action Chain#",
+        "kbMatched": "KB Matched#",
+        "other": "Other#"
       },
       "charts": {
-        "behaviourDistribution": "Behaviour 分布",
-        "behaviourAndMatchRateTrend": "Behaviour 与命中率趋势",
-        "countOfBehaviour": "Behaviour 数",
-        "matchRateLabel": "FAQ 命中率 / 整体命中率"
+        "behaviourDistribution": "Behaviour Distribution",
+        "behaviourAndMatchRateTrend": "Behaviour & Overall Match Rate Trend",
+        "countOfBehaviour": "Count of Behaviour",
+        "matchRateLabel": "FAQ Match Rate and Overall Match Rate"
       },
       "behaviour": {
         "faqMatched": "FAQ Matched",
@@ -1561,8 +1564,8 @@
         "agentSupport": "Agent Support"
       },
       "charts": {
-        "dailyTrend": "Agent Support 每日趋势",
-        "details": "Agent Support 详情"
+        "dailyTrend": "Agent Support Daily Trend",
+        "details": "Agent Support Details"
       },
       "columns": {
         "year": "年",
@@ -1580,12 +1583,12 @@
       "title": "Other Case Analysis",
       "subtitle": "未命中 FAQ / 动作链 / KB 的提问 — bot 止步之处",
       "kpis": {
-        "other": "其他数"
+        "other": "Other#"
       },
       "charts": {
         "distribution": "Other#",
         "dailyTrend": "Other#",
-        "details": "详情"
+        "details": "Details"
       },
       "categories": {
         "interaction": "Interaction",
@@ -1612,15 +1615,15 @@
         "avgRate": "平均分"
       },
       "filters": {
-        "vip": "VIP 筛选",
+        "vip": "VIP Filter",
         "vipYes": "VIP",
-        "vipNo": "非 VIP",
-        "businessGroup": "Business Group",
-        "country": "Country",
+        "vipNo": "Non-VIP",
+        "businessGroup": "Business Group Filter",
+        "country": "CountryFilter",
         "surveyRate": "Survey Rate"
       },
       "charts": {
-        "details": "Survey 详情"
+        "details": "Survey Details"
       },
       "columns": {
         "year": "年",

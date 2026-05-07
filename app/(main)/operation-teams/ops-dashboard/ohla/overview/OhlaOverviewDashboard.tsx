@@ -29,11 +29,12 @@ import {
     Sparkles,
     Users,
     MessagesSquare,
-    TrendingUp,
+    MousePointerClick,
     ShieldCheck,
     Stars,
-    ListChecks,
+    HelpCircle,
     Headphones,
+    ClipboardList,
     Clock,
     RefreshCw,
     X,
@@ -45,13 +46,16 @@ import {
     computeKpis,
     countBy,
     filterByDateRange,
+    groupAutoVsAskByMonth,
     groupByMonth,
     topN,
 } from '@/lib/ohla/aggregate'
 import type { OhlaRow } from '@/lib/ohla/types'
+import { OHLA_PALETTE } from '@/lib/ohla/colors'
 import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
+import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
 
 /** Default window: from the 1st of the current month through today. */
 function defaultDateRange(): { from: string; to: string } {
@@ -177,36 +181,32 @@ export function OhlaOverviewDashboard() {
 
     const monthly = useMemo(() => groupByMonth(filtered), [filtered])
 
-    /** Single-series count-per-month for the daily volume line chart. */
-    const volumeSeries = useMemo(
-        () => monthly.map((m) => ({ bucket: `${m.month}-01`, count: m.total })),
-        [monthly],
-    )
+    /** Daily Page Views trend (PBIX 'Page Views Daily Trend'). */
+    const volumeSeries = useMemo(() => {
+        const map = new Map<string, number>()
+        for (const r of filtered) {
+            map.set(r.createdDate, (map.get(r.createdDate) ?? 0) + 1)
+        }
+        return [...map.entries()]
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([day, count]) => ({ bucket: day, count }))
+    }, [filtered])
 
-    /** Distinct-user-per-month proxy: count of unique actor_stable_ids. */
+    /** Daily distinct visitors (PBIX 'Unique Visitors Daily Trend'). */
     const distinctUserSeries = useMemo(() => {
         const bucket = new Map<string, Set<string>>()
         for (const r of filtered) {
-            const month = r.createdDate.slice(0, 7)
-            if (!bucket.has(month)) bucket.set(month, new Set())
-            bucket.get(month)!.add(r.actorStableId)
+            if (!bucket.has(r.createdDate)) bucket.set(r.createdDate, new Set())
+            bucket.get(r.createdDate)!.add(r.actorStableId)
         }
         return [...bucket.entries()]
-            .map(([month, users]) => ({ bucket: `${month}-01`, count: users.size }))
+            .map(([day, users]) => ({ bucket: day, count: users.size }))
             .sort((a, b) => a.bucket.localeCompare(b.bucket))
     }, [filtered])
 
-    /** Multi-series combo (behaviour mix). */
-    const behaviourTrend = useMemo(
-        () =>
-            monthly.map((m) => ({
-                bucket: `${m.month}-01`,
-                enter_chat: m.byBehaviour.enter_chat ?? 0,
-                query: m.byBehaviour.query ?? 0,
-                click: m.byBehaviour.click ?? 0,
-            })),
-        [monthly],
-    )
+    /** Monthly Auto Support vs Live Agent (PBIX bottom combo chart). */
+    const autoVsAskMonthly = useMemo(() => groupAutoVsAskByMonth(filtered), [filtered])
+    void monthly // kept for future, not currently rendered as a series
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'
     const textMain = isLight ? 'text-slate-900' : 'text-gray-100'
@@ -358,14 +358,28 @@ export function OhlaOverviewDashboard() {
                     </div>
                 )}
 
-                {/* Row 1 — 3 headline KPIs (FAQ / Overall Match Rate moved
-                 *  to User Ask Analysis page per PBIX layout). */}
+                {/* Row 1 — 3 headline KPIs (PBIX: Page Views# / User Ask# / User Click#) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalInteractions')}
                         value={fmtNum(kpis.totalInteractions)}
                         icon={MessagesSquare}
                     />
+                    <KpiCard
+                        label={t('kpis.userAsk')}
+                        value={fmtNum(kpis.queryCount)}
+                        icon={HelpCircle}
+                    />
+                    <KpiCard
+                        label={t('kpis.totalActionChain')}
+                        value={fmtNum(kpis.totalActionChain)}
+                        icon={MousePointerClick}
+                    />
+                </div>
+
+                {/* Row 2 — 5 secondary KPIs (PBIX: Unique Visitors# / Ohla Auto Support# /
+                 *  Live Agent Support# / User Survey# / Avg Rate). */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.distinctUsers')}
                         value={fmtNum(kpis.distinctUsers)}
@@ -376,102 +390,91 @@ export function OhlaOverviewDashboard() {
                         value={fmtNum(kpis.tier0Supported)}
                         icon={ShieldCheck}
                     />
-                </div>
-
-                {/* Row 2 — 4 secondary KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <KpiCard
-                        label={t('kpis.avgSurveyRate')}
-                        value={fmtSurveyRate(kpis.avgSurveyRate)}
-                        subtitle={t('kpis.avgSurveyRateHint')}
-                        icon={Stars}
-                    />
-                    <KpiCard
-                        label={t('kpis.totalActionChain')}
-                        value={fmtNum(kpis.totalActionChain)}
-                        icon={ListChecks}
-                    />
                     <KpiCard
                         label={t('kpis.nonAutoSupport')}
-                        value={fmtNum(kpis.nonAutoSupport)}
+                        value={fmtNum(kpis.liveAgentSupport)}
                         icon={Headphones}
                     />
                     <KpiCard
-                        label={t('kpis.dataLagDays')}
-                        value={kpis.dataLagDays === null ? '—' : String(kpis.dataLagDays)}
-                        subtitle={
-                            kpis.latestAt
-                                ? t('kpis.dataLagDaysHint', { date: kpis.latestAt.slice(0, 10) })
-                                : undefined
-                        }
-                        icon={Clock}
+                        label={t('kpis.userSurvey')}
+                        value={fmtNum(kpis.userSurvey)}
+                        icon={ClipboardList}
+                    />
+                    <KpiCard
+                        label={t('kpis.avgSurveyRate')}
+                        value={fmtSurveyRate(kpis.avgSurveyRate)}
+                        icon={Stars}
                     />
                 </div>
 
-                {/* Row 3 — 3 donuts */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <DonutCard
-                        title={t('charts.businessGroup')}
-                        data={bgSlices}
-                        height={220}
-                        emptyText={t('common.noData')}
-                        selectedSlices={bgSel}
-                        onLegendToggle={toggle(setBgSel)}
-                        onSliceClick={(s) => toggle(setBgSel)(s.name)}
-                    />
-                    <DonutCard
-                        title={t('charts.region')}
-                        data={regionSlices}
-                        height={220}
-                        emptyText={t('common.noData')}
-                        selectedSlices={regionSel}
-                        onLegendToggle={toggle(setRegionSel)}
-                        onSliceClick={(s) => toggle(setRegionSel)(s.name)}
-                    />
-                    <DonutCard
-                        title={t('charts.behaviour')}
-                        data={behaviourSlices}
-                        height={220}
-                        emptyText={t('common.noData')}
-                        selectedSlices={behaviourSel}
-                        onLegendToggle={toggle(setBehaviourSel)}
-                        onSliceClick={(s) => toggle(setBehaviourSel)(s.name)}
-                    />
+                {/* Row 3 — PBIX 5-cell layout: left big BG donut, middle two donuts
+                 *  (Page Views by Action / Unique Visitor by Region), right two daily
+                 *  trend lines (Page Views Daily Trend / Unique Visitors Daily Trend). */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                    <div className="md:col-span-5">
+                        <DonutCard
+                            title={t('charts.businessGroup')}
+                            data={bgSlices}
+                            height={280}
+                            emptyText={t('common.noData')}
+                            selectedSlices={bgSel}
+                            onLegendToggle={toggle(setBgSel)}
+                            onSliceClick={(s) => toggle(setBgSel)(s.name)}
+                        />
+                    </div>
+                    <div className="md:col-span-3 flex flex-col gap-3">
+                        <DonutCard
+                            title={t('charts.behaviour')}
+                            data={behaviourSlices}
+                            height={130}
+                            emptyText={t('common.noData')}
+                            selectedSlices={behaviourSel}
+                            onLegendToggle={toggle(setBehaviourSel)}
+                            onSliceClick={(s) => toggle(setBehaviourSel)(s.name)}
+                        />
+                        <DonutCard
+                            title={t('charts.region')}
+                            data={regionSlices}
+                            height={130}
+                            emptyText={t('common.noData')}
+                            selectedSlices={regionSel}
+                            onLegendToggle={toggle(setRegionSel)}
+                            onSliceClick={(s) => toggle(setRegionSel)(s.name)}
+                        />
+                    </div>
+                    <div className="md:col-span-4 flex flex-col gap-3">
+                        <TrendLineCard
+                            title={t('charts.volumeTrend')}
+                            data={volumeSeries}
+                            height={130}
+                            color="#6366f1"
+                            emptyText={t('common.noData')}
+                        />
+                        <TrendLineCard
+                            title={t('charts.distinctUserTrend')}
+                            data={distinctUserSeries}
+                            height={130}
+                            color="#14b8a6"
+                            emptyText={t('common.noData')}
+                        />
+                    </div>
                 </div>
 
-                {/* Row 4 — combo (behaviour mix) */}
+                {/* Row 4 — Auto Support vs Total Ask (PBIX bottom combo chart) */}
                 <div className="mb-3">
-                    <TrendLineCard
+                    <StackedBarPercentLineCard
                         title={t('charts.behaviourTrend')}
-                        subtitle={t('charts.behaviourTrendSubtitle')}
-                        data={behaviourTrend}
-                        height={260}
-                        series={[
-                            { key: 'enter_chat', label: t('behaviour.enter_chat'), color: '#3b82f6' },
-                            { key: 'query', label: t('behaviour.query'), color: '#22c55e' },
-                            { key: 'click', label: t('behaviour.click'), color: '#f59e0b' },
+                        data={autoVsAskMonthly.map((m) => ({ ...m }))}
+                        xKey="monthLabel"
+                        height={280}
+                        emptyText={t('common.noData')}
+                        stackedKeys={[
+                            { key: 'autoSupport', label: t('kpis.tier0Supported'), color: OHLA_PALETTE.actionChainMatched },
+                            { key: 'liveAgentSupport', label: t('kpis.nonAutoSupport'), color: OHLA_PALETTE.faqMatched },
                         ]}
-                        emptyText={t('common.noData')}
-                    />
-                </div>
-
-                {/* Row 5 — 2 line charts */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <TrendLineCard
-                        title={t('charts.volumeTrend')}
-                        subtitle={t('charts.volumeTrendSubtitle')}
-                        data={volumeSeries}
-                        height={220}
-                        color="#6366f1"
-                        emptyText={t('common.noData')}
-                    />
-                    <TrendLineCard
-                        title={t('charts.distinctUserTrend')}
-                        subtitle={t('charts.distinctUserTrendSubtitle')}
-                        data={distinctUserSeries}
-                        height={220}
-                        color="#14b8a6"
-                        emptyText={t('common.noData')}
+                        lineKeys={[
+                            { key: 'autoRate', label: t('charts.autoRate'), color: '#f97316' },
+                        ]}
                     />
                 </div>
             </div>

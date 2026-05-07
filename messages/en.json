@@ -1515,6 +1515,8 @@
     },
     "kpis": {
       "totalInteractions": "Page Views#",
+      "userAsk": "User Ask#",
+      "userSurvey": "User Survey#",
       "distinctUsers": "Unique Visitors#",
       "tier0Supported": "Ohla Auto Support#",
       "faqMatchRate": "FAQ Match Rate",
@@ -1532,6 +1534,7 @@
       "behaviour": "Page Views by Action",
       "behaviourTrend": "Auto Support vs Total Ask",
       "behaviourTrendSubtitle": "Monthly auto vs live agent split",
+      "autoRate": "Auto Support Rate",
       "volumeTrend": "Page Views Daily Trend",
       "volumeTrendSubtitle": "Daily total interactions",
       "distinctUserTrend": "Unique Visitors Daily Trend",
