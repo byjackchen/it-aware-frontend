@@ -206,17 +206,15 @@ export function classifyOther(row: OhlaRow): OtherCategory {
 /**
  * Does this row qualify as an Agent Support (Live Agent) hand-off?
  *
- * Aligned with Overview 'Live Agent Support#' KPI: any row whose response
- * mentions "Ticket INC*** has been created" (decode.ts back-fills the
- * `ticketId` field from the response text). The PBIX measure is the same
- * count — a unique ticket per chatbot escalation event.
+ * Single source of truth — same signal as Overview "Live Agent Support#":
+ * the bot response text contains "Ticket INC*** has been created".
+ * decode.ts back-fills `ticketId` from that response, so a non-null
+ * ticketId means a ticket was actually created (not just offered).
  *
- * Older heuristics (template names, query+ticket) are kept as a defensive
- * fallback for rows that have a ticket attached via the structured object
- * path but no creation message.
+ * Older heuristics (AgentSupportConfirmTemplate / triggeredTickets) were
+ * removed because the confirm template fires whenever the bot OFFERS to
+ * escalate, even when the user declines, inflating the count ~2.7x.
  */
 export function isAgentSupport(row: OhlaRow): boolean {
-    if (row.ticketId !== null) return true
-    if (row.behaviour === 'query' && classifyAskBehaviour(row) === 'triggeredTickets') return true
-    return hasTemplate(row, AGENT_SUPPORT_TEMPLATES)
+    return row.ticketId !== null
 }
