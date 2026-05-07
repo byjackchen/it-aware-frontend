@@ -409,13 +409,14 @@ export function OhlaOverviewDashboard() {
 
                 {/* Row 3 — PBIX 5-cell layout: left big BG donut, middle two donuts
                  *  (Page Views by Action / Unique Visitor by Region), right two daily
-                 *  trend lines (Page Views Daily Trend / Unique Visitors Daily Trend). */}
+                 *  trend lines (Page Views Daily Trend / Unique Visitors Daily Trend).
+                 *  Fixed-height row so middle and right cells stay bottom-aligned. */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-1 mb-1">
-                    <div className="md:col-span-5 flex">
+                    <div className="md:col-span-5">
                         <DonutCard
                             title={t('charts.businessGroup')}
                             data={bgSlices}
-                            height={360}
+                            height={432}
                             emptyText={t('common.noData')}
                             selectedSlices={bgSel}
                             onLegendToggle={toggle(setBgSel)}
@@ -426,7 +427,7 @@ export function OhlaOverviewDashboard() {
                         <DonutCard
                             title={t('charts.behaviour')}
                             data={behaviourSlices}
-                            height={172}
+                            height={178}
                             emptyText={t('common.noData')}
                             selectedSlices={behaviourSel}
                             onLegendToggle={toggle(setBehaviourSel)}
@@ -435,7 +436,7 @@ export function OhlaOverviewDashboard() {
                         <DonutCard
                             title={t('charts.region')}
                             data={regionSlices}
-                            height={172}
+                            height={178}
                             emptyText={t('common.noData')}
                             selectedSlices={regionSel}
                             onLegendToggle={toggle(setRegionSel)}
@@ -446,7 +447,7 @@ export function OhlaOverviewDashboard() {
                         <TrendLineCard
                             title={t('charts.volumeTrend')}
                             data={volumeSeries}
-                            height={172}
+                            height={178}
                             color="#6366f1"
                             emptyText={t('common.noData')}
                             zoomable
@@ -454,7 +455,7 @@ export function OhlaOverviewDashboard() {
                         <TrendLineCard
                             title={t('charts.distinctUserTrend')}
                             data={distinctUserSeries}
-                            height={172}
+                            height={178}
                             color="#14b8a6"
                             emptyText={t('common.noData')}
                             zoomable
