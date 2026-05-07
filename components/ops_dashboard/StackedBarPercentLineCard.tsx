@@ -17,6 +17,7 @@ import {
     ComposedChart,
     Bar,
     Line,
+    LabelList,
     XAxis,
     YAxis,
     Tooltip,
@@ -45,6 +46,13 @@ export interface StackedBarPercentLineCardProps {
     leftAxisLabel?: string
     /** right-axis label, e.g. "FAQ Match Rate and Overall Match Rate". */
     rightAxisLabel?: string
+    /** Show count labels on each bar segment (PBIX style). */
+    showBarLabels?: boolean
+    /** Show value labels on the line (PBIX percentage labels). */
+    showLineLabels?: boolean
+    /** Optional secondary axis label key (e.g. 'quarterLabel'). Renders a
+     *  ghost row beneath the main x-axis grouping like PBIX hierarchy. */
+    secondaryXKey?: string
 }
 
 function pctFmt(v: number | string) {
@@ -63,6 +71,9 @@ export function StackedBarPercentLineCard({
     emptyText = 'No data',
     leftAxisLabel,
     rightAxisLabel,
+    showBarLabels = false,
+    showLineLabels = false,
+    secondaryXKey,
 }: StackedBarPercentLineCardProps) {
     const { theme } = useTheme()
     const isLight = theme === 'light'
@@ -98,9 +109,21 @@ export function StackedBarPercentLineCard({
                         <XAxis
                             dataKey={xKey}
                             tick={{ fontSize: 11, fill: axisCls }}
-                            interval="preserveStartEnd"
-                            minTickGap={20}
+                            interval={0}
+                            xAxisId="primary"
                         />
+                        {secondaryXKey && (
+                            <XAxis
+                                dataKey={secondaryXKey}
+                                tick={{ fontSize: 10, fill: axisCls, opacity: 0.7 }}
+                                interval={0}
+                                xAxisId="secondary"
+                                axisLine={false}
+                                tickLine={false}
+                                allowDuplicatedCategory
+                                height={18}
+                            />
+                        )}
                         <YAxis
                             yAxisId="left"
                             tick={{ fontSize: 11, fill: axisCls }}
@@ -148,27 +171,59 @@ export function StackedBarPercentLineCard({
                             }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11, color: axisCls }} />
-                        {stackedKeys.map((s) => (
-                            <Bar
-                                key={s.key}
-                                yAxisId="left"
-                                dataKey={s.key}
-                                name={s.label}
-                                fill={s.color}
-                                stackId="stack"
-                            />
-                        ))}
+                        {stackedKeys.map((s, idx) => {
+                            const isTopStack = idx === stackedKeys.length - 1
+                            return (
+                                <Bar
+                                    key={s.key}
+                                    yAxisId="left"
+                                    xAxisId="primary"
+                                    dataKey={s.key}
+                                    name={s.label}
+                                    fill={s.color}
+                                    stackId="stack"
+                                    minPointSize={3}
+                                >
+                                    {showBarLabels && (
+                                        <LabelList
+                                            dataKey={s.key}
+                                            position={isTopStack ? 'top' : 'center'}
+                                            style={{
+                                                fill: isTopStack ? axisCls : '#ffffff',
+                                                fontSize: 11,
+                                                fontWeight: 500,
+                                            }}
+                                            formatter={(v: unknown) => {
+                                                const n = typeof v === 'number' ? v : Number(v)
+                                                if (!Number.isFinite(n) || n === 0) return ''
+                                                return n.toLocaleString()
+                                            }}
+                                        />
+                                    )}
+                                </Bar>
+                            )
+                        })}
                         {lineKeys.map((s) => (
                             <Line
                                 key={s.key}
                                 yAxisId="right"
+                                xAxisId="primary"
                                 type="monotone"
                                 dataKey={s.key}
                                 name={s.label}
                                 stroke={s.color}
                                 strokeWidth={2}
-                                dot={false}
-                            />
+                                dot={{ r: 3, fill: s.color }}
+                            >
+                                {showLineLabels && (
+                                    <LabelList
+                                        dataKey={s.key}
+                                        position="top"
+                                        style={{ fill: s.color, fontSize: 11, fontWeight: 500 }}
+                                        formatter={(v: unknown) => pctFmt(v as number | string)}
+                                    />
+                                )}
+                            </Line>
                         ))}
                     </ComposedChart>
                 </ResponsiveContainer>

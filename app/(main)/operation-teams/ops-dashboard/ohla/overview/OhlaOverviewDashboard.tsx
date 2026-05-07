@@ -468,11 +468,14 @@ export function OhlaOverviewDashboard() {
                         title={t('charts.behaviourTrend')}
                         data={autoVsAskMonthly.map((m) => ({ ...m }))}
                         xKey="monthLabel"
-                        height={280}
+                        secondaryXKey="quarterLabel"
+                        height={300}
                         emptyText={t('common.noData')}
+                        showBarLabels
+                        showLineLabels
                         stackedKeys={[
-                            { key: 'autoSupport', label: t('kpis.tier0Supported'), color: OHLA_PALETTE.actionChainMatched },
-                            { key: 'liveAgentSupport', label: t('kpis.nonAutoSupport'), color: OHLA_PALETTE.faqMatched },
+                            { key: 'autoSupport', label: t('kpis.tier0Supported'), color: '#1e3a8a' },
+                            { key: 'liveAgentSupport', label: t('kpis.nonAutoSupport'), color: '#38bdf8' },
                         ]}
                         lineKeys={[
                             { key: 'autoRate', label: t('charts.autoRate'), color: '#f97316' },

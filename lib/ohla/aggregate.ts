@@ -372,6 +372,7 @@ export function groupAskByDay(allRows: OhlaRow[]): AskDayBucket[] {
 export interface AutoVsAskMonthBucket {
     month: string // YYYY-MM
     monthLabel: string // e.g. "January"
+    quarterLabel: string // e.g. "Qtr 1"
     autoSupport: number // = tier0 (faqMatched + kbMatched + actionChainMatched) within queries
     liveAgentSupport: number // queries with ticketId
     autoRate: number // 0..1
@@ -385,31 +386,38 @@ const MONTH_NAMES = [
 export function groupAutoVsAskByMonth(allRows: OhlaRow[]): AutoVsAskMonthBucket[] {
     const map = new Map<string, { auto: number; live: number }>()
     for (const r of allRows) {
-        if (r.behaviour !== 'query') continue
         const month = r.createdDate.slice(0, 7) // YYYY-MM
         let entry = map.get(month)
         if (!entry) {
             entry = { auto: 0, live: 0 }
             map.set(month, entry)
         }
+        // Live Agent: any row (typically click) that emitted a "Ticket INC***
+        // has been created" response — see decode.ts extractTicketIdFromResponse.
+        if (r.ticketId !== null) {
+            entry.live += 1
+        }
+        // Auto Support: only queries that we successfully bucketed into FAQ /
+        // KB / Action Chain (PBIX 'Tier 0 Supported v2').
+        if (r.behaviour !== 'query') continue
         const b = classifyAskBehaviour(r)
         if (b === 'faqMatched' || b === 'kbMatched' || b === 'actionChainMatched') {
             entry.auto += 1
-        }
-        if (r.ticketId !== null) {
-            entry.live += 1
         }
     }
     return [...map.entries()]
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([month, v]) => {
-            const idx = parseInt(month.slice(5, 7), 10) - 1
+            const monthIdx0 = parseInt(month.slice(5, 7), 10) - 1
             const total = v.auto + v.live
             return {
                 month,
-                monthLabel: MONTH_NAMES[idx] ?? month,
+                monthLabel: MONTH_NAMES[monthIdx0] ?? month,
+                quarterLabel: `Qtr ${Math.floor(monthIdx0 / 3) + 1}`,
                 autoSupport: v.auto,
                 liveAgentSupport: v.live,
+                // PBIX 'Auto Support Rate' = auto / (auto + live). Matches the
+                // 82% / 86% / 92% / 91% / 63% values in the reference screenshot.
                 autoRate: total > 0 ? v.auto / total : 0,
             }
         })
