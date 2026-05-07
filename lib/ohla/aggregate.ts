@@ -150,10 +150,10 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             surveyRateSum += r.surveyRate
             surveyRateN += 1
         }
-        // PBIX 'Live Agent Support#' = chat sessions where a ticket was created.
-        // ticketId is parsed from response_text "Ticket INC0123456 has been created"
-        // (decode.ts) — record.ticket JSON is null for nearly all rows.
-        if (r.ticketId !== null) liveAgentSupport += 1
+        // PBIX 'Live Agent Support#' = clicks on the "Contact Live Agent"
+        // button (EventKey base = 'agentsupport'). NOT the ticket creation
+        // count — many escalations don't end in a ticket.
+        if (r.clickedAgentSupport) liveAgentSupport += 1
 
         if (r.behaviour === 'query') {
             queryCount += 1
@@ -392,9 +392,8 @@ export function groupAutoVsAskByMonth(allRows: OhlaRow[]): AutoVsAskMonthBucket[
             entry = { auto: 0, live: 0 }
             map.set(month, entry)
         }
-        // Live Agent: any row (typically click) that emitted a "Ticket INC***
-        // has been created" response — see decode.ts extractTicketIdFromResponse.
-        if (r.ticketId !== null) {
+        // Live Agent: count clicks on the "Contact Live Agent" button.
+        if (r.clickedAgentSupport) {
             entry.live += 1
         }
         // Auto Support: only queries that we successfully bucketed into FAQ /

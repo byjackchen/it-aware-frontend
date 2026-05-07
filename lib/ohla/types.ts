@@ -78,6 +78,11 @@ export interface OhlaRow {
     ticketId: string | null;
     ticketReason: string | null;
 
+    // PBIX 'Live Agent Support#' signal (action_type='click' with EventKey
+    // starting with 'agentsupport' — i.e. user pressed the "contact live agent"
+    // button). This is the count PBIX uses, not "ticket actually created".
+    clickedAgentSupport: boolean;
+
     // Response template decoding (for User Ask / Other Case classification)
     allResponseTemplates: string[];        // in order, including AiIdleTemplate
     primaryResponseTemplate: string | null; // first non-AiIdleTemplate, null if all idle or empty

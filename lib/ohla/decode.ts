@@ -54,6 +54,24 @@ function extractTicketIdFromResponse(text: string | null | undefined): string | 
     return m ? m[1] : null
 }
 
+/**
+ * PBIX 'Live Agent Support#' counts user clicks on the "Contact Live Agent"
+ * button — i.e. action_type='click' with EventKey starting with "agentsupport"
+ * (covers both the initial entry "agentsupport" and the confirm step
+ * "agentsupport-confirm"). PBIX uses the entry click only — pattern matched
+ * by EventKey base part = 'agentsupport' (no suffix).
+ */
+function detectAgentSupportClick(behaviour: Behaviour, rec: OhlaRecord): boolean {
+    if (behaviour !== 'click') return false
+    const msg = rec.request_msg as
+        | { Msg?: { EventKey?: unknown } }
+        | undefined
+    const ek = msg?.Msg?.EventKey
+    if (typeof ek !== 'string') return false
+    const base = ek.split('|')[0]
+    return base === 'agentsupport'
+}
+
 function deriveBusinessGroup(worker: Worker | undefined): string | null {
     if (!worker) return null
     const raw = worker.department_name ?? null
@@ -146,6 +164,7 @@ export function decodeInteraction(
 
         ticketId: rec.ticket?.id ?? extractTicketIdFromResponse(row.response_text) ?? null,
         ticketReason: rec.ticket?.reason ?? null,
+        clickedAgentSupport: detectAgentSupportClick(behaviour, rec),
 
         allResponseTemplates,
         primaryResponseTemplate,

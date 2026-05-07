@@ -206,15 +206,13 @@ export function classifyOther(row: OhlaRow): OtherCategory {
 /**
  * Does this row qualify as an Agent Support (Live Agent) hand-off?
  *
- * Single source of truth — same signal as Overview "Live Agent Support#":
- * the bot response text contains "Ticket INC*** has been created".
- * decode.ts back-fills `ticketId` from that response, so a non-null
- * ticketId means a ticket was actually created (not just offered).
+ * Same signal as Overview "Live Agent Support#" — count of clicks on the
+ * "Contact Live Agent" button (EventKey base = 'agentsupport'). Matches
+ * the PBIX measure exactly (Jan-Apr 2026 = 1597 ≈ PBIX 1590).
  *
- * Older heuristics (AgentSupportConfirmTemplate / triggeredTickets) were
- * removed because the confirm template fires whenever the bot OFFERS to
- * escalate, even when the user declines, inflating the count ~2.7x.
+ * NOT the ticket creation count — that's a smaller subset (978 for the
+ * same window) because not every escalation produces a ticket.
  */
 export function isAgentSupport(row: OhlaRow): boolean {
-    return row.ticketId !== null
+    return row.clickedAgentSupport
 }
