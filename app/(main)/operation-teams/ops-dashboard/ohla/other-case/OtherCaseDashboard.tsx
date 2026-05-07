@@ -216,7 +216,12 @@ export function OtherCaseDashboard() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <KpiCard label={t('otherCase.kpis.other')} value={fmtNum(kpis.other)} valueSize="xl" />
+                    <KpiCard
+                    label={t('otherCase.kpis.other')}
+                    value={fmtNum(kpis.other)}
+                    valueSize="xl"
+                    tooltip={t('otherCase.kpis.other')}
+                />
                     <DonutCard
                         title={t('otherCase.charts.distribution')}
                         data={slices}

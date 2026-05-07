@@ -1075,7 +1075,7 @@
     "opsAssetsOverview": "Assets Overview",
     "opsInStockAssets": "In-Stock Assets",
     "opsPendingAssets": "Pending Assets",
-    "opsOhla": "Ohla",
+    "opsOhla": "Ohla Chatbot",
     "opsOhlaOverview": "Overview",
     "opsOhlaUserAsk": "User Ask Analysis",
     "opsOhlaAgentSupport": "Agent Support",
@@ -1110,36 +1110,36 @@
       "wipRepairs": "WIP Repairs"
     },
     "kpis": {
-      "totalActive": "Total Active Tickets",
-      "incidentsActive": "Active Incidents",
-      "requestsActive": "Active Requests",
-      "activeIncident": "Active Incidents",
-      "activeCatalog": "Active Catalog",
-      "activeAsset": "Active Asset Tasks",
-      "agingAsset30d": "Aging Asset > 30d",
-      "vipActive": "Active VIP Tickets",
-      "agingIncidentsGt2d": "Incidents > 2 days",
-      "agingCatalogGt30d": "Catalog Tasks > 30 days",
-      "agingAssetsGt30d": "Asset Tasks > 30 days",
-      "totalAssets": "Total Assets",
-      "inStock": "In Stock",
-      "inStockRate": "In-Stock Rate",
+      "totalActive": "Total active items across incidents, catalog requests, and asset tasks",
+      "incidentsActive": "Incidents currently open (not resolved or closed)",
+      "requestsActive": "Service catalog requests in progress",
+      "activeIncident": "Open incident tickets count",
+      "activeCatalog": "Open service catalog requests count",
+      "activeAsset": "Open asset task requests count",
+      "agingAsset30d": "Asset tasks unresolved for more than 30 days",
+      "vipActive": "Active incidents assigned to VIP stakeholders",
+      "agingIncidentsGt2d": "Incidents open longer than 2 days",
+      "agingCatalogGt30d": "Catalog requests open longer than 30 days",
+      "agingAssetsGt30d": "Asset tasks aging over 30 days",
+      "totalAssets": "Total hardware assets",
+      "inStock": "In stock",
+      "inStockRate": "In-stock rate",
       "pendingReturn": "Pending Return",
       "pendingRepair": "Pending Repair",
       "unconfirmed": "Unconfirmed",
       "zeroResidual": "Zero Residual",
-      "totalIncidents": "Total Incidents",
-      "active": "Active",
-      "p1": "P1 Active",
-      "p2": "P2 Active",
-      "agingGt2d": "Aging > 2d",
-      "agingGt7d": "Aging > 7d",
-      "agingGt30d": "Aging > 30d",
-      "resolvedRate": "Resolved Rate",
-      "resolved": "Resolved",
-      "totalCatalogTasks": "Total Catalog Tasks",
-      "highPriority": "High Priority",
-      "mediumPriority": "Medium Priority",
+      "totalIncidents": "Total incidents across all states",
+      "active": "Currently active incidents (open)",
+      "p1": "P1 Critical incidents (highest severity)",
+      "p2": "P2 High priority incidents",
+      "agingGt2d": "Incidents open longer than 2 days",
+      "agingGt7d": "Incidents open longer than 7 days",
+      "agingGt30d": "Incidents open longer than 30 days",
+      "resolvedRate": "Percentage of incidents resolved",
+      "resolved": "Total resolved incidents",
+      "totalCatalogTasks": "Total catalog tasks across all states",
+      "highPriority": "High priority (P1+P2) incidents",
+      "mediumPriority": "Medium priority incidents",
       "momDelta": "{arrow} {pct}% vs last mo",
       "momFlat": "flat vs last mo"
     },
@@ -1514,17 +1514,17 @@
       "subtitle": "Ohla Chatbot Performance"
     },
     "kpis": {
-      "totalInteractions": "Page Views#",
-      "userAsk": "User Ask#",
-      "userSurvey": "User Survey#",
-      "distinctUsers": "Unique Visitors#",
-      "tier0Supported": "Ohla Auto Support#",
+      "totalInteractions": "Total count of chatbot interaction sessions in the selected window",
+      "userAsk": "User queries classified as 'query' behaviour",
+      "userSurvey": "Sessions where user submitted a rate-ticket (1-5 scale)",
+      "distinctUsers": "Unique WeCom IDs with at least one interaction",
+      "tier0Supported": "Queries resolved by Ohla Auto Support without live agent escalation",
       "faqMatchRate": "FAQ Match Rate",
       "overallMatchRate": "Overall Match Rate",
-      "avgSurveyRate": "Avg Rate",
+      "avgSurveyRate": "Average survey rate across all sessions (1-5 scale)",
       "avgSurveyRateHint": "Survey rate average (1-5)",
-      "totalActionChain": "User Click#",
-      "nonAutoSupport": "Live Agent Support#",
+      "totalActionChain": "Total user clicks / action chain completions",
+      "nonAutoSupport": "Queries escalated to live agent (ticket created via Agent Support)",
       "dataLagDays": "Data Lag Days",
       "dataLagDaysHint": "Latest data: {date}"
     },
@@ -1544,13 +1544,13 @@
       "title": "User Ask Analysis",
       "subtitle": "What users ask Ohla - FAQ match performance and behaviour mix",
       "kpis": {
-        "userAsk": "User Ask#",
-        "faqMatchRate": "FAQ Match Rate",
-        "overallMatchRate": "Overall Match Rate",
-        "faqMatched": "FAQ Matched#",
-        "actionChain": "Action Chain#",
-        "kbMatched": "KB Matched#",
-        "other": "Other#"
+        "userAsk": "User queries classified as 'query' behaviour",
+        "faqMatchRate": "Percentage of queries matched to an FAQ",
+        "overallMatchRate": "Percentage of queries matched to FAQ, Action Chain, or KB",
+        "faqMatched": "Queries matched to an FAQ response",
+        "actionChain": "Queries matched to an action chain workflow",
+        "kbMatched": "Queries matched to a knowledge base article",
+        "other": "Queries with no FAQ / Action Chain / KB match"
       },
       "charts": {
         "behaviourDistribution": "Behaviour Distribution",
@@ -1569,7 +1569,7 @@
       "title": "Agent Support",
       "subtitle": "Escalations picked up by live agents",
       "kpis": {
-        "agentSupport": "Agent Support"
+        "agentSupport": "Sessions where user clicked Agent Support button (escalated to live agent)"
       },
       "charts": {
         "dailyTrend": "Agent Support Daily Trend",
@@ -1591,7 +1591,7 @@
       "title": "Other Case Analysis",
       "subtitle": "Queries outside FAQ / Action Chain / KB - where the bot stalled",
       "kpis": {
-        "other": "Other#"
+        "other": "Queries that could not be matched to FAQ, Action Chain, or KB"
       },
       "charts": {
         "distribution": "Other#",
@@ -1619,8 +1619,8 @@
       "title": "Survey Details",
       "subtitle": "User feedback from the rate-ticket button (1-5 scale)",
       "kpis": {
-        "survey": "Survey",
-        "avgRate": "Avg Rate"
+        "survey": "Total user survey responses via rate-ticket button (1-5 scale)",
+        "avgRate": "Average survey rate across all responses (1-5 scale)"
       },
       "filters": {
         "vip": "VIP Filter",

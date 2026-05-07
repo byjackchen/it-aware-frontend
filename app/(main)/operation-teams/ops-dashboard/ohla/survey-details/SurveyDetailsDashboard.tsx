@@ -271,7 +271,9 @@ export function SurveyDetailsDashboard() {
                         label={t('surveyDetails.kpis.survey')}
                         value={fmtNum(kpis.surveyCount)}
                         valueSize="xl"
-                    />
+                    
+                        tooltip={t('surveyDetails.kpis.survey')}
+    />
                     <div className={`rounded-xl border p-4 flex flex-col justify-center ${mutedCardCls}`}>
                         <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>
                             {t('surveyDetails.kpis.avgRate')}

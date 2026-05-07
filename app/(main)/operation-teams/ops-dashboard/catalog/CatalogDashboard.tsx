@@ -400,12 +400,16 @@ export function CatalogDashboard() {
                         value={kpis.total}
                         icon={ShoppingCart}
                         delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
-                    />
+                    
+                        tooltip={t('kpis.totalCatalogTasks')}
+    />
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
                         delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
-                    />
+                    
+                        tooltip={t('kpis.active')}
+    />
                     <KpiCard label={t('kpis.resolved')} value={kpis.resolved} />
                     <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
                     <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />

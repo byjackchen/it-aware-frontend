@@ -1067,7 +1067,7 @@
     "opsAssetsOverview": "资产总览",
     "opsInStockAssets": "库存资产",
     "opsPendingAssets": "待处理资产",
-    "opsOhla": "Ohla",
+    "opsOhla": "Ohla 聊天机器人",
     "opsOhlaOverview": "概览",
     "opsOhlaUserAsk": "用户提问分析",
     "opsOhlaAgentSupport": "人工支持",
@@ -1102,36 +1102,36 @@
       "wipRepairs": "维修中资产"
     },
     "kpis": {
-      "totalActive": "活动工单总数",
-      "incidentsActive": "活动事件",
-      "requestsActive": "活动请求",
-      "activeIncident": "活动事件",
-      "activeCatalog": "活动服务目录",
-      "activeAsset": "活动资产任务",
-      "agingAsset30d": "老化资产 > 30 天",
-      "vipActive": "活动 VIP 工单",
-      "agingIncidentsGt2d": "事件 > 2 天",
-      "agingCatalogGt30d": "服务目录任务 > 30 天",
-      "agingAssetsGt30d": "资产任务 > 30 天",
-      "totalAssets": "资产总数",
-      "inStock": "库存",
-      "inStockRate": "库存率",
+      "totalActive": "Total active items across incidents, catalog requests, and asset tasks",
+      "incidentsActive": "Incidents currently open (not resolved or closed)",
+      "requestsActive": "Service catalog requests in progress",
+      "activeIncident": "Open incident tickets count",
+      "activeCatalog": "Open service catalog requests count",
+      "activeAsset": "Open asset task requests count",
+      "agingAsset30d": "Asset tasks unresolved for more than 30 days",
+      "vipActive": "Active incidents assigned to VIP stakeholders",
+      "agingIncidentsGt2d": "Incidents open longer than 2 days",
+      "agingCatalogGt30d": "Catalog requests open longer than 30 days",
+      "agingAssetsGt30d": "Asset tasks aging over 30 days",
+      "totalAssets": "硬件资产总数",
+      "inStock": "在库资产",
+      "inStockRate": "在库率",
       "pendingReturn": "待归还",
       "pendingRepair": "待维修",
       "unconfirmed": "未确认",
-      "zeroResidual": "残值为零",
-      "totalIncidents": "事件总数",
-      "active": "活动",
-      "p1": "P1 活动",
-      "p2": "P2 活动",
-      "agingGt2d": "老化 > 2 天",
-      "agingGt7d": "老化 > 7 天",
-      "agingGt30d": "老化 > 30 天",
-      "resolvedRate": "解决率",
-      "resolved": "已解决",
-      "totalCatalogTasks": "服务目录任务总数",
-      "highPriority": "高优先级",
-      "mediumPriority": "中优先级",
+      "zeroResidual": "零残值",
+      "totalIncidents": "Total incidents across all states",
+      "active": "Currently active incidents (open)",
+      "p1": "P1 Critical incidents (highest severity)",
+      "p2": "P2 High priority incidents",
+      "agingGt2d": "Incidents open longer than 2 days",
+      "agingGt7d": "Incidents open longer than 7 days",
+      "agingGt30d": "Incidents open longer than 30 days",
+      "resolvedRate": "Percentage of incidents resolved",
+      "resolved": "Total resolved incidents",
+      "totalCatalogTasks": "Total catalog tasks across all states",
+      "highPriority": "High priority (P1+P2) incidents",
+      "mediumPriority": "Medium priority incidents",
       "momDelta": "{arrow} 较上月 {pct}%",
       "momFlat": "较上月持平"
     },
@@ -1506,17 +1506,17 @@
       "subtitle": "Ohla Chatbot Performance"
     },
     "kpis": {
-      "totalInteractions": "Page Views#",
-      "userAsk": "User Ask#",
-      "userSurvey": "User Survey#",
-      "distinctUsers": "Unique Visitors#",
-      "tier0Supported": "Ohla Auto Support#",
+      "totalInteractions": "Total count of chatbot interaction sessions in the selected window",
+      "userAsk": "User queries classified as 'query' behaviour",
+      "userSurvey": "Sessions where user submitted a rate-ticket (1-5 scale)",
+      "distinctUsers": "Unique WeCom IDs with at least one interaction",
+      "tier0Supported": "Queries resolved by Ohla Auto Support without live agent escalation",
       "faqMatchRate": "FAQ Match Rate",
       "overallMatchRate": "Overall Match Rate",
-      "avgSurveyRate": "Avg Rate",
+      "avgSurveyRate": "Average survey rate across all sessions (1-5 scale)",
       "avgSurveyRateHint": "Survey 均分 (1-5)",
-      "totalActionChain": "User Click#",
-      "nonAutoSupport": "Live Agent Support#",
+      "totalActionChain": "Total user clicks / action chain completions",
+      "nonAutoSupport": "Queries escalated to live agent (ticket created via Agent Support)",
       "dataLagDays": "Data Lag Days",
       "dataLagDaysHint": "最新数据：{date}"
     },
@@ -1536,13 +1536,13 @@
       "title": "User Ask Analysis",
       "subtitle": "用户向 Ohla 的提问分析 — FAQ 命中与 Behaviour 分布",
       "kpis": {
-        "userAsk": "User Ask#",
-        "faqMatchRate": "FAQ Match Rate",
-        "overallMatchRate": "Overall Match Rate",
-        "faqMatched": "FAQ Matched#",
-        "actionChain": "Action Chain#",
-        "kbMatched": "KB Matched#",
-        "other": "Other#"
+        "userAsk": "User queries classified as 'query' behaviour",
+        "faqMatchRate": "Percentage of queries matched to an FAQ",
+        "overallMatchRate": "Percentage of queries matched to FAQ, Action Chain, or KB",
+        "faqMatched": "Queries matched to an FAQ response",
+        "actionChain": "Queries matched to an action chain workflow",
+        "kbMatched": "Queries matched to a knowledge base article",
+        "other": "Queries with no FAQ / Action Chain / KB match"
       },
       "charts": {
         "behaviourDistribution": "Behaviour Distribution",
@@ -1561,7 +1561,7 @@
       "title": "Agent Support",
       "subtitle": "由人工客服接手的会话",
       "kpis": {
-        "agentSupport": "Agent Support"
+        "agentSupport": "Sessions where user clicked Agent Support button (escalated to live agent)"
       },
       "charts": {
         "dailyTrend": "Agent Support Daily Trend",
@@ -1583,7 +1583,7 @@
       "title": "Other Case Analysis",
       "subtitle": "未命中 FAQ / 动作链 / KB 的提问 — bot 止步之处",
       "kpis": {
-        "other": "Other#"
+        "other": "Queries that could not be matched to FAQ, Action Chain, or KB"
       },
       "charts": {
         "distribution": "Other#",
@@ -1611,8 +1611,8 @@
       "title": "Survey Details",
       "subtitle": "来自评分按钮的用户反馈 (1-5 分)",
       "kpis": {
-        "survey": "Survey",
-        "avgRate": "平均分"
+        "survey": "Total user survey responses via rate-ticket button (1-5 scale)",
+        "avgRate": "Average survey rate across all responses (1-5 scale)"
       },
       "filters": {
         "vip": "VIP Filter",

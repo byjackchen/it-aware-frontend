@@ -190,6 +190,7 @@ export function AgentSupportDashboard() {
                         label={t('agentSupport.kpis.agentSupport')}
                         value={fmtNum(kpis.count)}
                         valueSize="xl"
+                        tooltip={t('agentSupport.kpis.agentSupport')}
                     />
                     <div className="md:col-span-2">
                         <TrendLineCard

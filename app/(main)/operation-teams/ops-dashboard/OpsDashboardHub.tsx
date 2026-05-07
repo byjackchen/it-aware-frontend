@@ -42,7 +42,6 @@ import { type Region, type RegionBubble } from '@/components/ops_dashboard/Regio
 import {
     TopFilterBar,
     type FilterState,
-    type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import {
@@ -121,29 +120,13 @@ export function OpsDashboardHub() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    // Default the opened-date window to the last 3 months. Seeded into
-    // the user-visible filter state so the date picker reflects it —
-    // otherwise the default is invisible and users mistake it for a
-    // server-side cutoff.
-    const [defaultFromIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    );
-
     // ── Filter state ────────────────────────────────────────────
-    // Declared before the API fetches so the ticket query can read the
-    // current date range off ticketFilters.
-    //
-    // Mirrors the IncidentAnalysis design: assigned_group / priority /
-    // location (tickets) and support_group / procured_by / department
-    // (assets) are all donut-driven now — they keep their FilterState
-    // keys but no longer get panel slicers. Region/Country live in
-    // their own slot.
+    // assigned_group / priority / location (tickets) and support_group /
+    // procured_by / department (assets) are all donut-driven now.
     const [ticketFilters, setTicketFilters] = useState<FilterState>({
         assigned_group: [],
         location: [],
         priority: [],
-        created_at_from: { from: defaultFromIso, to: null },
-        created_at_to: { from: defaultFromIso, to: null },
     });
     const [assetFilters, setAssetFilters] = useState<FilterState>({
         support_group: [],
@@ -228,33 +211,16 @@ export function OpsDashboardHub() {
         return out;
     }, [allTickets, allAssets]);
 
-    // Open Date is the only panel slicer; everything else is donut-driven
-    // or lives in the Region/Country headerSlot.
-    const ticketSlicers: SlicerConfig[] = useMemo(
-        () => [
-            { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
-        ],
-        [t],
-    );
-
-    // ── Filtered tickets (Region/Country + donut filters + date) ─
+    // ── Filtered tickets (Region/Country + donut filters) ─
     const filteredTickets = useMemo(() => {
         const groupSel = (ticketFilters.assigned_group as string[]) ?? [];
         const locSel = (ticketFilters.location as string[]) ?? [];
         const prioSel = (ticketFilters.priority as string[]) ?? [];
-        const range =
-            (ticketFilters.created_at_from as { from: string | null; to: string | null }) ??
-            { from: null, to: null };
         return allTickets.filter((r) => {
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (locSel.length && !locSel.includes(locationOf(r))) return false;
             if (prioSel.length && !prioSel.includes(r.priority)) return false;
-            if (range.from || range.to) {
-                const opened = (r.created_at ?? '').slice(0, 10);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
             return true;
         });
     }, [allTickets, ticketFilters, selectedRegions, selectedCountries, selectedLocations]);
@@ -471,18 +437,14 @@ export function OpsDashboardHub() {
         n += arr(assetFilters, 'procured_by');
         n += arr(assetFilters, 'department');
         n += arr(assetFilters, 'region');
-        const r = ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined;
-        if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
         return n;
-    }, [ticketFilters, assetFilters, defaultFromIso]);
+    }, [ticketFilters, assetFilters]);
 
     function resetAllParentFilters() {
         setTicketFilters({
             assigned_group: [],
             location: [],
             priority: [],
-            created_at_from: { from: defaultFromIso, to: null },
-            created_at_to: { from: defaultFromIso, to: null },
         });
         setAssetFilters({
             support_group: [],
@@ -533,7 +495,6 @@ export function OpsDashboardHub() {
                 is donut-driven (chart filters). Single Clear All button
                 at the top-right. */}
             <TopFilterBar
-                slicers={ticketSlicers}
                 value={ticketFilters}
                 onChange={setTicketFilters}
                 storageKey="ops-dashboard:hub:filters"

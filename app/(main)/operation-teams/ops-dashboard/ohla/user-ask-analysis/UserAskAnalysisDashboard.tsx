@@ -189,7 +189,10 @@ export function UserAskAnalysisDashboard() {
                                 value={fmtNum(kpis.userAsk)}
                                 valueSize="xl"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.userAsk')}
+    
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -197,7 +200,9 @@ export function UserAskAnalysisDashboard() {
                                 value={pct(kpis.faqMatchRate)}
                                 valueSize="xl"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.faqMatchRate')}
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -205,7 +210,9 @@ export function UserAskAnalysisDashboard() {
                                 value={pct(kpis.overallMatchRate)}
                                 valueSize="xl"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.overallMatchRate')}
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -213,7 +220,9 @@ export function UserAskAnalysisDashboard() {
                                 value={fmtNum(kpis.faqMatched)}
                                 valueSize="lg"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.faqMatched')}
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -221,7 +230,9 @@ export function UserAskAnalysisDashboard() {
                                 value={fmtNum(kpis.actionChain)}
                                 valueSize="lg"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.actionChain')}
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -229,7 +240,9 @@ export function UserAskAnalysisDashboard() {
                                 value={fmtNum(kpis.kbMatched)}
                                 valueSize="lg"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.kbMatched')}
+    />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
@@ -237,7 +250,9 @@ export function UserAskAnalysisDashboard() {
                                 value={fmtNum(kpis.other)}
                                 valueSize="lg"
                                 className="h-full"
-                            />
+                            
+                        tooltip={t('userAsk.kpis.other')}
+    />
                         </div>
                     </div>
                     <div className="md:col-span-3">
