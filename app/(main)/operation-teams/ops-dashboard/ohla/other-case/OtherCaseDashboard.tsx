@@ -28,6 +28,7 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
+import { maskWecomId } from '@/lib/ohla/mask'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -127,7 +128,7 @@ export function OtherCaseDashboard() {
         { key: 'day', label: t('otherCase.columns.day'), alignRight: true },
         { key: 'behaviour', label: t('otherCase.columns.behaviour') },
         { key: 'userActionCorrected', label: t('otherCase.columns.userActionCorrected') },
-        { key: 'actorStableId', label: t('otherCase.columns.wecomId') },
+        { key: 'actorStableId', label: t('otherCase.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
         { key: 'userContent', label: t('otherCase.columns.userContent') },
         { key: 'response', label: t('otherCase.columns.response') },
     ]

@@ -31,6 +31,7 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { RangeSliderFilter } from '@/components/ohla/RangeSliderFilter'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
+import { maskWecomId } from '@/lib/ohla/mask'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -127,7 +128,7 @@ export function SurveyDetailsDashboard() {
         { key: 'month', label: t('surveyDetails.columns.month') },
         { key: 'day', label: t('surveyDetails.columns.day'), alignRight: true },
         { key: 'region', label: t('surveyDetails.columns.region') },
-        { key: 'actorStableId', label: t('surveyDetails.columns.wecomId') },
+        { key: 'actorStableId', label: t('surveyDetails.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
         { key: 'userContent', label: t('surveyDetails.columns.userContent') },
         {
             key: 'surveyRate',

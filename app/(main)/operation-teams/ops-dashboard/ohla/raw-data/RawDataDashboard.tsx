@@ -22,6 +22,7 @@ import { filterByDateRange } from '@/lib/ohla/aggregate'
 import type { OhlaRow } from '@/lib/ohla/types'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
+import { maskWecomId } from '@/lib/ohla/mask'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -54,7 +55,7 @@ export function RawDataDashboard() {
             width: 'w-20',
             render: (r) => r.createdAt.slice(11, 19), // HH:MM:SS
         },
-        { key: 'actorStableId', label: t('rawData.columns.wecomId') },
+        { key: 'actorStableId', label: t('rawData.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
         { key: 'behaviour', label: t('rawData.columns.behaviour'), width: 'w-24' },
         { key: 'userAction', label: t('rawData.columns.userAction') },
         { key: 'userActionCorrected', label: t('rawData.columns.userActionCorrected'), width: 'w-20' },

@@ -30,6 +30,7 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
+import { maskWecomId } from '@/lib/ohla/mask'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -94,7 +95,7 @@ export function AgentSupportDashboard() {
         { key: 'month', label: t('agentSupport.columns.month') },
         { key: 'day', label: t('agentSupport.columns.day'), alignRight: true },
         { key: 'region', label: t('agentSupport.columns.region') },
-        { key: 'actorStableId', label: t('agentSupport.columns.wecomId') },
+        { key: 'actorStableId', label: t('agentSupport.columns.wecomId'), render: (r) => maskWecomId(r.actorStableId) },
         { key: 'ticketId', label: t('agentSupport.columns.ticketId') },
         { key: 'ticketReason', label: t('agentSupport.columns.ticketReason') },
         { key: 'response', label: t('agentSupport.columns.response') },
