@@ -30,13 +30,7 @@ import type { OhlaRow } from '@/lib/ohla/types'
 import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
 import { RangeSliderFilter } from '@/components/ohla/RangeSliderFilter'
-
-function defaultDateRange(): { from: string; to: string } {
-    const now = new Date()
-    const to = now.toISOString().slice(0, 10)
-    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-    return { from, to }
-}
+import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -85,7 +79,7 @@ export function SurveyDetailsDashboard() {
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
-    const [{ from, to }, setRange] = useState(defaultDateRange)
+    const { range: { from, to }, setRange } = useOhlaDateRange()
     const [vipFilter, setVipFilter] = useState<VipFilter>('all')
     const [bgFilter, setBgFilter] = useState<string>('all')
     const [countryFilter, setCountryFilter] = useState<string>('all')

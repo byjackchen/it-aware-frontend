@@ -21,13 +21,7 @@ import { useOhla } from '@/lib/hooks/useOhla'
 import { filterByDateRange } from '@/lib/ohla/aggregate'
 import type { OhlaRow } from '@/lib/ohla/types'
 import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard'
-
-function defaultDateRange(): { from: string; to: string } {
-    const now = new Date()
-    const to = now.toISOString().slice(0, 10)
-    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-    return { from, to }
-}
+import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -44,7 +38,7 @@ export function RawDataDashboard() {
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
-    const [{ from, to }, setRange] = useState(defaultDateRange)
+    const { range: { from, to }, setRange } = useOhlaDateRange()
     const { rows, loading, error, refetch } = useOhla({ from, to })
     const filtered = useMemo(() => filterByDateRange(rows, from, to), [rows, from, to])
 

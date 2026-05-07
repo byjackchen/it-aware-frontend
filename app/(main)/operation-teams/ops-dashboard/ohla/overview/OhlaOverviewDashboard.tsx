@@ -56,14 +56,7 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
-
-/** Default window: from the 1st of the current month through today. */
-function defaultDateRange(): { from: string; to: string } {
-    const now = new Date()
-    const to = now.toISOString().slice(0, 10)
-    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-    return { from, to }
-}
+import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 
 function pct(v: number, digits = 1): string {
     return `${(v * 100).toFixed(digits)}%`
@@ -83,7 +76,7 @@ export function OhlaOverviewDashboard() {
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
-    const [{ from, to }, setRange] = useState(defaultDateRange)
+    const { range: { from, to }, setRange } = useOhlaDateRange()
     const { rows, loading, error, refetch } = useOhla({ from, to })
 
     // Cross-filter state — each donut slice click toggles membership in the
