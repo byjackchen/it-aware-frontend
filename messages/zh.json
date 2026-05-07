@@ -1,1483 +1,1674 @@
 {
-    "Auth": {
-        "common": {
-            "save": "保存",
-            "create": "创建",
-            "edit": "编辑",
-            "cancel": "取消",
-            "delete": "删除",
-            "add": "添加",
-            "yes": "是",
-            "no": "否",
-            "active": "活跃",
-            "inactive": "未激活",
-            "selectItem": "从列表中选择一项以查看详情",
-            "deleteConfirm": "确定要删除此项吗？"
-        },
-        "accounts": {
-            "title": "账户",
-            "detail": "账户详情",
-            "create": "创建账户",
-            "edit": "编辑账户",
-            "empty": "未找到账户",
-            "username": "用户名",
-            "usernamePlaceholder": "例如：john.doe",
-            "type": "类型",
-            "typeSystem": "系统",
-            "typeRegular": "普通",
-            "status": "状态",
-            "accountType": "账户类型",
-            "accountTypeUser": "用户",
-            "accountTypeSystem": "系统",
-            "accountTypeAgent": "Agent",
-            "accountTypeHint": "系统账户和Agent账户通过 API 密钥（密码）认证",
-            "isActive": "账户激活",
-            "isActiveHint": "未激活的账户无法登录",
-            "password": "密码（API 密钥）",
-            "newPassword": "新密码",
-            "passwordPlaceholder": "输入密码（至少8个字符）",
-            "passwordPlaceholderOptional": "留空保持当前密码",
-            "passwordHint": "至少8个字符",
-            "linkedWorker": "关联员工",
-            "noLinkedWorker": "未关联员工",
-            "linkWorker": "关联员工",
-            "unlink": "取消关联",
-            "noEmail": "无邮箱"
-        },
-        "groups": {
-            "title": "分组",
-            "detail": "分组详情",
-            "create": "创建分组",
-            "edit": "编辑分组",
-            "empty": "未找到分组",
-            "name": "名称",
-            "namePlaceholder": "例如：administrators",
-            "scopeType": "范围类型",
-            "scope": {
-                "unconstrained": "无限制",
-                "self_scoped": "自身范围",
-                "role_based": "基于角色"
-            },
-            "scopeHint": {
-                "unconstrained": "完全访问所有记录（管理员）",
-                "self_scoped": "仅访问自己的记录",
-                "role_based": "根据层级分配过滤访问"
-            }
-        },
-        "roles": {
-            "title": "角色",
-            "detail": "角色详情",
-            "create": "创建角色",
-            "edit": "编辑角色",
-            "empty": "未找到角色",
-            "name": "名称",
-            "namePlaceholder": "例如：经理",
-            "includeDescendants": "包含下级",
-            "includeDescYes": "包含层级中的子节点",
-            "includeDescNo": "仅限当前节点",
-            "includeDescHint": "启用后，角色将授权访问层级中的子节点",
-            "linkedGroups": "关联分组",
-            "noGroupsLinked": "此角色未关联任何分组",
-            "noRolesAssigned": "未分配角色",
-            "manageGroupsHint": "在分组页面管理分组-角色关联"
-        },
-        "permissions": {
-            "title": "权限",
-            "detail": "权限详情",
-            "create": "创建权限",
-            "empty": "未找到权限",
-            "code": "权限代码",
-            "codePreview": "权限代码预览",
-            "domain": "域",
-            "resource": "资源",
-            "action": "操作",
-            "assignedGroups": "已分配分组",
-            "noGroupsAssigned": "未分配任何分组",
-            "noPermissionsAssigned": "未分配权限",
-            "manageGroupsHint": "在分组页面管理权限分配"
-        },
-        "assignments": {
-            "select": "选择...",
-            "addTitle": "添加{title}"
-        }
+  "Auth": {
+    "common": {
+      "save": "保存",
+      "create": "创建",
+      "edit": "编辑",
+      "cancel": "取消",
+      "delete": "删除",
+      "add": "添加",
+      "yes": "是",
+      "no": "否",
+      "active": "活跃",
+      "inactive": "未激活",
+      "selectItem": "从列表中选择一项以查看详情",
+      "deleteConfirm": "确定要删除此项吗？"
     },
-    "Campaign": {
-        "accessDenied": {
-            "title": "需要运营活动模块权限",
-            "description": "当前账号没有访问运营活动模块的权限。"
-        },
-        "errors": {
-            "loadNotifications": "通知批次列表加载失败",
-            "loadDetails": "通知列表加载失败"
-        },
-        "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
-        "contentBlockTypes": {
-            "text": "文本",
-            "title": "标题",
-            "link": "链接"
-        },
-        "content": {
-            "blockText": "内容文本",
-            "blockUrl": "链接地址",
-            "addBlock": "新增内容块"
-        },
-        "list": {
-            "title": "通知批次",
-            "create": "创建通知批次",
-            "loading": "正在加载通知批次...",
-            "empty": "暂无通知批次",
-            "counts": "已加载 {loaded} / 总计 {total}",
-            "filters": {
-                "allStatus": "全部状态",
-                "allChannels": "全部渠道",
-                "search": "搜索批次名称或 OID"
-            }
-        },
-        "details": {
-            "selectNotification": "请选择通知批次查看通知行",
-            "trigger": "触发批次发送",
-            "loading": "正在加载通知...",
-            "empty": "暂无通知",
-            "counts": "已加载 {loaded} / 总计 {total}",
-            "fields": {
-                "status": "状态",
-                "receiver": "接收人",
-                "channel": "渠道",
-                "total": "接收人数",
-                "runId": "Run ID",
-                "scheduledAt": "计划时间",
-                "content": "通知内容",
-                "creator": "创建账号",
-                "createdAt": "创建时间",
-                "updatedAt": "更新时间"
-            },
-            "filters": {
-                "allStatus": "全部通知状态",
-                "search": "搜索接收人或内容"
-            },
-            "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。",
-            "serverManagedStatus": "当前状态下批次为只读。",
-            "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
-            "actions": {
-                "editObject": "编辑批次",
-                "addRow": "新增通知",
-                "cancelBatch": "取消批次",
-                "cancel": "取消"
-            },
-            "rowEditor": {
-                "createTitle": "新增通知",
-                "editTitle": "编辑通知：{receiver}",
-                "fields": {
-                    "receiver": "接收人 stable_id",
-                    "status": "状态",
-                    "scheduledAt": "计划时间",
-                    "errorMessage": "错误信息",
-                    "content": "内容块"
-                },
-                "actions": {
-                    "create": "创建通知",
-                    "save": "保存通知",
-                    "delete": "删除通知"
-                },
-                "errors": {
-                    "emptyReceiver": "接收人 stable_id 不能为空。",
-                    "failedNeedsError": "状态为 failed 时必须填写 error_message。"
-                }
-            }
-        },
-        "create": {
-            "title": "创建通知批次",
-            "subtitle": "可按向导配置，或通过 Excel 上传创建通知批次。",
-            "entryModes": {
-                "guided": "向导创建",
-                "excelDirect": "Excel 直传创建"
-            },
-            "steps": {
-                "content": "通知模板",
-                "receivers": "通知接收人"
-            },
-            "fields": {
-                "name": "通知批次名称",
-                "namePlaceholder": "例如：weekly_ops_notice",
-                "channel": "渠道",
-                "contentBlocks": "内容块"
-            },
-            "actions": {
-                "next": "下一步",
-                "back": "返回",
-                "create": "创建批次"
-            },
-            "errors": {
-                "noReceivers": "请至少选择一位接收人。",
-                "invalidContent": "每个内容块都必须填写文本，链接类型还需填写 URL。",
-                "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "emptyName": "通知批次名称不能为空。",
-                "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 条通知。{error}"
-            }
-        },
-        "receivers": {
-            "loadingWorkers": "正在加载员工...",
-            "autoSelectedCount": "已选择 {count} 位接收人",
-            "manualAddPlaceholder": "员工 stable_id",
-            "manualAdd": "添加接收人",
-            "manualAdded": "手动追加",
-            "empty": "当前筛选条件下暂无可展示接收人。",
-            "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
-            "expandAll": "全部展开",
-            "collapseAll": "全部收起",
-            "expand": "展开",
-            "collapse": "收起",
-            "selectAll": "全选",
-            "unselectAll": "取消全选",
-            "noLocations": "暂无地点数据",
-            "sources": {
-                "selected": "筛选命中",
-                "manual": "手动添加",
-                "manualExternal": "手动外部",
-                "outsideFilter": "不在当前筛选条件"
-            },
-            "filters": {
-                "organization": "组织",
-                "location": "地点",
-                "workerType": "员工类型"
-            }
-        },
-        "directUpload": {
-            "title": "Excel 直传创建",
-            "subtitle": "每行对应一条通知，包含接收人及独立内容块。",
-            "downloadTemplate": "下载模板",
-            "uploadFile": "上传 .xlsx",
-            "templateHint": "模板列：receiver_stable_id + block_01..block_20 三元组（type/text/url）。",
-            "waitWorkers": "请等待员工数据加载完成后再上传。",
-            "parseFatal": "上传文件解析失败。",
-            "noValidRows": "未找到可用的通知数据行。",
-            "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 行。{error}",
-            "summary": {
-                "totalRows": "总行数",
-                "validRows": "有效行",
-                "unmatchedRows": "未匹配行",
-                "duplicateRowsIgnored": "重复已忽略",
-                "invalidRows": "非法行"
-            },
-            "unmatchedTitle": "未匹配 stable_id",
-            "rowErrorsTitle": "行校验问题",
-            "rowErrorLine": "第 {row} 行（{stableId}）：{message}",
-            "previewTitle": "解析预览",
-            "previewColumns": {
-                "row": "行号",
-                "receiver": "接收人",
-                "blockCount": "内容块数"
-            }
-        },
-        "edit": {
-            "title": "编辑通知批次",
-            "readOnlyStatus": "当前通知批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑。",
-            "addReceiverTitle": "添加接收人",
-            "newReceiver": "新增",
-            "fields": {
-                "name": "通知批次名称",
-                "channel": "渠道",
-                "newReceiverStableId": "新增接收人 stable_id",
-                "copySource": "复制内容来源"
-            },
-            "actions": {
-                "addReceiver": "添加接收人",
-                "save": "保存修改"
-            },
-            "errors": {
-                "duplicateReceiver": "该接收人已存在。",
-                "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "notEditable": "当前通知批次状态不可编辑。",
-                "emptyName": "通知批次名称不能为空。",
-                "noReceivers": "至少保留一位接收人。",
-                "invalidContent": "所有接收人的内容块都必须合法。",
-                "partialWrite": "通知批次 {notificationBatchOid} 已部分保存：仅写入 {processed}/{total} 条通知。{error}"
-            }
-        }
+    "accounts": {
+      "title": "账户",
+      "detail": "账户详情",
+      "create": "创建账户",
+      "edit": "编辑账户",
+      "empty": "未找到账户",
+      "username": "用户名",
+      "usernamePlaceholder": "例如：john.doe",
+      "type": "类型",
+      "typeSystem": "系统",
+      "typeRegular": "普通",
+      "status": "状态",
+      "accountType": "账户类型",
+      "accountTypeUser": "用户",
+      "accountTypeSystem": "系统",
+      "accountTypeAgent": "Agent",
+      "accountTypeHint": "系统账户和Agent账户通过 API 密钥（密码）认证",
+      "isActive": "账户激活",
+      "isActiveHint": "未激活的账户无法登录",
+      "password": "密码（API 密钥）",
+      "newPassword": "新密码",
+      "passwordPlaceholder": "输入密码（至少8个字符）",
+      "passwordPlaceholderOptional": "留空保持当前密码",
+      "passwordHint": "至少8个字符",
+      "linkedWorker": "关联员工",
+      "noLinkedWorker": "未关联员工",
+      "linkWorker": "关联员工",
+      "unlink": "取消关联",
+      "noEmail": "无邮箱"
     },
-    "CampaignSurvey": {
-        "accessDenied": {
-            "title": "需要运营活动问卷批次权限",
-            "description": "当前账号没有访问运营活动问卷批次的权限。"
-        },
-        "errors": {
-            "loadSurveys": "问卷批次列表加载失败",
-            "loadDetails": "问卷列表加载失败"
-        },
-        "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
-        "list": {
-            "title": "问卷批次",
-            "create": "创建问卷批次",
-            "loading": "正在加载问卷批次...",
-            "empty": "暂无问卷批次",
-            "counts": "已加载 {loaded} / 总计 {total}",
-            "filters": {
-                "allStatus": "全部状态",
-                "search": "搜索批次名称或 OID"
-            }
-        },
-        "details": {
-            "selectSurvey": "请选择问卷批次查看问卷行",
-            "loading": "正在加载问卷...",
-            "empty": "暂无问卷",
-            "counts": "已加载 {loaded} / 总计 {total}",
-            "fields": {
-                "status": "状态",
-                "receiver": "接收人",
-                "total": "接收人数",
-                "creator": "创建账号",
-                "createdAt": "创建时间",
-                "updatedAt": "更新时间",
-                "submittedAt": "提交时间",
-                "questions": "题目",
-                "answer": "回答"
-            },
-            "filters": {
-                "allStatus": "全部问卷状态",
-                "search": "搜索接收人或回答"
-            },
-            "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。提交/撤回为动作操作。",
-            "serverManagedStatus": "当前状态下批次为只读。",
-            "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
-            "actions": {
-                "editObject": "编辑批次",
-                "addRow": "新增问卷",
-                "publishBatch": "发布批次",
-                "closeBatch": "关闭批次",
-                "reopenBatch": "重新开启批次",
-                "cancelBatch": "取消批次",
-                "cancel": "取消"
-            },
-            "rowEditor": {
-                "createTitle": "新增问卷",
-                "editTitle": "编辑问卷：{receiver}",
-                "fields": {
-                    "receiver": "接收人 stable_id",
-                    "status": "状态",
-                    "submittedAt": "提交时间",
-                    "answerJson": "问卷回答 JSON",
-                    "answerJsonPlaceholder": "{\"answers\":[...]}",
-                    "questions": "问卷题目"
-                },
-                "actions": {
-                    "create": "创建问卷",
-                    "save": "保存问卷",
-                    "submit": "提交",
-                    "revoke": "撤回",
-                    "delete": "删除问卷"
-                },
-                "errors": {
-                    "emptyReceiver": "接收人 stable_id 不能为空。",
-                    "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
-                    "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
-                    "submitNotAllowed": "当前问卷状态不允许提交。",
-                    "revokeNotAllowed": "当前问卷状态不允许撤回。",
-                    "createdSubmittedAtNotAllowed": "状态为 created 时 submitted_at 必须为空。",
-                    "createdAnswerNotAllowed": "状态为 created 时 survey_answer 必须为空。"
-                }
-            }
-        },
-        "create": {
-            "title": "创建问卷批次",
-            "subtitle": "可按向导配置，或通过表格批量导入创建问卷批次。",
-            "entryModes": {
-                "guided": "向导创建",
-                "spreadsheet": "表格导入"
-            },
-            "sections": {
-                "questions": "题目内容",
-                "receivers": "接收人选择"
-            },
-            "fields": {
-                "name": "问卷批次名称",
-                "namePlaceholder": "例如：employee_pulse_weekly"
-            },
-            "actions": {
-                "create": "创建批次"
-            },
-            "errors": {
-                "noReceivers": "请至少选择一位接收人。",
-                "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "emptyName": "问卷批次名称不能为空。",
-                "partialWrite": "问卷批次 {surveyBatchOid} 已创建，但仅写入 {processed}/{total} 条问卷。{error}"
-            }
-        },
-        "questionBuilder": {
-            "title": "问卷题目",
-            "subtitle": "配置问卷引导语与结构化题目。",
-            "empty": "尚未添加题目。",
-            "questionLabel": "题目",
-            "fields": {
-                "intro": "引导语",
-                "introPlaceholder": "展示给接收人的引导文本",
-                "questionId": "题目 ID",
-                "type": "类型",
-                "title": "标题",
-                "required": "必答",
-                "options": "选项",
-                "optionId": "option_id",
-                "optionLabel": "label"
-            },
-            "actions": {
-                "removeQuestion": "删除题目",
-                "addOption": "添加选项",
-                "addQuestion": "添加题目"
-            }
-        },
-        "receivers": {
-            "loadingWorkers": "正在加载员工...",
-            "autoSelectedCount": "已选择 {count} 位接收人",
-            "manualAddPlaceholder": "员工 stable_id",
-            "manualAdd": "添加接收人",
-            "manualAdded": "手动追加",
-            "empty": "当前筛选条件下暂无可展示接收人。",
-            "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
-            "expandAll": "全部展开",
-            "collapseAll": "全部收起",
-            "selectAll": "全选",
-            "unselectAll": "取消全选",
-            "noLocations": "暂无地点数据",
-            "sources": {
-                "selected": "筛选命中",
-                "manual": "手动添加",
-                "manualExternal": "手动外部",
-                "outsideFilter": "不在当前筛选条件"
-            },
-            "filters": {
-                "location": "地点",
-                "workerType": "员工类型"
-            }
-        },
-        "directUpload": {
-            "title": "表格导入",
-            "subtitle": "每一行创建一个问卷批次及其单条问卷接收人记录。",
-            "downloadTemplate": "下载模板",
-            "uploadFile": "上传 .xlsx",
-            "import": "导入问卷批次",
-            "templateHint": "必填列：name、receiver_stable_id、intro，以及 q01..q20 题目列。",
-            "waitWorkers": "请等待员工数据加载完成后再上传。",
-            "parseFatal": "上传文件解析失败。",
-            "noValidRows": "未找到可用数据行。",
-            "summary": {
-                "totalRows": "总行数",
-                "validRows": "有效行",
-                "unmatchedRows": "未匹配行",
-                "duplicateRowsIgnored": "重复已忽略",
-                "invalidRows": "非法行"
-            },
-            "unmatchedTitle": "未匹配 stable_id",
-            "rowErrorsTitle": "行校验问题",
-            "rowErrorLine": "第 {row} 行（{stableId}）：{message}",
-            "previewTitle": "解析预览",
-            "previewColumns": {
-                "row": "行号",
-                "name": "问卷名称",
-                "receiver": "接收人",
-                "questionCount": "题目数"
-            }
-        },
-        "edit": {
-            "title": "编辑问卷批次",
-            "readOnlyQuestionStatus": "当前问卷批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑题目。",
-            "readOnlyDetailStatus": "当前问卷批次状态为 \"{status}\"，当状态为 cancelled 时不可编辑接收人行。",
-            "receiversTitle": "接收人",
-            "receiverCount": "{count} 位接收人",
-            "fields": {
-                "name": "问卷批次名称",
-                "newReceiverStableId": "新增接收人 stable_id",
-                "detailStatus": "问卷状态",
-                "submittedAt": "提交时间",
-                "answerJson": "问卷回答 JSON",
-                "answerJsonPlaceholder": "{\"answers\":[...]}"
-            },
-            "actions": {
-                "addReceiver": "添加接收人",
-                "removeReceiver": "删除接收人",
-                "save": "保存修改"
-            },
-            "errors": {
-                "duplicateReceiver": "该接收人已存在。",
-                "receiverNotFound": "未找到该 stable_id 对应员工。",
-                "notEditable": "当前问卷批次状态不可编辑。",
-                "emptyName": "问卷批次名称不能为空。",
-                "noReceivers": "至少保留一位接收人。",
-                "emptyReceiver": "接收人 stable_id 不能为空。",
-                "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
-                "invalidAnswerJson": "问卷回答 JSON 非法。",
-                "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
-                "partialWrite": "问卷批次 {surveyBatchOid} 已部分保存：仅写入 {processed}/{total} 条问卷。{error}"
-            }
-        }
+    "groups": {
+      "title": "分组",
+      "detail": "分组详情",
+      "create": "创建分组",
+      "edit": "编辑分组",
+      "empty": "未找到分组",
+      "name": "名称",
+      "namePlaceholder": "例如：administrators",
+      "scopeType": "范围类型",
+      "scope": {
+        "unconstrained": "无限制",
+        "self_scoped": "自身范围",
+        "role_based": "基于角色"
+      },
+      "scopeHint": {
+        "unconstrained": "完全访问所有记录（管理员）",
+        "self_scoped": "仅访问自己的记录",
+        "role_based": "根据层级分配过滤访问"
+      }
     },
-    "Dashboard": {
-        "title": "数据概览",
-        "subtitle": "跨所有数据对象资源的实时汇总指标。",
-        "refresh": "刷新",
-        "loading": "正在加载看板统计...",
-        "loadFailed": "看板统计加载失败，请刷新重试。",
-        "generatedAt": "更新时间：{time}",
-        "summary": {
-            "totalAcrossResources": "资源总计",
-            "activeCapable": "活跃数（支持激活状态的资源）",
-            "availableResources": "可用资源"
-        },
-        "groups": {
-            "hierarchies": "层级",
-            "objects": "对象",
-            "activities": "活动",
-            "campaigns": "运营活动",
-            "insights": "洞察"
-        },
-        "resources": {
-            "organizations": "组织",
-            "locations": "地点",
-            "service-catalogs": "服务目录",
-            "workers": "员工",
-            "articles": "文章",
-            "incidents": "事件",
-            "requests": "请求",
-            "inquiries": "问询",
-            "interactions": "交互事件",
-            "surveys": "问卷批次",
-            "notifications": "通知批次",
-            "analyses": "分析"
-        },
-        "metrics": {
-            "total": "总数",
-            "active": "活跃",
-            "inactive": "未激活"
-        },
-        "status": {
-            "ok": "可用",
-            "forbidden": "无权限",
-            "error": "不可用"
-        },
-        "comingSoon": "看板即将推出"
+    "roles": {
+      "title": "角色",
+      "detail": "角色详情",
+      "create": "创建角色",
+      "edit": "编辑角色",
+      "empty": "未找到角色",
+      "name": "名称",
+      "namePlaceholder": "例如：经理",
+      "includeDescendants": "包含下级",
+      "includeDescYes": "包含层级中的子节点",
+      "includeDescNo": "仅限当前节点",
+      "includeDescHint": "启用后，角色将授权访问层级中的子节点",
+      "linkedGroups": "关联分组",
+      "noGroupsLinked": "此角色未关联任何分组",
+      "noRolesAssigned": "未分配角色",
+      "manageGroupsHint": "在分组页面管理分组-角色关联"
     },
-    "Data": {
-        "common": {
-            "save": "保存",
-            "edit": "编辑",
-            "cancel": "取消",
-            "delete": "删除",
-            "created": "创建时间",
-            "updated": "更新时间",
-            "name": "名称",
-            "parent": "父节点",
-            "noParent": "无父节点（根级别）",
-            "searchParent": "搜索父节点...",
-            "hierarchyPath": "层级路径",
-            "levelsDeep": "{count} 层深",
-            "levelsDeepPlural": "{count} 层深",
-            "noRelationships": "未找到关系",
-            "edgeRelationships": "图关系",
-            "roleAssignments": "角色分配",
-            "filter": "筛选",
-            "all": "全部",
-            "search": "搜索...",
-            "refresh": "刷新",
-            "back": "返回"
-        },
-        "roleAssignment": {
-            "noRoles": "没有可用的角色。请先在权限模块中创建角色。",
-            "noWorkers": "此角色尚未分配员工。",
-            "noAvailable": "没有可分配的员工",
-            "noAssignments": "暂无角色分配。使用下方搜索查找角色。",
-            "unassignedRoles": "未分配的角色",
-            "searchRoles": "搜索角色...",
-            "searchWorkers": "搜索员工...",
-            "addWorker": "添加员工",
-            "moreRoles": "+{count} 个角色",
-            "noMatchingRoles": "未找到匹配的角色"
-        },
-        "organizations": {
-            "title": "组织",
-            "detail": "组织详情",
-            "new": "新建组织",
-            "empty": "未找到组织。创建您的第一个组织开始使用。",
-            "deleteConfirm": "确定要删除此组织吗？此操作无法撤销。",
-            "rootCount": "{count} 个根组织",
-            "rootCountPlural": "{count} 个根组织"
-        },
-        "locations": {
-            "title": "地点",
-            "detail": "地点详情",
-            "new": "新建地点",
-            "empty": "未找到地点。创建您的第一个地点开始使用。",
-            "deleteConfirm": "确定要删除此地点吗？此操作无法撤销。",
-            "rootCount": "{count} 个根地点",
-            "rootCountPlural": "{count} 个根地点"
-        },
-        "serviceCatalogs": {
-            "title": "服务目录",
-            "detail": "服务目录详情",
-            "new": "新建服务目录",
-            "empty": "未找到服务目录。创建您的第一个服务目录开始使用。",
-            "deleteConfirm": "确定要删除此服务目录吗？此操作无法撤销。",
-            "rootCount": "{count} 个根服务目录",
-            "rootCountPlural": "{count} 个根服务目录"
-        },
-        "workers": {
-            "title": "员工",
-            "detail": "员工详情",
-            "new": "新建员工",
-            "empty": "未找到员工",
-            "deleteConfirm": "确定要删除此员工吗？",
-            "fullname": "姓名",
-            "fullName": "全名",
-            "legalFirstName": "法定名",
-            "legalLastName": "法定姓",
-            "preferredFirstName": "常用名",
-            "stableId": "稳定ID",
-            "email": "邮箱",
-            "workerId": "员工ID",
-            "organization": "组织",
-            "location": "地点",
-            "manager": "主管",
-            "gender": "性别",
-            "hireDate": "入职日期",
-            "jobCategory": "职能类别",
-            "jobSubcategory": "职能子类",
-            "jobProfessionalLevel": "职级",
-            "jobManagementLevel": "管理层级",
-            "jobBand": "职级带",
-            "jobTitle": "职位名称",
-            "status": "状态",
-            "active": "活跃",
-            "inactive": "未激活",
-            "notSet": "未设置",
-            "count": "{filtered} / {total} 员工",
-            "countPlural": "{filtered} / {total} 员工",
-            "required": "必填",
-            "optional": "可选",
-            "createWorker": "创建员工",
-            "profile": {
-                "title": "员工画像",
-                "empty": "暂无员工画像。",
-                "summary": "摘要",
-                "topics": "主题",
-                "tags": "标签",
-                "commaDelimited": "用逗号分隔",
-                "summaryUpdated": "摘要更新时间",
-                "topicsUpdated": "主题更新时间",
-                "tagsUpdated": "标签更新时间",
-                "addTopic": "添加主题",
-                "topicName": "主题名称",
-                "topicNeed": "需求 / 描述",
-                "topicNotes": "备注（可选）",
-                "topicResolved": "已解决",
-                "topicUnresolved": "未解决"
-            }
-        },
-        "hardwares": {
-            "title": "硬件",
-            "subtitle": "{active} 活跃 / {total} 总计",
-            "searchPlaceholder": "搜索序列号、资产标签或分配人...",
-            "filterModelCategory": "型号类别",
-            "filterAssetStatus": "资产状态",
-            "filterRegion": "区域",
-            "filterAll": "全部",
-            "showInactive": "显示已停用",
-            "empty": "未找到硬件资产",
-            "unassigned": "未分配",
-            "detail": {
-                "backToList": "返回硬件列表",
-                "identity": "标识",
-                "model": "型号",
-                "assignment": "分配",
-                "locationOrg": "位置 / 组织",
-                "cost": "成本",
-                "status": "状态",
-                "verification": "验证",
-                "provenance": "来源",
-                "serialNumber": "序列号",
-                "assetTag": "资产标签",
-                "assetNumber": "资产编号",
-                "modelCategory": "型号类别",
-                "modelDisplayName": "型号显示名",
-                "modelName": "型号名称",
-                "mainCategory": "主类别",
-                "assetFunction": "资产功能",
-                "assetOwner": "资产所有者",
-                "assignedToUsername": "分配给（用户名）",
-                "assignedToDisplayName": "分配给",
-                "employmentType": "雇佣类型",
-                "employmentStartDate": "入职日期",
-                "assignedDate": "分配日期",
-                "firstAssignedDate": "首次分配日期",
-                "workerOid": "员工",
-                "company": "公司",
-                "businessGroup": "业务组",
-                "department": "部门",
-                "location": "位置",
-                "officeId": "办公室ID",
-                "regionCode": "区域代码",
-                "region": "区域",
-                "officeRegion": "办公区域",
-                "stockRoom": "库房",
-                "costValue": "成本",
-                "costCenter": "成本中心",
-                "procuredCostCenter": "采购成本中心",
-                "residualValue": "残值",
-                "residualDate": "残值日期",
-                "budgetByOit": "OIT预算",
-                "costByOit": "OIT成本",
-                "assetStatus": "资产状态",
-                "substatus": "子状态",
-                "retiredDate": "退役日期",
-                "scheduledRetirement": "计划退役",
-                "verificationStatus": "验证状态",
-                "verifiedDate": "验证日期",
-                "verifiedBy": "验证人",
-                "erpCreatedBy": "ERP创建者",
-                "erpCreatedDate": "ERP创建日期",
-                "erpUpdatedDate": "ERP更新日期",
-                "ownedBy": "拥有者",
-                "active": "活跃",
-                "inactive": "已停用",
-                "yes": "是",
-                "no": "否",
-                "notSet": "—"
-            }
-        },
-        "roles": {
-            "noRoles": "没有可用角色。请先在安全模块创建角色。",
-            "addWorker": "添加员工",
-            "noWorkers": "此角色未分配员工。",
-            "workersCount": "{count} 员工",
-            "workersCountPlural": "{count} 员工",
-            "noWorkersAvailable": "没有可用员工"
-        },
-        "articles": {
-            "title": "文章",
-            "detail": "文章详情",
-            "new": "新建文章",
-            "empty": "未找到文章",
-            "deleteConfirm": "确定要删除此文章吗？",
-            "articleTitle": "标题",
-            "summary": "摘要",
-            "content": "内容 (Markdown)",
-            "serviceCatalog": "服务目录",
-            "serviceCatalogs": "服务目录",
-            "sourceSystem": "来源系统",
-            "sourceUrl": "来源链接",
-            "version": "版本",
-            "latest": "最新",
-            "status": "状态",
-            "active": "活跃",
-            "inactive": "未激活",
-            "count": "{filtered} / {total} 文章",
-            "countPlural": "{filtered} / {total} 文章",
-            "embeddingIds": "嵌入 ID",
-            "embeddedAt": "嵌入时间",
-            "noEmbedding": "未嵌入"
-        },
-        "notifications": {
-            "title": "通知",
-            "detail": "通知详情",
-            "empty": "未找到通知",
-            "selectBatch": "选择通知批次",
-            "receiver": "接收人",
-            "status": "状态",
-            "batch": "通知批次",
-            "channel": "渠道",
-            "content": "内容",
-            "scheduledAt": "计划发送时间",
-            "errorMessage": "错误信息"
-        },
-        "surveys": {
-            "title": "问卷",
-            "detail": "问卷详情",
-            "empty": "未找到问卷",
-            "selectBatch": "选择问卷批次",
-            "allBatches": "全部批次",
-            "receiver": "接收人",
-            "status": "状态",
-            "submittedAt": "提交时间",
-            "batch": "问卷批次",
-            "questions": "题目",
-            "answers": "回答",
-            "noAnswer": "未提交回答"
-        },
-        "scenarios": {
-            "title": "场景",
-            "detail": "场景详情",
-            "empty": "未找到场景",
-            "deleteConfirm": "确定要删除此场景吗？",
-            "scenarioType": "场景类型",
-            "worker": "员工",
-            "effectiveAt": "生效时间",
-            "description": "描述",
-            "notes": "备注",
-            "keyTopics": "关键主题",
-            "noDescription": "无描述",
-            "noNotes": "无备注",
-            "noKeyTopics": "无关键主题"
-        },
-        "analyses": {
-            "title": "分析",
-            "detail": "分析详情",
-            "new": "新建分析",
-            "empty": "未找到分析",
-            "deleteConfirm": "确定要删除此分析吗？",
-            "worker": "员工",
-            "sourceType": "来源类型",
-            "sourceOid": "来源 OID",
-            "sourceObject": "来源对象",
-            "sourceBatch": "来源批次",
-            "topic": "主题",
-            "keywords": "关键词",
-            "fact": "事实摘要",
-            "semantic": "情感倾向",
-            "intent": "意图",
-            "serviceCatalog": "服务目录",
-            "configurationItem": "配置项",
-            "positive": "正面",
-            "negative": "负面",
-            "noKeywords": "无关键词"
-        },
-        "clusters": {
-            "title": "员工群组",
-            "subtitle": "基于 ML 计算的 IT 服务员工行为分组",
-            "detail": "群组详情",
-            "empty": "未找到群组数据。聚类管道尚未运行。",
-            "noWorkers": "该群组中未找到员工",
-            "summaryTitle": "群组概览",
-            "totalWorkers": "总员工数",
-            "nClusters": "群组数",
-            "noiseCount": "未分类",
-            "lastComputed": "上次计算",
-            "clusterSize": "规模",
-            "percentage": "占比",
-            "workers": "员工",
-            "allClusters": "所有群组",
-            "noise": "未分类（异常值）",
-            "searchPlaceholder": "按员工姓名或 ID 搜索...",
-            "filterByCluster": "按群组筛选",
-            "featureRadar": "特征指纹",
-            "scatterPlot": "群组可视化",
-            "pcaX": "成分 1",
-            "pcaY": "成分 2",
-            "runId": "运行 ID",
-            "computedAt": "计算时间",
-            "backToList": "返回群组列表",
-            "probability": "置信度",
-            "workerName": "员工",
-            "clusterAssignment": "群组"
-        }
+    "permissions": {
+      "title": "权限",
+      "detail": "权限详情",
+      "create": "创建权限",
+      "empty": "未找到权限",
+      "code": "权限代码",
+      "codePreview": "权限代码预览",
+      "domain": "域",
+      "resource": "资源",
+      "action": "操作",
+      "assignedGroups": "已分配分组",
+      "noGroupsAssigned": "未分配任何分组",
+      "noPermissionsAssigned": "未分配权限",
+      "manageGroupsHint": "在分组页面管理权限分配"
     },
-    "GlobalSearch": {
-        "placeholder": "搜索数据对象...",
-        "noResults": "未找到结果",
-        "searching": "搜索中...",
-        "organizations": "组织",
-        "locations": "地点",
-        "workers": "员工",
-        "serviceCatalogs": "服务目录",
-        "articles": "文章",
-        "requests": "请求"
-    },
-    "Knowledge": {
-        "sidebar": {
-            "title": "服务目录"
-        },
-        "overview": {
-            "title": "知识库",
-            "description": "按服务目录浏览文章和文档。从侧边栏选择一个分类以查看相关内容。",
-            "catalogs": "目录",
-            "recentArticles": "最近文章",
-            "viewAll": "查看全部",
-            "noArticles": "暂无文章。从侧边栏选择一个目录以浏览内容。"
-        },
-        "catalog": {
-            "articleCount": "此分类下有 {count} 篇文章",
-            "articleCountPlural": "此分类下有 {count} 篇文章"
-        },
-        "articles": {
-            "title": "文章",
-            "empty": "此分类下暂无文章",
-            "article": "文章",
-            "source": "来源"
-        },
-        "faqs": {
-            "title": "常见问题",
-            "comingSoon": "常见问题即将上线",
-            "underDevelopment": "此功能正在开发中"
-        },
-        "common": {
-            "noCatalogs": "未找到目录",
-            "loadError": "加载目录失败"
-        }
-    },
-    "Persona": {
-        "sections": {
-            "personalInfo": "个人信息",
-            "jobInfo": "岗位信息",
-            "profileInfo": "画像信息",
-            "activitiesTimeline": "活动时间线",
-            "graphLinks": "图关系",
-            "experimental": "实验性功能",
-            "experimentalHint": "画像和聚类分析仍在开发中，点击展开。"
-        },
-        "fields": {
-            "workerType": "员工类型",
-            "vipStatus": "VIP 状态"
-        },
-        "status": {
-            "active": "活跃",
-            "inactive": "未激活",
-            "vip": "VIP",
-            "notVip": "非 VIP",
-            "notSet": "未设置"
-        },
-        "sidebar": {
-            "title": "组织与员工",
-            "searchPlaceholder": "搜索组织名称或员工 stable_id...",
-            "searchButton": "搜索",
-            "vipFilter": "仅 VIP",
-            "activeFilter": "仅活跃",
-            "organizations": "组织",
-            "expandAll": "全部展开",
-            "collapseAll": "全部收起",
-            "workers": "员工",
-            "allOrganizations": "全部组织",
-            "loadingOrganizations": "正在加载组织...",
-            "loadingWorkers": "正在加载员工...",
-            "noOrganizations": "未找到组织",
-            "noWorkers": "未找到员工"
-        },
-        "profile": {
-            "summary": "AI 摘要",
-            "topics": "主题",
-            "tags": "标签",
-            "summaryUpdated": "摘要更新时间",
-            "topicsUpdated": "主题更新时间",
-            "tagsUpdated": "标签更新时间",
-            "empty": "暂无画像信息"
-        },
-        "cluster": {
-            "label": "用户群组",
-            "noise": "未分类",
-            "probability": "置信度",
-            "outlierScore": "异常分数",
-            "profile": "群组画像",
-            "behaviors": "核心行为",
-            "painPoints": "痛点",
-            "bestPractices": "最佳实践",
-            "sla": "SLA 建议",
-            "features": "特征画像",
-            "labelFeatures": "标签",
-            "basedOn": "基于 {count} 名相似员工",
-            "description": "描述",
-            "noCluster": "该员工暂无群组分配",
-            "membershipStrong": "强",
-            "membershipModerate": "中等",
-            "membershipWeak": "弱",
-            "viewCluster": "查看群组详情"
-        },
-        "timeline": {
-            "window": "时间窗口",
-            "slideLeft": "向左滑动",
-            "slideRight": "向右滑动",
-            "zoomIn": "放大",
-            "zoomOut": "缩小",
-            "reload": "刷新",
-            "showInteractions": "交互明细",
-            "on": "开启",
-            "off": "关闭",
-            "legend": "图例",
-            "loading": "正在加载时间线活动...",
-            "error": "活动时间线加载失败",
-            "retry": "重试",
-            "empty": "所选时间窗口内无活动",
-            "showingLatest": "显示最近 {loaded} / {total} 条活动",
-            "lanes": {
-                "incident": "事件",
-                "request": "请求",
-                "inquiry": "问询",
-                "interaction": "交互",
-                "survey": "问卷",
-                "analysis": "分析",
-                "scenario": "场景"
-            },
-            "scenarioTooltip": "场景：{type}，生效时间 {date}",
-            "heatBar": "热力条",
-            "dragHint": "在时间轴或热力条上拖拽可平移时间窗口",
-            "rangeStart": "区间起点",
-            "rangeEnd": "区间终点",
-            "backgroundLoading": "正在加载更多时间片...",
-            "heatTooltip": {
-                "total": "总量",
-                "interval": "区间",
-                "incident": "事件",
-                "request": "请求",
-                "inquiry": "问询",
-                "interaction": "交互",
-                "survey": "问卷",
-                "analysis": "分析"
-            }
-        }
-    },
-    "Sidebar": {
-        "overview": "概览",
-        "threats": "威胁",
-        "access": "访问控制",
-        "accounts": "账户",
-        "groups": "分组",
-        "roles": "角色",
-        "permissions": "权限",
-        "hierarchies": "层级结构",
-        "objects": "对象",
-        "organizations": "组织",
-        "locations": "地点",
-        "serviceCatalogs": "服务目录",
-        "workers": "员工",
-        "profile": "个人资料",
-        "team": "团队",
-        "settings": "设置",
-        "articles": "文章",
-        "hardwares": "硬件",
-        "networks": "网络",
-        "ioaScans": "iOA 扫描",
-        "activities": "活动",
-        "incidents": "事件",
-        "requests": "请求",
-        "inquiries": "问询",
-        "interactions": "交互事件",
-        "faqs": "常见问题",
-        "campaign": "运营活动",
-        "notificationBatches": "通知批次",
-        "surveyBatches": "问卷批次",
-        "insights": "洞察",
-        "notifications": "通知",
-        "surveys": "问卷",
-        "analyses": "分析",
-        "clusters": "群组",
-        "journeys": "旅程",
-        "scenarios": "场景",
-        "sscDashboard": "SSC 仪表盘",
-        "faqReport": "FAQ 分析报告",
-        "opsDashboard": "运维仪表盘",
-        "opsMonitoring": "监控",
-        "opsActiveMonitoring": "实时监控",
-        "opsIncidents": "事件",
-        "opsCatalog": "服务目录",
-        "opsVipTickets": "VIP 工单",
-        "opsAging": "工单老化",
-        "opsAgingIncidents": "老化事件",
-        "opsAgingScTasks": "老化服务目录任务",
-        "opsAgingAssetTasks": "老化资产任务",
-        "opsAssets": "资产",
-        "opsAssetsOverview": "资产总览",
-        "opsInStockAssets": "库存资产",
-        "opsPendingAssets": "待处理资产",
-        "surveyAnalytics": "问卷分析",
-        "analytics": "分析",
-        "dataOverview": "数据总览",
-        "agentFleet": "Agent Fleet",
-        "agentOps": "AgentOps",
-        "agents": "Agents",
-        "tickets": "工单",
-        "ticketList": "工单列表",
-        "ticketKanban": "工单看板"
-    },
-    "OpsDashboard": {
-        "title": "运维仪表盘",
-        "subtitle": "运维团队指标与工单活动",
-        "nav": {
-            "overview": "总览",
-            "activeMonitoring": "实时监控",
-            "incidents": "事件",
-            "catalog": "服务目录",
-            "vipTickets": "VIP 工单",
-            "agingIncidents": "老化事件",
-            "agingScTasks": "老化服务目录任务",
-            "agingAssetTasks": "老化资产任务",
-            "assetsOverview": "资产总览",
-            "inStockAssets": "库存资产",
-            "pendingAssets": "待处理资产",
-            "wipRepairs": "维修中资产"
-        },
-        "kpis": {
-            "totalActive": "活动工单总数",
-            "incidentsActive": "活动事件",
-            "requestsActive": "活动请求",
-            "activeIncident": "活动事件",
-            "activeCatalog": "活动服务目录",
-            "activeAsset": "活动资产任务",
-            "agingAsset30d": "老化资产 > 30 天",
-            "vipActive": "活动 VIP 工单",
-            "agingIncidentsGt2d": "事件 > 2 天",
-            "agingCatalogGt30d": "服务目录任务 > 30 天",
-            "agingAssetsGt30d": "资产任务 > 30 天",
-            "totalAssets": "资产总数",
-            "inStock": "库存",
-            "inStockRate": "库存率",
-            "pendingReturn": "待归还",
-            "pendingRepair": "待维修",
-            "unconfirmed": "未确认",
-            "zeroResidual": "残值为零",
-            "totalIncidents": "事件总数",
-            "active": "活动",
-            "p1": "P1 活动",
-            "p2": "P2 活动",
-            "agingGt2d": "老化 > 2 天",
-            "agingGt7d": "老化 > 7 天",
-            "agingGt30d": "老化 > 30 天",
-            "resolvedRate": "解决率",
-            "resolved": "已解决",
-            "totalCatalogTasks": "服务目录任务总数",
-            "highPriority": "高优先级",
-            "mediumPriority": "中优先级",
-            "momDelta": "{arrow} 较上月 {pct}%",
-            "momFlat": "较上月持平"
-        },
-        "charts": {
-            "ticketsByAssignmentGroup": "按分配组划分的工单",
-            "ticketsByPriority": "按优先级划分的工单",
-            "ticketsByLocation": "按地点划分的工单",
-            "ticketsByDepartment": "按部门划分的工单",
-            "ticketsByChannel": "按渠道划分的工单",
-            "ticketsByCategory": "按分类划分的工单",
-            "monthlyOpenedTrend": "工单开单趋势（近 {months} 个月）",
-            "deviceType": "设备类型",
-            "assetsByRegion": "按区域划分的资产",
-            "assetsByStatus": "按状态划分的资产",
-            "world": "世界",
-            "axisMonth": "月份",
-            "axisTickets": "工单",
-            "axisAssets": "资产",
-            "procuredBy": "采购方",
-            "procuredBySubtitle": "点击切片以筛选",
-            "inStockLocation": "库存位置",
-            "supportGroupDevice": "按支持组与设备类型划分的资产",
-            "byCategory": "按类别",
-            "legendMac": "Mac",
-            "legendWindows": "Windows",
-            "legendOther": "其他",
-            "activeByPriority": "按优先级划分的活动事件",
-            "activeByPrioritySubtitle": "点击切片以筛选",
-            "byStateAll": "按状态（全部）",
-            "activeByGroup": "按分配组划分的活动事件",
-            "activeByGroupCatalog": "按分配组划分的活动目录任务",
-            "activeByGroupSubtitle": "点击切片以筛选",
-            "byDepartment": "按部门划分的活动",
-            "volumeTrend": "工单量趋势",
-            "byAssignmentGroupTop8": "按分配组划分的活动工单",
-            "byAssignmentGroupTop8Subtitle": "前 8 · 点击以筛选",
-            "worldMap": "区域分布",
-            "worldMapSubtitle": "按报修人所在区域统计的活动工单",
-            "supportGroup": "支持组",
-            "supportGroupSubtitle": "按支持组统计的资产",
-            "cumulativeOpenedClosed": "累计开单 vs 关闭",
-            "filterLegend": "图表筛选图例"
-        },
-        "filters": {
-            "title": "筛选器",
-            "clearAll": "清除全部",
-            "clientSideTooltip": "仅对当前已加载的数据进行筛选。请扩大时间范围或清除其他筛选以加载更多选项。",
-            "assignmentGroup": "分配组",
-            "priority": "优先级",
-            "state": "状态",
-            "location": "地点",
-            "department": "部门",
-            "isVip": "仅 VIP",
-            "opened": "开单时间",
-            "updated": "更新时间",
-            "effective": "生效时间",
-            "deviceType": "设备类型",
-            "region": "区域",
-            "assetStatus": "资产状态",
-            "substatus": "子状态",
-            "supportGroup": "支持组",
-            "procuredBy": "采购方",
-            "stockroom": "库房",
-            "modelCategory": "型号类别",
-            "country": "国家/地区",
-            "clearAllFilters": "清除全部筛选",
-            "searchCountry": "搜索国家/地区…",
-            "searchLocation": "搜索地点…",
-            "showingCountries": "显示 {count} 个国家/地区（{scope}）",
-            "showingLocations": "显示 {count} 个地点（{scope}）",
-            "scopeAllRegions": "所有区域",
-            "scopeInItems": "{items}",
-            "scopeInItemsPlus": "{items} +{count}"
-        },
-        "tables": {
-            "number": "编号",
-            "title": "标题",
-            "type": "类型",
-            "state": "状态",
-            "priority": "优先级",
-            "assignmentGroup": "分配组",
-            "assignedTo": "处理人",
-            "openedBy": "开单人",
-            "caller": "报修人",
-            "location": "地点",
-            "department": "部门",
-            "channel": "渠道",
-            "category": "分类",
-            "subcategory": "子分类",
-            "openedAt": "开单时间",
-            "updatedAt": "更新时间",
-            "daysSinceUpdate": "未更新天数",
-            "isVip": "VIP",
-            "serialNumber": "序列号",
-            "assetTag": "资产标签",
-            "model": "型号",
-            "modelCategory": "型号类别",
-            "assetStatus": "资产状态",
-            "substatus": "子状态",
-            "stockRoom": "库房",
-            "region": "区域",
-            "residualValue": "残值",
-            "assignedToUser": "使用者",
-            "device": "设备",
-            "substate": "子状态",
-            "age": "资产年限",
-            "created": "创建时间",
-            "supportGroup": "支持组",
-            "incident": "事件",
-            "request": "请求",
-            "daysNoUpdate": "未更新天数",
-            "shortDescription": "简要描述"
-        },
-        "tabs": {
-            "pendingReturn": "待归还",
-            "pendingRepair": "待维修",
-            "unconfirmed": "未确认"
-        },
-        "pages": {
-            "assetsTitle": "资产仪表盘",
-            "assetsSubtitle": "全公司硬件资产概览",
-            "inStockTitle": "库存资产",
-            "inStockSubtitle": "当前在库房的硬件",
-            "pendingTitle": "待处理资产",
-            "pendingSubtitle": "待确认、归还或维修的资产",
-            "filteredCount": "已筛选：{filtered} / {total} 项资产",
-            "records": "{count} 条记录",
-            "totalResidual": "残值合计",
-            "avgAge": "平均年限",
-            "incidentsTitle": "事件分析",
-            "incidentsSubtitle": "事件的优先级分布、老化与分配组负载",
-            "filteredIncidents": "已筛选：{filtered} / {total} 个事件",
-            "vipTitle": "VIP 活动工单",
-            "vipSubtitle": "VIP 报修人开出的未关闭事件与请求",
-            "vipRecords": "{count} 条 VIP 工单",
-            "agingIncidentsTitle": "老化事件",
-            "agingIncidentsSubtitle": "超过 2 天未更新的 OIT 事件",
-            "agingScTasksTitle": "老化服务目录任务",
-            "agingScTasksSubtitle": "超过 30 天未更新的 OIT 服务目录任务",
-            "agingAssetTasksTitle": "老化资产任务",
-            "agingAssetTasksSubtitle": "超过 30 天未更新的 OIT 资产任务",
-            "agingRecords": "{count} 条记录",
-            "catalogTitle": "服务目录任务仪表盘",
-            "catalogSubtitle": "服务目录任务的工单量、老化与团队负载",
-            "filteredCatalog": "已筛选：{filtered} / {total} 个任务",
-            "hubTitle": "实时监控中心",
-            "hubSubtitle": "跨区域的活动工单与硬件资产总览",
-            "hubTicketsSection": "工单",
-            "hubAssetsSection": "资产",
-            "hubFilteredTickets": "已筛选：{filtered} / {total} 条活动工单",
-            "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产"
-        },
-        "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
-        "links": {
-            "openLabel": "打开 {label}",
-            "openAssetHub": "打开资产总览",
-            "openInStockAssets": "打开库存资产仪表盘",
-            "openPendingAssets": "打开待处理资产仪表盘",
-            "openVipTickets": "打开 VIP 工单仪表盘",
-            "openAgingIncidents": "打开老化事件仪表盘",
-            "openAgingCatalogTasks": "打开老化服务目录任务仪表盘",
-            "openAgingAssetTasks": "打开老化资产任务仪表盘"
-        },
-        "empty": {
-            "noData": "暂无数据",
-            "loading": "加载中...",
-            "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
-            "loadFailed": "加载数据失败",
-            "retry": "重试"
-        }
-    },
-    "SSCDashboard": {
-        "title": "SSC 工作台",
-        "subtitle": "Chatbot 交互与工单时间线对齐",
-        "headers": {
-            "no": "No",
-            "time": "Time&Date",
-            "user": "User ID",
-            "region": "Region",
-            "country": "Country",
-            "department": "Department",
-            "question": "User ask",
-            "faqReply": "回复",
-            "ciAi": "CI(Ohla)",
-            "ciReview": "CI(人工审核)",
-            "helpful": "Helpful (原始数据)",
-            "codeAi": "Code(Ohla)",
-            "codeReview": "Code(人工审核)",
-            "needsOptimization": "是否需要优化？",
-            "optimizationNotes": "需优化部分",
-            "completed": "完成",
-            "ticketId": "工单ID",
-            "summary": "总结",
-            "category": "分类CI(SN)",
-            "preFaq": "提工单之前的FAQ",
-            "kb": "Related KB",
-            "csatScore": "CSAT (原始数据)",
-            "csatText": "CSAT (文本)"
-        },
-        "codes": {
-            "ACCT": "内容清晰准确",
-            "IMP": "需优化改进",
-            "ERR": "错误需修正",
-            "NEW": "新增问题",
-            "QNC": "问题不清",
-            "CUST": "客制化问题",
-            "OOS": "不在支援范围内"
-        },
-        "buttons": {
-            "preFaqWithCount": "在左侧面板高亮 {count} 条相关的开单前 FAQ 交互",
-            "preFaqEmpty": "未识别到开单前的相关 FAQ",
-            "kbWithCount": "打开 {count} 篇关联 KB 文章",
-            "kbEmpty": "无关联 KB 文章",
-            "downloadXlsx": "下载 Excel",
-            "align": "对齐"
-        },
-        "messages": {
-            "saveError": "保存失败 — 请重试",
-            "downloadError": "下载失败",
-            "downloadTooLarge": "数据条数过多 — 请缩小筛选范围"
-        },
-        "panels": {
-            "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
-            "ticketTitle": "Ticket Dashboard (Incidents)"
-        },
-        "categoryFilter": {
-            "label": "AI 分类：",
-            "allLabel": "全部",
-            "selectedCount": "已选 {count}",
-            "unclassified": "未分类",
-            "reviewPlaceholder": "—"
-        },
-        "preFaqButton": "高亮显示左侧 {count} 条提工单前的 FAQ 交互",
-        "preFaqEmpty": "未识别到提工单前的 FAQ 交互",
-        "kbButton": "打开 {count} 篇相关 KB 文章",
-        "kbEmpty": "无相关 KB 文章",
-        "downloadXlsx": "下载 Excel",
-        "downloadError": "下载失败",
-        "downloadTooLarge": "数据太多 — 请缩小筛选范围",
-        "saveError": "保存失败 — 请重试"
-    },
-    "SurveyAnalytics": {
-        "title": "问卷分析",
-        "subtitle": "基于问卷回复和 AI 生成分析的洞察",
-        "refreshAll": "刷新所有板块",
-        "selectBatch": "选择问卷批次以查看分析",
-        "loadingBatches": "正在加载批次...",
-        "noBatches": "未找到问卷批次",
-        "recipients": "位接收人",
-        "submission": {
-            "title": "问卷提交概览",
-            "loading": "正在加载提交概览...",
-            "loadFailed": "数据加载失败",
-            "totalSent": "已发送总数",
-            "submitted": "已提交",
-            "responseRate": "回复率",
-            "surveysSent": "份问卷已发送",
-            "responsesReceived": "份回复已收到",
-            "responseRateLabel": "回复率",
-            "submissionsByLocation": "按地区分布",
-            "showAll": "展开全部 {count} 个地区",
-            "showLess": "收起"
-        },
-        "classification": {
-            "title": "分析分类",
-            "loading": "正在加载分析分类...",
-            "loadFailed": "数据加载失败",
-            "totalAnalyses": "分析总数",
-            "positive": "正面",
-            "negative": "负面",
-            "serviceCatalog": "服务目录",
-            "configurationItem": "配置项",
-            "intent": "意图",
-            "byLocation": "按地区",
-            "neutral": "中性"
-        },
-        "keywords": {
-            "title": "关键词热力图",
-            "loading": "正在加载关键词热力图...",
-            "loadFailed": "数据加载失败",
-            "positive": "正面",
-            "negative": "负面",
-            "mixedNeutral": "混合/中性",
-            "sizeFrequency": "面积 = 频率",
-            "groupBySC": "服务目录层级",
-            "groupByLocation": "地区层级",
-            "allKeywords": "全部",
-            "ungrouped": "未分类"
-        },
-        "location": {
-            "noData": "暂无地区数据",
-            "location": "地区",
-            "total": "总数",
-            "topIssues": "主要问题"
-        },
-        "popover": {
-            "total": "总计",
-            "showing": "显示",
-            "openAnalysis": "打开分析",
-            "openSurvey": "打开问卷"
-        },
-        "donut": {
-            "submitted": "已提交",
-            "notStarted": "未开始",
-            "revoked": "已撤回",
-            "expired": "已过期"
-        },
-        "region": {
-            "apac": "亚太",
-            "emea": "欧非中东",
-            "americas": "美洲"
-        },
-        "negativeFeedback": {
-            "title": "负面反馈聚焦",
-            "loading": "正在加载负面反馈分析...",
-            "serviceCatalog": "服务目录",
-            "configItem": "配置项",
-            "allLocations": "全部地区",
-            "count": "数量",
-            "negativeRate": "负面比例",
-            "typicalIssues": "典型问题",
-            "viewMore": "查看更多 ({count})",
-            "collapse": "收起",
-            "noNegative": "未发现负面反馈",
-            "issue": "条问题",
-            "issues": "条问题"
-        }
-    },
-    "TopBar": {
-        "title": "Ohla IT-Aware",
-        "dashboard": "原始数据",
-        "dataOverview": "数据概览",
-        "surveyAnalytics": "问卷分析",
-        "auth": "权限",
-        "data": "数据",
-        "application": "其他应用",
-        "knowledge": "知识库",
-        "persona": "用户画像",
-        "campaign": "运营活动",
-        "sscCockpit": "SSC 团队",
-        "operationTeams": "运维团队",
-        "agentOps": "AgentOps"
-    },
-    "SSCFAQReport": {
-        "kpiTooltip": {
-            "totalInteractions": "周期内所有会话总数（含所有编码，包括 NA）。",
-            "uniqueVisitors": "按 actor_stable_id 去重的独立用户数。",
-            "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
-            "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷（总数 − NA）× 100%"
-        }
+    "assignments": {
+      "select": "选择...",
+      "addTitle": "添加{title}"
     }
+  },
+  "Campaign": {
+    "accessDenied": {
+      "title": "需要运营活动模块权限",
+      "description": "当前账号没有访问运营活动模块的权限。"
+    },
+    "errors": {
+      "loadNotifications": "通知批次列表加载失败",
+      "loadDetails": "通知列表加载失败"
+    },
+    "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
+    "contentBlockTypes": {
+      "text": "文本",
+      "title": "标题",
+      "link": "链接"
+    },
+    "content": {
+      "blockText": "内容文本",
+      "blockUrl": "链接地址",
+      "addBlock": "新增内容块"
+    },
+    "list": {
+      "title": "通知批次",
+      "create": "创建通知批次",
+      "loading": "正在加载通知批次...",
+      "empty": "暂无通知批次",
+      "counts": "已加载 {loaded} / 总计 {total}",
+      "filters": {
+        "allStatus": "全部状态",
+        "allChannels": "全部渠道",
+        "search": "搜索批次名称或 OID"
+      }
+    },
+    "details": {
+      "selectNotification": "请选择通知批次查看通知行",
+      "trigger": "触发批次发送",
+      "loading": "正在加载通知...",
+      "empty": "暂无通知",
+      "counts": "已加载 {loaded} / 总计 {total}",
+      "fields": {
+        "status": "状态",
+        "receiver": "接收人",
+        "channel": "渠道",
+        "total": "接收人数",
+        "runId": "Run ID",
+        "scheduledAt": "计划时间",
+        "content": "通知内容",
+        "creator": "创建账号",
+        "createdAt": "创建时间",
+        "updatedAt": "更新时间"
+      },
+      "filters": {
+        "allStatus": "全部通知状态",
+        "search": "搜索接收人或内容"
+      },
+      "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。",
+      "serverManagedStatus": "当前状态下批次为只读。",
+      "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
+      "actions": {
+        "editObject": "编辑批次",
+        "addRow": "新增通知",
+        "cancelBatch": "取消批次",
+        "cancel": "取消"
+      },
+      "rowEditor": {
+        "createTitle": "新增通知",
+        "editTitle": "编辑通知：{receiver}",
+        "fields": {
+          "receiver": "接收人 stable_id",
+          "status": "状态",
+          "scheduledAt": "计划时间",
+          "errorMessage": "错误信息",
+          "content": "内容块"
+        },
+        "actions": {
+          "create": "创建通知",
+          "save": "保存通知",
+          "delete": "删除通知"
+        },
+        "errors": {
+          "emptyReceiver": "接收人 stable_id 不能为空。",
+          "failedNeedsError": "状态为 failed 时必须填写 error_message。"
+        }
+      }
+    },
+    "create": {
+      "title": "创建通知批次",
+      "subtitle": "可按向导配置，或通过 Excel 上传创建通知批次。",
+      "entryModes": {
+        "guided": "向导创建",
+        "excelDirect": "Excel 直传创建"
+      },
+      "steps": {
+        "content": "通知模板",
+        "receivers": "通知接收人"
+      },
+      "fields": {
+        "name": "通知批次名称",
+        "namePlaceholder": "例如：weekly_ops_notice",
+        "channel": "渠道",
+        "contentBlocks": "内容块"
+      },
+      "actions": {
+        "next": "下一步",
+        "back": "返回",
+        "create": "创建批次"
+      },
+      "errors": {
+        "noReceivers": "请至少选择一位接收人。",
+        "invalidContent": "每个内容块都必须填写文本，链接类型还需填写 URL。",
+        "receiverNotFound": "未找到该 stable_id 对应员工。",
+        "emptyName": "通知批次名称不能为空。",
+        "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 条通知。{error}"
+      }
+    },
+    "receivers": {
+      "loadingWorkers": "正在加载员工...",
+      "autoSelectedCount": "已选择 {count} 位接收人",
+      "manualAddPlaceholder": "员工 stable_id",
+      "manualAdd": "添加接收人",
+      "manualAdded": "手动追加",
+      "empty": "当前筛选条件下暂无可展示接收人。",
+      "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
+      "expandAll": "全部展开",
+      "collapseAll": "全部收起",
+      "expand": "展开",
+      "collapse": "收起",
+      "selectAll": "全选",
+      "unselectAll": "取消全选",
+      "noLocations": "暂无地点数据",
+      "sources": {
+        "selected": "筛选命中",
+        "manual": "手动添加",
+        "manualExternal": "手动外部",
+        "outsideFilter": "不在当前筛选条件"
+      },
+      "filters": {
+        "organization": "组织",
+        "location": "地点",
+        "workerType": "员工类型"
+      }
+    },
+    "directUpload": {
+      "title": "Excel 直传创建",
+      "subtitle": "每行对应一条通知，包含接收人及独立内容块。",
+      "downloadTemplate": "下载模板",
+      "uploadFile": "上传 .xlsx",
+      "templateHint": "模板列：receiver_stable_id + block_01..block_20 三元组（type/text/url）。",
+      "waitWorkers": "请等待员工数据加载完成后再上传。",
+      "parseFatal": "上传文件解析失败。",
+      "noValidRows": "未找到可用的通知数据行。",
+      "partialWrite": "通知批次 {notificationBatchOid} 已创建，但仅写入 {processed}/{total} 行。{error}",
+      "summary": {
+        "totalRows": "总行数",
+        "validRows": "有效行",
+        "unmatchedRows": "未匹配行",
+        "duplicateRowsIgnored": "重复已忽略",
+        "invalidRows": "非法行"
+      },
+      "unmatchedTitle": "未匹配 stable_id",
+      "rowErrorsTitle": "行校验问题",
+      "rowErrorLine": "第 {row} 行（{stableId}）：{message}",
+      "previewTitle": "解析预览",
+      "previewColumns": {
+        "row": "行号",
+        "receiver": "接收人",
+        "blockCount": "内容块数"
+      }
+    },
+    "edit": {
+      "title": "编辑通知批次",
+      "readOnlyStatus": "当前通知批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑。",
+      "addReceiverTitle": "添加接收人",
+      "newReceiver": "新增",
+      "fields": {
+        "name": "通知批次名称",
+        "channel": "渠道",
+        "newReceiverStableId": "新增接收人 stable_id",
+        "copySource": "复制内容来源"
+      },
+      "actions": {
+        "addReceiver": "添加接收人",
+        "save": "保存修改"
+      },
+      "errors": {
+        "duplicateReceiver": "该接收人已存在。",
+        "receiverNotFound": "未找到该 stable_id 对应员工。",
+        "notEditable": "当前通知批次状态不可编辑。",
+        "emptyName": "通知批次名称不能为空。",
+        "noReceivers": "至少保留一位接收人。",
+        "invalidContent": "所有接收人的内容块都必须合法。",
+        "partialWrite": "通知批次 {notificationBatchOid} 已部分保存：仅写入 {processed}/{total} 条通知。{error}"
+      }
+    }
+  },
+  "CampaignSurvey": {
+    "accessDenied": {
+      "title": "需要运营活动问卷批次权限",
+      "description": "当前账号没有访问运营活动问卷批次的权限。"
+    },
+    "errors": {
+      "loadSurveys": "问卷批次列表加载失败",
+      "loadDetails": "问卷列表加载失败"
+    },
+    "batchProgress": "正在写入接收人：{processed} / {total}（批次 {currentBatch} / {totalBatches}）",
+    "list": {
+      "title": "问卷批次",
+      "create": "创建问卷批次",
+      "loading": "正在加载问卷批次...",
+      "empty": "暂无问卷批次",
+      "counts": "已加载 {loaded} / 总计 {total}",
+      "filters": {
+        "allStatus": "全部状态",
+        "search": "搜索批次名称或 OID"
+      }
+    },
+    "details": {
+      "selectSurvey": "请选择问卷批次查看问卷行",
+      "loading": "正在加载问卷...",
+      "empty": "暂无问卷",
+      "counts": "已加载 {loaded} / 总计 {total}",
+      "fields": {
+        "status": "状态",
+        "receiver": "接收人",
+        "total": "接收人数",
+        "creator": "创建账号",
+        "createdAt": "创建时间",
+        "updatedAt": "更新时间",
+        "submittedAt": "提交时间",
+        "questions": "题目",
+        "answer": "回答"
+      },
+      "filters": {
+        "allStatus": "全部问卷状态",
+        "search": "搜索接收人或回答"
+      },
+      "serverManagedHint": "状态由服务端管理；请通过动作按钮执行状态变更。提交/撤回为动作操作。",
+      "serverManagedStatus": "当前状态下批次为只读。",
+      "nonEditableState": "当前为不可编辑状态：该批次仅可查看。",
+      "actions": {
+        "editObject": "编辑批次",
+        "addRow": "新增问卷",
+        "publishBatch": "发布批次",
+        "closeBatch": "关闭批次",
+        "reopenBatch": "重新开启批次",
+        "cancelBatch": "取消批次",
+        "cancel": "取消"
+      },
+      "rowEditor": {
+        "createTitle": "新增问卷",
+        "editTitle": "编辑问卷：{receiver}",
+        "fields": {
+          "receiver": "接收人 stable_id",
+          "status": "状态",
+          "submittedAt": "提交时间",
+          "answerJson": "问卷回答 JSON",
+          "answerJsonPlaceholder": "{\"answers\":[...]}",
+          "questions": "问卷题目"
+        },
+        "actions": {
+          "create": "创建问卷",
+          "save": "保存问卷",
+          "submit": "提交",
+          "revoke": "撤回",
+          "delete": "删除问卷"
+        },
+        "errors": {
+          "emptyReceiver": "接收人 stable_id 不能为空。",
+          "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
+          "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
+          "submitNotAllowed": "当前问卷状态不允许提交。",
+          "revokeNotAllowed": "当前问卷状态不允许撤回。",
+          "createdSubmittedAtNotAllowed": "状态为 created 时 submitted_at 必须为空。",
+          "createdAnswerNotAllowed": "状态为 created 时 survey_answer 必须为空。"
+        }
+      }
+    },
+    "create": {
+      "title": "创建问卷批次",
+      "subtitle": "可按向导配置，或通过表格批量导入创建问卷批次。",
+      "entryModes": {
+        "guided": "向导创建",
+        "spreadsheet": "表格导入"
+      },
+      "sections": {
+        "questions": "题目内容",
+        "receivers": "接收人选择"
+      },
+      "fields": {
+        "name": "问卷批次名称",
+        "namePlaceholder": "例如：employee_pulse_weekly"
+      },
+      "actions": {
+        "create": "创建批次"
+      },
+      "errors": {
+        "noReceivers": "请至少选择一位接收人。",
+        "receiverNotFound": "未找到该 stable_id 对应员工。",
+        "emptyName": "问卷批次名称不能为空。",
+        "partialWrite": "问卷批次 {surveyBatchOid} 已创建，但仅写入 {processed}/{total} 条问卷。{error}"
+      }
+    },
+    "questionBuilder": {
+      "title": "问卷题目",
+      "subtitle": "配置问卷引导语与结构化题目。",
+      "empty": "尚未添加题目。",
+      "questionLabel": "题目",
+      "fields": {
+        "intro": "引导语",
+        "introPlaceholder": "展示给接收人的引导文本",
+        "questionId": "题目 ID",
+        "type": "类型",
+        "title": "标题",
+        "required": "必答",
+        "options": "选项",
+        "optionId": "option_id",
+        "optionLabel": "label"
+      },
+      "actions": {
+        "removeQuestion": "删除题目",
+        "addOption": "添加选项",
+        "addQuestion": "添加题目"
+      }
+    },
+    "receivers": {
+      "loadingWorkers": "正在加载员工...",
+      "autoSelectedCount": "已选择 {count} 位接收人",
+      "manualAddPlaceholder": "员工 stable_id",
+      "manualAdd": "添加接收人",
+      "manualAdded": "手动追加",
+      "empty": "当前筛选条件下暂无可展示接收人。",
+      "locationTreeHint": "勾选上级地点会自动包含所有下级地点；可手动取消下级进行覆盖。",
+      "expandAll": "全部展开",
+      "collapseAll": "全部收起",
+      "selectAll": "全选",
+      "unselectAll": "取消全选",
+      "noLocations": "暂无地点数据",
+      "sources": {
+        "selected": "筛选命中",
+        "manual": "手动添加",
+        "manualExternal": "手动外部",
+        "outsideFilter": "不在当前筛选条件"
+      },
+      "filters": {
+        "location": "地点",
+        "workerType": "员工类型"
+      }
+    },
+    "directUpload": {
+      "title": "表格导入",
+      "subtitle": "每一行创建一个问卷批次及其单条问卷接收人记录。",
+      "downloadTemplate": "下载模板",
+      "uploadFile": "上传 .xlsx",
+      "import": "导入问卷批次",
+      "templateHint": "必填列：name、receiver_stable_id、intro，以及 q01..q20 题目列。",
+      "waitWorkers": "请等待员工数据加载完成后再上传。",
+      "parseFatal": "上传文件解析失败。",
+      "noValidRows": "未找到可用数据行。",
+      "summary": {
+        "totalRows": "总行数",
+        "validRows": "有效行",
+        "unmatchedRows": "未匹配行",
+        "duplicateRowsIgnored": "重复已忽略",
+        "invalidRows": "非法行"
+      },
+      "unmatchedTitle": "未匹配 stable_id",
+      "rowErrorsTitle": "行校验问题",
+      "rowErrorLine": "第 {row} 行（{stableId}）：{message}",
+      "previewTitle": "解析预览",
+      "previewColumns": {
+        "row": "行号",
+        "name": "问卷名称",
+        "receiver": "接收人",
+        "questionCount": "题目数"
+      }
+    },
+    "edit": {
+      "title": "编辑问卷批次",
+      "readOnlyQuestionStatus": "当前问卷批次状态为 \"{status}\"，仅在 \"created\" 状态下可编辑题目。",
+      "readOnlyDetailStatus": "当前问卷批次状态为 \"{status}\"，当状态为 cancelled 时不可编辑接收人行。",
+      "receiversTitle": "接收人",
+      "receiverCount": "{count} 位接收人",
+      "fields": {
+        "name": "问卷批次名称",
+        "newReceiverStableId": "新增接收人 stable_id",
+        "detailStatus": "问卷状态",
+        "submittedAt": "提交时间",
+        "answerJson": "问卷回答 JSON",
+        "answerJsonPlaceholder": "{\"answers\":[...]}"
+      },
+      "actions": {
+        "addReceiver": "添加接收人",
+        "removeReceiver": "删除接收人",
+        "save": "保存修改"
+      },
+      "errors": {
+        "duplicateReceiver": "该接收人已存在。",
+        "receiverNotFound": "未找到该 stable_id 对应员工。",
+        "notEditable": "当前问卷批次状态不可编辑。",
+        "emptyName": "问卷批次名称不能为空。",
+        "noReceivers": "至少保留一位接收人。",
+        "emptyReceiver": "接收人 stable_id 不能为空。",
+        "submittedAtRequired": "状态为 submitted 时必须填写 submitted_at。",
+        "invalidAnswerJson": "问卷回答 JSON 非法。",
+        "answerRequired": "状态为 submitted 时必须填写 survey_answer。",
+        "partialWrite": "问卷批次 {surveyBatchOid} 已部分保存：仅写入 {processed}/{total} 条问卷。{error}"
+      }
+    }
+  },
+  "Dashboard": {
+    "title": "数据概览",
+    "subtitle": "跨所有数据对象资源的实时汇总指标。",
+    "refresh": "刷新",
+    "loading": "正在加载看板统计...",
+    "loadFailed": "看板统计加载失败，请刷新重试。",
+    "generatedAt": "更新时间：{time}",
+    "summary": {
+      "totalAcrossResources": "资源总计",
+      "activeCapable": "活跃数（支持激活状态的资源）",
+      "availableResources": "可用资源"
+    },
+    "groups": {
+      "hierarchies": "层级",
+      "objects": "对象",
+      "activities": "活动",
+      "campaigns": "运营活动",
+      "insights": "洞察"
+    },
+    "resources": {
+      "organizations": "组织",
+      "locations": "地点",
+      "service-catalogs": "服务目录",
+      "workers": "员工",
+      "articles": "文章",
+      "incidents": "事件",
+      "requests": "请求",
+      "inquiries": "问询",
+      "interactions": "交互事件",
+      "surveys": "问卷批次",
+      "notifications": "通知批次",
+      "analyses": "分析"
+    },
+    "metrics": {
+      "total": "总数",
+      "active": "活跃",
+      "inactive": "未激活"
+    },
+    "status": {
+      "ok": "可用",
+      "forbidden": "无权限",
+      "error": "不可用"
+    },
+    "comingSoon": "看板即将推出"
+  },
+  "Data": {
+    "common": {
+      "save": "保存",
+      "edit": "编辑",
+      "cancel": "取消",
+      "delete": "删除",
+      "created": "创建时间",
+      "updated": "更新时间",
+      "name": "名称",
+      "parent": "父节点",
+      "noParent": "无父节点（根级别）",
+      "searchParent": "搜索父节点...",
+      "hierarchyPath": "层级路径",
+      "levelsDeep": "{count} 层深",
+      "levelsDeepPlural": "{count} 层深",
+      "noRelationships": "未找到关系",
+      "edgeRelationships": "图关系",
+      "roleAssignments": "角色分配",
+      "filter": "筛选",
+      "all": "全部",
+      "search": "搜索...",
+      "refresh": "刷新",
+      "back": "返回"
+    },
+    "roleAssignment": {
+      "noRoles": "没有可用的角色。请先在权限模块中创建角色。",
+      "noWorkers": "此角色尚未分配员工。",
+      "noAvailable": "没有可分配的员工",
+      "noAssignments": "暂无角色分配。使用下方搜索查找角色。",
+      "unassignedRoles": "未分配的角色",
+      "searchRoles": "搜索角色...",
+      "searchWorkers": "搜索员工...",
+      "addWorker": "添加员工",
+      "moreRoles": "+{count} 个角色",
+      "noMatchingRoles": "未找到匹配的角色"
+    },
+    "organizations": {
+      "title": "组织",
+      "detail": "组织详情",
+      "new": "新建组织",
+      "empty": "未找到组织。创建您的第一个组织开始使用。",
+      "deleteConfirm": "确定要删除此组织吗？此操作无法撤销。",
+      "rootCount": "{count} 个根组织",
+      "rootCountPlural": "{count} 个根组织"
+    },
+    "locations": {
+      "title": "地点",
+      "detail": "地点详情",
+      "new": "新建地点",
+      "empty": "未找到地点。创建您的第一个地点开始使用。",
+      "deleteConfirm": "确定要删除此地点吗？此操作无法撤销。",
+      "rootCount": "{count} 个根地点",
+      "rootCountPlural": "{count} 个根地点"
+    },
+    "serviceCatalogs": {
+      "title": "服务目录",
+      "detail": "服务目录详情",
+      "new": "新建服务目录",
+      "empty": "未找到服务目录。创建您的第一个服务目录开始使用。",
+      "deleteConfirm": "确定要删除此服务目录吗？此操作无法撤销。",
+      "rootCount": "{count} 个根服务目录",
+      "rootCountPlural": "{count} 个根服务目录"
+    },
+    "workers": {
+      "title": "员工",
+      "detail": "员工详情",
+      "new": "新建员工",
+      "empty": "未找到员工",
+      "deleteConfirm": "确定要删除此员工吗？",
+      "fullname": "姓名",
+      "fullName": "全名",
+      "legalFirstName": "法定名",
+      "legalLastName": "法定姓",
+      "preferredFirstName": "常用名",
+      "stableId": "稳定ID",
+      "email": "邮箱",
+      "workerId": "员工ID",
+      "organization": "组织",
+      "location": "地点",
+      "manager": "主管",
+      "gender": "性别",
+      "hireDate": "入职日期",
+      "jobCategory": "职能类别",
+      "jobSubcategory": "职能子类",
+      "jobProfessionalLevel": "职级",
+      "jobManagementLevel": "管理层级",
+      "jobBand": "职级带",
+      "jobTitle": "职位名称",
+      "status": "状态",
+      "active": "活跃",
+      "inactive": "未激活",
+      "notSet": "未设置",
+      "count": "{filtered} / {total} 员工",
+      "countPlural": "{filtered} / {total} 员工",
+      "required": "必填",
+      "optional": "可选",
+      "createWorker": "创建员工",
+      "profile": {
+        "title": "员工画像",
+        "empty": "暂无员工画像。",
+        "summary": "摘要",
+        "topics": "主题",
+        "tags": "标签",
+        "commaDelimited": "用逗号分隔",
+        "summaryUpdated": "摘要更新时间",
+        "topicsUpdated": "主题更新时间",
+        "tagsUpdated": "标签更新时间",
+        "addTopic": "添加主题",
+        "topicName": "主题名称",
+        "topicNeed": "需求 / 描述",
+        "topicNotes": "备注（可选）",
+        "topicResolved": "已解决",
+        "topicUnresolved": "未解决"
+      }
+    },
+    "hardwares": {
+      "title": "硬件",
+      "subtitle": "{active} 活跃 / {total} 总计",
+      "searchPlaceholder": "搜索序列号、资产标签或分配人...",
+      "filterModelCategory": "型号类别",
+      "filterAssetStatus": "资产状态",
+      "filterRegion": "区域",
+      "filterAll": "全部",
+      "showInactive": "显示已停用",
+      "empty": "未找到硬件资产",
+      "unassigned": "未分配",
+      "detail": {
+        "backToList": "返回硬件列表",
+        "identity": "标识",
+        "model": "型号",
+        "assignment": "分配",
+        "locationOrg": "位置 / 组织",
+        "cost": "成本",
+        "status": "状态",
+        "verification": "验证",
+        "provenance": "来源",
+        "serialNumber": "序列号",
+        "assetTag": "资产标签",
+        "assetNumber": "资产编号",
+        "modelCategory": "型号类别",
+        "modelDisplayName": "型号显示名",
+        "modelName": "型号名称",
+        "mainCategory": "主类别",
+        "assetFunction": "资产功能",
+        "assetOwner": "资产所有者",
+        "assignedToUsername": "分配给（用户名）",
+        "assignedToDisplayName": "分配给",
+        "employmentType": "雇佣类型",
+        "employmentStartDate": "入职日期",
+        "assignedDate": "分配日期",
+        "firstAssignedDate": "首次分配日期",
+        "workerOid": "员工",
+        "company": "公司",
+        "businessGroup": "业务组",
+        "department": "部门",
+        "location": "位置",
+        "officeId": "办公室ID",
+        "regionCode": "区域代码",
+        "region": "区域",
+        "officeRegion": "办公区域",
+        "stockRoom": "库房",
+        "costValue": "成本",
+        "costCenter": "成本中心",
+        "procuredCostCenter": "采购成本中心",
+        "residualValue": "残值",
+        "residualDate": "残值日期",
+        "budgetByOit": "OIT预算",
+        "costByOit": "OIT成本",
+        "assetStatus": "资产状态",
+        "substatus": "子状态",
+        "retiredDate": "退役日期",
+        "scheduledRetirement": "计划退役",
+        "verificationStatus": "验证状态",
+        "verifiedDate": "验证日期",
+        "verifiedBy": "验证人",
+        "erpCreatedBy": "ERP创建者",
+        "erpCreatedDate": "ERP创建日期",
+        "erpUpdatedDate": "ERP更新日期",
+        "ownedBy": "拥有者",
+        "active": "活跃",
+        "inactive": "已停用",
+        "yes": "是",
+        "no": "否",
+        "notSet": "—"
+      }
+    },
+    "roles": {
+      "noRoles": "没有可用角色。请先在安全模块创建角色。",
+      "addWorker": "添加员工",
+      "noWorkers": "此角色未分配员工。",
+      "workersCount": "{count} 员工",
+      "workersCountPlural": "{count} 员工",
+      "noWorkersAvailable": "没有可用员工"
+    },
+    "articles": {
+      "title": "文章",
+      "detail": "文章详情",
+      "new": "新建文章",
+      "empty": "未找到文章",
+      "deleteConfirm": "确定要删除此文章吗？",
+      "articleTitle": "标题",
+      "summary": "摘要",
+      "content": "内容 (Markdown)",
+      "serviceCatalog": "服务目录",
+      "serviceCatalogs": "服务目录",
+      "sourceSystem": "来源系统",
+      "sourceUrl": "来源链接",
+      "version": "版本",
+      "latest": "最新",
+      "status": "状态",
+      "active": "活跃",
+      "inactive": "未激活",
+      "count": "{filtered} / {total} 文章",
+      "countPlural": "{filtered} / {total} 文章",
+      "embeddingIds": "嵌入 ID",
+      "embeddedAt": "嵌入时间",
+      "noEmbedding": "未嵌入"
+    },
+    "notifications": {
+      "title": "通知",
+      "detail": "通知详情",
+      "empty": "未找到通知",
+      "selectBatch": "选择通知批次",
+      "receiver": "接收人",
+      "status": "状态",
+      "batch": "通知批次",
+      "channel": "渠道",
+      "content": "内容",
+      "scheduledAt": "计划发送时间",
+      "errorMessage": "错误信息"
+    },
+    "surveys": {
+      "title": "问卷",
+      "detail": "问卷详情",
+      "empty": "未找到问卷",
+      "selectBatch": "选择问卷批次",
+      "allBatches": "全部批次",
+      "receiver": "接收人",
+      "status": "状态",
+      "submittedAt": "提交时间",
+      "batch": "问卷批次",
+      "questions": "题目",
+      "answers": "回答",
+      "noAnswer": "未提交回答"
+    },
+    "scenarios": {
+      "title": "场景",
+      "detail": "场景详情",
+      "empty": "未找到场景",
+      "deleteConfirm": "确定要删除此场景吗？",
+      "scenarioType": "场景类型",
+      "worker": "员工",
+      "effectiveAt": "生效时间",
+      "description": "描述",
+      "notes": "备注",
+      "keyTopics": "关键主题",
+      "noDescription": "无描述",
+      "noNotes": "无备注",
+      "noKeyTopics": "无关键主题"
+    },
+    "analyses": {
+      "title": "分析",
+      "detail": "分析详情",
+      "new": "新建分析",
+      "empty": "未找到分析",
+      "deleteConfirm": "确定要删除此分析吗？",
+      "worker": "员工",
+      "sourceType": "来源类型",
+      "sourceOid": "来源 OID",
+      "sourceObject": "来源对象",
+      "sourceBatch": "来源批次",
+      "topic": "主题",
+      "keywords": "关键词",
+      "fact": "事实摘要",
+      "semantic": "情感倾向",
+      "intent": "意图",
+      "serviceCatalog": "服务目录",
+      "configurationItem": "配置项",
+      "positive": "正面",
+      "negative": "负面",
+      "noKeywords": "无关键词"
+    },
+    "clusters": {
+      "title": "员工群组",
+      "subtitle": "基于 ML 计算的 IT 服务员工行为分组",
+      "detail": "群组详情",
+      "empty": "未找到群组数据。聚类管道尚未运行。",
+      "noWorkers": "该群组中未找到员工",
+      "summaryTitle": "群组概览",
+      "totalWorkers": "总员工数",
+      "nClusters": "群组数",
+      "noiseCount": "未分类",
+      "lastComputed": "上次计算",
+      "clusterSize": "规模",
+      "percentage": "占比",
+      "workers": "员工",
+      "allClusters": "所有群组",
+      "noise": "未分类（异常值）",
+      "searchPlaceholder": "按员工姓名或 ID 搜索...",
+      "filterByCluster": "按群组筛选",
+      "featureRadar": "特征指纹",
+      "scatterPlot": "群组可视化",
+      "pcaX": "成分 1",
+      "pcaY": "成分 2",
+      "runId": "运行 ID",
+      "computedAt": "计算时间",
+      "backToList": "返回群组列表",
+      "probability": "置信度",
+      "workerName": "员工",
+      "clusterAssignment": "群组"
+    }
+  },
+  "GlobalSearch": {
+    "placeholder": "搜索数据对象...",
+    "noResults": "未找到结果",
+    "searching": "搜索中...",
+    "organizations": "组织",
+    "locations": "地点",
+    "workers": "员工",
+    "serviceCatalogs": "服务目录",
+    "articles": "文章",
+    "requests": "请求"
+  },
+  "Knowledge": {
+    "sidebar": {
+      "title": "服务目录"
+    },
+    "overview": {
+      "title": "知识库",
+      "description": "按服务目录浏览文章和文档。从侧边栏选择一个分类以查看相关内容。",
+      "catalogs": "目录",
+      "recentArticles": "最近文章",
+      "viewAll": "查看全部",
+      "noArticles": "暂无文章。从侧边栏选择一个目录以浏览内容。"
+    },
+    "catalog": {
+      "articleCount": "此分类下有 {count} 篇文章",
+      "articleCountPlural": "此分类下有 {count} 篇文章"
+    },
+    "articles": {
+      "title": "文章",
+      "empty": "此分类下暂无文章",
+      "article": "文章",
+      "source": "来源"
+    },
+    "faqs": {
+      "title": "常见问题",
+      "comingSoon": "常见问题即将上线",
+      "underDevelopment": "此功能正在开发中"
+    },
+    "common": {
+      "noCatalogs": "未找到目录",
+      "loadError": "加载目录失败"
+    }
+  },
+  "Persona": {
+    "sections": {
+      "personalInfo": "个人信息",
+      "jobInfo": "岗位信息",
+      "profileInfo": "画像信息",
+      "activitiesTimeline": "活动时间线",
+      "graphLinks": "图关系"
+    },
+    "fields": {
+      "workerType": "员工类型",
+      "vipStatus": "VIP 状态"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "未激活",
+      "vip": "VIP",
+      "notVip": "非 VIP",
+      "notSet": "未设置"
+    },
+    "sidebar": {
+      "title": "组织与员工",
+      "searchPlaceholder": "搜索组织名称或员工 stable_id...",
+      "searchButton": "搜索",
+      "vipFilter": "仅 VIP",
+      "activeFilter": "仅活跃",
+      "organizations": "组织",
+      "expandAll": "全部展开",
+      "collapseAll": "全部收起",
+      "workers": "员工",
+      "allOrganizations": "全部组织",
+      "loadingOrganizations": "正在加载组织...",
+      "loadingWorkers": "正在加载员工...",
+      "noOrganizations": "未找到组织",
+      "noWorkers": "未找到员工"
+    },
+    "profile": {
+      "summary": "AI 摘要",
+      "topics": "主题",
+      "tags": "标签",
+      "summaryUpdated": "摘要更新时间",
+      "topicsUpdated": "主题更新时间",
+      "tagsUpdated": "标签更新时间",
+      "empty": "暂无画像信息"
+    },
+    "cluster": {
+      "label": "用户群组",
+      "noise": "未分类",
+      "probability": "置信度",
+      "outlierScore": "异常分数",
+      "profile": "群组画像",
+      "behaviors": "核心行为",
+      "painPoints": "痛点",
+      "bestPractices": "最佳实践",
+      "sla": "SLA 建议",
+      "features": "特征画像",
+      "labelFeatures": "标签",
+      "basedOn": "基于 {count} 名相似员工",
+      "description": "描述",
+      "noCluster": "该员工暂无群组分配",
+      "membershipStrong": "强",
+      "membershipModerate": "中等",
+      "membershipWeak": "弱",
+      "viewCluster": "查看群组详情"
+    },
+    "timeline": {
+      "window": "时间窗口",
+      "slideLeft": "向左滑动",
+      "slideRight": "向右滑动",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "reload": "刷新",
+      "showInteractions": "交互明细",
+      "on": "开启",
+      "off": "关闭",
+      "legend": "图例",
+      "loading": "正在加载时间线活动...",
+      "error": "活动时间线加载失败",
+      "retry": "重试",
+      "empty": "所选时间窗口内无活动",
+      "showingLatest": "显示最近 {loaded} / {total} 条活动",
+      "lanes": {
+        "incident": "事件",
+        "request": "请求",
+        "inquiry": "问询",
+        "interaction": "交互",
+        "survey": "问卷",
+        "analysis": "分析",
+        "scenario": "场景"
+      },
+      "scenarioTooltip": "场景：{type}，生效时间 {date}",
+      "heatBar": "热力条",
+      "dragHint": "在时间轴或热力条上拖拽可平移时间窗口",
+      "rangeStart": "区间起点",
+      "rangeEnd": "区间终点",
+      "backgroundLoading": "正在加载更多时间片...",
+      "heatTooltip": {
+        "total": "总量",
+        "interval": "区间",
+        "incident": "事件",
+        "request": "请求",
+        "inquiry": "问询",
+        "interaction": "交互",
+        "survey": "问卷",
+        "analysis": "分析"
+      }
+    }
+  },
+  "Sidebar": {
+    "overview": "概览",
+    "threats": "威胁",
+    "access": "访问控制",
+    "accounts": "账户",
+    "groups": "分组",
+    "roles": "角色",
+    "permissions": "权限",
+    "hierarchies": "层级结构",
+    "objects": "对象",
+    "organizations": "组织",
+    "locations": "地点",
+    "serviceCatalogs": "服务目录",
+    "workers": "员工",
+    "profile": "个人资料",
+    "team": "团队",
+    "settings": "设置",
+    "articles": "文章",
+    "hardwares": "硬件",
+    "networks": "网络",
+    "ioaScans": "iOA 扫描",
+    "activities": "活动",
+    "incidents": "事件",
+    "requests": "请求",
+    "inquiries": "问询",
+    "interactions": "交互事件",
+    "faqs": "常见问题",
+    "campaign": "运营活动",
+    "notificationBatches": "通知批次",
+    "surveyBatches": "问卷批次",
+    "insights": "洞察",
+    "notifications": "通知",
+    "surveys": "问卷",
+    "analyses": "分析",
+    "clusters": "群组",
+    "journeys": "旅程",
+    "scenarios": "场景",
+    "sscDashboard": "SSC 仪表盘",
+    "faqReport": "FAQ 分析报告",
+    "opsDashboard": "运维仪表盘",
+    "opsMonitoring": "监控",
+    "opsActiveMonitoring": "实时监控",
+    "opsIncidents": "事件",
+    "opsCatalog": "服务目录",
+    "opsVipTickets": "VIP 工单",
+    "opsAging": "工单老化",
+    "opsAgingIncidents": "老化事件",
+    "opsAgingScTasks": "老化服务目录任务",
+    "opsAgingAssetTasks": "老化资产任务",
+    "opsAssets": "资产",
+    "opsAssetsOverview": "资产总览",
+    "opsInStockAssets": "库存资产",
+    "opsPendingAssets": "待处理资产",
+    "surveyAnalytics": "问卷分析",
+    "analytics": "分析",
+    "dataOverview": "数据总览",
+    "agentFleet": "Agent Fleet",
+    "agentOps": "AgentOps",
+    "agents": "Agents",
+    "tickets": "工单",
+    "ticketList": "工单列表",
+    "ticketKanban": "工单看板",
+    "opsOhla": "Ohla 聊天机器人",
+    "opsOhlaOverview": "概览",
+    "opsOhlaUserAsk": "用户提问分析",
+    "opsOhlaAgentSupport": "人工支持",
+    "opsOhlaSurveyDetails": "满意度详情",
+    "opsOhlaOtherCase": "其它案例分析",
+    "opsOhlaRawData": "原始数据"
+  },
+  "OpsDashboard": {
+    "title": "运维仪表盘",
+    "subtitle": "运维团队指标与工单活动",
+    "nav": {
+      "overview": "总览",
+      "activeMonitoring": "实时监控",
+      "incidents": "事件",
+      "catalog": "服务目录",
+      "vipTickets": "VIP 工单",
+      "agingIncidents": "老化事件",
+      "agingScTasks": "老化服务目录任务",
+      "agingAssetTasks": "老化资产任务",
+      "assetsOverview": "资产总览",
+      "inStockAssets": "库存资产",
+      "pendingAssets": "待处理资产",
+      "wipRepairs": "维修中资产"
+    },
+    "kpis": {
+      "totalActive": "Total active items across incidents, catalog requests, and asset tasks",
+      "incidentsActive": "Incidents currently open (not resolved or closed)",
+      "requestsActive": "Service catalog requests in progress",
+      "activeIncident": "Open incident tickets count",
+      "activeCatalog": "Open service catalog requests count",
+      "activeAsset": "Open asset task requests count",
+      "agingAsset30d": "Asset tasks unresolved for more than 30 days",
+      "vipActive": "Active incidents assigned to VIP stakeholders",
+      "agingIncidentsGt2d": "Incidents open longer than 2 days",
+      "agingCatalogGt30d": "Catalog requests open longer than 30 days",
+      "agingAssetsGt30d": "Asset tasks aging over 30 days",
+      "totalAssets": "硬件资产总数",
+      "inStock": "在库资产",
+      "inStockRate": "在库率",
+      "pendingReturn": "待归还",
+      "pendingRepair": "待维修",
+      "unconfirmed": "未确认",
+      "zeroResidual": "零残值",
+      "totalIncidents": "Total incidents across all states",
+      "active": "Currently active incidents (open)",
+      "p1": "P1 Critical incidents (highest severity)",
+      "p2": "P2 High priority incidents",
+      "agingGt2d": "Incidents open longer than 2 days",
+      "agingGt7d": "Incidents open longer than 7 days",
+      "agingGt30d": "Incidents open longer than 30 days",
+      "resolvedRate": "Percentage of incidents resolved",
+      "resolved": "Total resolved incidents",
+      "totalCatalogTasks": "Total catalog tasks across all states",
+      "highPriority": "High priority (P1+P2) incidents",
+      "mediumPriority": "Medium priority incidents",
+      "momDelta": "{arrow} 较上月 {pct}%",
+      "momFlat": "较上月持平"
+    },
+    "charts": {
+      "ticketsByAssignmentGroup": "按分配组划分的工单",
+      "ticketsByPriority": "按优先级划分的工单",
+      "ticketsByLocation": "按地点划分的工单",
+      "ticketsByDepartment": "按部门划分的工单",
+      "ticketsByChannel": "按渠道划分的工单",
+      "ticketsByCategory": "按分类划分的工单",
+      "monthlyOpenedTrend": "工单开单趋势（近 {months} 个月）",
+      "deviceType": "设备类型",
+      "assetsByRegion": "按区域划分的资产",
+      "assetsByStatus": "按状态划分的资产",
+      "world": "世界",
+      "axisMonth": "月份",
+      "axisTickets": "工单",
+      "axisAssets": "资产",
+      "procuredBy": "采购方",
+      "procuredBySubtitle": "点击切片以筛选",
+      "inStockLocation": "库存位置",
+      "supportGroupDevice": "按支持组与设备类型划分的资产",
+      "byCategory": "按类别",
+      "legendMac": "Mac",
+      "legendWindows": "Windows",
+      "legendOther": "其他",
+      "activeByPriority": "按优先级划分的活动事件",
+      "activeByPrioritySubtitle": "点击切片以筛选",
+      "byStateAll": "按状态（全部）",
+      "activeByGroup": "按分配组划分的活动事件",
+      "activeByGroupCatalog": "按分配组划分的活动目录任务",
+      "activeByGroupSubtitle": "点击切片以筛选",
+      "byDepartment": "按部门划分的活动",
+      "volumeTrend": "工单量趋势",
+      "byAssignmentGroupTop8": "按分配组划分的活动工单",
+      "byAssignmentGroupTop8Subtitle": "前 8 · 点击以筛选",
+      "worldMap": "区域分布",
+      "worldMapSubtitle": "按报修人所在区域统计的活动工单",
+      "supportGroup": "支持组",
+      "supportGroupSubtitle": "按支持组统计的资产",
+      "cumulativeOpenedClosed": "累计开单 vs 关闭",
+      "filterLegend": "图表筛选图例"
+    },
+    "filters": {
+      "title": "筛选器",
+      "clearAll": "清除全部",
+      "clientSideTooltip": "仅对当前已加载的数据进行筛选。请扩大时间范围或清除其他筛选以加载更多选项。",
+      "assignmentGroup": "分配组",
+      "priority": "优先级",
+      "state": "状态",
+      "location": "地点",
+      "department": "部门",
+      "isVip": "仅 VIP",
+      "opened": "开单时间",
+      "updated": "更新时间",
+      "effective": "生效时间",
+      "deviceType": "设备类型",
+      "region": "区域",
+      "assetStatus": "资产状态",
+      "substatus": "子状态",
+      "supportGroup": "支持组",
+      "procuredBy": "采购方",
+      "stockroom": "库房",
+      "modelCategory": "型号类别",
+      "country": "国家/地区",
+      "clearAllFilters": "清除全部筛选",
+      "searchCountry": "搜索国家/地区…",
+      "searchLocation": "搜索地点…",
+      "showingCountries": "显示 {count} 个国家/地区（{scope}）",
+      "showingLocations": "显示 {count} 个地点（{scope}）",
+      "scopeAllRegions": "所有区域",
+      "scopeInItems": "{items}",
+      "scopeInItemsPlus": "{items} +{count}"
+    },
+    "tables": {
+      "number": "编号",
+      "title": "标题",
+      "type": "类型",
+      "state": "状态",
+      "priority": "优先级",
+      "assignmentGroup": "分配组",
+      "assignedTo": "处理人",
+      "openedBy": "开单人",
+      "caller": "报修人",
+      "location": "地点",
+      "department": "部门",
+      "channel": "渠道",
+      "category": "分类",
+      "subcategory": "子分类",
+      "openedAt": "开单时间",
+      "updatedAt": "更新时间",
+      "daysSinceUpdate": "未更新天数",
+      "isVip": "VIP",
+      "serialNumber": "序列号",
+      "assetTag": "资产标签",
+      "model": "型号",
+      "modelCategory": "型号类别",
+      "assetStatus": "资产状态",
+      "substatus": "子状态",
+      "stockRoom": "库房",
+      "region": "区域",
+      "residualValue": "残值",
+      "assignedToUser": "使用者",
+      "device": "设备",
+      "substate": "子状态",
+      "age": "资产年限",
+      "created": "创建时间",
+      "supportGroup": "支持组",
+      "incident": "事件",
+      "request": "请求",
+      "daysNoUpdate": "未更新天数",
+      "shortDescription": "简要描述"
+    },
+    "tabs": {
+      "pendingReturn": "待归还",
+      "pendingRepair": "待维修",
+      "unconfirmed": "未确认"
+    },
+    "pages": {
+      "assetsTitle": "资产仪表盘",
+      "assetsSubtitle": "全公司硬件资产概览",
+      "inStockTitle": "库存资产",
+      "inStockSubtitle": "当前在库房的硬件",
+      "pendingTitle": "待处理资产",
+      "pendingSubtitle": "待确认、归还或维修的资产",
+      "filteredCount": "已筛选：{filtered} / {total} 项资产",
+      "records": "{count} 条记录",
+      "totalResidual": "残值合计",
+      "avgAge": "平均年限",
+      "incidentsTitle": "事件分析",
+      "incidentsSubtitle": "事件的优先级分布、老化与分配组负载",
+      "filteredIncidents": "已筛选：{filtered} / {total} 个事件",
+      "vipTitle": "VIP 活动工单",
+      "vipSubtitle": "VIP 报修人开出的未关闭事件与请求",
+      "vipRecords": "{count} 条 VIP 工单",
+      "agingIncidentsTitle": "老化事件",
+      "agingIncidentsSubtitle": "超过 2 天未更新的 OIT 事件",
+      "agingScTasksTitle": "老化服务目录任务",
+      "agingScTasksSubtitle": "超过 30 天未更新的 OIT 服务目录任务",
+      "agingAssetTasksTitle": "老化资产任务",
+      "agingAssetTasksSubtitle": "超过 30 天未更新的 OIT 资产任务",
+      "agingRecords": "{count} 条记录",
+      "catalogTitle": "服务目录任务仪表盘",
+      "catalogSubtitle": "服务目录任务的工单量、老化与团队负载",
+      "filteredCatalog": "已筛选：{filtered} / {total} 个任务",
+      "hubTitle": "实时监控中心",
+      "hubSubtitle": "跨区域的活动工单与硬件资产总览",
+      "hubTicketsSection": "工单",
+      "hubAssetsSection": "资产",
+      "hubFilteredTickets": "已筛选：{filtered} / {total} 条活动工单",
+      "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产"
+    },
+    "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
+    "links": {
+      "openLabel": "打开 {label}",
+      "openAssetHub": "打开资产总览",
+      "openInStockAssets": "打开库存资产仪表盘",
+      "openPendingAssets": "打开待处理资产仪表盘",
+      "openVipTickets": "打开 VIP 工单仪表盘",
+      "openAgingIncidents": "打开老化事件仪表盘",
+      "openAgingCatalogTasks": "打开老化服务目录任务仪表盘",
+      "openAgingAssetTasks": "打开老化资产任务仪表盘"
+    },
+    "empty": {
+      "noData": "暂无数据",
+      "loading": "加载中...",
+      "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
+      "loadFailed": "加载数据失败",
+      "retry": "重试"
+    }
+  },
+  "SSCDashboard": {
+    "title": "SSC 工作台",
+    "subtitle": "Chatbot 交互与工单时间线对齐",
+    "headers": {
+      "no": "No",
+      "time": "Time&Date",
+      "user": "User ID",
+      "region": "Region",
+      "country": "Country",
+      "department": "Department",
+      "question": "User ask",
+      "faqReply": "回复",
+      "ciAi": "CI(Ohla)",
+      "ciReview": "CI(人工审核)",
+      "helpful": "Helpful (原始数据)",
+      "codeAi": "Code(Ohla)",
+      "codeReview": "Code(人工审核)",
+      "needsOptimization": "是否需要优化？",
+      "optimizationNotes": "需优化部分",
+      "completed": "完成",
+      "ticketId": "工单ID",
+      "summary": "总结",
+      "category": "分类CI(SN)",
+      "preFaq": "提工单之前的FAQ",
+      "kb": "Related KB",
+      "csatScore": "CSAT (原始数据)",
+      "csatText": "CSAT (文本)"
+    },
+    "codes": {
+      "ACCT": "内容清晰准确",
+      "IMP": "需优化改进",
+      "ERR": "错误需修正",
+      "NEW": "新增问题",
+      "QNC": "问题不清",
+      "CUST": "客制化问题",
+      "OOS": "不在支援范围内"
+    },
+    "buttons": {
+      "preFaqWithCount": "在左侧面板高亮 {count} 条相关的开单前 FAQ 交互",
+      "preFaqEmpty": "未识别到开单前的相关 FAQ",
+      "kbWithCount": "打开 {count} 篇关联 KB 文章",
+      "kbEmpty": "无关联 KB 文章",
+      "downloadXlsx": "下载 Excel",
+      "align": "对齐"
+    },
+    "messages": {
+      "saveError": "保存失败 — 请重试",
+      "downloadError": "下载失败",
+      "downloadTooLarge": "数据条数过多 — 请缩小筛选范围"
+    },
+    "panels": {
+      "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
+      "ticketTitle": "Ticket Dashboard (Incidents)"
+    },
+    "categoryFilter": {
+      "label": "AI 分类：",
+      "allLabel": "全部",
+      "selectedCount": "已选 {count}",
+      "unclassified": "未分类",
+      "reviewPlaceholder": "—"
+    },
+    "preFaqButton": "高亮显示左侧 {count} 条提工单前的 FAQ 交互",
+    "preFaqEmpty": "未识别到提工单前的 FAQ 交互",
+    "kbButton": "打开 {count} 篇相关 KB 文章",
+    "kbEmpty": "无相关 KB 文章",
+    "downloadXlsx": "下载 Excel",
+    "downloadError": "下载失败",
+    "downloadTooLarge": "数据太多 — 请缩小筛选范围",
+    "saveError": "保存失败 — 请重试"
+  },
+  "SurveyAnalytics": {
+    "title": "问卷分析",
+    "subtitle": "基于问卷回复和 AI 生成分析的洞察",
+    "refreshAll": "刷新所有板块",
+    "selectBatch": "选择问卷批次以查看分析",
+    "loadingBatches": "正在加载批次...",
+    "noBatches": "未找到问卷批次",
+    "recipients": "位接收人",
+    "submission": {
+      "title": "问卷提交概览",
+      "loading": "正在加载提交概览...",
+      "loadFailed": "数据加载失败",
+      "totalSent": "已发送总数",
+      "submitted": "已提交",
+      "responseRate": "回复率",
+      "surveysSent": "份问卷已发送",
+      "responsesReceived": "份回复已收到",
+      "responseRateLabel": "回复率",
+      "submissionsByLocation": "按地区分布",
+      "showAll": "展开全部 {count} 个地区",
+      "showLess": "收起"
+    },
+    "classification": {
+      "title": "分析分类",
+      "loading": "正在加载分析分类...",
+      "loadFailed": "数据加载失败",
+      "totalAnalyses": "分析总数",
+      "positive": "正面",
+      "negative": "负面",
+      "serviceCatalog": "服务目录",
+      "configurationItem": "配置项",
+      "intent": "意图",
+      "byLocation": "按地区",
+      "neutral": "中性"
+    },
+    "keywords": {
+      "title": "关键词热力图",
+      "loading": "正在加载关键词热力图...",
+      "loadFailed": "数据加载失败",
+      "positive": "正面",
+      "negative": "负面",
+      "mixedNeutral": "混合/中性",
+      "sizeFrequency": "面积 = 频率",
+      "groupBySC": "服务目录层级",
+      "groupByLocation": "地区层级",
+      "allKeywords": "全部",
+      "ungrouped": "未分类"
+    },
+    "location": {
+      "noData": "暂无地区数据",
+      "location": "地区",
+      "total": "总数",
+      "topIssues": "主要问题"
+    },
+    "popover": {
+      "total": "总计",
+      "showing": "显示",
+      "openAnalysis": "打开分析",
+      "openSurvey": "打开问卷"
+    },
+    "donut": {
+      "submitted": "已提交",
+      "notStarted": "未开始",
+      "revoked": "已撤回",
+      "expired": "已过期"
+    },
+    "region": {
+      "apac": "亚太",
+      "emea": "欧非中东",
+      "americas": "美洲"
+    },
+    "negativeFeedback": {
+      "title": "负面反馈聚焦",
+      "loading": "正在加载负面反馈分析...",
+      "serviceCatalog": "服务目录",
+      "configItem": "配置项",
+      "allLocations": "全部地区",
+      "count": "数量",
+      "negativeRate": "负面比例",
+      "typicalIssues": "典型问题",
+      "viewMore": "查看更多 ({count})",
+      "collapse": "收起",
+      "noNegative": "未发现负面反馈",
+      "issue": "条问题",
+      "issues": "条问题"
+    }
+  },
+  "TopBar": {
+    "title": "Ohla IT-Aware",
+    "dashboard": "原始数据",
+    "dataOverview": "数据概览",
+    "surveyAnalytics": "问卷分析",
+    "auth": "权限",
+    "data": "数据",
+    "application": "其他应用",
+    "knowledge": "知识库",
+    "persona": "用户画像",
+    "campaign": "运营活动",
+    "sscCockpit": "SSC 团队",
+    "operationTeams": "运维团队",
+    "agentOps": "AgentOps"
+  },
+  "SSCFAQReport": {
+    "kpiTooltip": {
+      "totalInteractions": "周期内所有会话总数（含所有编码，包括 NA）。",
+      "uniqueVisitors": "按 actor_stable_id 去重的独立用户数。",
+      "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
+      "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷（总数 − NA）× 100%"
+    }
+  },
+  "Ohla": {
+    "common": {
+      "noData": "暂无数据",
+      "retry": "重试",
+      "refresh": "刷新",
+      "all": "全部"
+    },
+    "filters": {
+      "dateRange": "时间范围",
+      "rowCount": "{count} 条记录",
+      "active": "当前筛选",
+      "clearAll": "清空"
+    },
+    "behaviour": {
+      "enter_chat": "enter_chat",
+      "query": "query",
+      "click": "click"
+    },
+    "overview": {
+      "title": "Overview",
+      "subtitle": "Ohla Chatbot Performance"
+    },
+    "kpis": {
+      "totalInteractions": "Total count of chatbot interaction sessions in the selected window",
+      "userAsk": "User queries classified as 'query' behaviour",
+      "userSurvey": "Sessions where user submitted a rate-ticket (1-5 scale)",
+      "distinctUsers": "Unique WeCom IDs with at least one interaction",
+      "tier0Supported": "Queries resolved by Ohla Auto Support without live agent escalation",
+      "faqMatchRate": "FAQ Match Rate",
+      "overallMatchRate": "Overall Match Rate",
+      "avgSurveyRate": "Average survey rate across all sessions (1-5 scale)",
+      "avgSurveyRateHint": "Survey 均分 (1-5)",
+      "totalActionChain": "Total user clicks / action chain completions",
+      "nonAutoSupport": "Queries escalated to live agent (ticket created via Agent Support)",
+      "dataLagDays": "Data Lag Days",
+      "dataLagDaysHint": "最新数据：{date}"
+    },
+    "charts": {
+      "businessGroup": "Unique Visitors by BG",
+      "region": "Unique Visitor by Region",
+      "behaviour": "Page Views by Action",
+      "behaviourTrend": "Auto Support vs Total Ask",
+      "behaviourTrendSubtitle": "按月 Auto / Live Agent 占比",
+      "autoRate": "Auto 占比",
+      "volumeTrend": "Page Views Daily Trend",
+      "volumeTrendSubtitle": "按日交互总数",
+      "distinctUserTrend": "Unique Visitors Daily Trend",
+      "distinctUserTrendSubtitle": "按日独立 WeCom ID"
+    },
+    "userAsk": {
+      "title": "User Ask Analysis",
+      "subtitle": "用户向 Ohla 的提问分析 — FAQ 命中与 Behaviour 分布",
+      "kpis": {
+        "userAsk": "User queries classified as 'query' behaviour",
+        "faqMatchRate": "Percentage of queries matched to an FAQ",
+        "overallMatchRate": "Percentage of queries matched to FAQ, Action Chain, or KB",
+        "faqMatched": "Queries matched to an FAQ response",
+        "actionChain": "Queries matched to an action chain workflow",
+        "kbMatched": "Queries matched to a knowledge base article",
+        "other": "Queries with no FAQ / Action Chain / KB match"
+      },
+      "charts": {
+        "behaviourDistribution": "Behaviour Distribution",
+        "behaviourAndMatchRateTrend": "Behaviour & Overall Match Rate Trend",
+        "countOfBehaviour": "Count of Behaviour",
+        "matchRateLabel": "FAQ Match Rate and Overall Match Rate"
+      },
+      "behaviour": {
+        "faqMatched": "FAQ Matched",
+        "actionChainMatched": "Action Chain Matched",
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant"
+      }
+    },
+    "agentSupport": {
+      "title": "Agent Support",
+      "subtitle": "由人工客服接手的会话",
+      "kpis": {
+        "agentSupport": "Sessions where user clicked Agent Support button (escalated to live agent)"
+      },
+      "charts": {
+        "dailyTrend": "Agent Support Daily Trend",
+        "details": "Agent Support Details"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "region": "地区",
+        "wecomId": "WeCom ID",
+        "ticketId": "工单号",
+        "ticketReason": "工单原因",
+        "response": "回复"
+      }
+    },
+    "otherCase": {
+      "title": "Other Case Analysis",
+      "subtitle": "未命中 FAQ / 动作链 / KB 的提问 — bot 止步之处",
+      "kpis": {
+        "other": "Queries that could not be matched to FAQ, Action Chain, or KB"
+      },
+      "charts": {
+        "distribution": "Other#",
+        "dailyTrend": "Other#",
+        "details": "Details"
+      },
+      "categories": {
+        "interaction": "Interaction",
+        "irrelevant": "Irrelevant",
+        "unmatchedAnywhere": "unmatched_anywhere"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "behaviour": "Behaviour",
+        "userActionCorrected": "User Action Corrected",
+        "wecomId": "WeCom ID",
+        "userContent": "用户内容",
+        "response": "回复"
+      }
+    },
+    "surveyDetails": {
+      "title": "Survey Details",
+      "subtitle": "来自评分按钮的用户反馈 (1-5 分)",
+      "kpis": {
+        "survey": "Total user survey responses via rate-ticket button (1-5 scale)",
+        "avgRate": "Average survey rate across all responses (1-5 scale)"
+      },
+      "filters": {
+        "vip": "VIP Filter",
+        "vipYes": "VIP",
+        "vipNo": "Non-VIP",
+        "businessGroup": "Business Group Filter",
+        "country": "CountryFilter",
+        "surveyRate": "Survey Rate"
+      },
+      "charts": {
+        "details": "Survey Details"
+      },
+      "columns": {
+        "year": "年",
+        "quarter": "季",
+        "month": "月",
+        "day": "日",
+        "region": "地区",
+        "wecomId": "WeCom ID",
+        "userContent": "用户内容",
+        "surveyRate": "Survey Rate"
+      }
+    },
+    "rawData": {
+      "title": "Raw Data",
+      "subtitle": "时间窗内全部 chatbot 交互 — 用于导出和排查的平铺表",
+      "charts": {
+        "details": "Raw Data"
+      },
+      "columns": {
+        "date": "日期",
+        "time": "时间",
+        "wecomId": "WeCom ID",
+        "behaviour": "Behaviour",
+        "userAction": "User Action",
+        "userActionCorrected": "ai_code",
+        "userContent": "用户内容",
+        "response": "回复",
+        "shownFaqs": "推荐 FAQ",
+        "ticketId": "工单号",
+        "ticketReason": "工单原因",
+        "isHelpful": "Helpful",
+        "helpfulScore": "评分",
+        "surveyReceived": "Survey?",
+        "surveyRate": "Rate",
+        "region": "地区",
+        "country": "国家",
+        "businessGroup": "BG",
+        "vip": "VIP",
+        "cycleId": "Cycle",
+        "sessionId": "Session",
+        "deviceType": "设备",
+        "primaryTemplate": "主响应模板"
+      }
+    }
+  }
 }

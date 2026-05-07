@@ -37,6 +37,14 @@ import {
     PackageCheck,
     PackageOpen,
     Wrench,
+    Bot as Chatbot,
+    LineChart,
+    MessageSquare,
+    HelpCircle,
+    Headphones,
+    ClipboardSignature,
+    Search,
+    Database,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -468,6 +476,59 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/pending-assets',
                         labelKey: 'opsPendingAssets',
                         icon: PackageOpen,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'opsOhla',
+                items: [
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/overview',
+                        labelKey: 'opsOhlaOverview',
+                        icon: LineChart,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/user-ask-analysis',
+                        labelKey: 'opsOhlaUserAsk',
+                        icon: HelpCircle,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/agent-support',
+                        labelKey: 'opsOhlaAgentSupport',
+                        icon: Headphones,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/survey-details',
+                        labelKey: 'opsOhlaSurveyDetails',
+                        icon: ClipboardSignature,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/other-case',
+                        labelKey: 'opsOhlaOtherCase',
+                        icon: Search,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/ohla/raw-data',
+                        labelKey: 'opsOhlaRawData',
+                        icon: Database,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),

@@ -260,7 +260,10 @@ export function AssetHubDashboard() {
                             icon={HardDrive}
                             valueSize="lg"
                             className="h-full flex flex-col justify-center"
-                        />
+                        
+                        tooltip={t('kpis.totalAssets')}
+    
+    />
                         <div
                             className={`rounded-xl border p-4 h-full flex flex-col justify-center ${cardBg}`}
                         >
@@ -297,11 +300,41 @@ export function AssetHubDashboard() {
 
                 {/* Row 2: KPI tiles */}
                 <div className="grid grid-cols-5 gap-3 mb-3">
-                    <KpiCard label={t('kpis.inStock')} value={kpis.inStock} icon={PackageCheck} />
-                    <KpiCard label={t('kpis.pendingReturn')} value={kpis.pendingReturn} icon={Truck} />
-                    <KpiCard label={t('kpis.pendingRepair')} value={kpis.pendingRepair} icon={Wrench} />
-                    <KpiCard label={t('kpis.unconfirmed')} value={kpis.unconfirmed} icon={HelpCircle} />
-                    <KpiCard label={t('kpis.zeroResidual')} value={kpis.zeroResidual} icon={DollarSign} />
+                    <KpiCard
+                        label={t('kpis.inStock')}
+                        value={kpis.inStock}
+                        icon={PackageCheck}
+                        linkHref="/operation-teams/ops-dashboard/in-stock-assets"
+                        linkLabel={t('links.openInStockAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingReturn')}
+                        value={kpis.pendingReturn}
+                        icon={Truck}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingRepair')}
+                        value={kpis.pendingRepair}
+                        icon={Wrench}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.unconfirmed')}
+                        value={kpis.unconfirmed}
+                        icon={HelpCircle}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/operation-teams/ops-dashboard/assets"
+                        linkLabel={t('links.openAssetHub')}
+                    />
                 </div>
 
                 {/* Row 3: Support-group × device-type stacked bar (inline recharts -- GroupBarCard does not support stacked) */}

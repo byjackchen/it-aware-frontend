@@ -106,25 +106,33 @@ export function TicketsPanel({
                     value={kpis.totalActive}
                     icon={Activity}
                     delta={deltaProp(kpiDeltas?.totalActive)}
-                />
+                
+                        tooltip={t('kpis.totalActive')}
+    />
                 <KpiCard
                     label={t('kpis.activeIncident')}
                     value={kpis.activeIncident}
                     icon={AlertTriangle}
                     delta={deltaProp(kpiDeltas?.activeIncident)}
-                />
+                
+                        tooltip={t('kpis.activeIncident')}
+    />
                 <KpiCard
                     label={t('kpis.activeCatalog')}
                     value={kpis.activeCatalog}
                     icon={Briefcase}
                     delta={deltaProp(kpiDeltas?.activeCatalog)}
-                />
+                
+                        tooltip={t('kpis.activeCatalog')}
+    />
                 <KpiCard
                     label={t('kpis.activeAsset')}
                     value={kpis.activeAsset}
                     icon={Boxes}
                     delta={deltaProp(kpiDeltas?.activeAsset)}
-                />
+                
+                        tooltip={t('kpis.activeAsset')}
+    />
             </div>
             {/* KPI row 2 — each tile drills into its dedicated dashboard via the right-side arrow. */}
             <div className="grid grid-cols-4 gap-2 mb-3">
@@ -135,25 +143,33 @@ export function TicketsPanel({
                     delta={deltaProp(kpiDeltas?.vipActive)}
                     linkHref="/operation-teams/ops-dashboard/vip-tickets"
                     linkLabel={t('links.openVipTickets')}
-                />
+                
+                        tooltip={t('kpis.vipActive')}
+    />
                 <KpiCard
                     label={t('kpis.agingIncidentsGt2d')}
                     value={kpis.agingIncidentGt2d}
                     linkHref="/operation-teams/ops-dashboard/aging-incidents"
                     linkLabel={t('links.openAgingIncidents')}
-                />
+                
+                        tooltip={t('kpis.agingIncidentsGt2d')}
+    />
                 <KpiCard
                     label={t('kpis.agingCatalogGt30d')}
                     value={kpis.agingCatalogGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-sc-tasks"
                     linkLabel={t('links.openAgingCatalogTasks')}
-                />
+                
+                        tooltip={t('kpis.agingCatalogGt30d')}
+    />
                 <KpiCard
                     label={t('kpis.agingAsset30d')}
                     value={kpis.agingAssetGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-asset-tasks"
                     linkLabel={t('links.openAgingAssetTasks')}
-                />
+                
+                        tooltip={t('kpis.agingAsset30d')}
+    />
             </div>
 
             {/* Charts row */}
