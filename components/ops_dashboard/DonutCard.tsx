@@ -106,7 +106,7 @@ export function DonutCard({
     const chartHeight = interactive ? Math.max(height - externalLegendHeight, 120) : height;
 
     return (
-        <div className={`rounded-xl border p-4 ${cardBase}`}>
+        <div className={`rounded-xl border p-4 w-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
