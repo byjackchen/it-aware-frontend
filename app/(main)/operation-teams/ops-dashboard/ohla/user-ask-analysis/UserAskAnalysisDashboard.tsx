@@ -182,44 +182,78 @@ export function UserAskAnalysisDashboard() {
                     </div>
                 )}
 
-                {/* Row 1 — User Ask# big tile, FAQ Match Rate card,
-                 *  Overall Match Rate card, Behaviour donut (4 cols).
-                 *  Match Rate cards are independent visuals per Jason's
-                 *  PBIX layout (they are not on the Overview page).
-                 */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
-                    <KpiCard
-                        label={t('userAsk.kpis.userAsk')}
-                        value={fmtNum(kpis.userAsk)}
-                        valueSize="xl"
-                        className="h-full"
-                    />
-                    <KpiCard
-                        label={t('userAsk.kpis.faqMatchRate')}
-                        value={pct(kpis.faqMatchRate)}
-                        valueSize="xl"
-                        className="h-full"
-                    />
-                    <KpiCard
-                        label={t('userAsk.kpis.overallMatchRate')}
-                        value={pct(kpis.overallMatchRate)}
-                        valueSize="xl"
-                        className="h-full"
-                    />
-                    <DonutCard
-                        title={t('userAsk.charts.behaviourDistribution')}
-                        data={behaviourSlices}
-                        height={220}
-                        emptyText={t('common.noData')}
-                    />
-                </div>
-
-                {/* Row 2 — 4 category KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <KpiCard label={t('userAsk.kpis.faqMatched')} value={fmtNum(kpis.faqMatched)} valueSize="lg" />
-                    <KpiCard label={t('userAsk.kpis.actionChain')} value={fmtNum(kpis.actionChain)} valueSize="lg" />
-                    <KpiCard label={t('userAsk.kpis.kbMatched')} value={fmtNum(kpis.kbMatched)} valueSize="lg" />
-                    <KpiCard label={t('userAsk.kpis.other')} value={fmtNum(kpis.other)} valueSize="lg" />
+                {/* Top block — PBIX layout:
+                 *   Left 9 cols (12-grid):
+                 *     Row a: big "User Ask#" tile (col-span 6) + FAQ MR (3) + Overall MR (3)
+                 *     Row b: 4 secondary KPIs equally spread (FAQ Matched# / Action Chain# / KB Matched# / Other#)
+                 *   Right 3 cols: Behaviour Distribution donut (spans both rows). */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-1 mb-1">
+                    <div className="md:col-span-9 grid grid-cols-1 md:grid-cols-12 gap-1">
+                        <div className="md:col-span-6">
+                            <KpiCard
+                                label={t('userAsk.kpis.userAsk')}
+                                value={fmtNum(kpis.userAsk)}
+                                valueSize="xl"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.faqMatchRate')}
+                                value={pct(kpis.faqMatchRate)}
+                                valueSize="xl"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.overallMatchRate')}
+                                value={pct(kpis.overallMatchRate)}
+                                valueSize="xl"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.faqMatched')}
+                                value={fmtNum(kpis.faqMatched)}
+                                valueSize="lg"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.actionChain')}
+                                value={fmtNum(kpis.actionChain)}
+                                valueSize="lg"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.kbMatched')}
+                                value={fmtNum(kpis.kbMatched)}
+                                valueSize="lg"
+                                className="h-full"
+                            />
+                        </div>
+                        <div className="md:col-span-3">
+                            <KpiCard
+                                label={t('userAsk.kpis.other')}
+                                value={fmtNum(kpis.other)}
+                                valueSize="lg"
+                                className="h-full"
+                            />
+                        </div>
+                    </div>
+                    <div className="md:col-span-3">
+                        <DonutCard
+                            title={t('userAsk.charts.behaviourDistribution')}
+                            data={behaviourSlices}
+                            height={264}
+                            emptyText={t('common.noData')}
+                        />
+                    </div>
                 </div>
 
                 {/* Row 3 — combo chart: stacked bar + 2 match-rate lines */}
