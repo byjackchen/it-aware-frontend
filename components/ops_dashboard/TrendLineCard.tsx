@@ -14,7 +14,7 @@
  *     Catalog dashboards.
  */
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Brush } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
 export interface TrendSeries {
     /** Field name on each data point (e.g. "opened", "closed"). */
@@ -49,6 +49,8 @@ export interface TrendLineCardProps {
     actionSlot?: React.ReactNode;
     /** Optional multi-series config; when set, replaces the single `count` line. */
     series?: TrendSeries[];
+    /** Show a Brush at the bottom for click-and-drag zoom into a date range. */
+    zoomable?: boolean;
 }
 
 function defaultXFormat(bucket: string): string {
@@ -67,6 +69,7 @@ export function TrendLineCard({
     emptyText = 'No data',
     actionSlot,
     series,
+    zoomable = false,
 }: TrendLineCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -151,6 +154,16 @@ export function TrendLineCard({
                                 strokeWidth={2}
                                 dot={{ r: 3, fill: color }}
                                 activeDot={{ r: 5 }}
+                            />
+                        )}
+                        {zoomable && data.length > 4 && (
+                            <Brush
+                                dataKey="bucket"
+                                height={18}
+                                stroke={color}
+                                fill={isLight ? '#f1f5f9' : 'rgba(255,255,255,0.05)'}
+                                travellerWidth={8}
+                                tickFormatter={formatXTick}
                             />
                         )}
                     </LineChart>

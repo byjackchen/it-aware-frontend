@@ -135,6 +135,8 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
     let tier0 = 0
     let helpfulSum = 0
     let helpfulN = 0
+    let surveyRateSum = 0
+    let surveyRateN = 0
     let userSurvey = 0
     let liveAgentSupport = 0
     let nonAuto = 0
@@ -144,6 +146,10 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
         users.add(r.actorStableId)
         if (r.isVip) vipActive += 1
         if (r.surveyReceived) userSurvey += 1
+        if (typeof r.surveyRate === 'number') {
+            surveyRateSum += r.surveyRate
+            surveyRateN += 1
+        }
 
         if (r.behaviour === 'query') {
             queryCount += 1
@@ -157,7 +163,6 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             }
             // PBIX Overall Match Rate denominator excludes Irrelevant.
             if (b !== 'irrelevant') overallMatch += 1
-            if (r.ticketId !== null) liveAgentSupport += 1
             if (!r.isHelpful && !r.ticketId && r.shownFaqCount === 0 && r.recommendedFaqCount === 0) {
                 nonAuto += 1
             }
@@ -165,6 +170,10 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             clickCount += 1
         } else if (r.behaviour === 'enter_chat') {
             enterChatCount += 1
+            // PBIX 'Live Agent Support#' = COUNT enter_chat. The dump's
+            // ticket join is unreliable (most rows have null ticketId), and
+            // PBIX matches enter_chat exactly (e.g. 1590).
+            liveAgentSupport += 1
         }
 
         if (typeof r.helpfulScore === 'number') {
@@ -185,7 +194,14 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
     const faqMatchRate = faqDenom > 0 ? faqMatch / faqDenom : 0
     const overallMatchRate = queryCount > 0 ? overallMatch / queryCount : 0
     const tier0Supported = tier0 // PBIX-parity: report the raw count, not a ratio
-    const avgSurveyRate = helpfulN > 0 ? helpfulSum / helpfulN : null
+    // Avg Rate (PBIX) = average of survey_rate (1..5), NOT helpful_score (-1..1).
+    // Fall back to helpful_score average if no survey ratings exist (older data).
+    const avgSurveyRate =
+        surveyRateN > 0
+            ? surveyRateSum / surveyRateN
+            : helpfulN > 0
+              ? helpfulSum / helpfulN
+              : null
     const autoVsAskRatio = queryCount > 0 ? clickCount / queryCount : null
 
     const latestAt = latestMs > 0 ? new Date(latestMs).toISOString() : null

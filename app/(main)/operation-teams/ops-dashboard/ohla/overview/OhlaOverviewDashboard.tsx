@@ -359,7 +359,7 @@ export function OhlaOverviewDashboard() {
                 )}
 
                 {/* Row 1 — 3 headline KPIs (PBIX: Page Views# / User Ask# / User Click#) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-1">
                     <KpiCard
                         label={t('kpis.totalInteractions')}
                         value={fmtNum(kpis.totalInteractions)}
@@ -379,7 +379,7 @@ export function OhlaOverviewDashboard() {
 
                 {/* Row 2 — 5 secondary KPIs (PBIX: Unique Visitors# / Ohla Auto Support# /
                  *  Live Agent Support# / User Survey# / Avg Rate). */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mb-1">
                     <KpiCard
                         label={t('kpis.distinctUsers')}
                         value={fmtNum(kpis.distinctUsers)}
@@ -410,7 +410,7 @@ export function OhlaOverviewDashboard() {
                 {/* Row 3 — PBIX 5-cell layout: left big BG donut, middle two donuts
                  *  (Page Views by Action / Unique Visitor by Region), right two daily
                  *  trend lines (Page Views Daily Trend / Unique Visitors Daily Trend). */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-1 mb-1">
                     <div className="md:col-span-5">
                         <DonutCard
                             title={t('charts.businessGroup')}
@@ -422,7 +422,7 @@ export function OhlaOverviewDashboard() {
                             onSliceClick={(s) => toggle(setBgSel)(s.name)}
                         />
                     </div>
-                    <div className="md:col-span-3 flex flex-col gap-3">
+                    <div className="md:col-span-3 flex flex-col gap-1">
                         <DonutCard
                             title={t('charts.behaviour')}
                             data={behaviourSlices}
@@ -442,13 +442,14 @@ export function OhlaOverviewDashboard() {
                             onSliceClick={(s) => toggle(setRegionSel)(s.name)}
                         />
                     </div>
-                    <div className="md:col-span-4 flex flex-col gap-3">
+                    <div className="md:col-span-4 flex flex-col gap-1">
                         <TrendLineCard
                             title={t('charts.volumeTrend')}
                             data={volumeSeries}
                             height={130}
                             color="#6366f1"
                             emptyText={t('common.noData')}
+                            zoomable
                         />
                         <TrendLineCard
                             title={t('charts.distinctUserTrend')}
@@ -456,12 +457,13 @@ export function OhlaOverviewDashboard() {
                             height={130}
                             color="#14b8a6"
                             emptyText={t('common.noData')}
+                            zoomable
                         />
                     </div>
                 </div>
 
                 {/* Row 4 — Auto Support vs Total Ask (PBIX bottom combo chart) */}
-                <div className="mb-3">
+                <div className="mb-1">
                     <StackedBarPercentLineCard
                         title={t('charts.behaviourTrend')}
                         data={autoVsAskMonthly.map((m) => ({ ...m }))}
