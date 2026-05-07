@@ -41,6 +41,19 @@ function toDateOnly(iso: string): string {
     return iso.slice(0, 10)
 }
 
+/**
+ * Extract a ticket id (e.g. "INC0119747") from the bot response text.
+ * The ticket-creation response always reads:
+ *   "✨ Ticket INC0119747 has been created. We are now pulling you into a..."
+ * This is the only reliable signal for "Live Agent Support#" because the
+ * dump's `record.ticket` JSON object is null for nearly every row.
+ */
+function extractTicketIdFromResponse(text: string | null | undefined): string | null {
+    if (typeof text !== 'string') return null
+    const m = text.match(/Ticket\s+(INC\d+)\s+has been created/i)
+    return m ? m[1] : null
+}
+
 function deriveBusinessGroup(worker: Worker | undefined): string | null {
     if (!worker) return null
     const raw = worker.department_name ?? null
@@ -82,16 +95,28 @@ export function decodeInteraction(
     const shownFaqs = Array.isArray(rec.shown_faqs) ? rec.shown_faqs : null
 
     // Survey detection — PBIX 'Survey Received? = "Yes"':
-    // click on the ratings ticket button. The content_text embeds the rating
-    // as "…-{rate}|{hash}" (e.g. "actionchain-rateticket-naive-INC0109583-5|687…").
-    const surveyReceived =
-        behaviour === 'click' && rec.request_action === 'actionchain-rateticket-naive'
+    // click on the ratings ticket button. content_text embeds the rating as
+    // "[Click: actionchain-{rateticket|ticket_rating}-naive-INC0123456-5|hash]".
+    // Old data used "rateticket-naive"; from 2025-11 onwards it's "ticket_rating-naive".
+    // Detect via content_text shape so we catch both variants.
+    const reqAction = rec.request_action
+    const isRateClick =
+        behaviour === 'click' &&
+        (typeof reqAction === 'string'
+            ? /(?:rateticket|ticket_rating)-naive/.test(reqAction)
+            : false ||
+              (typeof row.content_text === 'string' &&
+                  /(?:rateticket|ticket_rating)-naive-[A-Z0-9]+-(\d+)\|/.test(row.content_text)))
     let surveyRate: number | null = null
-    if (surveyReceived && typeof row.content_text === 'string') {
-        const m = row.content_text.match(/-(\d+)\|/)
+    let surveyReceived = isRateClick
+    if (typeof row.content_text === 'string') {
+        const m = row.content_text.match(/(?:rateticket|ticket_rating)-naive-[A-Z0-9]+-(\d+)\|/)
         if (m) {
             const n = Number(m[1])
-            if (Number.isFinite(n) && n >= 1 && n <= 5) surveyRate = n
+            if (Number.isFinite(n) && n >= 1 && n <= 5) {
+                surveyRate = n
+                surveyReceived = true
+            }
         }
     }
 
@@ -119,7 +144,7 @@ export function decodeInteraction(
         shownFaqCount: shownFaqs ? shownFaqs.length : 0,
         recommendedFaqCount,
 
-        ticketId: rec.ticket?.id ?? null,
+        ticketId: rec.ticket?.id ?? extractTicketIdFromResponse(row.response_text) ?? null,
         ticketReason: rec.ticket?.reason ?? null,
 
         allResponseTemplates,

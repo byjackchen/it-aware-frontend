@@ -150,6 +150,10 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             surveyRateSum += r.surveyRate
             surveyRateN += 1
         }
+        // PBIX 'Live Agent Support#' = chat sessions where a ticket was created.
+        // ticketId is parsed from response_text "Ticket INC0123456 has been created"
+        // (decode.ts) — record.ticket JSON is null for nearly all rows.
+        if (r.ticketId !== null) liveAgentSupport += 1
 
         if (r.behaviour === 'query') {
             queryCount += 1
@@ -170,10 +174,6 @@ export function computeKpis(rows: OhlaRow[], now: Date = new Date()): OhlaKpis {
             clickCount += 1
         } else if (r.behaviour === 'enter_chat') {
             enterChatCount += 1
-            // PBIX 'Live Agent Support#' = COUNT enter_chat. The dump's
-            // ticket join is unreliable (most rows have null ticketId), and
-            // PBIX matches enter_chat exactly (e.g. 1590).
-            liveAgentSupport += 1
         }
 
         if (typeof r.helpfulScore === 'number') {
