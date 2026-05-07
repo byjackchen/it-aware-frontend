@@ -5,14 +5,14 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Lock, Loader2 } from 'lucide-react';
 import { createPermission } from '@/app/actions/security';
 
 export function PermissionCreatePage() {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [domain, setDomain] = useState('');
     const [resource, setResource] = useState('');

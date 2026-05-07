@@ -120,17 +120,6 @@ function forwardAuthCookies(response: NextResponse, setCookies: string[]): void 
   }
 }
 
-function setUserDataCookie(response: NextResponse, userData: object, requestId: string): void {
-  try {
-    const jsonString = JSON.stringify(userData)
-    const encoded = Buffer.from(jsonString).toString('base64')
-    response.headers.append('Set-Cookie', `${COOKIES.USER_DATA}=${encoded}; Path=/; Max-Age=30; SameSite=lax`)
-  } catch (error) {
-    console.error(`[Middleware:${requestId}] setUserDataCookie error:`, error)
-    throw error
-  }
-}
-
 // --- Main Middleware ---
 
 export async function middleware(request: NextRequest) {
@@ -214,14 +203,8 @@ export async function middleware(request: NextRequest) {
           // Set auth mode to SSO and clear any previous logged_out state
           response.headers.append('Set-Cookie', `${COOKIES.AUTH_MODE}=${AUTH_MODES.SSO}; Path=/; Max-Age=86400; SameSite=lax`)
 
-          // Fetch and set user data for immediate client hydration
-          const accessTokenCookie = setCookies.find(c => c.startsWith(`${COOKIES.ACCESS}=`))
-          if (accessTokenCookie) {
-            const userData = await fetchUserData(accessTokenCookie, requestId)
-            if (userData) {
-              setUserDataCookie(response, userData, requestId)
-            }
-          }
+          // Client hydrates user data via /api/auth/me; avoid setting a large
+          // user_data cookie here that can blow past nginx proxy_buffer_size and trip 502.
         } else {
           // Handle user not found / unauthorized cases from backend
           console.error(`[Middleware:${requestId}] JWT token fetch failed: ${authResponse.status}`)
@@ -260,15 +243,15 @@ export async function middleware(request: NextRequest) {
       return redirectResponse
     }
   } else if (hasAccessToken && authMode !== AUTH_MODES.LOGGED_OUT) {
-    // User has access token (either password login or SSO refresh without headers)
-    // Fetch user data for the session
+    // User has access token (either password login or SSO refresh without headers).
+    // Validate the token by probing /auth/me; do NOT echo the response into a cookie
+    // (it can be tens of KB of permissions and trip nginx 502 via proxy_buffer_size).
+    // Client hydrates user data via /api/auth/me directly.
     try {
       const accessTokenValue = request.cookies.get(COOKIES.ACCESS)?.value
       const accessTokenCookie = `${COOKIES.ACCESS}=${accessTokenValue}`
       const userData = await fetchUserData(accessTokenCookie, requestId)
-      if (userData) {
-        setUserDataCookie(response, userData, requestId)
-      } else {
+      if (!userData) {
         // Token is invalid or expired - redirect to login
         const loginUrl = new URL('/login', request.url)
         loginUrl.searchParams.set('error', 'Your session has expired. Please log in again.')

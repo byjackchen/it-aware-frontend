@@ -1,15 +1,16 @@
 'use client';
 
-import Link from 'next/link';
+import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
 import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/session';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -24,7 +25,7 @@ interface NavMenuItem extends MenuItem {
 
 export function TopBar() {
   const t = useTranslations('TopBar');
-  const router = useRouter();
+  const router = useTransitionRouter();
   const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
   const { theme } = useTheme();
@@ -82,29 +83,61 @@ export function TopBar() {
       ]),
     },
     {
+      href: '/persona',
+      label: t('persona'),
+      icon: UserCircle,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_PERSONA
+      ]),
+    },
+    {
+      href: '/operation-teams',
+      label: t('operationTeams'),
+      icon: Wrench,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
+      ]),
+    },
+    {
+      href: '/ssc-cockpit',
+      label: t('sscCockpit'),
+      icon: Headset,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_SSC,
+      ]),
+    },
+    {
+      href: '/agent-ops',
+      label: t('agentOps'),
+      icon: KanbanSquare,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+      ]),
+    },
+    {
       href: '/application',
       label: t('application'),
       icon: Layers,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
-        PERMISSIONS.UI.NAVIGATION_PERSONA,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
+        PERMISSIONS.UI.NAVIGATION_DATA,
       ]),
       children: [
+        {
+          href: '/dashboard/data-overview',
+          label: t('dashboard'),
+          icon: LayoutDashboard,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_DATA
+          ]),
+        },
         {
           href: '/knowledge',
           label: t('knowledge'),
           icon: BookOpen,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-          ]),
-        },
-        {
-          href: '/persona',
-          label: t('persona'),
-          icon: UserCircle,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_PERSONA
           ]),
         },
         {
@@ -115,21 +148,7 @@ export function TopBar() {
             PERMISSIONS.UI.NAVIGATION_CAMPAIGN
           ]),
         },
-        {
-          href: '/ssc-cockpit',
-          label: t('sscCockpit'),
-          icon: Headset,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_DATA,
-          ]),
-        },
       ],
-    },
-    {
-      href: '/dashboard/data-overview',
-      label: t('dashboard'),
-      icon: LayoutDashboard,
-      permissions: requireAnyPermission([]),
     },
   ];
 
@@ -151,7 +170,9 @@ export function TopBar() {
 
   return (
     <header
-      className="glass-dark px-6 flex flex-col fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 ease-in-out"
+      className={`px-6 flex flex-col fixed top-0 left-0 right-0 z-50 h-16 border-b transition-all duration-300 ease-in-out ${
+        isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23] border-white/10'
+      }`}
     >
       {/* Main Navigation Row */}
       <div className="h-16 flex items-center justify-between flex-shrink-0">
@@ -193,7 +214,7 @@ export function TopBar() {
                       <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isHovered ? 'rotate-180' : ''}`} />
                     </button>
                   ) : (
-                    <Link
+                    <NavLink
                       href={item.href}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${isActive
                         ? 'nav-active text-blue-500'
@@ -204,7 +225,7 @@ export function TopBar() {
                     >
                       <Icon className="w-4 h-4" />
                       <span className="font-medium">{item.label}</span>
-                    </Link>
+                    </NavLink>
                   )}
 
                   {/* Dropdown Menu - Positioned relatively to the item */}
@@ -227,7 +248,7 @@ export function TopBar() {
                         const ChildIcon = child.icon;
                         const isChildActive = pathname.startsWith(child.href);
                         return (
-                          <Link
+                          <NavLink
                             key={child.href}
                             href={child.href}
                             className={`
@@ -242,7 +263,7 @@ export function TopBar() {
                           >
                             <ChildIcon className="w-4 h-4" />
                             <span className="text-sm font-medium">{child.label}</span>
-                          </Link>
+                          </NavLink>
                         );
                       })}
                     </div>

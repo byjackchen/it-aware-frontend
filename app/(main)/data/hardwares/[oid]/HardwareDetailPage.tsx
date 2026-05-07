@@ -4,7 +4,7 @@
  * Hardware detail page client component — read-only, 8 clustered card layout.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import {
     ArrowLeft,
@@ -28,7 +28,7 @@ function formatCurrency(value: string | null): string {
 
 export function HardwareDetailPage({ hardware }: HardwareDetailPageProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data.hardwares.detail');
     const isLight = theme === 'light';
     const notSet = t('notSet');

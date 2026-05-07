@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { downloadXlsx } from '@/lib/utils/export-xlsx';
+import { OverlaySpinner } from '@/components/layout/skeletons';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { useAllActiveWorkers } from '@/components/campaign_surveys/useAllActiveWorkers';
+import { useAllLocations } from '@/components/campaign_surveys/useAllLocations';
 import type { SurveyBatch, Survey, SurveyBatchListResponse, SurveyListResponse } from '@/lib/types/objects';
 
 const PAGE_SIZE = 1000;
@@ -21,7 +22,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function SurveysListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -32,11 +33,14 @@ export function SurveysListPage() {
     const [isLoadingBatches, setIsLoadingBatches] = useState(true);
     const [isLoadingSurveys, setIsLoadingSurveys] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [exportProgress, setExportProgress] = useState<number | null>(null);
+    const exportAbortRef = useRef<AbortController | null>(null);
 
     // Workers — fetched on mount in parallel with batches/surveys; provides denormalized
     // country_name/region_name for the export. is_active=true is intentional: departed
     // workers fall through to empty geo cells in the export, which is acceptable.
-    const { workers, error: workersError } = useAllActiveWorkers();
+    const { workers, error: workersError, isLoading: isLoadingWorkers } = useAllActiveWorkers();
+    const { locations, error: locationsError, isLoading: isLoadingLocations } = useAllLocations();
 
     // Fetch batches on mount
     useEffect(() => {
@@ -64,8 +68,14 @@ export function SurveysListPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // Fetch ALL surveys (paginated) when batch changes
-    const fetchAllSurveys = useCallback(async (batchOid: string) => {
+    // useRef so the abort controller survives re-renders without invalidating
+    // the useCallback identity.
+    const surveysAbortRef = useRef<AbortController | null>(null);
+
+    // Fetch ALL surveys (paginated) when batch changes. Coalesces setState
+    // calls across pages to avoid cascading re-renders on large batches, and
+    // aborts in-flight fetches when the batch selection changes mid-load.
+    const fetchAllSurveys = useCallback(async (batchOid: string, signal: AbortSignal) => {
         if (!batchOid) {
             setSurveys([]);
             setTotalSurveys(null);
@@ -76,39 +86,53 @@ export function SurveysListPage() {
         setSurveys([]);
         setTotalSurveys(null);
 
-        try {
-            const allItems: Survey[] = [];
-            let skip = 0;
-            let total = 0;
+        const allItems: Survey[] = [];
+        let skip = 0;
+        let total = 0;
+        const COALESCE_PAGES = 4;
+        let pagesSinceFlush = 0;
 
+        try {
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 const res = await fetch(
-                    `/api/campaigns/survey_batchs/${encodeURIComponent(batchOid)}/surveys?limit=${PAGE_SIZE}&skip=${skip}`
+                    `/api/campaigns/survey_batchs/${encodeURIComponent(batchOid)}/surveys?limit=${PAGE_SIZE}&skip=${skip}`,
+                    { signal },
                 );
                 if (!res.ok) throw new Error('Failed to load surveys');
                 const data: SurveyListResponse = await res.json();
                 total = data.total;
                 allItems.push(...(data.items || []));
-                setSurveys([...allItems]);
-                setTotalSurveys(total);
+                pagesSinceFlush += 1;
 
-                if (allItems.length >= total || (data.items?.length ?? 0) < PAGE_SIZE) {
-                    break;
+                const isLastPage =
+                    allItems.length >= total || (data.items?.length ?? 0) < PAGE_SIZE;
+
+                if (isLastPage || pagesSinceFlush >= COALESCE_PAGES) {
+                    setSurveys([...allItems]);
+                    setTotalSurveys(total);
+                    pagesSinceFlush = 0;
                 }
+
+                if (isLastPage) break;
                 skip += PAGE_SIZE;
             }
         } catch (err) {
+            // AbortError = stale fetch superseded by a newer one; not user-visible.
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
-            setIsLoadingSurveys(false);
+            if (!signal.aborted) setIsLoadingSurveys(false);
         }
     }, []);
 
     useEffect(() => {
-        if (selectedBatchOid) {
-            void fetchAllSurveys(selectedBatchOid);
-        }
+        if (!selectedBatchOid) return;
+        surveysAbortRef.current?.abort();
+        const controller = new AbortController();
+        surveysAbortRef.current = controller;
+        void fetchAllSurveys(selectedBatchOid, controller.signal);
+        return () => controller.abort();
     }, [selectedBatchOid, fetchAllSurveys]);
 
     const filteredSurveys = useMemo(() => {
@@ -117,80 +141,73 @@ export function SurveysListPage() {
         return surveys.filter((s) => s.receiver_stable_id.toLowerCase().includes(q));
     }, [surveys, searchQuery]);
 
-    // Map worker_oid → denormalized country/region from the Worker list endpoint.
-    // Used by handleExportExcel to enrich exported rows. Either field can be null
-    // when the backend has not resolved geo for that worker.
+    // Map location_oid → Location.name. Built from the full Locations list so we
+    // can resolve the leaf office/site that Worker.location_oid points at. The
+    // backend's Worker list endpoint denormalizes country_name/region_name but
+    // not the location name, so this lookup lives client-side.
+    const locationNameMap = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const loc of locations) {
+            map.set(loc.oid, loc.name);
+        }
+        return map;
+    }, [locations]);
+
+    // Map worker_oid → denormalized country/region + resolved location name.
+    // Used by both the row renderer and handleExportExcel. Any field can be null
+    // when the backend has not resolved geo for that worker or when location_oid
+    // points at a stale/unknown location.
     const workerGeoMap = useMemo(() => {
-        const map = new Map<string, { country: string | null; region: string | null }>();
+        const map = new Map<string, { country: string | null; region: string | null; location: string | null }>();
         for (const w of workers) {
+            const locationName = w.location_oid ? locationNameMap.get(w.location_oid) ?? null : null;
             map.set(w.oid, {
                 country: w.country_name ?? null,
                 region: w.region_name ?? null,
+                location: locationName,
             });
         }
         return map;
-    }, [workers]);
+    }, [workers, locationNameMap]);
 
     const selectedBatch = batches.find(b => b.oid === selectedBatchOid);
 
     const handleRefresh = () => {
-        if (selectedBatchOid) void fetchAllSurveys(selectedBatchOid);
+        if (!selectedBatchOid) return;
+        surveysAbortRef.current?.abort();
+        const controller = new AbortController();
+        surveysAbortRef.current = controller;
+        void fetchAllSurveys(selectedBatchOid, controller.signal);
     };
 
-    const handleExportExcel = useCallback(() => {
-        if (filteredSurveys.length === 0) return;
+    // Guard: only enable export when ALL data the exporter depends on has resolved.
+    // Prevents partial-row and blank-geo exports that silently diverge from the UI.
+    const isExportReady = !isLoadingSurveys && !isLoadingWorkers && !isLoadingLocations && filteredSurveys.length > 0;
 
-        // Collect unique questions from the first survey (all surveys in a batch share the same questions)
-        const questions = filteredSurveys[0]?.survey_questions?.questions ?? [];
+    const handleExportExcel = useCallback(async () => {
+        if (!isExportReady) return;
 
-        const headers = [
-            'Receiver Stable ID', 'Country', 'Region', 'Status', 'Submitted At', 'Created At', 'Updated At',
-            ...questions.map((q) => q.title),
-        ];
+        exportAbortRef.current?.abort();
+        const controller = new AbortController();
+        exportAbortRef.current = controller;
+        setExportProgress(0);
 
-        const rows = filteredSurveys.map((survey) => {
-            const answers = survey.survey_answer?.answers ?? [];
-            const answerCells = questions.map((question) => {
-                const answer = answers.find((a) => a.question_id === question.question_id);
-                if (!answer) return '';
-                if (answer.type === 'single_select') {
-                    if (question.type === 'single_select' || question.type === 'multi_select') {
-                        const opt = question.options.find((o) => o.option_id === answer.selected_option_id);
-                        return opt?.label ?? answer.selected_option_id;
-                    }
-                    return answer.selected_option_id;
-                }
-                if (answer.type === 'multi_select') {
-                    if (question.type === 'single_select' || question.type === 'multi_select') {
-                        return answer.selected_option_ids
-                            .map((id) => {
-                                const opt = question.options.find((o) => o.option_id === id);
-                                return opt?.label ?? id;
-                            })
-                            .join(', ');
-                    }
-                    return answer.selected_option_ids.join(', ');
-                }
-                if (answer.type === 'text') return answer.text;
-                return '';
+        try {
+            const { exportSurveysXlsx } = await import('./exportSurveysXlsx');
+            await exportSurveysXlsx({
+                surveys: filteredSurveys,
+                batchName: selectedBatch?.name ?? 'batch',
+                workerGeoMap,
+                signal: controller.signal,
+                onProgress: (pct) => setExportProgress(pct),
             });
-
-            const geo = workerGeoMap.get(survey.receiver_oid);
-            return [
-                survey.receiver_stable_id,
-                geo?.country ?? '',
-                geo?.region ?? '',
-                survey.status,
-                survey.submitted_at ?? '',
-                survey.created_at,
-                survey.updated_at,
-                ...answerCells,
-            ];
-        });
-
-        const batchName = selectedBatch?.name?.replace(/[^a-zA-Z0-9_-]/g, '_') ?? 'batch';
-        downloadXlsx('Surveys', headers, rows, `surveys_${batchName}_export.xlsx`);
-    }, [filteredSurveys, selectedBatch, workerGeoMap]);
+        } catch (err) {
+            console.error('Export failed:', err);
+            setError(err instanceof Error ? err.message : 'Export failed');
+        } finally {
+            setExportProgress(null);
+        }
+    }, [isExportReady, filteredSurveys, selectedBatch, workerGeoMap]);
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4">
@@ -212,8 +229,27 @@ export function SurveysListPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={handleExportExcel} disabled={filteredSurveys.length === 0} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30`} title="Export to Excel">
-                            <Download className="w-5 h-5" />
+                        <button
+                            onClick={handleExportExcel}
+                            disabled={!isExportReady}
+                            className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                            title={
+                                isLoadingSurveys
+                                    ? 'Loading surveys — export will be enabled when all rows are loaded'
+                                    : isLoadingWorkers
+                                        ? 'Loading worker geo data — export will be enabled shortly'
+                                        : isLoadingLocations
+                                            ? 'Loading office/site locations — export will be enabled shortly'
+                                            : filteredSurveys.length === 0
+                                                ? 'No surveys to export'
+                                                : 'Export to Excel'
+                            }
+                        >
+                            {isLoadingSurveys || isLoadingWorkers || isLoadingLocations ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <Download className="w-5 h-5" />
+                            )}
                         </button>
                         <button onClick={handleRefresh} className={`p-2 rounded-lg transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}>
                             <RefreshCw className={`w-5 h-5 ${isLoadingSurveys ? 'animate-spin' : ''}`} />
@@ -252,10 +288,14 @@ export function SurveysListPage() {
                     </div>
                 </div>
 
-                {/* Worker geo data failure banner — export still works, but Country/Region cells will be empty */}
-                {workersError && (
+                {/* Worker/location geo data failure banner — export still works, but affected cells will be empty */}
+                {(workersError || locationsError) && (
                     <div className={`mb-4 px-3 py-2 rounded-lg text-xs ${isLight ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                        Country/Region unavailable — worker geo data failed to load. Export will still run with empty geo columns.
+                        {workersError && locationsError
+                            ? 'Country/Region/Location unavailable — worker and location data failed to load. Export will still run with empty geo columns.'
+                            : workersError
+                                ? 'Country/Region unavailable — worker geo data failed to load. Export will still run with empty geo columns.'
+                                : 'Location unavailable — office/site data failed to load. Export will still run with empty Location cells.'}
                     </div>
                 )}
 
@@ -283,6 +323,11 @@ export function SurveysListPage() {
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
                             {filteredSurveys.map((survey) => {
                                 const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.created;
+                                const geo = workerGeoMap.get(survey.receiver_oid);
+                                const locationLabel = geo?.location ?? '—';
+                                const submittedLabel = survey.submitted_at
+                                    ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}`
+                                    : 'Not submitted';
                                 return (
                                     <button
                                         key={survey.oid}
@@ -293,8 +338,8 @@ export function SurveysListPage() {
                                             <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                                 {survey.receiver_stable_id}
                                             </div>
-                                            <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {survey.submitted_at ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}` : 'Not submitted'}
+                                            <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {submittedLabel} · {locationLabel}
                                             </div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
@@ -307,6 +352,9 @@ export function SurveysListPage() {
                     )}
                 </div>
             </div>
+            {exportProgress !== null && (
+                <OverlaySpinner text="Exporting surveys..." progress={exportProgress} />
+            )}
         </div>
     );
 }

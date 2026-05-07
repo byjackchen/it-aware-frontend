@@ -4,7 +4,7 @@
  * Roles list page with navigation to detail and create pages.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Plus, Shield, Check, X } from 'lucide-react';
 import type { Role } from '@/lib/types/security';
@@ -15,7 +15,7 @@ interface RolesListPageProps {
 
 export function RolesListPage({ roles }: RolesListPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const handleRowClick = (role: Role) => {
         router.push(`/auth/roles/${role.oid}`);

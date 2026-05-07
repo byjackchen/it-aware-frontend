@@ -2,12 +2,12 @@
 
 import { useLocale } from 'next-intl';
 import { Globe } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTheme } from '@/lib/contexts/theme-context';
 
 export function LanguageSwitcher() {
     const locale = useLocale();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const { theme } = useTheme();
     const isLight = theme === 'light';
 

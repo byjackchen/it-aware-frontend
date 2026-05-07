@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { NavLink } from '@/components/navigation/NavLink';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -41,7 +41,7 @@ export function Sidebar() {
                 (item.href !== '/' && pathname.startsWith(item.href));
 
             return (
-                <Link
+                <NavLink
                     key={item.href}
                     href={item.href}
                     className={`
@@ -56,7 +56,7 @@ export function Sidebar() {
                 >
                     {Icon && <Icon className="w-4 h-4" />}
                     <span>{t(item.labelKey!)}</span>
-                </Link>
+                </NavLink>
             );
         });
     };

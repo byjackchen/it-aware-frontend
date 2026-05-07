@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Users, Plus, RefreshCw, Search, Check, X, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
@@ -16,7 +16,7 @@ import type { Worker, Organization } from '@/lib/types/objects';
 
 export function WorkersListPage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
     const [workerTypeFilter, setWorkerTypeFilter] = useState<string | null>(null);

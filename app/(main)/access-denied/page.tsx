@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ShieldX, ArrowLeft, Home } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTranslations } from 'next-intl';
 
 export default function AccessDeniedPage() {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const { theme } = useTheme();
     const t = useTranslations('AccessDenied');
     const isLight = theme === 'light';

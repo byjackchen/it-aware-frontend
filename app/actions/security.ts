@@ -307,11 +307,11 @@ export async function createAccount(formData: FormData) {
   const action = 'Security:createAccount';
   const startTime = Date.now();
 
-  const isSystem = formData.get('is_system') === 'true';
+  const accountType = formData.get('account_type') as string || 'user';
   const data: AccountCreate = {
     username: formData.get('username') as string,
-    is_system: isSystem,
-    password: isSystem ? (formData.get('password') as string) : undefined,
+    account_type: accountType,
+    password: formData.get('password') as string || undefined,
   };
 
   logger.info(`Started`, { requestId, action });

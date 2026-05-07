@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -30,7 +30,7 @@ function hasInvalidContentBlocks(blocks: NotificationContentBlock[]): boolean {
 export function NotificationCreateWizard() {
     const t = useTranslations('Campaign');
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
 
     const [isPending, startTransition] = useTransition();

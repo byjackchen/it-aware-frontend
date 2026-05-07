@@ -33,6 +33,12 @@ import {
     updateInquiry,
     deleteInquiry,
     deleteInteraction,
+    createAgent,
+    updateAgent,
+    deleteAgent,
+    createTicket,
+    updateTicket,
+    deleteTicket,
 } from '@/lib/api/objects';
 import {
     createAnalysis,
@@ -688,6 +694,12 @@ export async function createIncidentAction(formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -719,6 +731,12 @@ export async function createIncidentAction(formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -752,6 +770,12 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -782,6 +806,12 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -843,6 +873,14 @@ export async function createRequestAction(formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const item = formData.get('item') as string | null;
+    const request_item = formData.get('request_item') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -879,6 +917,14 @@ export async function createRequestAction(formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            item: item || undefined,
+            request_item: request_item || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -912,6 +958,14 @@ export async function updateRequestAction(oid: string, formData: FormData) {
     const description = formData.get('description') as string | null;
     const priority = formData.get('priority') as string | null;
     const urgency = formData.get('urgency') as string | null;
+    const item = formData.get('item') as string | null;
+    const request_item = formData.get('request_item') as string | null;
+    const caller_name = formData.get('caller_name') as string | null;
+    const assigned_to_name = formData.get('assigned_to_name') as string | null;
+    const sn_id = formData.get('sn_id') as string | null;
+    const category = formData.get('category') as string | null;
+    const subcategory = formData.get('subcategory') as string | null;
+    const impact = formData.get('impact') as string | null;
     const channel = formData.get('channel') as string | null;
     const assigned_to_oid = formData.get('assigned_to_oid') as string | null;
     const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
@@ -942,6 +996,14 @@ export async function updateRequestAction(oid: string, formData: FormData) {
             description: description || undefined,
             priority: priority || undefined,
             urgency: urgency || undefined,
+            item: item || undefined,
+            request_item: request_item || undefined,
+            caller_name: caller_name || undefined,
+            assigned_to_name: assigned_to_name || undefined,
+            sn_id: sn_id || undefined,
+            category: category || undefined,
+            subcategory: subcategory || undefined,
+            impact: impact || undefined,
             channel: channel || undefined,
             assigned_to_oid: assigned_to_oid || undefined,
             service_catalog_oid: service_catalog_oid || undefined,
@@ -1338,6 +1400,158 @@ export async function deleteScenarioAction(oid: string) {
         revalidatePath('/data/scenarios');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Agent Actions
+// ============================================================================
+
+export async function createAgentAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createAgent';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const agent = await createAgent({
+            name: formData.get('name') as string,
+            agent_id: formData.get('agent_id') as string,
+            agent_platform: formData.get('agent_platform') as string,
+            contact_worker_oid: formData.get('contact_worker_oid') as string,
+            agent_key: formData.get('agent_key') as string || undefined,
+            account_oid: formData.get('account_oid') as string || undefined,
+            description: formData.get('description') as string || undefined,
+        });
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, agent };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateAgentAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateAgent';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const agent = await updateAgent(oid, {
+            name: formData.get('name') as string || undefined,
+            agent_key: formData.get('agent_key') as string || undefined,
+            agent_platform: formData.get('agent_platform') as string || undefined,
+            contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
+            account_oid: formData.get('account_oid') as string || undefined,
+            description: formData.get('description') as string || undefined,
+            is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
+        });
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, agent };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteAgentAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteAgent';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteAgent(oid);
+        revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Ticket Actions
+// ============================================================================
+
+export async function createTicketAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createTicket';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const tagsRaw = formData.get('tags') as string | null;
+        const ticket = await createTicket({
+            title: formData.get('title') as string,
+            description: formData.get('description') as string || undefined,
+            assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
+        });
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, ticket };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateTicketAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateTicket';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const tagsRaw = formData.get('tags') as string | null;
+        const ticket = await updateTicket(oid, {
+            title: formData.get('title') as string || undefined,
+            description: formData.get('description') as string || undefined,
+            status: formData.get('status') as string || undefined,
+            flagged: formData.get('flagged') !== null ? formData.get('flagged') === 'true' : undefined,
+            assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
+        });
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, ticket };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteTicketAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteTicket';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteTicket(oid);
+        revalidatePath('/agentops/tickets');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });

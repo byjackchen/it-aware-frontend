@@ -15,7 +15,7 @@ export interface UserAccount {
   oid: string
   username: string
   is_active: boolean
-  is_system: boolean
+  account_type: string
   created_at?: string
 }
 

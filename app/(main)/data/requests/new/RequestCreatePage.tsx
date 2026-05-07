@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ArrowLeft, ClipboardList, Loader2, Save } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
@@ -18,7 +18,7 @@ const STATE_OPTIONS = ['Pending', 'Open', 'Work in Progress', 'Closed Complete',
 
 export function RequestCreatePage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<string | null>(null);

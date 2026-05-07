@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
     MousePointerClick,
@@ -36,7 +36,7 @@ function formatJson(value: Record<string, unknown> | null): string {
 export function InteractionDetailPage({ interaction }: InteractionDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
 

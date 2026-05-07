@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, User, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -17,7 +17,7 @@ import { PERMISSIONS } from '@/lib/config/permissions';
 
 export function WorkerCreatePage() {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);

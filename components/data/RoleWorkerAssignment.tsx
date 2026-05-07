@@ -11,7 +11,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, ChevronRight, Plus, X, User, Loader2, Search, Shield } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -41,7 +41,7 @@ export function RoleWorkerAssignment({
     onRemove,
 }: RoleWorkerAssignmentProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data');
     const isLight = theme === 'light';
     const [isPending, startTransition] = useTransition();

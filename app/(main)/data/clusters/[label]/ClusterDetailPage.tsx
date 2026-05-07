@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, Network, Clock, Loader2 } from 'lucide-react';
@@ -64,7 +64,7 @@ export function ClusterDetailPage({
 }: ClusterDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('Data.clusters');
     const tPersona = useTranslations('Persona.cluster');
     const locale = useLocale();

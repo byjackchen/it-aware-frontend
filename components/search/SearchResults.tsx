@@ -5,7 +5,7 @@
  * Groups results by object type and renders clickable items.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -24,7 +24,7 @@ interface GroupedResults {
 
 export function SearchResults({ results, isLoading, onSelect }: SearchResultsProps) {
     const { theme } = useTheme();
-    const router = useRouter();
+    const router = useTransitionRouter();
     const t = useTranslations('GlobalSearch');
     const isLight = theme === 'light';
 

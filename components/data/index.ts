@@ -9,4 +9,5 @@ export { RoleWorkerAssignment } from './RoleWorkerAssignment';
 export { LocationTypeSelect } from './LocationTypeSelect';
 export { OrganizationTypeSelect } from './OrganizationTypeSelect';
 export { TimezoneSelect } from './TimezoneSelect';
-
+export { Phase2FieldsCard } from './Phase2FieldsCard';
+export { IncidentSlasCard } from './IncidentSlasCard';

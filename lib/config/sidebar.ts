@@ -26,6 +26,17 @@ import {
     Route,
     LayoutDashboard,
     BarChart3,
+    BarChart2,
+    Bot,
+    TicketCheck,
+    KanbanSquare,
+    List,
+    Crown,
+    Gauge,
+    Timer,
+    PackageCheck,
+    PackageOpen,
+    Wrench,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -132,6 +143,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
+                        href: '/data/agents',
+                        labelKey: 'agents',
+                        icon: Bot,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.AGENTS_READ,
+                        ]),
+                    },
+                    {
                         href: '/data/hardwares',
                         labelKey: 'hardwares',
                         icon: HardDrive,
@@ -147,6 +167,20 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.ARTICLES_READ,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'networks',
+                items: [
+                    {
+                        href: '/data/networks/ioa-scans',
+                        labelKey: 'ioaScans',
+                        icon: Network,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.NETWORKS.IOA_SCANS_READ,
                         ]),
                     },
                 ],
@@ -252,6 +286,20 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
+            {
+                labelKey: 'agentOps',
+                items: [
+                    {
+                        href: '/data/agentops/tickets',
+                        labelKey: 'tickets',
+                        icon: TicketCheck,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.TICKETS_READ,
+                        ]),
+                    },
+                ],
+            },
         ],
     },
     '/campaign': {
@@ -313,9 +361,148 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 labelKey: 'sscDashboard',
                 icon: LayoutDashboard,
                 permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_DATA,
+                    PERMISSIONS.UI.NAVIGATION_SSC,
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                     PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+            {
+                href: '/ssc-cockpit/faq-report',
+                labelKey: 'faqReport',
+                icon: BarChart2,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INTERACTIONS_READ,
+                ]),
+            },
+        ],
+    },
+    '/operation-teams': {
+        sections: [
+            {
+                labelKey: 'opsMonitoring',
+                items: [
+                    {
+                        href: '/operation-teams/ops-dashboard',
+                        labelKey: 'opsActiveMonitoring',
+                        icon: Gauge,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/incidents',
+                        labelKey: 'opsIncidents',
+                        icon: AlertCircle,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/catalog',
+                        labelKey: 'opsCatalog',
+                        icon: ClipboardList,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/vip-tickets',
+                        labelKey: 'opsVipTickets',
+                        icon: Crown,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'opsAging',
+                items: [
+                    {
+                        href: '/operation-teams/ops-dashboard/aging-incidents',
+                        labelKey: 'opsAgingIncidents',
+                        icon: Timer,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/aging-sc-tasks',
+                        labelKey: 'opsAgingScTasks',
+                        icon: Timer,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/aging-asset-tasks',
+                        labelKey: 'opsAgingAssetTasks',
+                        icon: Timer,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'opsAssets',
+                items: [
+                    {
+                        href: '/operation-teams/ops-dashboard/assets',
+                        labelKey: 'opsAssetsOverview',
+                        icon: HardDrive,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/in-stock-assets',
+                        labelKey: 'opsInStockAssets',
+                        icon: PackageCheck,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/pending-assets',
+                        labelKey: 'opsPendingAssets',
+                        icon: PackageOpen,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                ],
+            },
+        ],
+    },
+    '/agent-ops': {
+        items: [
+            {
+                href: '/agent-ops/agents',
+                labelKey: 'agentFleet',
+                icon: Bot,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.AGENTS_READ,
+                ]),
+            },
+            {
+                href: '/agent-ops/ticket-list',
+                labelKey: 'ticketList',
+                icon: List,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
+                ]),
+            },
+            {
+                href: '/agent-ops/ticket-kanban',
+                labelKey: 'ticketKanban',
+                icon: KanbanSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
         ],

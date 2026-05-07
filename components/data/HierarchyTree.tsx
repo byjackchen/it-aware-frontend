@@ -6,7 +6,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ChevronRight, ChevronDown, Circle, CircleDot, Network } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { HierarchyTreeNode } from '@/lib/types/objects';
@@ -27,7 +27,7 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ node, baseHref, level, isLight, forceExpand }: TreeNodeProps) {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isExpanded, setIsExpanded] = useState(level < 2); // Auto-expand first 2 levels
     const hasChildren = node.children.length > 0;
 

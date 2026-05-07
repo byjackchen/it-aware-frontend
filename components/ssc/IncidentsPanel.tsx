@@ -1,14 +1,21 @@
 'use client';
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { AlertCircle, Loader2, Download } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { AlertCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { IncidentRow, INCIDENT_GRID_COLS } from '@/components/ssc/IncidentRow';
-import type { Incident, IncidentListResponse, WorkerContext } from '@/lib/types/objects';
+import {
+    INCIDENT_CATEGORIES,
+    getIncidentCategoryLabel,
+    type Incident,
+    type IncidentListResponse,
+    type IncidentCategory,
+    type WorkerContext,
+} from '@/lib/types/objects';
 
 interface IncidentsPanelProps {
     dateFrom: string;
@@ -34,12 +41,30 @@ export function IncidentsPanel({
     const { theme } = useTheme();
     const isLight = theme === 'light';
     const t = useTranslations('SSCDashboard');
+    const locale = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
     const [remotePage, setRemotePage] = useState<{ page: number; items: Incident[] } | null>(null);
     const [isPageLoading, setIsPageLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
+
+    // ai_category filter
+    const [selectedCategories, setSelectedCategories] = useState<Set<IncidentCategory | 'NONE'>>(new Set());
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+                setShowCategoryDropdown(false);
+            }
+        }
+        if (showCategoryDropdown) {
+            document.addEventListener('mousedown', handleClick);
+            return () => document.removeEventListener('mousedown', handleClick);
+        }
+    }, [showCategoryDropdown]);
 
     const query = useMemo(() => ({
         ...(dateFrom ? { created_at_from: dateFrom } : {}),
@@ -60,19 +85,31 @@ export function IncidentsPanel({
         inferHasMore: () => false,
     });
 
-    // Client-side worker filter: match actor_oid → stable_id via workerMap
+    // Client-side worker filter + ai_category filter
     const filteredIncidents = useMemo(() => {
-        if (!workerFilter) return incidents;
-        const q = workerFilter.toLowerCase();
-        return incidents.filter((inc) => {
-            const stableId = workerMap[inc.actor_oid]?.stable_id;
-            return stableId?.toLowerCase().includes(q);
-        });
-    }, [incidents, workerFilter, workerMap]);
+        let result = incidents;
+        if (workerFilter) {
+            const q = workerFilter.toLowerCase();
+            result = result.filter((inc) => {
+                const stableId = workerMap[inc.actor_oid]?.stable_id;
+                return stableId?.toLowerCase().includes(q);
+            });
+        }
+        if (selectedCategories.size > 0) {
+            result = result.filter((inc) => {
+                const cat = inc.ai_category ?? 'NONE';
+                return selectedCategories.has(cat as IncidentCategory | 'NONE');
+            });
+        }
+        return result;
+    }, [incidents, workerFilter, workerMap, selectedCategories]);
 
-    const totalPages = Math.ceil((workerFilter ? filteredIncidents.length : (totalIncidents ?? incidents.length)) / pageSize) || 1;
+    const hasCategoryFilter = selectedCategories.size > 0;
+    const hasAnyFilter = !!workerFilter || hasCategoryFilter;
+
+    const totalPages = Math.ceil((hasAnyFilter ? filteredIncidents.length : (totalIncidents ?? incidents.length)) / pageSize) || 1;
     const localStartIdx = (currentPage - 1) * pageSize;
-    const isLocalPage = workerFilter || localStartIdx < filteredIncidents.length;
+    const isLocalPage = hasAnyFilter || localStartIdx < filteredIncidents.length;
 
     const displayedIncidents = useMemo(() => {
         if (isLocalPage) {
@@ -118,7 +155,7 @@ export function IncidentsPanel({
         }
     }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
-    useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [pageSize, workerFilter]);
+    useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [pageSize, workerFilter, selectedCategories]);
 
     // Overlay map for optimistic inline-edit updates
     const [overlay, setOverlay] = useState<Map<string, Incident>>(new Map());
@@ -188,6 +225,79 @@ export function IncidentsPanel({
                 </div>
             </div>
 
+            {/* Category Filter */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 border-b ${
+                isLight ? 'bg-indigo-50/30 border-slate-200' : 'bg-indigo-950/10 border-white/10'
+            }`}>
+                <div className="flex items-center gap-1.5 relative" ref={categoryDropdownRef}>
+                    <Filter className={`w-3 h-3 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                    <span className={`text-xs font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                        {t('categoryFilter.label')}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setShowCategoryDropdown(v => !v)}
+                        className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded border ${
+                            hasCategoryFilter
+                                ? isLight
+                                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                                    : 'bg-indigo-500/10 border-indigo-400/40 text-indigo-300'
+                                : isLight
+                                    ? 'bg-white border-slate-200 text-slate-600'
+                                    : 'bg-white/5 border-white/15 text-gray-300'
+                        } transition-colors`}
+                    >
+                        {hasCategoryFilter ? t('categoryFilter.selectedCount', { count: selectedCategories.size }) : t('categoryFilter.allLabel')}
+                        <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {hasCategoryFilter && (
+                        <button type="button" onClick={() => setSelectedCategories(new Set())} className={`p-0.5 rounded ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}>
+                            <X className="w-3 h-3" />
+                        </button>
+                    )}
+                    {showCategoryDropdown && (
+                        <div className={`absolute top-full left-0 mt-1 z-50 rounded-lg border shadow-lg py-1 min-w-[170px] max-h-[280px] overflow-y-auto ${
+                            isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-white/15'
+                        }`}>
+                            {/* NONE option for unclassified */}
+                            <label className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCategories.has('NONE')}
+                                    onChange={() => {
+                                        setSelectedCategories(prev => {
+                                            const next = new Set(prev);
+                                            if (next.has('NONE')) next.delete('NONE'); else next.add('NONE');
+                                            return next;
+                                        });
+                                    }}
+                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>—</span>
+                                <span className={`ml-auto text-[10px] ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>({t('categoryFilter.unclassified')})</span>
+                            </label>
+                            {INCIDENT_CATEGORIES.map(cat => (
+                                <label key={cat} className={`flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCategories.has(cat)}
+                                        onChange={() => {
+                                            setSelectedCategories(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(cat)) next.delete(cat); else next.add(cat);
+                                                return next;
+                                            });
+                                        }}
+                                        className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <span className={isLight ? 'text-slate-700' : 'text-gray-200'}>{getIncidentCategoryLabel(cat, locale)}</span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Column Headers */}
             <div className={`grid ${INCIDENT_GRID_COLS} gap-1 px-3 py-1.5 border-b ${
                 isLight ? 'bg-slate-50/50 border-slate-200' : 'bg-white/3 border-white/10'
@@ -198,6 +308,8 @@ export function IncidentsPanel({
                 <div className={columnHeaderClass}>{t('headers.summary')}</div>
                 <div className={columnHeaderClass}>{t('headers.category')}</div>
                 <div className={columnHeaderClass}>{t('headers.user')}</div>
+                <div className={columnHeaderClass}>AI Cat.</div>
+                <div className={columnHeaderClass}>Review Cat.</div>
                 <div className={columnHeaderClass}>{t('headers.preFaq')}</div>
                 <div className={columnHeaderClass}>{t('headers.kb')}</div>
                 <div className={columnHeaderClass}>{t('headers.csatScore')}</div>
@@ -245,7 +357,7 @@ export function IncidentsPanel({
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalItems={workerFilter ? filteredIncidents.length : (totalIncidents ?? incidents.length)}
+                    totalItems={hasAnyFilter ? filteredIncidents.length : (totalIncidents ?? incidents.length)}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
                     onPageSizeChange={setPageSize}

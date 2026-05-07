@@ -5,24 +5,24 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, User, Loader2 } from 'lucide-react';
 import { createAccount } from '@/app/actions/security';
 
 export function AccountCreatePage() {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [username, setUsername] = useState('');
-    const [isSystem, setIsSystem] = useState(false);
+    const [accountType, setAccountType] = useState('user');
     const [password, setPassword] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const formData = new FormData();
         formData.set('username', username);
-        formData.set('is_system', String(isSystem));
+        formData.set('account_type', accountType);
         formData.set('is_active', 'true');
         if (password) {
             formData.set('password', password);
@@ -69,26 +69,24 @@ export function AccountCreatePage() {
                         />
                     </div>
 
-                    {/* System Account */}
+                    {/* Account Type */}
                     <div>
-                        <label className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                checked={isSystem}
-                                onChange={(e) => setIsSystem(e.target.checked)}
-                                className="w-5 h-5 rounded theme-checkbox"
-                            />
-                            <div>
-                                <span className="text-white font-medium">{t('accounts.isSystem')}</span>
-                                <p className="text-sm text-gray-400 mt-0.5">
-                                    {t('accounts.isSystemHint')}
-                                </p>
-                            </div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                            {t('accounts.type')} *
                         </label>
+                        <select
+                            value={accountType}
+                            onChange={(e) => setAccountType(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg theme-input"
+                        >
+                            <option value="user">User</option>
+                            <option value="system">System</option>
+                            <option value="agent">Agent</option>
+                        </select>
                     </div>
 
-                    {/* Password (System accounts only) */}
-                    {isSystem && (
+                    {/* Password (Non-user accounts only) */}
+                    {accountType !== 'user' && (
                         <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">
                                 {t('accounts.password')} *
@@ -110,7 +108,7 @@ export function AccountCreatePage() {
                     <div className="flex gap-3 pt-4">
                         <button
                             type="submit"
-                            disabled={isPending || !username || (isSystem && !password)}
+                            disabled={isPending || !username || (accountType !== 'user' && !password)}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50"
                         >
                             {isPending ? (

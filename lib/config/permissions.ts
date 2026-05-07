@@ -15,6 +15,9 @@ export const PERMISSIONS = {
     NAVIGATION_KNOWLEDGE: 'ui:navigation:knowledge',
     NAVIGATION_DATA: 'ui:navigation:data',
     NAVIGATION_CAMPAIGN: 'ui:navigation:campaign',
+    NAVIGATION_AGENT_OPS: 'ui:navigation:agent_ops',
+    NAVIGATION_SSC: 'ui:navigation:ssc',
+    NAVIGATION_OPERATION: 'ui:navigation:operation',
   },
   // Objects domain permissions
   OBJECTS: {
@@ -29,6 +32,11 @@ export const PERMISSIONS = {
     WORKERS_READ_SENSITIVE: 'objects:workers:read_sensitive',
     WORKERS_EDIT_SENSITIVE: 'objects:workers:edit_sensitive',
     HARDWARES_READ: 'objects:hardwares:read',
+    HARDWARES_WRITE: 'objects:hardwares:write',
+    AGENTS_READ: 'objects:agents:read',
+    AGENTS_WRITE: 'objects:agents:write',
+    TICKETS_READ: 'objects:tickets:read',
+    TICKETS_WRITE: 'objects:tickets:write',
     WORKER_HIERARCHY_ROLES_READ: 'objects:worker_hierarchy_roles:read',
     WORKER_HIERARCHY_ROLES_EDIT: 'objects:worker_hierarchy_roles:edit',
     ARTICLES_READ: 'objects:articles:read',
@@ -51,6 +59,11 @@ export const PERMISSIONS = {
     SCENARIOS_WRITE: 'objects:scenarios:write',
     WORKER_CLUSTERS_READ: 'objects:worker_clusters:read',
     WORKER_CLUSTERS_WRITE: 'objects:worker_clusters:write',
+  },
+  // Networks domain permissions (iOA scans, future network telemetry)
+  NETWORKS: {
+    IOA_SCANS_READ: 'networks:ioa_scans:read',
+    IOA_SCANS_TRIGGER: 'networks:ioa_scans:trigger',
   },
 } as const;
 

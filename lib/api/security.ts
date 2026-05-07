@@ -57,7 +57,7 @@ function ensureListEnvelope<T>(value: unknown, endpoint: string): ListEnvelope<T
 export async function getAccounts(isSystem?: boolean): Promise<Account[]> {
   const params = new URLSearchParams({ limit: '1000' });
   if (isSystem !== undefined) {
-    params.set('is_system', String(isSystem));
+    params.set('account_type', String(isSystem));
   }
   return fetchApi<Account[]>(`${AUTH_CONFIG_BASE}/accounts?${params.toString()}`);
 }

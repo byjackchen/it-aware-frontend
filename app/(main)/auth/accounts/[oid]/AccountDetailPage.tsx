@@ -5,7 +5,7 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import {
     ArrowLeft,
@@ -50,7 +50,7 @@ export function AccountDetailPage({
     allGroups,
 }: AccountDetailPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [isLinkingWorker, setIsLinkingWorker] = useState(false);
@@ -159,7 +159,7 @@ export function AccountDetailPage({
                                     {t('accounts.type')}
                                 </label>
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
-                                    {account.is_system ? (
+                                    {account.account_type === 'system' ? (
                                         <span className="flex items-center gap-1.5 text-purple-400">
                                             <Bot className="w-4 h-4" />
                                             <span>{t('accounts.typeSystem')}</span>
@@ -204,8 +204,8 @@ export function AccountDetailPage({
                             </div>
                         </div>
 
-                        {/* Password (System accounts only, edit mode) */}
-                        {isEditing && account.is_system && (
+                        {/* Password (Non-user accounts only, edit mode) */}
+                        {isEditing && account.account_type !== 'user' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">
                                     {t('accounts.newPassword')}
@@ -248,8 +248,8 @@ export function AccountDetailPage({
                         </div>
                     )}
 
-                    {/* Linked Worker (Non-system accounts only) */}
-                    {!account.is_system && (
+                    {/* Linked Worker (User accounts only) */}
+                    {account.account_type === 'user' && (
                         <div className="border-t pt-6 border-white/10">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
                                 {t('accounts.linkedWorker')}

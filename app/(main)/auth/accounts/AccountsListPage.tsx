@@ -4,9 +4,9 @@
  * Accounts list page with navigation to detail and create pages.
  */
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
-import { Plus, User, Check, X, Bot, UserCircle } from 'lucide-react';
+import { Plus, User, Check, X } from 'lucide-react';
 import type { Account, Worker, AccountWorker } from '@/lib/types/security';
 
 interface AccountsListPageProps {
@@ -21,7 +21,7 @@ export function AccountsListPage({
     accountWorkers,
 }: AccountsListPageProps) {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const router = useTransitionRouter();
 
     const getLinkedWorker = (accountOid: string): Worker | null => {
         const link = accountWorkers.find((aw) => aw.account_oid === accountOid);
@@ -85,17 +85,13 @@ export function AccountsListPage({
                                                 <span className="font-medium text-white">{account.username}</span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                {account.is_system ? (
-                                                    <span className="flex items-center gap-1.5 text-purple-400">
-                                                        <Bot className="w-4 h-4" />
-                                                        <span className="text-sm">{t('accounts.typeSystem')}</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1.5 text-blue-400">
-                                                        <UserCircle className="w-4 h-4" />
-                                                        <span className="text-sm">{t('accounts.typeRegular')}</span>
-                                                    </span>
-                                                )}
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                    account.account_type === 'system' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                                                    account.account_type === 'agent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                                }`}>
+                                                    {account.account_type === 'system' ? 'System' : account.account_type === 'agent' ? 'Agent' : 'User'}
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {account.is_active ? (

@@ -608,6 +608,30 @@ export const REVIEW_CODE_LABELS: Record<ReviewCode, { en: string; zh: string }> 
 };
 
 // ============================================================================
+// Incident AI Category Codes (escalation reason classification)
+// ============================================================================
+
+export const INCIDENT_CATEGORIES = ['KB_GAP', 'USER_HABIT', 'AGENT_ERR', 'MANUAL_SSC', 'ONSITE', 'SECURITY', 'MONITORING', 'OUT_OF_SCOPE'] as const;
+export type IncidentCategory = typeof INCIDENT_CATEGORIES[number];
+
+export const INCIDENT_CATEGORY_LABELS: Record<IncidentCategory, { en: string; zh: string }> = {
+    KB_GAP:       { en: 'KB Gap',       zh: 'KB缺失' },
+    USER_HABIT:   { en: 'User Habit',   zh: '用户习惯' },
+    AGENT_ERR:    { en: 'Agent Error',  zh: 'Agent错误' },
+    MANUAL_SSC:   { en: 'Manual SSC',   zh: '需人工处理' },
+    ONSITE:       { en: 'Onsite',       zh: '升级Onsite' },
+    SECURITY:     { en: 'Security',     zh: '升级安全' },
+    MONITORING:   { en: 'Monitoring',   zh: '系统监控' },
+    OUT_OF_SCOPE: { en: 'Out of Scope', zh: '非OIT范围' },
+};
+
+export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale: string): string {
+    const entry = INCIDENT_CATEGORY_LABELS[cat as IncidentCategory];
+    if (!entry) return cat;
+    return locale.startsWith('zh') ? entry.zh : entry.en;
+}
+
+// ============================================================================
 // Activity Types (Incidents, Requests, Inquiries, Interactions)
 // ============================================================================
 
@@ -620,6 +644,12 @@ export interface Incident {
     state: string;
     priority: string | null;
     urgency: string | null;
+    category: string | null;
+    subcategory: string | null;
+    impact: string | null;
+    caller_name: string | null;
+    assigned_to_name: string | null;
+    sn_id: string | null;
     channel: string | null;
 
     // Relationships
@@ -657,6 +687,72 @@ export interface Incident {
     // SSC dashboard — CSAT
     csat_score?: number | null;
     csat_text?: string | null;
+
+    // AI classification — escalation reason
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category
+    review_category?: string | null;
+
+    // ---------------------------------------------------------------------
+    // Phase 2 — ServiceNow authoritative fields.
+    // All nullable; historical rows hold NULLs until the one-off backfill
+    // or a fresh sync cycle populates them. The ops-dashboard aging clock
+    // lives on source_updated_at; base.updated_at is now DB-row lifecycle.
+    // See backend docs/activities/timestamp_semantics.md.
+    // ---------------------------------------------------------------------
+    source_created_at?: string | null;
+    source_updated_at?: string | null;
+    source_opened_at?: string | null;
+    source_resolved_at?: string | null;
+    source_closed_at?: string | null;
+    source_last_reopened_at?: string | null;
+    source_sla_due?: string | null;
+    source_due_date?: string | null;
+    source_expected_start?: string | null;
+
+    opened_by_name?: string | null;
+    resolved_by_name?: string | null;
+    closed_by_name?: string | null;
+    last_reopened_by_name?: string | null;
+
+    // Ticket-anchored (distinct from actor-anchored).
+    location?: string | null;
+    department?: string | null;
+    company?: string | null;
+
+    service?: string | null;
+    service_offering?: string | null;
+    configuration_item_display?: string | null;
+
+    made_sla?: boolean | null;
+    escalation?: number | null;
+    severity?: string | null;
+    reopen_count?: number | null;
+    reassignment_count?: number | null;
+
+    business_duration_sec?: number | null;
+    business_resolve_time_sec?: number | null;
+    business_duration_w_pause_sec?: number | null;
+    duration_sec?: number | null;
+    resolve_time_sec?: number | null;
+
+    on_hold_reason?: string | null;
+    resolution_code?: string | null;
+    resolution_notes?: string | null;
+
+    correlation_id?: string | null;
+    correlation_display?: string | null;
+
+    parent_incident_sn_id?: string | null;
+    parent_sn_id?: string | null;
+    child_incidents_sn_ids?: string[] | null;
+    change_request_sn_id?: string | null;
+    caused_by_change_sn_id?: string | null;
+    problem_sn_id?: string | null;
+    probable_cause?: string | null;
+    knowledge_sn_id?: string | null;
 }
 
 export interface Request {
@@ -668,6 +764,14 @@ export interface Request {
     state: string;
     priority: string | null;
     urgency: string | null;
+    category: string | null;
+    subcategory: string | null;
+    impact: string | null;
+    item: string | null;
+    request_item: string | null;
+    caller_name: string | null;
+    assigned_to_name: string | null;
+    sn_id: string | null;
     channel: string | null;
 
     // Relationships
@@ -686,6 +790,99 @@ export interface Request {
     created_at: string;
     updated_at: string;
     effective_at: string;
+
+    // ---------------------------------------------------------------------
+    // Phase 2 — ServiceNow authoritative fields (request-side subset).
+    // Mirror of the incident set with the request-specific additions
+    // (agent_updated_at, close_notes, contact_type, catalog, request_sn_id)
+    // and without the incident-only fields (resolved_at, last_reopened_*,
+    // severity, reopen_count, change_request, problem, probable_cause,
+    // parent_incident).
+    // ---------------------------------------------------------------------
+    source_created_at?: string | null;
+    source_updated_at?: string | null;
+    source_opened_at?: string | null;
+    source_closed_at?: string | null;
+    source_sla_due?: string | null;
+    source_due_date?: string | null;
+    source_expected_start?: string | null;
+    source_agent_updated_at?: string | null;
+
+    opened_by_name?: string | null;
+    closed_by_name?: string | null;
+    close_notes?: string | null;
+    contact_type?: string | null;
+
+    location?: string | null;
+    department?: string | null;
+    company?: string | null;
+
+    service?: string | null;
+    service_offering?: string | null;
+    configuration_item_display?: string | null;
+    catalog?: string | null;
+
+    made_sla?: boolean | null;
+    escalation?: number | null;
+    reassignment_count?: number | null;
+
+    business_duration_sec?: number | null;
+    business_duration_w_pause_sec?: number | null;
+    duration_sec?: number | null;
+    resolve_time_sec?: number | null;
+
+    parent_sn_id?: string | null;
+    request_sn_id?: string | null;
+    knowledge_sn_id?: string | null;
+    correlation_id?: string | null;
+    correlation_display?: string | null;
+}
+
+/**
+ * Incident SLA row. One-to-many off Incident via incident_oid.
+ *
+ * See backend docs/superpowers/plans/2026-04-24-ops-dashboard-phase-2-incident-slas.md.
+ * Source is the ServiceNow ``task_sla`` record; ``sn_sys_id`` is the
+ * stable upstream key. Duration columns store integer seconds parsed
+ * from SN's English-prose format at ingest.
+ */
+export interface IncidentSla {
+    oid: string;
+    incident_oid: string;
+    sn_sys_id: string;
+    sn_incident_number: string;
+
+    sla_name: string | null;
+    schedule: string | null;
+    schedule_timezone: string | null;
+
+    stage: string | null;
+    has_breached: boolean | null;
+    made_sla: boolean | null;
+
+    percentage: number | null;
+    business_percentage: number | null;
+
+    start_time: string | null;
+    end_time: string | null;
+    breach_time: string | null;
+    original_breach_time: string | null;
+    sla_due: string | null;
+
+    business_duration_sec: number | null;
+    business_time_left_sec: number | null;
+    actual_elapsed_time_sec: number | null;
+    pause_duration_sec: number | null;
+    business_pause_duration_sec: number | null;
+
+    source_system: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface IncidentSlaListResponse {
+    items: IncidentSla[];
+    total: number;
 }
 
 export interface IncidentCreate {
@@ -696,6 +893,12 @@ export interface IncidentCreate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -718,6 +921,14 @@ export interface RequestCreate {
     state: string;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    item?: string | null;
+    request_item?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -749,6 +960,10 @@ export interface IncidentListParams {
     updated_at_to?: string;
     effective_at_from?: string;
     effective_at_to?: string;
+    // AI classification — single-value backend filter (frontend dashboard
+    // does multi-select client-side; this exists for typed callers
+    // such as MCP, scripts, or future pages that want server-side filtering).
+    ai_category?: string;
     skip?: number;
     limit?: number;
 }
@@ -840,6 +1055,12 @@ export interface IncidentUpdate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -852,6 +1073,12 @@ export interface IncidentUpdate {
     created_at?: string;
     updated_at?: string;
     effective_at?: string;
+    // AI classification — DAG-written; included so internal tools can post-correct.
+    ai_category?: string | null;
+    ai_category_reason?: string | null;
+    ai_category_at?: string | null;
+    // Human review override of ai_category — also writable via PATCH /incidents/{oid}/review.
+    review_category?: string | null;
 }
 
 export interface RequestUpdate {
@@ -860,6 +1087,14 @@ export interface RequestUpdate {
     description?: string | null;
     priority?: string | null;
     urgency?: string | null;
+    category?: string | null;
+    subcategory?: string | null;
+    impact?: string | null;
+    item?: string | null;
+    request_item?: string | null;
+    caller_name?: string | null;
+    assigned_to_name?: string | null;
+    sn_id?: string | null;
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
@@ -1454,4 +1689,152 @@ export interface WorkerContext {
     region: string | null;
     country: string | null;
     department: string | null;
+}
+
+// ==================== Agent ====================
+
+export interface Agent {
+    oid: string;
+    name: string;
+    agent_id: string;
+    agent_key: string | null;
+    agent_admin_key: string | null;
+    agent_platform: string;
+    contact_worker_oid: string;
+    account_oid: string | null;
+    description: string | null;
+    agent_workspace_id: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AgentCreate {
+    name: string;
+    agent_id: string;
+    agent_key?: string;
+    agent_admin_key?: string;
+    agent_platform: string;
+    contact_worker_oid: string;
+    account_oid?: string;
+    description?: string;
+    agent_workspace_id?: string;
+}
+
+export interface AgentUpdate {
+    name?: string;
+    agent_key?: string;
+    agent_admin_key?: string;
+    agent_platform?: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+    agent_workspace_id?: string;
+    is_active?: boolean;
+}
+
+export interface AgentListResponse {
+    items: Agent[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== Ticket ====================
+
+export interface Ticket {
+    oid: string;
+    title: string;
+    description: string | null;
+    status: 'backlog' | 'in_progress' | 'blocked' | 'done';
+    flagged: boolean;
+    creator_account_oid: string;
+    assignee_account_oid: string | null;
+    agent_status: 'idle' | 'running' | 'error';
+    tags: string[] | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TicketCreate {
+    title: string;
+    description?: string;
+    assignee_account_oid?: string;
+    tags?: string[];
+}
+
+export interface TicketUpdate {
+    title?: string;
+    description?: string;
+    status?: string;
+    flagged?: boolean;
+    assignee_account_oid?: string;
+    tags?: string[];
+}
+
+export interface TicketListResponse {
+    items: Ticket[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== TicketComment ====================
+
+export interface TicketComment {
+    oid: string;
+    ticket_oid: string;
+    author_account_oid: string;
+    content: string;
+    replied_to_comment_oid: string | null;
+    agent_conversation_id: string | null;
+    created_at: string;
+}
+
+export interface TicketCommentCreate {
+    content: string;
+    replied_to_comment_oid?: string;
+}
+
+export interface TicketCommentListResponse {
+    items: TicketComment[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ── FAQ Monthly Report ────────────────────────────────────────────────────────
+
+export interface CodeBreakdownItem {
+    code: string;
+    display: string;
+    count: number;
+    percentage: number;
+}
+
+export interface MonthStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    breakdown: CodeBreakdownItem[];
+    grand_total: number;
+    unique_visitors: number;
+    faq_resolution_rate: number;
+    ok_rate: number;
+    imp_rate: number;
+    human_escalation_rate: number;
+}
+
+export interface FAQEnquiryItem {
+    code: string;
+    name: string;
+    count: number;
+    percentage: number;
+    sample_question?: string | null;
+}
+
+export interface InteractionFAQReport {
+    current: MonthStats;
+    previous: MonthStats;
+    top5_faq: FAQEnquiryItem[];
 }
