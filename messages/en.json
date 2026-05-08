@@ -1028,6 +1028,7 @@
         "agentOps": "AgentOps"
     },
     "SSCIncidentReport": {
+        "title": "Incident Monthly Report",
         "kpi": {
             "totalIncidents": "Total Incidents",
             "resolved": "Resolved",
@@ -1039,7 +1040,78 @@
             "resolved": "Incidents in Resolved or Closed state within the period.",
             "highPriority": "Incidents with Critical or High priority — indicates urgent workload pressure.",
             "overdue": "Open incidents (not Resolved/Closed) created more than 7 days ago — indicates backlog."
-        }
+        },
+        "charts": {
+            "aiCategoryCurrent": "AI Category — Current",
+            "aiCategoryPrevious": "AI Category — Previous",
+            "stateDistribution": "State Distribution",
+            "priorityDistribution": "Priority Distribution"
+        },
+        "actions": {
+            "apply": "Apply"
+        },
+        "delta": {
+            "flatVsPrev": "Flat vs prev",
+            "vsPrev": "vs prev"
+        },
+        "priority": {
+            "unknown": "Unknown"
+        },
+        "sections": {
+            "categoryComparison": "Category Comparison by Period",
+            "categoryComparisonSubtitle": "Current vs previous period breakdown with deltas",
+            "categoryComparisonTooltip": "Based on COALESCE(review_category, ai_category). More incidents in a category may indicate rising issues.",
+            "top5AssignedGroups": "Top 5 Assigned Groups",
+            "top5AssignedGroupsTooltip": "Groups handling the most incidents in the current period.",
+            "top5ServiceCatalogs": "Top 5 Service Catalogs",
+            "top5ServiceCatalogsTooltip": "Service catalog items with the most incidents in the current period."
+        },
+        "table": {
+            "category": "Category",
+            "current": "Current",
+            "share": "Share",
+            "previous": "Previous",
+            "deltaCount": "Δ Count",
+            "deltaPts": "Δ %pts"
+        },
+        "chatbot": {
+            "title": "Chatbot Escalation Metrics",
+            "subtitle": "{label} — {count} meaningful sessions",
+            "tooltip": "Session = same user's interactions grouped by 15-min inactivity gap. Escalation = user confirmed transfer to human agent (agentsupport-confirm).",
+            "kpi": {
+                "escalationRate": "Escalation Rate",
+                "botHandledRate": "Bot Handled Rate",
+                "adjustedBotFailure": "Adjusted Bot Failure",
+                "avgStepsToEscalate": "Avg Steps to Escalate"
+            },
+            "kpiTooltip": {
+                "escalationRate": "Sessions with agentsupport-confirm ÷ meaningful sessions",
+                "botHandledRate": "Sessions with queries/clicks but no escalation ÷ meaningful sessions",
+                "adjustedBotFailure": "(escalated - direct) ÷ (meaningful - direct). Excludes users who never tried the bot.",
+                "avgStepsToEscalate": "Average non-enter_chat interactions before user confirms escalation"
+            },
+            "repeatUsers": "{count} repeat users",
+            "breakdown": {
+                "escalatedSessions": "Escalated Sessions",
+                "directEscalation": "Direct (skipped bot)",
+                "afterTryingBot": "After Trying Bot",
+                "repeatEscalators": "Repeat Escalators"
+            },
+            "charts": {
+                "current": "Session Outcome — Current",
+                "previous": "Session Outcome — Previous"
+            },
+            "legend": {
+                "botHandled": "Bot Handled",
+                "directEscalation": "Direct Escalation",
+                "afterBotEscalation": "After-Bot Escalation"
+            }
+        },
+        "error": {
+            "title": "Failed to load incident report",
+            "loading": "Loading report..."
+        },
+        "noData": "No data available for this period."
     },
     "SSCFAQReport": {
         "title": "FAQ Analyst Report",

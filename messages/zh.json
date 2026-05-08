@@ -708,6 +708,7 @@
         "agentOps": "AgentOps"
     },
     "SSCIncidentReport": {
+        "title": "Incident 月报",
         "kpi": {
             "totalIncidents": "工单总数",
             "resolved": "已解决",
@@ -719,7 +720,78 @@
             "resolved": "周期内处于 Resolved 或 Closed 状态的工单数。",
             "highPriority": "Critical 或 High 优先级的工单数 — 反映紧急工作压力。",
             "overdue": "创建超过7天仍未解决（非 Resolved/Closed）的工单数 — 反映积压情况。"
-        }
+        },
+        "charts": {
+            "aiCategoryCurrent": "AI 分类 — 本期",
+            "aiCategoryPrevious": "AI 分类 — 上期",
+            "stateDistribution": "状态分布",
+            "priorityDistribution": "优先级分布"
+        },
+        "actions": {
+            "apply": "应用"
+        },
+        "delta": {
+            "flatVsPrev": "与上期持平",
+            "vsPrev": "较上期"
+        },
+        "priority": {
+            "unknown": "未知"
+        },
+        "sections": {
+            "categoryComparison": "分类周期对比",
+            "categoryComparisonSubtitle": "本期与上期分类分布及变化",
+            "categoryComparisonTooltip": "基于 COALESCE(review_category, ai_category)。某类工单增多可能意味着该类问题正在上升。",
+            "top5AssignedGroups": "Top 5 分配组",
+            "top5AssignedGroupsTooltip": "当前周期内处理工单最多的分配组。",
+            "top5ServiceCatalogs": "Top 5 服务目录",
+            "top5ServiceCatalogsTooltip": "当前周期内工单量最高的服务目录项。"
+        },
+        "table": {
+            "category": "分类",
+            "current": "本期",
+            "share": "占比",
+            "previous": "上期",
+            "deltaCount": "Δ 数量",
+            "deltaPts": "Δ 百分点"
+        },
+        "chatbot": {
+            "title": "Chatbot 转人工指标",
+            "subtitle": "{label} — {count} 个有效会话",
+            "tooltip": "Session = 同一用户按 15 分钟无操作间隔切分的会话。Escalation = 用户确认转人工（agentsupport-confirm）。",
+            "kpi": {
+                "escalationRate": "转人工率",
+                "botHandledRate": "机器人处理率",
+                "adjustedBotFailure": "校正后机器人失败率",
+                "avgStepsToEscalate": "转人工前平均步数"
+            },
+            "kpiTooltip": {
+                "escalationRate": "含 agentsupport-confirm 的会话 ÷ 有效会话",
+                "botHandledRate": "有查询/点击但未转人工的会话 ÷ 有效会话",
+                "adjustedBotFailure": "(转人工 - 直接转人工) ÷ (有效会话 - 直接转人工)，排除从未尝试机器人的用户。",
+                "avgStepsToEscalate": "用户确认转人工前的平均非 enter_chat 交互次数"
+            },
+            "repeatUsers": "{count} 个重复转人工用户",
+            "breakdown": {
+                "escalatedSessions": "转人工会话",
+                "directEscalation": "直接转人工（跳过机器人）",
+                "afterTryingBot": "尝试机器人后转人工",
+                "repeatEscalators": "重复转人工用户"
+            },
+            "charts": {
+                "current": "会话结果 — 本期",
+                "previous": "会话结果 — 上期"
+            },
+            "legend": {
+                "botHandled": "机器人处理",
+                "directEscalation": "直接转人工",
+                "afterBotEscalation": "尝试机器人后转人工"
+            }
+        },
+        "error": {
+            "title": "Incident 报告加载失败",
+            "loading": "正在加载报告..."
+        },
+        "noData": "当前周期无可用数据。"
     },
     "SSCFAQReport": {
         "title": "FAQ 分析报告",

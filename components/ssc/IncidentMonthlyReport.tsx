@@ -90,21 +90,21 @@ function pct(value: number): string {
     return `${value.toFixed(1)}%`;
 }
 
-function formatCountDelta(current: number, previous: number): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatCountDelta(current: number, previous: number, flatLabel: string, vsPrevLabel: string): { value: string; trend: 'up' | 'down' | 'flat' } {
     const diff = current - previous;
-    if (diff === 0) return { value: 'Flat vs prev', trend: 'flat' };
+    if (diff === 0) return { value: flatLabel, trend: 'flat' };
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} vs prev`,
+        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
         trend: diff > 0 ? 'up' : 'down',
     };
 }
 
-function formatCountDeltaInverse(current: number, previous: number): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatCountDeltaInverse(current: number, previous: number, flatLabel: string, vsPrevLabel: string): { value: string; trend: 'up' | 'down' | 'flat' } {
     const diff = current - previous;
-    if (diff === 0) return { value: 'Flat vs prev', trend: 'flat' };
+    if (diff === 0) return { value: flatLabel, trend: 'flat' };
     // Lower is better for this metric
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} vs prev`,
+        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
         trend: diff < 0 ? 'up' : 'down',
     };
 }
@@ -170,6 +170,7 @@ function SectionHeading({ title, subtitle, tooltip, isLight }: { title: string; 
 function DateRangeControls({ startDate, endDate }: { startDate: string; endDate: string }) {
     const router = useTransitionRouter();
     const searchParams = useSearchParams();
+    const t = useTranslations('SSCIncidentReport');
     const [draftStart, setDraftStart] = useState(startDate);
     const [draftEnd, setDraftEnd] = useState(endDate);
 
@@ -204,13 +205,30 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
                 disabled={!draftStart || !draftEnd || draftStart > draftEnd}
                 className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-                Apply
+                {t('actions.apply')}
             </button>
         </div>
     );
 }
 
-function BreakdownComparisonTable({ current, previous, isLight }: { current: IncidentMonthStats; previous: IncidentMonthStats; isLight: boolean }) {
+function BreakdownComparisonTable({
+    current,
+    previous,
+    isLight,
+    labels,
+}: {
+    current: IncidentMonthStats;
+    previous: IncidentMonthStats;
+    isLight: boolean;
+    labels: {
+        category: string;
+        current: string;
+        share: string;
+        previous: string;
+        deltaCount: string;
+        deltaPts: string;
+    };
+}) {
     const rows = compareCodes(current, previous);
     const headerCls = `px-3 py-2.5 text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-400'}`;
 
@@ -219,12 +237,12 @@ function BreakdownComparisonTable({ current, previous, isLight }: { current: Inc
             <table className="w-full text-sm">
                 <thead>
                     <tr className={`border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
-                        <th className={`${headerCls} text-left`}>Category</th>
-                        <th className={`${headerCls} text-right`}>Current</th>
-                        <th className={`${headerCls} text-right`}>Share</th>
-                        <th className={`${headerCls} text-right`}>Previous</th>
-                        <th className={`${headerCls} text-right`}>&Delta; Count</th>
-                        <th className={`${headerCls} text-right`}>&Delta; %pts</th>
+                        <th className={`${headerCls} text-left`}>{labels.category}</th>
+                        <th className={`${headerCls} text-right`}>{labels.current}</th>
+                        <th className={`${headerCls} text-right`}>{labels.share}</th>
+                        <th className={`${headerCls} text-right`}>{labels.previous}</th>
+                        <th className={`${headerCls} text-right`}>{labels.deltaCount}</th>
+                        <th className={`${headerCls} text-right`}>{labels.deltaPts}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -259,9 +277,17 @@ function BreakdownComparisonTable({ current, previous, isLight }: { current: Inc
     );
 }
 
-function Top5List({ items, title, isLight }: { items: IncidentTop5Item[]; title: string; isLight: boolean }) {
+function Top5List({
+    items,
+    isLight,
+    emptyText,
+}: {
+    items: IncidentTop5Item[];
+    isLight: boolean;
+    emptyText: string;
+}) {
     if (items.length === 0) {
-        return <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>No data available for this period.</p>;
+        return <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{emptyText}</p>;
     }
 
     const maxCount = items[0]?.count ?? 1;
@@ -311,11 +337,37 @@ function ChatbotEscalationSection({
     previous,
     isLight,
     sectionBg,
+    labels,
 }: {
     current: ChatbotEscalationStats;
     previous: ChatbotEscalationStats | null;
     isLight: boolean;
     sectionBg: string;
+    labels: {
+        title: string;
+        subtitle: string;
+        tooltip: string;
+        escalationRate: string;
+        escalationRateTooltip: string;
+        botHandledRate: string;
+        botHandledRateTooltip: string;
+        adjustedBotFailure: string;
+        adjustedBotFailureTooltip: string;
+        avgStepsToEscalate: string;
+        avgStepsTooltip: string;
+        repeatUsers: string;
+        escalatedSessions: string;
+        directEscalation: string;
+        afterTryingBot: string;
+        repeatEscalators: string;
+        sessionOutcomeCurrent: string;
+        sessionOutcomePrevious: string;
+        botHandled: string;
+        directEscalationLegend: string;
+        afterBotEscalation: string;
+        flatVsPrev: string;
+        vsPrev: string;
+    };
 }) {
     const prevEscRate = previous?.escalation_rate ?? 0;
     const prevBotRate = previous?.bot_handled_rate ?? 0;
@@ -323,61 +375,61 @@ function ChatbotEscalationSection({
 
     function rateDelta(cur: number, prev: number, lowerIsBetter = false): { value: string; trend: 'up' | 'down' | 'flat' } {
         const diff = cur - prev;
-        if (Math.abs(diff) < 0.1) return { value: 'Flat vs prev', trend: 'flat' };
+        if (Math.abs(diff) < 0.1) return { value: labels.flatVsPrev, trend: 'flat' };
         const sign = diff > 0 ? '+' : '';
         const trend = lowerIsBetter ? (diff < 0 ? 'up' : 'down') : (diff > 0 ? 'up' : 'down');
-        return { value: `${sign}${diff.toFixed(1)}pp vs prev`, trend };
+        return { value: `${sign}${diff.toFixed(1)}pp ${labels.vsPrev}`, trend };
     }
 
     return (
         <div className={`p-4 ${sectionBg}`}>
             <SectionHeading
-                title="Chatbot Escalation Metrics"
-                subtitle={`${current.label} — ${current.meaningful_sessions} meaningful sessions`}
-                tooltip="Session = same user's interactions grouped by 15-min inactivity gap. Escalation = user confirmed transfer to human agent (agentsupport-confirm)."
+                title={labels.title}
+                subtitle={labels.subtitle.replace('{label}', current.label).replace('{count}', String(current.meaningful_sessions))}
+                tooltip={labels.tooltip}
                 isLight={isLight}
             />
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 <KpiCard
-                    label="Escalation Rate"
+                    label={labels.escalationRate}
                     value={`${current.escalation_rate.toFixed(1)}%`}
                     delta={rateDelta(current.escalation_rate, prevEscRate, true)}
                     icon={AlertTriangle}
-                    tooltip="Sessions with agentsupport-confirm ÷ meaningful sessions"
+                    tooltip={labels.escalationRateTooltip}
                 />
                 <KpiCard
-                    label="Bot Handled Rate"
+                    label={labels.botHandledRate}
                     value={`${current.bot_handled_rate.toFixed(1)}%`}
                     delta={rateDelta(current.bot_handled_rate, prevBotRate)}
                     icon={CheckCircle2}
-                    tooltip="Sessions with queries/clicks but no escalation ÷ meaningful sessions"
+                    tooltip={labels.botHandledRateTooltip}
                 />
                 <KpiCard
-                    label="Adjusted Bot Failure"
+                    label={labels.adjustedBotFailure}
                     value={`${current.adjusted_bot_failure_rate.toFixed(1)}%`}
                     delta={rateDelta(current.adjusted_bot_failure_rate, prevAdjRate, true)}
                     icon={TrendingDown}
-                    tooltip="(escalated - direct) ÷ (meaningful - direct). Excludes users who never tried the bot."
+                    tooltip={labels.adjustedBotFailureTooltip}
                 />
                 <KpiCard
-                    label="Avg Steps to Escalate"
+                    label={labels.avgStepsToEscalate}
                     value={current.avg_interactions_before_escalation.toFixed(1)}
                     delta={{
-                        value: `${current.repeat_escalator_count} repeat users`,
+                        value: labels.repeatUsers.replace('{count}', String(current.repeat_escalator_count)),
                         trend: 'flat',
                     }}
                     icon={ArrowRight}
-                    tooltip="Average non-enter_chat interactions before user confirms escalation"
+                    tooltip={labels.avgStepsTooltip}
                 />
             </div>
             {/* Breakdown row */}
             <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className={`rounded-lg p-3 ${isLight ? 'bg-white border border-slate-200' : 'bg-white/5 border border-white/5'}`}>
-                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Escalated Sessions</p>
+                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{labels.escalatedSessions}</p>
                     <p className={`mt-1 text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{current.escalated_sessions}</p>
                 </div>
                 <div className={`rounded-lg p-3 ${isLight ? 'bg-white border border-slate-200' : 'bg-white/5 border border-white/5'}`}>
-                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Direct (skipped bot)</p>
+                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{labels.directEscalation}</p>
                     <p className={`mt-1 text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                         {current.direct_escalation_sessions}
                         <span className={`ml-1 text-xs font-normal ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -386,7 +438,7 @@ function ChatbotEscalationSection({
                     </p>
                 </div>
                 <div className={`rounded-lg p-3 ${isLight ? 'bg-white border border-slate-200' : 'bg-white/5 border border-white/5'}`}>
-                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>After Trying Bot</p>
+                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{labels.afterTryingBot}</p>
                     <p className={`mt-1 text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                         {current.after_bot_escalation_sessions}
                         <span className={`ml-1 text-xs font-normal ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -395,30 +447,30 @@ function ChatbotEscalationSection({
                     </p>
                 </div>
                 <div className={`rounded-lg p-3 ${isLight ? 'bg-white border border-slate-200' : 'bg-white/5 border border-white/5'}`}>
-                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Repeat Escalators</p>
+                    <p className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{labels.repeatEscalators}</p>
                     <p className={`mt-1 text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{current.repeat_escalator_count}</p>
                 </div>
             </div>
             {/* Donut: escalation breakdown */}
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <DonutCard
-                    title="Session Outcome — Current"
+                    title={labels.sessionOutcomeCurrent}
                     subtitle={current.label}
                     data={[
-                        { name: 'Bot Handled', value: current.bot_handled_sessions, color: '#22c55e' },
-                        { name: 'Direct Escalation', value: current.direct_escalation_sessions, color: '#f59e0b' },
-                        { name: 'After-Bot Escalation', value: current.after_bot_escalation_sessions, color: '#ef4444' },
+                        { name: labels.botHandled, value: current.bot_handled_sessions, color: '#22c55e' },
+                        { name: labels.directEscalationLegend, value: current.direct_escalation_sessions, color: '#f59e0b' },
+                        { name: labels.afterBotEscalation, value: current.after_bot_escalation_sessions, color: '#ef4444' },
                     ]}
                     height={280}
                 />
                 {previous && (
                     <DonutCard
-                        title="Session Outcome — Previous"
+                        title={labels.sessionOutcomePrevious}
                         subtitle={previous.label}
                         data={[
-                            { name: 'Bot Handled', value: previous.bot_handled_sessions, color: '#22c55e' },
-                            { name: 'Direct Escalation', value: previous.direct_escalation_sessions, color: '#f59e0b' },
-                            { name: 'After-Bot Escalation', value: previous.after_bot_escalation_sessions, color: '#ef4444' },
+                            { name: labels.botHandled, value: previous.bot_handled_sessions, color: '#22c55e' },
+                            { name: labels.directEscalationLegend, value: previous.direct_escalation_sessions, color: '#f59e0b' },
+                            { name: labels.afterBotEscalation, value: previous.after_bot_escalation_sessions, color: '#ef4444' },
                         ]}
                         height={280}
                     />
@@ -438,7 +490,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
     if (error) {
         return (
             <div className={`rounded-xl border p-6 ${isLight ? 'border-red-200 bg-red-50' : 'border-red-500/20 bg-red-500/10'}`}>
-                <p className={`text-sm font-medium ${isLight ? 'text-red-900' : 'text-red-200'}`}>Failed to load incident report</p>
+                <p className={`text-sm font-medium ${isLight ? 'text-red-900' : 'text-red-200'}`}>{t('error.title')}</p>
                 <p className={`mt-1 text-xs ${isLight ? 'text-red-700' : 'text-red-300'}`}>{error}</p>
             </div>
         );
@@ -449,13 +501,44 @@ export function IncidentMonthlyReport({ report, error }: Props) {
             <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                     <AlertTriangle className="mx-auto h-8 w-8 text-gray-500 animate-pulse" />
-                    <p className="mt-3 text-sm text-gray-400">Loading report...</p>
+                    <p className="mt-3 text-sm text-gray-400">{t('error.loading')}</p>
                 </div>
             </div>
         );
     }
 
     const { current, previous } = report;
+    const flatVsPrev = t('delta.flatVsPrev');
+    const vsPrev = t('delta.vsPrev');
+    const chatbotLabels = {
+        title: t('chatbot.title'),
+        subtitle: t('chatbot.subtitle'),
+        tooltip: t('chatbot.tooltip'),
+        escalationRate: t('chatbot.kpi.escalationRate'),
+        escalationRateTooltip: t('chatbot.kpiTooltip.escalationRate'),
+        botHandledRate: t('chatbot.kpi.botHandledRate'),
+        botHandledRateTooltip: t('chatbot.kpiTooltip.botHandledRate'),
+        adjustedBotFailure: t('chatbot.kpi.adjustedBotFailure'),
+        adjustedBotFailureTooltip: t('chatbot.kpiTooltip.adjustedBotFailure'),
+        avgStepsToEscalate: t('chatbot.kpi.avgStepsToEscalate'),
+        avgStepsTooltip: t('chatbot.kpiTooltip.avgStepsToEscalate'),
+        repeatUsers: t('chatbot.repeatUsers'),
+        escalatedSessions: t('chatbot.breakdown.escalatedSessions'),
+        directEscalation: t('chatbot.breakdown.directEscalation'),
+        afterTryingBot: t('chatbot.breakdown.afterTryingBot'),
+        repeatEscalators: t('chatbot.breakdown.repeatEscalators'),
+        sessionOutcomeCurrent: t('chatbot.charts.current'),
+        sessionOutcomePrevious: t('chatbot.charts.previous'),
+        botHandled: t('chatbot.legend.botHandled'),
+        directEscalationLegend: t('chatbot.legend.directEscalation'),
+        afterBotEscalation: t('chatbot.legend.afterBotEscalation'),
+        flatVsPrev: t('delta.flatVsPrev'),
+        vsPrev: t('delta.vsPrev'),
+    };
+    const priorityLabels: Record<string, string> = {
+        ...PRIORITY_LABELS,
+        Unknown: t('priority.unknown'),
+    };
 
     const sectionBg = isLight
         ? 'rounded-xl border border-slate-200 bg-white'
@@ -472,7 +555,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                         <AlertTriangle className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Incident Monthly Report</h1>
+                        <h1 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('title')}</h1>
                         <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                             {current.label} vs {previous.label}
                         </p>
@@ -486,28 +569,28 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <KpiCard
                     label={t('kpi.totalIncidents')}
                     value={current.grand_total.toLocaleString()}
-                    delta={formatCountDelta(current.grand_total, previous.grand_total)}
+                    delta={formatCountDelta(current.grand_total, previous.grand_total, flatVsPrev, vsPrev)}
                     icon={AlertTriangle}
                     tooltip={t('kpiTooltip.totalIncidents')}
                 />
                 <KpiCard
                     label={t('kpi.resolved')}
                     value={current.resolved_count.toLocaleString()}
-                    delta={formatCountDelta(current.resolved_count, previous.resolved_count)}
+                    delta={formatCountDelta(current.resolved_count, previous.resolved_count, flatVsPrev, vsPrev)}
                     icon={CheckCircle2}
                     tooltip={t('kpiTooltip.resolved')}
                 />
                 <KpiCard
                     label={t('kpi.highPriority')}
                     value={current.high_priority_count.toLocaleString()}
-                    delta={formatCountDeltaInverse(current.high_priority_count, previous.high_priority_count)}
+                    delta={formatCountDeltaInverse(current.high_priority_count, previous.high_priority_count, flatVsPrev, vsPrev)}
                     icon={Flame}
                     tooltip={t('kpiTooltip.highPriority')}
                 />
                 <KpiCard
                     label={t('kpi.overdue')}
                     value={current.overdue_count.toLocaleString()}
-                    delta={formatCountDeltaInverse(current.overdue_count, previous.overdue_count)}
+                    delta={formatCountDeltaInverse(current.overdue_count, previous.overdue_count, flatVsPrev, vsPrev)}
                     icon={Clock}
                     tooltip={t('kpiTooltip.overdue')}
                 />
@@ -516,7 +599,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
             {/* AI Category Distribution — Donut Charts */}
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <DonutCard
-                    title="AI Category — Current"
+                    title={t('charts.aiCategoryCurrent')}
                     subtitle={current.label}
                     data={current.breakdown.map((item) => ({
                         name: CATEGORY_LABELS[item.code] || item.display,
@@ -526,7 +609,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                     height={350}
                 />
                 <DonutCard
-                    title="AI Category — Previous"
+                    title={t('charts.aiCategoryPrevious')}
                     subtitle={previous.label}
                     data={previous.breakdown.map((item) => ({
                         name: CATEGORY_LABELS[item.code] || item.display,
@@ -540,7 +623,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
             {/* State + Priority Distribution */}
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <DonutCard
-                    title="State Distribution"
+                    title={t('charts.stateDistribution')}
                     subtitle={current.label}
                     data={current.state_breakdown.map((item) => ({
                         name: item.display,
@@ -550,10 +633,10 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                     height={300}
                 />
                 <DonutCard
-                    title="Priority Distribution"
+                    title={t('charts.priorityDistribution')}
                     subtitle={current.label}
                     data={current.priority_breakdown.map((item) => ({
-                        name: PRIORITY_LABELS[item.code] || item.display,
+                        name: priorityLabels[item.code] || item.display,
                         value: item.count,
                         color: PRIORITY_COLORS[item.code] || '#94a3b8',
                     }))}
@@ -564,13 +647,25 @@ export function IncidentMonthlyReport({ report, error }: Props) {
             {/* Category Comparison Table */}
             <div className={`p-4 ${sectionBg}`}>
                 <SectionHeading
-                    title="Category Comparison by Period"
-                    subtitle="Current vs previous period breakdown with deltas"
-                    tooltip="Based on COALESCE(review_category, ai_category). More incidents in a category may indicate rising issues."
+                    title={t('sections.categoryComparison')}
+                    subtitle={t('sections.categoryComparisonSubtitle')}
+                    tooltip={t('sections.categoryComparisonTooltip')}
                     isLight={isLight}
                 />
                 <div className="mt-4">
-                    <BreakdownComparisonTable current={current} previous={previous} isLight={isLight} />
+                    <BreakdownComparisonTable
+                        current={current}
+                        previous={previous}
+                        isLight={isLight}
+                        labels={{
+                            category: t('table.category'),
+                            current: t('table.current'),
+                            share: t('table.share'),
+                            previous: t('table.previous'),
+                            deltaCount: t('table.deltaCount'),
+                            deltaPts: t('table.deltaPts'),
+                        }}
+                    />
                 </div>
             </div>
 
@@ -578,22 +673,22 @@ export function IncidentMonthlyReport({ report, error }: Props) {
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div className={`p-4 ${sectionBg}`}>
                     <SectionHeading
-                        title="Top 5 Assigned Groups"
-                        tooltip="Groups handling the most incidents in the current period."
+                        title={t('sections.top5AssignedGroups')}
+                        tooltip={t('sections.top5AssignedGroupsTooltip')}
                         isLight={isLight}
                     />
                     <div className="mt-4">
-                        <Top5List items={report.top5_assigned_group} title="Assigned Group" isLight={isLight} />
+                        <Top5List items={report.top5_assigned_group} isLight={isLight} emptyText={t('noData')} />
                     </div>
                 </div>
                 <div className={`p-4 ${sectionBg}`}>
                     <SectionHeading
-                        title="Top 5 Service Catalogs"
-                        tooltip="Service catalog items with the most incidents in the current period."
+                        title={t('sections.top5ServiceCatalogs')}
+                        tooltip={t('sections.top5ServiceCatalogsTooltip')}
                         isLight={isLight}
                     />
                     <div className="mt-4">
-                        <Top5List items={report.top5_service_catalog} title="Service Catalog" isLight={isLight} />
+                        <Top5List items={report.top5_service_catalog} isLight={isLight} emptyText={t('noData')} />
                     </div>
                 </div>
             </div>
@@ -605,6 +700,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                     previous={report.chatbot_escalation_previous}
                     isLight={isLight}
                     sectionBg={sectionBg}
+                    labels={chatbotLabels}
                 />
             )}
         </div>
