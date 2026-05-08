@@ -479,13 +479,17 @@ export function IncidentAnalysisDashboard() {
                         value={kpis.total}
                         icon={AlertTriangle}
                         delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
-                    />
+                    
+                        tooltip={t('kpis.totalIncidents')}
+    />
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
                         icon={Activity}
                         delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
-                    />
+                    
+                        tooltip={t('kpis.active')}
+    />
                     <KpiCard label={t('kpis.highPriority')} value={kpis.high} />
                     <KpiCard label={t('kpis.mediumPriority')} value={kpis.medium} />
                 </div>
@@ -497,7 +501,9 @@ export function IncidentAnalysisDashboard() {
                         value={kpis.vipActive}
                         icon={Star}
                         delta={vipMoM ? { value: deltaLabel(vipMoM), trend: vipMoM.trend } : undefined}
-                    />
+                    
+                        tooltip={t('kpis.vipActive')}
+    />
                     <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
                 </div>
 

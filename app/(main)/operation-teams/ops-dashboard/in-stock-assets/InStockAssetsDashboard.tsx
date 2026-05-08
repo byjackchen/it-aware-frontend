@@ -277,9 +277,24 @@ export function InStockAssetsDashboard() {
 
             {/* KPI row — three big-number tiles. */}
             <div className="grid grid-cols-3 gap-3 shrink-0">
-                <KpiCard label={t('kpis.inStock')} value={kpis.count} icon={PackageCheck} />
-                <KpiCard label={t('pages.totalResidual')} value={kpis.residual} icon={DollarSign} />
-                <KpiCard label={t('pages.avgAge')} value={kpis.avgAge} icon={Calendar} />
+                <KpiCard
+                    label={t('kpis.inStock')}
+                    value={kpis.count}
+                    icon={PackageCheck}
+                    tooltip={t('kpis.inStock')}
+                />
+                <KpiCard
+                    label={t('pages.totalResidual')}
+                    value={kpis.residual}
+                    icon={DollarSign}
+                    tooltip={t('pages.totalResidual')}
+                />
+                <KpiCard
+                    label={t('pages.avgAge')}
+                    value={kpis.avgAge}
+                    icon={Calendar}
+                    tooltip={t('pages.avgAge')}
+                />
             </div>
 
             {/* Donut row — three interactive donuts on their own line so

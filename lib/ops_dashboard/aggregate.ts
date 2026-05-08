@@ -466,7 +466,13 @@ export function inferDeviceType(modelName: string | null | undefined): DeviceTyp
     if (!modelName) return 'Other';
     const s = modelName.toLowerCase();
     if (s.includes('mac')) return 'Mac';
-    if (s.includes('win')) return 'Windows';
+    if (s.includes('win') || s.includes('thinkpad') || s.includes('latitude') ||
+        s.includes('precision') || s.includes('inspiron') || s.includes('xps') ||
+        s.includes('probook') || s.includes('elitebook') || s.includes('zbook') ||
+        s.includes('surface') || s.includes('aspire') || s.includes('swift') ||
+        s.includes('travelmate') || s.includes('zenbook') || s.includes('vivobook') ||
+        s.includes('lifetime') || s.includes('lifebook') || s.includes('notebook') ||
+        s.includes('pc') || s.includes('laptop')) return 'Windows';
     return 'Other';
 }
 

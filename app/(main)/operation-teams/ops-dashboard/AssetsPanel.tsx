@@ -107,7 +107,10 @@ export function AssetsPanel({
                     icon={HardDrive}
                     linkHref="/operation-teams/ops-dashboard/assets"
                     linkLabel={t('links.openAssetHub')}
-                />
+                
+                        tooltip={t('kpis.totalAssets')}
+    
+    />
                 <KpiCard
                     label={t('kpis.inStockRate')}
                     value={kpis.total > 0 ? `${kpis.inStockRatePct}%` : '—'}
@@ -120,35 +123,45 @@ export function AssetsPanel({
                     icon={PackageCheck}
                     linkHref="/operation-teams/ops-dashboard/in-stock-assets"
                     linkLabel={t('links.openInStockAssets')}
-                />
+                
+                        tooltip={t('kpis.inStock')}
+    />
                 <KpiCard
                     label={t('kpis.pendingReturn')}
                     value={kpis.pendingReturn}
                     icon={Truck}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
-                />
+                
+                        tooltip={t('kpis.pendingReturn')}
+    />
                 <KpiCard
                     label={t('kpis.pendingRepair')}
                     value={kpis.pendingRepair}
                     icon={Wrench}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
-                />
+                
+                        tooltip={t('kpis.pendingRepair')}
+    />
                 <KpiCard
                     label={t('kpis.unconfirmed')}
                     value={kpis.unconfirmed}
                     icon={HelpCircle}
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
-                />
+                
+                        tooltip={t('kpis.unconfirmed')}
+    />
                 <KpiCard
                     label={t('kpis.zeroResidual')}
                     value={kpis.zeroResidual}
                     icon={DollarSign}
                     linkHref="/operation-teams/ops-dashboard/assets"
                     linkLabel={t('links.openAssetHub')}
-                />
+                
+                        tooltip={t('kpis.zeroResidual')}
+    />
             </div>
 
             {/* Charts row 1 — three donuts */}
