@@ -95,7 +95,7 @@ function ToggleButton({
 // ---------------------------------------------------------------------------
 
 export const INCIDENT_GRID_COLS =
-    'grid-cols-[40px_90px_90px_1fr_90px_80px_75px_80px_70px_70px_50px_120px_60px_140px_60px]';
+    'grid-cols-[40px_90px_90px_1fr_90px_80px_75px_80px_70px_70px_50px_60px_120px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Main row component
@@ -335,6 +335,11 @@ export function IncidentRow({
             {/* 10. CSAT Text — read-only (sourced upstream) */}
             <div className={cellClass} title={incident.csat_text ?? ''}>
                 {incident.csat_text ?? '—'}
+            </div>
+
+            {/* 11. QA Score — read-only */}
+            <div className={`${cellClass} text-center font-medium`}>
+                {incident.qa_score ?? '—'}
             </div>
 
             {/* 11. 优化? — editable tri-state toggle */}

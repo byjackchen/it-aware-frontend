@@ -329,6 +329,7 @@ export function IncidentsPanel({
                 <div className={columnHeaderClass}>{t('headers.kb')}</div>
                 <div className={columnHeaderClass}>{t('headers.csatScore')}</div>
                 <div className={columnHeaderClass}>{t('headers.csatText')}</div>
+                <div className={columnHeaderClass}>QA</div>
                 <div className={`${columnHeaderClass} flex items-center justify-between`}>
                     <span>{t('headers.needsOptimization')}</span>
                     <button
