@@ -15,7 +15,6 @@ import {
     Layers,
     AlertCircle,
     ClipboardList,
-    MessageCircle,
     MousePointerClick,
     Bell,
     BellRing,
@@ -212,15 +211,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.REQUESTS_READ,
-                        ]),
-                    },
-                    {
-                        href: '/data/inquiries',
-                        labelKey: 'inquiries',
-                        icon: MessageCircle,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.INQUIRIES_READ,
                         ]),
                     },
                     {

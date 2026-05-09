@@ -548,7 +548,6 @@
             "lanes": {
                 "incident": "Incidents",
                 "request": "Requests",
-                "inquiry": "Inquiries",
                 "interaction": "Interactions",
                 "survey": "Surveys",
                 "analysis": "Analyses",
@@ -565,7 +564,6 @@
                 "interval": "Interval",
                 "incident": "Incidents",
                 "request": "Requests",
-                "inquiry": "Inquiries",
                 "interaction": "Interactions",
                 "survey": "Surveys",
                 "analysis": "Analyses"
@@ -596,7 +594,6 @@
         "activities": "Activities",
         "incidents": "Incidents",
         "requests": "Requests",
-        "inquiries": "Inquiries",
         "interactions": "Interactions",
         "faqs": "FAQs",
         "campaign": "Campaign",
@@ -1608,7 +1605,6 @@
       "articles": "Articles",
       "incidents": "Incidents",
       "requests": "Requests",
-      "inquiries": "Inquiries",
       "interactions": "Interactions",
       "surveys": "Survey Batches",
       "notifications": "Notification Batches",
@@ -2066,7 +2062,6 @@
       "lanes": {
         "incident": "Incidents",
         "request": "Requests",
-        "inquiry": "Inquiries",
         "interaction": "Interactions",
         "survey": "Surveys",
         "analysis": "Analyses",
@@ -2083,7 +2078,6 @@
         "interval": "Interval",
         "incident": "Incidents",
         "request": "Requests",
-        "inquiry": "Inquiries",
         "interaction": "Interactions",
         "survey": "Surveys",
         "analysis": "Analyses"
@@ -2114,7 +2108,6 @@
     "activities": "Activities",
     "incidents": "Incidents",
     "requests": "Requests",
-    "inquiries": "Inquiries",
     "interactions": "Interactions",
     "faqs": "FAQs",
     "campaign": "Campaign",

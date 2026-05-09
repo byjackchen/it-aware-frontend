@@ -11,7 +11,6 @@ const RESOURCE_PATHS = {
     articles: '/objects/articles',
     incidents: '/objects/activities/incidents',
     requests: '/objects/activities/requests',
-    inquiries: '/objects/activities/inquiries',
     interactions: '/objects/activities/interactions',
     analysiss: '/objects/insights/analysiss',
     'worker-clusters': '/objects/insights/worker-clusters',

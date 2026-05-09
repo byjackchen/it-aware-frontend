@@ -632,7 +632,7 @@ export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale:
 }
 
 // ============================================================================
-// Activity Types (Incidents, Requests, Inquiries, Interactions)
+// Activity Types (Incidents, Requests, Interactions)
 // ============================================================================
 
 // QA Scoring types
@@ -1015,65 +1015,6 @@ export interface RequestListParams {
     limit?: number;
 }
 
-export interface Inquiry {
-    oid: string;
-    object_type: 'inquiry';
-    topic: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[] | null;
-    state: string;
-
-    // Relationships
-    actor_oid: string;
-    actor_role: string;
-    fact: string | null;
-    source_system?: string | null;
-    fact_embedding_id: string | null;
-    fact_embedded_at: string | null;
-    service_catalog_oid: string | null;
-    configuration_item_oid: string | null;
-
-    created_at: string;
-    updated_at: string;
-    effective_at: string;
-}
-
-export interface InquiryCreate {
-    actor_oid: string;
-    actor_role?: string | null;
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
-export interface InquiryListResponse {
-    items: Inquiry[];
-    total: number;
-    skip: number;
-    limit: number;
-}
-
-export interface InquiryListParams {
-    state?: string;
-    actor_oid?: string;
-    created_at_from?: string;
-    created_at_to?: string;
-    updated_at_from?: string;
-    updated_at_to?: string;
-    effective_at_from?: string;
-    effective_at_to?: string;
-    skip?: number;
-    limit?: number;
-}
-
-
 export interface IncidentUpdate {
     title: string;
     stable_id?: string | null;
@@ -1134,22 +1075,7 @@ export interface RequestUpdate {
     effective_at?: string;
 }
 
-export interface InquiryUpdate {
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    state?: string;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
 export type InteractionActionType = 'enter' | 'click' | 'send_msg';
-export type InteractionAssignmentStatus = 'assigned' | 'deferred' | null;
 export type InteractionSortBy = 'created_at' | 'ingested_at' | 'updated_at';
 export type InteractionOrder = 'asc' | 'desc';
 
@@ -1164,10 +1090,6 @@ export interface Interaction {
     content_raw: Record<string, unknown> | null;
     response_text: string | null;
     response_raw: Record<string, unknown> | null;
-    assignment_status: InteractionAssignmentStatus;
-    assigned_inquiry_oid: string | null;
-    assignment_updated_at: string | null;
-    assignment_log: Record<string, unknown> | null;
     created_at: string;
     ingested_at: string;
     updated_at: string;
@@ -1191,8 +1113,6 @@ export interface InteractionListParams {
     stable_id_prefix?: string;
     actor_stable_id?: string;
     source_system?: string;
-    assignment_status?: 'assigned' | 'deferred' | 'null';
-    assigned_inquiry_oid?: string;
     created_at_from?: string;
     created_at_to?: string;
     skip?: number;

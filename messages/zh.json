@@ -228,7 +228,6 @@
             "lanes": {
                 "incident": "事件",
                 "request": "请求",
-                "inquiry": "问询",
                 "interaction": "交互",
                 "survey": "问卷",
                 "analysis": "分析",
@@ -245,7 +244,6 @@
                 "interval": "区间",
                 "incident": "事件",
                 "request": "请求",
-                "inquiry": "问询",
                 "interaction": "交互",
                 "survey": "问卷",
                 "analysis": "分析"
@@ -276,7 +274,6 @@
         "activities": "活动",
         "incidents": "事件",
         "requests": "请求",
-        "inquiries": "问询",
         "interactions": "交互事件",
         "faqs": "常见问题",
         "campaign": "运营活动",
@@ -1288,7 +1285,6 @@
       "articles": "文章",
       "incidents": "事件",
       "requests": "请求",
-      "inquiries": "问询",
       "interactions": "交互事件",
       "surveys": "问卷批次",
       "notifications": "通知批次",
@@ -1744,7 +1740,6 @@
       "lanes": {
         "incident": "事件",
         "request": "请求",
-        "inquiry": "问询",
         "interaction": "交互",
         "survey": "问卷",
         "analysis": "分析",
@@ -1761,7 +1756,6 @@
         "interval": "区间",
         "incident": "事件",
         "request": "请求",
-        "inquiry": "问询",
         "interaction": "交互",
         "survey": "问卷",
         "analysis": "分析"
@@ -1792,7 +1786,6 @@
     "activities": "活动",
     "incidents": "事件",
     "requests": "请求",
-    "inquiries": "问询",
     "interactions": "交互事件",
     "faqs": "常见问题",
     "campaign": "运营活动",
