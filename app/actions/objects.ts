@@ -33,6 +33,9 @@ import {
     createAgent,
     updateAgent,
     deleteAgent,
+    createSystem,
+    updateSystem,
+    deleteSystem,
     createTicket,
     updateTicket,
     deleteTicket,
@@ -1344,6 +1347,81 @@ export async function deleteAgentAction(oid: string) {
     try {
         await deleteAgent(oid);
         revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function createSystemAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createSystem';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const contactWorkerOid = formData.get('contact_worker_oid') as string;
+        const accountOid = formData.get('account_oid') as string;
+        const description = formData.get('description') as string;
+        const system = await createSystem({
+            name: formData.get('name') as string,
+            system_id: formData.get('system_id') as string,
+            system_platform: formData.get('system_platform') as string,
+            contact_worker_oid: contactWorkerOid || undefined,
+            account_oid: accountOid || undefined,
+            description: description || undefined,
+        });
+        revalidatePath('/data/systems');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, system };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateSystemAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateSystem';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const system = await updateSystem(oid, {
+            name: (formData.get('name') as string) || undefined,
+            system_platform: (formData.get('system_platform') as string) || undefined,
+            contact_worker_oid: (formData.get('contact_worker_oid') as string) || undefined,
+            account_oid: (formData.get('account_oid') as string) || undefined,
+            description: (formData.get('description') as string) || undefined,
+            is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
+        });
+        revalidatePath('/data/systems');
+        revalidatePath(`/data/systems/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, system };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteSystemAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteSystem';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteSystem(oid);
+        revalidatePath('/data/systems');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return { success: true };

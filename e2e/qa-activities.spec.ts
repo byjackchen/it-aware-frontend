@@ -242,3 +242,98 @@ test.describe('Requests — list, detail, creation form', () => {
     expect(i18n.collected, 'no MISSING_MESSAGE on new request form').toEqual([]);
   });
 });
+
+test.describe('Systems — list, detail, full CRUD round-trip', () => {
+  test('S-1 /data/systems list loads with seeded rows + clickable to detail', async ({ page }) => {
+    const listPromise = page.waitForResponse(
+      (r) => r.url().includes('/api/objects/systems') && r.request().method() === 'GET',
+      { timeout: 15_000 }
+    );
+    await page.goto('/data/systems');
+    const list = await listPromise;
+    expect(list.ok()).toBeTruthy();
+    const items = extractItems(await list.json()) as Array<{ system_id: string }>;
+    // P5 seeds 3 default systems; CRUD tests may add transient ones, so allow more.
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    expect(items.some((s) => s.system_id === 'it-aware-backend')).toBe(true);
+  });
+
+  test('S-2 /data/systems/[oid] detail page loads with edit+delete affordances', async ({ page }) => {
+    const sample = await fetchFirstItem<{ oid: string; system_id: string; name: string }>(
+      page,
+      '/api/objects/systems?limit=1'
+    );
+    expect(sample?.oid).toBeTruthy();
+
+    await page.goto(`/data/systems/${sample!.oid}`);
+    await expect(page.getByTestId('system-detail-title')).toHaveText('System Details');
+    await expect(page.getByTestId('system-stable-id')).toHaveText(sample!.system_id);
+    await expect(page.getByTestId('system-edit-button')).toBeVisible();
+    await expect(page.getByTestId('system-delete-button')).toBeVisible();
+  });
+
+  test('S-3 /data/systems/new form renders all required fields', async ({ page }) => {
+    await page.goto('/data/systems/new');
+    await expect(page.getByRole('heading', { name: /^New System$/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole('heading', { name: /^Required$/i })).toBeVisible();
+    await expect(page.getByPlaceholder('e.g. ServiceNow Ingestion')).toBeVisible();
+    await expect(page.getByPlaceholder('e.g. servicenow-ingest')).toBeVisible();
+    await expect(page.getByPlaceholder('e.g. ingestion, scheduler, internal')).toBeVisible();
+    await expect(page.getByTestId('system-create-submit')).toBeVisible();
+  });
+
+  test('S-4 full CRUD round-trip: create → edit → soft-delete', async ({ page }) => {
+    // Use a unique system_id so parallel runs / re-runs don't collide.
+    const stamp = Date.now();
+    const systemId = `e2e-test-${stamp}`;
+    const initialName = `E2E Test System ${stamp}`;
+    const renamedName = `${initialName} (renamed)`;
+
+    // CREATE
+    await page.goto('/data/systems/new');
+    await page.getByPlaceholder('e.g. ServiceNow Ingestion').fill(initialName);
+    await page.getByPlaceholder('e.g. servicenow-ingest').fill(systemId);
+    await page.getByPlaceholder('e.g. ingestion, scheduler, internal').fill('test');
+    await page.getByTestId('system-create-submit').click();
+    await page.waitForURL('**/data/systems', { timeout: 15_000 });
+
+    // Verify created
+    let listAfterCreate = extractItems(
+      await (await page.request.get('/api/objects/systems?limit=1000')).json()
+    ) as Array<{ oid: string; system_id: string; name: string; is_active: boolean }>;
+    const created = listAfterCreate.find((s) => s.system_id === systemId);
+    expect(created, 'system should appear after create').toBeTruthy();
+    expect(created!.name).toBe(initialName);
+    expect(created!.is_active).toBe(true);
+
+    // EDIT (rename via detail page)
+    await page.goto(`/data/systems/${created!.oid}`);
+    await page.getByTestId('system-edit-button').click();
+    // The Name input is the first editable text input on the detail card.
+    await page.locator(`input[value="${initialName}"]`).fill(renamedName);
+    await page.getByTestId('system-save-button').click();
+
+    // Wait for the edit-mode buttons to disappear (handler flips isEditing back to false).
+    await expect(page.getByTestId('system-edit-button')).toBeVisible({ timeout: 15_000 });
+
+    let listAfterEdit = extractItems(
+      await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
+    ) as Array<{ oid: string; system_id: string; name: string }>;
+    const edited = listAfterEdit.find((s) => s.system_id === systemId);
+    expect(edited?.name).toBe(renamedName);
+
+    // SOFT-DELETE (backend convention: flips is_active=false; row stays in list)
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByTestId('system-delete-button').click();
+    await page.waitForURL('**/data/systems', { timeout: 15_000 });
+
+    let listAfterDelete = extractItems(
+      await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
+    ) as Array<{ system_id: string; is_active: boolean }>;
+    const softDeleted = listAfterDelete.find((s) => s.system_id === systemId);
+    expect(softDeleted, 'system should still exist after soft-delete').toBeTruthy();
+    expect(softDeleted!.is_active, 'is_active should flip to false').toBe(false);
+  });
+});
