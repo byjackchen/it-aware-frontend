@@ -11,12 +11,6 @@ import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
 
-const STATUS_STYLE: Record<'assigned' | 'deferred' | 'unassigned', { bg: string; text: string }> = {
-    assigned: { bg: 'bg-green-500/20', text: 'text-green-500' },
-    deferred: { bg: 'bg-yellow-500/20', text: 'text-yellow-500' },
-    unassigned: { bg: 'bg-gray-500/20', text: 'text-gray-500' },
-};
-
 function getCreatedAtTimestamp(value: string): number {
     const ts = Date.parse(value);
     return Number.isNaN(ts) ? 0 : ts;
@@ -124,35 +118,27 @@ export function InteractionsListPage() {
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No interactions found</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
-                            {filteredInteractions.map((interaction) => {
-                                const statusKey = (interaction.assignment_status || 'unassigned') as 'assigned' | 'deferred' | 'unassigned';
-                                const statusStyle = STATUS_STYLE[statusKey];
-
-                                return (
-                                    <button
-                                        key={interaction.oid}
-                                        onClick={() => router.push(`/data/interactions/${interaction.oid}`)}
-                                        className={`w-full text-left px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0 flex-1">
-                                                <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                                                    {interaction.content_text || '[No content text]'}
-                                                </div>
-                                                <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                    {interaction.stable_id} · {interaction.action_type} · {interaction.source_system} · {interaction.actor_stable_id}
-                                                </div>
-                                                <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                    {formatDateTime(interaction.created_at, timezone)}
-                                                </div>
+                            {filteredInteractions.map((interaction) => (
+                                <button
+                                    key={interaction.oid}
+                                    onClick={() => router.push(`/data/interactions/${interaction.oid}`)}
+                                    className={`w-full text-left px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                                                {interaction.content_text || '[No content text]'}
                                             </div>
-                                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                                                {statusKey}
-                                            </span>
+                                            <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {interaction.stable_id} · {interaction.action_type} · {interaction.source_system} · {interaction.actor_stable_id}
+                                            </div>
+                                            <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {formatDateTime(interaction.created_at, timezone)}
+                                            </div>
                                         </div>
-                                    </button>
-                                );
-                            })}
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>

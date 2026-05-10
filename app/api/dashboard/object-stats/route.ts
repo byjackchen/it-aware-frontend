@@ -71,13 +71,6 @@ const RESOURCE_CONFIGS: DashboardResourceConfig[] = [
         supportsIsActive: false,
     },
     {
-        key: 'inquiries',
-        href: '/data/inquiries',
-        group: 'activities',
-        path: '/objects/activities/inquiries',
-        supportsIsActive: false,
-    },
-    {
         key: 'interactions',
         href: '/data/interactions',
         group: 'activities',

@@ -120,7 +120,6 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
             `${t('timeline.heatTooltip.total')}: ${bin.totalCount}`,
             `${t('timeline.heatTooltip.incident')}: ${bin.incidentCount}`,
             `${t('timeline.heatTooltip.request')}: ${bin.requestCount}`,
-            `${t('timeline.heatTooltip.inquiry')}: ${bin.inquiryCount}`,
             `${t('timeline.heatTooltip.interaction')}: ${bin.interactionCount}`,
             `${t('timeline.heatTooltip.survey')}: ${bin.surveyCount}`,
             `${t('timeline.heatTooltip.analysis')}: ${bin.analysisCount}`,

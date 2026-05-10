@@ -6,7 +6,6 @@ export type DashboardResourceKey =
     | 'articles'
     | 'incidents'
     | 'requests'
-    | 'inquiries'
     | 'interactions'
     | 'surveys'
     | 'notifications'

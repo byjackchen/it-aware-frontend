@@ -64,15 +64,15 @@ export function PersonaIoaScanWidget({ workerOid }: { workerOid: string }) {
             </div>
 
             {state.kind === 'loading' && (
-                <div className="text-sm text-slate-500 border rounded p-4">Loading…</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded p-4">Loading…</div>
             )}
             {state.kind === 'empty' && (
-                <div className="text-sm text-slate-500 border rounded p-4">
+                <div className="text-sm text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded p-4">
                     No scan yet for this worker. Click &ldquo;Run iOA scan now&rdquo; above.
                 </div>
             )}
             {state.kind === 'error' && (
-                <div className="text-sm text-red-500 border border-red-200 rounded p-4">
+                <div className="text-sm text-red-500 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded p-4">
                     {state.message}
                 </div>
             )}

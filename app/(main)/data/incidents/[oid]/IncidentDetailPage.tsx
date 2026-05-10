@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { IncidentSlasCard, ObjectGraph, Phase2FieldsCard, QAScoreCard } from '@/components/data';
+import { ActorBadge, IncidentSlasCard, ObjectGraph, Phase2FieldsCard, QAScoreCard } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type {
     GlobalEdge,
@@ -83,10 +83,6 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
     const [effectiveAt, setEffectiveAt] = useState(incident.effective_at);
 
     const assignedWorkerName = workers.find((w) => w.oid === incident.assigned_to_oid)?.fullname || 'Unassigned';
-    const creator = workers.find((w) => w.oid === incident.actor_oid);
-    const creatorStableId = creator?.stable_id || 'Unknown';
-    const actorRoleLabel = incident.actor_role || 'caller';
-    const actorOidLabel = incident.actor_oid || 'Unknown';
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === incident.oid ? e.to_object : e.from_object;
@@ -457,17 +453,13 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
 
                     <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Actor</label>
-                        <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                            <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                            <span className="text-sm capitalize">{actorRoleLabel}:</span>
-                            {creator ? (
-                                <Link href={`/data/workers/${creator.stable_id}`} className="underline underline-offset-4">
-                                    {creatorStableId}
-                                </Link>
-                            ) : (
-                                <span className="font-mono text-xs">{actorOidLabel}</span>
-                            )}
-                        </div>
+                        <ActorBadge
+                            actorType={incident.actor_type}
+                            actorStableId={incident.actor_stable_id}
+                            actorOid={incident.actor_oid}
+                            actorRole={incident.actor_role}
+                            defaultRole="caller"
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">

@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
@@ -23,11 +22,6 @@ interface InteractionDetailPageProps {
     interaction: Interaction;
 }
 
-function getStatusLabel(status: Interaction['assignment_status']): string {
-    if (!status) return 'unassigned';
-    return status;
-}
-
 function formatJson(value: Record<string, unknown> | null): string {
     if (!value) return 'null';
     return JSON.stringify(value, null, 2);
@@ -39,15 +33,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
-
-    const statusLabel = getStatusLabel(interaction.assignment_status);
-
-    const STATUS_STYLE: Record<'assigned' | 'deferred' | 'unassigned', { bg: string; text: string }> = {
-        assigned: { bg: 'bg-green-500/20', text: 'text-green-500' },
-        deferred: { bg: 'bg-yellow-500/20', text: 'text-yellow-500' },
-        unassigned: { bg: 'bg-gray-500/20', text: 'text-gray-500' },
-    };
-    const statusStyle = STATUS_STYLE[statusLabel as 'assigned' | 'deferred' | 'unassigned'];
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this interaction?')) return;
@@ -81,10 +66,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                             </div>
                         </div>
                     </div>
-
-                    <div className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                        {statusLabel}
-                    </div>
                 </div>
 
                 <div className={`rounded-xl border p-6 space-y-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
@@ -108,16 +89,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Actor Stable ID</span>
                             <span className="text-sm">{interaction.actor_stable_id}</span>
-                        </div>
-                        <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Assigned Inquiry OID</span>
-                            {interaction.assigned_inquiry_oid ? (
-                                <Link href={`/data/inquiries/${interaction.assigned_inquiry_oid}`} className="underline underline-offset-4 text-sm">
-                                    {interaction.assigned_inquiry_oid}
-                                </Link>
-                            ) : (
-                                <span className="text-sm opacity-60">—</span>
-                            )}
                         </div>
                     </div>
 
@@ -148,12 +119,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                                 <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.response_raw)}</pre>
                             </div>
                         </div>
-                        <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Assignment Log (JSON)</span>
-                            <div className={`p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
-                                <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.assignment_log)}</pre>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
@@ -168,10 +133,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Updated At</span>
                             <span className="text-sm">{formatDateTime(interaction.updated_at, timezone)}</span>
-                        </div>
-                        <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Assignment Updated At</span>
-                            <span className="text-sm">{formatDateTime(interaction.assignment_updated_at, timezone)}</span>
                         </div>
                     </div>
 

@@ -632,7 +632,7 @@ export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale:
 }
 
 // ============================================================================
-// Activity Types (Incidents, Requests, Inquiries, Interactions)
+// Activity Types (Incidents, Requests, Interactions)
 // ============================================================================
 
 // QA Scoring types
@@ -655,6 +655,12 @@ export interface QAScoreDetail {
     soft_skills: QACategoryScore;
 }
 
+// Phase 3 typed actor: an incident/request actor is one of these four
+// kinds. 'worker' is the historical default; 'system' / 'agent' point
+// at objects.systems / objects.agents respectively; 'external' has no
+// oid (only actor_stable_id).
+export type ActorType = 'worker' | 'system' | 'agent' | 'external';
+
 export interface Incident {
     oid: string;
     stable_id: string | null;
@@ -673,7 +679,10 @@ export interface Incident {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -800,7 +809,10 @@ export interface Request {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -912,7 +924,10 @@ export interface IncidentSlaListResponse {
 
 export interface IncidentCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -939,7 +954,10 @@ export interface IncidentCreate {
 
 export interface RequestCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -1015,65 +1033,6 @@ export interface RequestListParams {
     limit?: number;
 }
 
-export interface Inquiry {
-    oid: string;
-    object_type: 'inquiry';
-    topic: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[] | null;
-    state: string;
-
-    // Relationships
-    actor_oid: string;
-    actor_role: string;
-    fact: string | null;
-    source_system?: string | null;
-    fact_embedding_id: string | null;
-    fact_embedded_at: string | null;
-    service_catalog_oid: string | null;
-    configuration_item_oid: string | null;
-
-    created_at: string;
-    updated_at: string;
-    effective_at: string;
-}
-
-export interface InquiryCreate {
-    actor_oid: string;
-    actor_role?: string | null;
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
-export interface InquiryListResponse {
-    items: Inquiry[];
-    total: number;
-    skip: number;
-    limit: number;
-}
-
-export interface InquiryListParams {
-    state?: string;
-    actor_oid?: string;
-    created_at_from?: string;
-    created_at_to?: string;
-    updated_at_from?: string;
-    updated_at_to?: string;
-    effective_at_from?: string;
-    effective_at_to?: string;
-    skip?: number;
-    limit?: number;
-}
-
-
 export interface IncidentUpdate {
     title: string;
     stable_id?: string | null;
@@ -1134,22 +1093,7 @@ export interface RequestUpdate {
     effective_at?: string;
 }
 
-export interface InquiryUpdate {
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    state?: string;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
 export type InteractionActionType = 'enter' | 'click' | 'send_msg';
-export type InteractionAssignmentStatus = 'assigned' | 'deferred' | null;
 export type InteractionSortBy = 'created_at' | 'ingested_at' | 'updated_at';
 export type InteractionOrder = 'asc' | 'desc';
 
@@ -1164,10 +1108,6 @@ export interface Interaction {
     content_raw: Record<string, unknown> | null;
     response_text: string | null;
     response_raw: Record<string, unknown> | null;
-    assignment_status: InteractionAssignmentStatus;
-    assigned_inquiry_oid: string | null;
-    assignment_updated_at: string | null;
-    assignment_log: Record<string, unknown> | null;
     created_at: string;
     ingested_at: string;
     updated_at: string;
@@ -1191,8 +1131,6 @@ export interface InteractionListParams {
     stable_id_prefix?: string;
     actor_stable_id?: string;
     source_system?: string;
-    assignment_status?: 'assigned' | 'deferred' | 'null';
-    assigned_inquiry_oid?: string;
     created_at_from?: string;
     created_at_to?: string;
     skip?: number;
@@ -1760,6 +1698,51 @@ export interface AgentUpdate {
 
 export interface AgentListResponse {
     items: Agent[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== System ====================
+// Phase 3: objects.systems is a first-class identity for non-human,
+// non-AI actors (ServiceNow ingest, Airflow scheduler, etc.). Mirrors
+// Agent shape but contact_worker_oid is nullable (infrastructure
+// systems are ownerless) and there are no agent_key / admin_key /
+// workspace_id analogs.
+
+export interface System {
+    oid: string;
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid: string | null;
+    account_oid: string | null;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SystemCreate {
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+}
+
+export interface SystemUpdate {
+    name?: string;
+    system_platform?: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+    is_active?: boolean;
+}
+
+export interface SystemListResponse {
+    items: System[];
     total: number;
     skip: number;
     limit: number;

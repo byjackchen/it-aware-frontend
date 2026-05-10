@@ -1,6 +1,6 @@
 /**
  * Server-side API client for Objects module (organizations, locations, workers, service catalogs, articles).
- * Also includes edges, activities (incidents/requests/inquiries/interactions), and worker-hierarchy-role APIs.
+ * Also includes edges, activities (incidents/requests/interactions), and worker-hierarchy-role APIs.
  */
 
 // cookies and redirect removed as they are now used in core.ts
@@ -38,11 +38,6 @@ import type {
     IncidentCreate,
     IncidentUpdate,
     IncidentSlaListResponse,
-    Inquiry,
-    InquiryListParams,
-    InquiryListResponse,
-    InquiryCreate,
-    InquiryUpdate,
     Request,
     RequestListParams,
     RequestListResponse,
@@ -55,6 +50,10 @@ import type {
     AgentCreate,
     AgentUpdate,
     AgentListResponse,
+    System,
+    SystemCreate,
+    SystemUpdate,
+    SystemListResponse,
     Ticket,
     TicketCreate,
     TicketUpdate,
@@ -652,33 +651,6 @@ export async function getRequest(oid: string): Promise<Request> {
     return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`);
 }
 
-export async function getInquiries(): Promise<Inquiry[]> {
-    return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
-}
-
-export async function getInquiriesPage(params: InquiryListParams = {}): Promise<InquiryListResponse> {
-    const queryParams = new URLSearchParams();
-    setOptionalQueryParam(queryParams, 'state', params.state);
-    setOptionalQueryParam(queryParams, 'actor_oid', params.actor_oid);
-    setOptionalQueryParam(queryParams, 'created_at_from', params.created_at_from);
-    setOptionalQueryParam(queryParams, 'created_at_to', params.created_at_to);
-    setOptionalQueryParam(queryParams, 'updated_at_from', params.updated_at_from);
-    setOptionalQueryParam(queryParams, 'updated_at_to', params.updated_at_to);
-    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
-    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
-    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
-    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
-
-    const queryString = queryParams.toString();
-    const url = `${OBJECTS_BASE}/activities/inquiries${queryString ? `?${queryString}` : ''}`;
-    return fetchApi<InquiryListResponse>(url);
-}
-
-
-export async function getInquiry(oid: string): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`);
-}
-
 export async function getInteractions(params: InteractionListParams = {}): Promise<InteractionListResponse> {
     const queryParams = new URLSearchParams();
 
@@ -686,8 +658,6 @@ export async function getInteractions(params: InteractionListParams = {}): Promi
     if (params.stable_id_prefix) queryParams.set('stable_id_prefix', params.stable_id_prefix);
     if (params.actor_stable_id) queryParams.set('actor_stable_id', params.actor_stable_id);
     if (params.source_system) queryParams.set('source_system', params.source_system);
-    if (params.assignment_status !== undefined) queryParams.set('assignment_status', params.assignment_status);
-    if (params.assigned_inquiry_oid) queryParams.set('assigned_inquiry_oid', params.assigned_inquiry_oid);
     if (params.created_at_from) queryParams.set('created_at_from', params.created_at_from);
     if (params.created_at_to) queryParams.set('created_at_to', params.created_at_to);
     if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
@@ -799,32 +769,6 @@ export async function deleteRequest(oid: string): Promise<void> {
     });
 }
 
-export async function createInquiry(data: InquiryCreate): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateInquiry(oid: string, data: InquiryUpdate): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function deleteInquiry(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
-        method: 'DELETE',
-    });
-}
-
 export async function deleteInteraction(oid: string): Promise<void> {
     return fetchApi<void>(`${OBJECTS_BASE}/activities/interactions/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
@@ -871,6 +815,45 @@ export async function updateAgent(oid: string, data: AgentUpdate): Promise<Agent
 
 export async function deleteAgent(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agents/${oid}`, { method: 'DELETE' });
+}
+
+// ==================== Systems ====================
+
+export async function getSystems(): Promise<System[]> {
+    return fetchApi<System[]>(`${OBJECTS_BASE}/systems?limit=1000`);
+}
+
+export async function getSystemsPage(params: { skip?: number; limit?: number; is_active?: boolean; system_platform?: string }): Promise<SystemListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params.system_platform) searchParams.set('system_platform', params.system_platform);
+    return fetchApi<SystemListResponse>(`${OBJECTS_BASE}/systems?${searchParams}`);
+}
+
+export async function getSystem(oid: string): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`);
+}
+
+export async function createSystem(data: SystemCreate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateSystem(oid: string, data: SystemUpdate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteSystem(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/systems/${oid}`, { method: 'DELETE' });
 }
 
 // ==================== Tickets ====================

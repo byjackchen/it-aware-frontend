@@ -29,13 +29,13 @@ import {
     createRequest,
     updateRequest,
     deleteRequest,
-    createInquiry,
-    updateInquiry,
-    deleteInquiry,
     deleteInteraction,
     createAgent,
     updateAgent,
     deleteAgent,
+    createSystem,
+    updateSystem,
+    deleteSystem,
     createTicket,
     updateTicket,
     deleteTicket,
@@ -673,7 +673,7 @@ export async function deleteArticleAction(oid: string) {
 }
 
 // ============================================================================
-// Activity Actions (Incidents, Requests & Inquiries)
+// Activity Actions (Incidents, Requests)
 // ============================================================================
 
 export async function createIncidentAction(formData: FormData) {
@@ -1046,133 +1046,6 @@ export async function deleteRequestAction(oid: string) {
     }
 }
 
-export async function createInquiryAction(formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:createInquiry';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    const actor_oid = formData.get('actor_oid') as string;
-    const actor_role = formData.get('actor_role') as string | null;
-    const topic = formData.get('topic') as string | null;
-    const fact = formData.get('fact') as string | null;
-    const source_system = formData.get('source_system') as string | null;
-    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
-    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
-    const messagesStr = formData.get('messages') as string | null;
-    const created_at = formData.get('created_at') as string | null;
-    const updated_at = formData.get('updated_at') as string | null;
-    const effective_at = formData.get('effective_at') as string | null;
-
-    let messages: unknown[] | undefined = undefined;
-    if (messagesStr) {
-        try {
-            messages = JSON.parse(messagesStr);
-        } catch (e) {
-             logger.error(`Invalid messages JSON`, e, { requestId, action });
-             throw new Error('Invalid messages JSON format');
-        }
-    }
-
-    try {
-        await createInquiry({
-            actor_oid,
-            actor_role: actor_role || undefined,
-            topic: topic || undefined,
-            fact: fact || undefined,
-            source_system: source_system || undefined,
-            service_catalog_oid: service_catalog_oid || undefined,
-            configuration_item_oid: configuration_item_oid || undefined,
-            messages,
-            created_at: created_at?.trim() || undefined,
-            updated_at: updated_at?.trim() || undefined,
-            effective_at: effective_at?.trim() || undefined,
-        });
-        revalidatePath('/data/inquiries');
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function updateInquiryAction(oid: string, formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:updateInquiry';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    const topic = formData.get('topic') as string | null;
-    const fact = formData.get('fact') as string | null;
-    const state = formData.get('state') as string | null;
-    const source_system = formData.get('source_system') as string | null;
-    const service_catalog_oid_raw = formData.get('service_catalog_oid');
-    const configuration_item_oid_raw = formData.get('configuration_item_oid');
-    const messagesStr = formData.get('messages') as string | null;
-    const created_at = formData.get('created_at') as string | null;
-    const updated_at = formData.get('updated_at') as string | null;
-    const effective_at = formData.get('effective_at') as string | null;
-
-    const service_catalog_oid = service_catalog_oid_raw === null
-        ? undefined
-        : String(service_catalog_oid_raw).trim();
-    const configuration_item_oid = configuration_item_oid_raw === null
-        ? undefined
-        : String(configuration_item_oid_raw).trim();
-
-    let messages: unknown[] | undefined = undefined;
-    if (messagesStr) {
-        try {
-            messages = JSON.parse(messagesStr);
-        } catch (e) {
-             logger.error(`Invalid messages JSON`, e, { requestId, action });
-             throw new Error('Invalid messages JSON format');
-        }
-    }
-
-    try {
-        await updateInquiry(oid, {
-            topic: topic || undefined,
-            fact: fact || undefined,
-            source_system: source_system || undefined,
-            state: state || undefined,
-            service_catalog_oid,
-            configuration_item_oid,
-            messages,
-            created_at: created_at?.trim() || undefined,
-            updated_at: updated_at?.trim() || undefined,
-            effective_at: effective_at?.trim() || undefined,
-        });
-        revalidatePath('/data/inquiries');
-        revalidatePath(`/data/inquiries/${oid}`);
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function deleteInquiryAction(oid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:deleteInquiry';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    try {
-        await deleteInquiry(oid);
-        revalidatePath('/data/inquiries');
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
 
 export async function deleteInteractionAction(oid: string) {
     const requestId = logger.generateRequestId();
@@ -1474,6 +1347,81 @@ export async function deleteAgentAction(oid: string) {
     try {
         await deleteAgent(oid);
         revalidatePath('/agentops/agents');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function createSystemAction(formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:createSystem';
+    const startTime = Date.now();
+    logger.info(`Started`, { requestId, action });
+
+    try {
+        const contactWorkerOid = formData.get('contact_worker_oid') as string;
+        const accountOid = formData.get('account_oid') as string;
+        const description = formData.get('description') as string;
+        const system = await createSystem({
+            name: formData.get('name') as string,
+            system_id: formData.get('system_id') as string,
+            system_platform: formData.get('system_platform') as string,
+            contact_worker_oid: contactWorkerOid || undefined,
+            account_oid: accountOid || undefined,
+            description: description || undefined,
+        });
+        revalidatePath('/data/systems');
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, system };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function updateSystemAction(oid: string, formData: FormData) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:updateSystem';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        const system = await updateSystem(oid, {
+            name: (formData.get('name') as string) || undefined,
+            system_platform: (formData.get('system_platform') as string) || undefined,
+            contact_worker_oid: (formData.get('contact_worker_oid') as string) || undefined,
+            account_oid: (formData.get('account_oid') as string) || undefined,
+            description: (formData.get('description') as string) || undefined,
+            is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
+        });
+        revalidatePath('/data/systems');
+        revalidatePath(`/data/systems/${oid}`);
+        const duration = Date.now() - startTime;
+        logger.info(`Success in ${duration}ms`, { requestId, action });
+        return { success: true, system };
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function deleteSystemAction(oid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:deleteSystem';
+    const startTime = Date.now();
+    logger.info(`Started - oid: ${oid}`, { requestId, action });
+
+    try {
+        await deleteSystem(oid);
+        revalidatePath('/data/systems');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return { success: true };

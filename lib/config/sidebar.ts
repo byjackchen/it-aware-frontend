@@ -15,7 +15,6 @@ import {
     Layers,
     AlertCircle,
     ClipboardList,
-    MessageCircle,
     MousePointerClick,
     Bell,
     BellRing,
@@ -28,6 +27,7 @@ import {
     BarChart3,
     BarChart2,
     Bot,
+    Cpu,
     TicketCheck,
     KanbanSquare,
     List,
@@ -160,6 +160,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
+                        href: '/data/systems',
+                        labelKey: 'systems',
+                        icon: Cpu,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SYSTEMS_READ,
+                        ]),
+                    },
+                    {
                         href: '/data/hardwares',
                         labelKey: 'hardwares',
                         icon: HardDrive,
@@ -212,15 +221,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.REQUESTS_READ,
-                        ]),
-                    },
-                    {
-                        href: '/data/inquiries',
-                        labelKey: 'inquiries',
-                        icon: MessageCircle,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.INQUIRIES_READ,
                         ]),
                     },
                     {

@@ -22,7 +22,6 @@ export function getObjectPath(objectType: string, oid: string, stableId?: string
         case 'article': return `/data/articles/${oid}`;
         case 'incident': return `/data/incidents/${oid}`;
         case 'request': return `/data/requests/${oid}`;
-        case 'inquiry': return `/data/inquiries/${oid}`;
         case 'interaction': return `/data/interactions/${oid}`;
         case 'service_catalog': return `/data/service-catalogs/${oid}`;
         case 'scenario': return `/data/scenarios/${oid}`;

@@ -53,3 +53,11 @@ next-env.d.ts
 # claude
 CLAUDE.md
 .gstack/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/e2e/.auth/
+.playwright-mcp/
