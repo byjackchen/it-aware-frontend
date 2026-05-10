@@ -309,6 +309,7 @@
         "agentFleet": "Agent Fleet",
         "agentOps": "AgentOps",
         "agents": "Agents",
+        "systems": "系统",
         "tickets": "工单",
         "ticketList": "工单列表",
         "ticketKanban": "工单看板"
@@ -1820,6 +1821,7 @@
     "agentFleet": "Agent Fleet",
     "agentOps": "AgentOps",
     "agents": "Agents",
+    "systems": "系统",
     "tickets": "工单",
     "ticketList": "工单列表",
     "ticketKanban": "工单看板",

@@ -655,6 +655,12 @@ export interface QAScoreDetail {
     soft_skills: QACategoryScore;
 }
 
+// Phase 3 typed actor: an incident/request actor is one of these four
+// kinds. 'worker' is the historical default; 'system' / 'agent' point
+// at objects.systems / objects.agents respectively; 'external' has no
+// oid (only actor_stable_id).
+export type ActorType = 'worker' | 'system' | 'agent' | 'external';
+
 export interface Incident {
     oid: string;
     stable_id: string | null;
@@ -673,7 +679,10 @@ export interface Incident {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -800,7 +809,10 @@ export interface Request {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -912,7 +924,10 @@ export interface IncidentSlaListResponse {
 
 export interface IncidentCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -939,7 +954,10 @@ export interface IncidentCreate {
 
 export interface RequestCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -1680,6 +1698,51 @@ export interface AgentUpdate {
 
 export interface AgentListResponse {
     items: Agent[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== System ====================
+// Phase 3: objects.systems is a first-class identity for non-human,
+// non-AI actors (ServiceNow ingest, Airflow scheduler, etc.). Mirrors
+// Agent shape but contact_worker_oid is nullable (infrastructure
+// systems are ownerless) and there are no agent_key / admin_key /
+// workspace_id analogs.
+
+export interface System {
+    oid: string;
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid: string | null;
+    account_oid: string | null;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SystemCreate {
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+}
+
+export interface SystemUpdate {
+    name?: string;
+    system_platform?: string;
+    contact_worker_oid?: string;
+    account_oid?: string;
+    description?: string;
+    is_active?: boolean;
+}
+
+export interface SystemListResponse {
+    items: System[];
     total: number;
     skip: number;
     limit: number;

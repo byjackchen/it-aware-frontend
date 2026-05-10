@@ -248,9 +248,10 @@ export function IncidentRow({
                 {catalogName ?? '—'}
             </div>
 
-            {/* 6. Worker */}
-            <div className={`text-xs truncate font-medium ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} title={incident.actor_oid}>
-                {worker?.stable_id ?? incident.actor_oid}
+            {/* 6. Actor — Phase 3 typed actor: fall back to stable_id when
+                 actor_oid is null (external) or not in workerMap (system/agent). */}
+            <div className={`text-xs truncate font-medium ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} title={incident.actor_oid ?? incident.actor_stable_id ?? ''}>
+                {worker?.stable_id ?? incident.actor_stable_id ?? incident.actor_oid ?? '—'}
             </div>
 
             {/* 7. AI Category — read-only label */}

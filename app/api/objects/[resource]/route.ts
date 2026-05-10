@@ -17,6 +17,7 @@ const RESOURCE_PATHS = {
     scenarios: '/objects/journeys/scenarios',
     roles: '/auth/config/roles',
     agents: '/objects/agents',
+    systems: '/objects/systems',
     tickets: '/objects/agentops/tickets',
     'ioa-scan-workers': '/objects/networks/ioa_scans/workers-with-latest',
 } as const;

@@ -50,6 +50,10 @@ import type {
     AgentCreate,
     AgentUpdate,
     AgentListResponse,
+    System,
+    SystemCreate,
+    SystemUpdate,
+    SystemListResponse,
     Ticket,
     TicketCreate,
     TicketUpdate,
@@ -811,6 +815,45 @@ export async function updateAgent(oid: string, data: AgentUpdate): Promise<Agent
 
 export async function deleteAgent(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agents/${oid}`, { method: 'DELETE' });
+}
+
+// ==================== Systems ====================
+
+export async function getSystems(): Promise<System[]> {
+    return fetchApi<System[]>(`${OBJECTS_BASE}/systems?limit=1000`);
+}
+
+export async function getSystemsPage(params: { skip?: number; limit?: number; is_active?: boolean; system_platform?: string }): Promise<SystemListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params.system_platform) searchParams.set('system_platform', params.system_platform);
+    return fetchApi<SystemListResponse>(`${OBJECTS_BASE}/systems?${searchParams}`);
+}
+
+export async function getSystem(oid: string): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`);
+}
+
+export async function createSystem(data: SystemCreate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateSystem(oid: string, data: SystemUpdate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteSystem(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/systems/${oid}`, { method: 'DELETE' });
 }
 
 // ==================== Tickets ====================

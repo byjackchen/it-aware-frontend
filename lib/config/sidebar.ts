@@ -27,6 +27,7 @@ import {
     BarChart3,
     BarChart2,
     Bot,
+    Cpu,
     TicketCheck,
     KanbanSquare,
     List,
@@ -156,6 +157,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.AGENTS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/systems',
+                        labelKey: 'systems',
+                        icon: Cpu,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SYSTEMS_READ,
                         ]),
                     },
                     {

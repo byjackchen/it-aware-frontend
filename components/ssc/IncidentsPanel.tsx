@@ -96,7 +96,11 @@ export function IncidentsPanel({
         if (workerFilter) {
             const q = workerFilter.toLowerCase();
             result = result.filter((inc) => {
-                const stableId = workerMap[inc.actor_oid]?.stable_id;
+                // Phase 3: prefer actor_stable_id (always set when caller has
+                // a stable identifier — workers, system, agent, or external);
+                // fall back to workerMap lookup for legacy rows.
+                const stableId = inc.actor_stable_id
+                    ?? (inc.actor_oid ? workerMap[inc.actor_oid]?.stable_id : undefined);
                 return stableId?.toLowerCase().includes(q);
             });
         }
@@ -383,7 +387,7 @@ export function IncidentsPanel({
                             <div key={effective.oid} className={rowHighlight}>
                                 <IncidentRow
                                     incident={effective}
-                                    worker={workerMap[effective.actor_oid]}
+                                    worker={effective.actor_oid ? workerMap[effective.actor_oid] : undefined}
                                     catalogName={catalogMap[effective.service_catalog_oid ?? '']}
                                     isAligned={effective.oid === alignedIncidentOid}
                                     onAlign={() => onAlign(effective)}

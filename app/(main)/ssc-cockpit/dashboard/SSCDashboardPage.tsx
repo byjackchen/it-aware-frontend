@@ -142,7 +142,11 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
         }
 
         // Resolve incident worker oid → stable_id for filtering interactions
-        const incidentWorkerStableId = workerMap[incident.actor_oid]?.stable_id ?? null;
+        // Phase 3: actor_oid is null for external actors. Skip the workerMap
+        // lookup when there's no oid (the panel falls back to actor_stable_id).
+        const incidentWorkerStableId = incident.actor_oid
+            ? workerMap[incident.actor_oid]?.stable_id ?? null
+            : (incident.actor_stable_id ?? null);
 
         // Narrow interactions panel to the 30-min window so it fetches the right data
         const windowStartDate = new Date(windowStart).toISOString().slice(0, 10);

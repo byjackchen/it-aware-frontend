@@ -629,6 +629,7 @@
         "agentFleet": "Agent Fleet",
         "agentOps": "AgentOps",
         "agents": "Agents",
+        "systems": "Systems",
         "tickets": "Tickets",
         "ticketList": "Ticket List",
         "ticketKanban": "Ticket Kanban"
@@ -2142,6 +2143,7 @@
     "agentFleet": "Agent Fleet",
     "agentOps": "AgentOps",
     "agents": "Agents",
+        "systems": "Systems",
     "tickets": "Tickets",
     "ticketList": "Ticket List",
     "ticketKanban": "Ticket Kanban",

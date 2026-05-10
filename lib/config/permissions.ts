@@ -47,6 +47,8 @@ export const PERMISSIONS = {
     REQUESTS_WRITE: 'objects:requests:write',
     INTERACTIONS_READ: 'objects:interactions:read',
     INTERACTIONS_WRITE: 'objects:interactions:write',
+    SYSTEMS_READ: 'objects:systems:read',
+    SYSTEMS_WRITE: 'objects:systems:write',
     NOTIFICATION_BATCHS_READ: 'objects:notification_batchs:read',
     NOTIFICATION_BATCHS_WRITE: 'objects:notification_batchs:write',
     SURVEY_BATCHS_READ: 'objects:survey_batchs:read',
