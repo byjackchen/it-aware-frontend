@@ -82,8 +82,18 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     await expect(page.getByText(/^QA Score$/).first()).toBeVisible({ timeout: 15_000 });
     // The denormalized actors-section heading from Phase 2.
     await expect(page.getByText(/^Actors\b/).first()).toBeVisible();
+    // Phase 3 ActorBadge: typed pill + stable_id, both rendered.
+    const badge = page.getByTestId('actor-type-badge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText(/Worker|System|Agent|External/);
+    const id = page.getByTestId('actor-stable-id');
+    await expect(id).toBeVisible();
     if (sample?.actor_stable_id) {
-      await expect(page.getByText(sample.actor_stable_id, { exact: false }).first()).toBeVisible();
+      await expect(id).toHaveText(sample.actor_stable_id);
+    }
+    // Worker actors get a profile link; non-worker actors render as plain text.
+    if (sample?.actor_type === 'worker' && sample.actor_stable_id) {
+      await expect(id).toHaveAttribute('href', `/data/workers/${sample.actor_stable_id}`);
     }
   });
 
@@ -198,11 +208,13 @@ test.describe('Requests — list, detail, creation form', () => {
     expect(failures, 'no 5xx from /api/objects/requests').toEqual([]);
   });
 
-  test('R-2 /data/requests/[oid] detail renders core sections', async ({ page }) => {
-    const sample = await fetchFirstItem<{ oid: string; stable_id: string }>(
-      page,
-      '/api/objects/requests?limit=1'
-    );
+  test('R-2 /data/requests/[oid] detail renders core sections + actor badge', async ({ page }) => {
+    const sample = await fetchFirstItem<{
+      oid: string;
+      stable_id: string;
+      actor_type?: string;
+      actor_stable_id?: string;
+    }>(page, '/api/objects/requests?limit=1');
     expect(sample?.oid).toBeTruthy();
 
     await page.goto(`/data/requests/${sample!.oid}`);
@@ -210,6 +222,13 @@ test.describe('Requests — list, detail, creation form', () => {
       timeout: 15_000,
     });
     await expect(page.getByText(/^Actors\b/).first()).toBeVisible();
+    // Phase 3 ActorBadge surfaces typed actor on the request detail too.
+    const badge = page.getByTestId('actor-type-badge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText(/Worker|System|Agent|External/);
+    if (sample?.actor_stable_id) {
+      await expect(page.getByTestId('actor-stable-id')).toHaveText(sample.actor_stable_id);
+    }
   });
 
   test('R-3 /data/requests/new form renders Required + Optional sections', async ({ page }) => {
