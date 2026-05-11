@@ -285,27 +285,48 @@ export function DataTable<T extends Record<string, unknown>>({
                     <span>
                         Page {currentPage + 1} of {totalPages}
                     </span>
-                    <div className="flex gap-1">
-                        {[...Array(Math.min(totalPages, 7))].map((_, i) => {
-                            const p =
-                                totalPages <= 7
-                                    ? i
-                                    : i === 0
-                                        ? 0
-                                        : i === 6
-                                            ? totalPages - 1
-                                            : currentPage - 2 + i;
-                            const clamped = Math.max(0, Math.min(p, totalPages - 1));
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => goToPage(clamped)}
-                                    className={`px-2 py-0.5 rounded ${currentPage === clamped ? 'bg-blue-500 text-white' : isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
-                                >
-                                    {clamped + 1}
-                                </button>
-                            );
-                        })}
+                    <div className="flex gap-1 items-center">
+                        {(() => {
+                            // Build a de-duped, sorted list of page
+                            // indices: always include first + last, a
+                            // ±1 window around the current page, and
+                            // render an ellipsis wherever the sequence
+                            // jumps by more than one. Previous naive
+                            // algorithm emitted `1 1 1 2 3 4 N` when
+                            // currentPage was near 0 because the
+                            // windowing produced repeats that were
+                            // then clamped back to 0.
+                            const pages = new Set<number>([0, totalPages - 1]);
+                            for (let d = -1; d <= 1; d += 1) {
+                                const p = currentPage + d;
+                                if (p >= 0 && p < totalPages) pages.add(p);
+                            }
+                            const sorted = [...pages].sort((a, b) => a - b);
+                            const nodes: React.ReactNode[] = [];
+                            for (let i = 0; i < sorted.length; i += 1) {
+                                const p = sorted[i];
+                                if (i > 0 && p - sorted[i - 1] > 1) {
+                                    nodes.push(
+                                        <span
+                                            key={`ellipsis-${p}`}
+                                            className={`px-1 ${mutedText}`}
+                                        >
+                                            …
+                                        </span>,
+                                    );
+                                }
+                                nodes.push(
+                                    <button
+                                        key={p}
+                                        onClick={() => goToPage(p)}
+                                        className={`px-2 py-0.5 rounded ${currentPage === p ? 'bg-blue-500 text-white' : isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
+                                    >
+                                        {p + 1}
+                                    </button>,
+                                );
+                            }
+                            return nodes;
+                        })()}
                     </div>
                     <span>
                         {typeof total === 'number'

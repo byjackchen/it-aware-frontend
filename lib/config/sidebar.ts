@@ -8,6 +8,7 @@ import {
     Lock,
     User,
     Users,
+    UserPlus,
     FileText,
     HardDrive,
     Building2,
@@ -15,6 +16,7 @@ import {
     Layers,
     AlertCircle,
     ClipboardList,
+    MessageCircle,
     MousePointerClick,
     Bell,
     BellRing,
@@ -27,7 +29,6 @@ import {
     BarChart3,
     BarChart2,
     Bot,
-    Cpu,
     TicketCheck,
     KanbanSquare,
     List,
@@ -37,6 +38,7 @@ import {
     PackageCheck,
     PackageOpen,
     Wrench,
+    DollarSign,
     Bot as Chatbot,
     LineChart,
     MessageSquare,
@@ -160,15 +162,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/data/systems',
-                        labelKey: 'systems',
-                        icon: Cpu,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.SYSTEMS_READ,
-                        ]),
-                    },
-                    {
                         href: '/data/hardwares',
                         labelKey: 'hardwares',
                         icon: HardDrive,
@@ -221,6 +214,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.REQUESTS_READ,
+                        ]),
+                    },
+                    {
+                        href: '/data/inquiries',
+                        labelKey: 'inquiries',
+                        icon: MessageCircle,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.INQUIRIES_READ,
                         ]),
                     },
                     {
@@ -383,15 +385,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                 ]),
             },
-            {
-                href: '/ssc-cockpit/incident-report',
-                labelKey: 'incidentReport',
-                icon: AlertCircle,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_SSC,
-                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
-                ]),
-            },
         ],
     },
     '/operation-teams': {
@@ -427,6 +420,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/vip-tickets',
                         labelKey: 'opsVipTickets',
                         icon: Crown,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/on-off-boarding',
+                        labelKey: 'opsOnOffBoarding',
+                        icon: UserPlus,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
@@ -485,6 +486,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/pending-assets',
                         labelKey: 'opsPendingAssets',
                         icon: PackageOpen,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/zero-residual-assets',
+                        labelKey: 'opsZeroResidualAssets',
+                        icon: DollarSign,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),

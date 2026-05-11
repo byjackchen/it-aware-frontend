@@ -16,6 +16,7 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Brush } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { TitleWithInfo } from './TitleWithInfo';
 export interface TrendSeries {
     /** Field name on each data point (e.g. "opened", "closed"). */
     key: string;
@@ -39,6 +40,8 @@ export interface TrendChartRow {
 export interface TrendLineCardProps {
     title: string;
     subtitle?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
     data: TrendChartRow[];
     height?: number;
     /** Single-series stroke colour — defaults to blue-500. Ignored when `series` is set. */
@@ -62,6 +65,7 @@ function defaultXFormat(bucket: string): string {
 export function TrendLineCard({
     title,
     subtitle,
+    info,
     data,
     height = 200,
     color = '#3b82f6',
@@ -87,10 +91,7 @@ export function TrendLineCard({
     return (
         <div className={`rounded-xl border p-4 w-full h-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                    <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                    {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
-                </div>
+                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
                 {actionSlot}
             </div>
 

@@ -23,9 +23,10 @@
  * Existing callers that don't pass these new props are unaffected.
  */
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutLegend } from './DonutLegend';
+import { TitleWithInfo } from './TitleWithInfo';
 
 export interface DonutSlice {
     name: string;
@@ -36,6 +37,8 @@ export interface DonutSlice {
 export interface DonutCardProps {
     title: string;
     subtitle?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
     data: DonutSlice[];
     /** Fallback palette for slices that don't carry their own colour. */
     palette?: string[];
@@ -70,6 +73,7 @@ const DEFAULT_PALETTE = [
 export function DonutCard({
     title,
     subtitle,
+    info,
     data,
     palette = DEFAULT_PALETTE,
     height = 500,
@@ -108,10 +112,7 @@ export function DonutCard({
     return (
         <div className={`rounded-xl border p-4 w-full h-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                    <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                    {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
-                </div>
+                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
                 {actionSlot}
             </div>
 
@@ -149,6 +150,20 @@ export function DonutCard({
                                     );
                                 })}
                             </Pie>
+                            {/* Themed tooltip — recharts' default is
+                                a white panel with black text, which is
+                                illegible on the dark dashboard theme. */}
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: isLight ? '#fff' : '#1e293b',
+                                    border: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    color: isLight ? '#1e293b' : '#f1f5f9',
+                                    fontSize: '12px',
+                                }}
+                                itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                                formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
+                            />
                             {!interactive && (
                                 <Legend
                                     verticalAlign="bottom"

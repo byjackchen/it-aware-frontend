@@ -26,6 +26,7 @@ import {
     Legend,
 } from 'recharts'
 import { useTheme } from '@/lib/contexts/theme-context'
+import { TitleWithInfo } from './TitleWithInfo'
 
 export interface SeriesDef {
     key: string
@@ -36,6 +37,8 @@ export interface SeriesDef {
 export interface StackedBarPercentLineCardProps {
     title: string
     subtitle?: string
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string
     data: Array<Record<string, string | number | null | undefined>>
     xKey: string
     stackedKeys: SeriesDef[]
@@ -63,6 +66,7 @@ function pctFmt(v: number | string) {
 export function StackedBarPercentLineCard({
     title,
     subtitle,
+    info,
     data,
     xKey,
     stackedKeys,
@@ -91,8 +95,7 @@ export function StackedBarPercentLineCard({
     return (
         <div className={`rounded-xl border p-4 ${cardBase}`}>
             <div className="mb-3">
-                <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
+                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
             </div>
             {isEmpty ? (
                 <div

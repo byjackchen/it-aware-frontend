@@ -23,13 +23,17 @@ import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
     classifyRequestType,
     cumulativeTrendByMonth,
+    trendByMonth,
     daysSinceUpdated,
+    formatDurationSec,
     formatMoM,
     groupBy,
     isActiveState,
+    meanOf,
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    sumOf,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -45,6 +49,7 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 
 /** Catalog tasks use the prototype's blue-family palette to distinguish them from incidents. */
 const CATALOG_PALETTE = [
@@ -88,9 +93,16 @@ export function CatalogDashboard() {
     // 3-month default seeded into the user-visible filter so the picker
     // reflects what's actually being fetched. Otherwise users see a date
     // gap and mistake it for a server-side cutoff.
-    const [defaultFromIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    );
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so all MONITORING dashboards open on the
+    // same month-to-date window — easier to compare numbers
+    // across pages and matches how the team reports MTD.
+    const [defaultFromIso] = useState<string>(() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}-01`;
+    });
 
     // Stable aging clock.
     const [now] = useState<number>(() => Date.now());
@@ -104,10 +116,18 @@ export function CatalogDashboard() {
         created_at_to: { from: defaultFromIso, to: null },
     });
 
-    // Three-level Region / Country / Location slicer state — geographic.
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
 
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
     const { data, loading, error, refetch } = useRequests(
@@ -176,7 +196,44 @@ export function CatalogDashboard() {
             if (days > 7) aging7d += 1;
             if (days > 30) aging30d += 1;
         }
-        return { total, active, resolved, resolvedRate, aging7d, aging30d };
+
+        // Resolved-on-day-1 and time metrics — mirror the
+        // IncidentAnalysisDashboard treatment but use SN's
+        // `source_closed_at` for closure (requests don't carry
+        // `source_resolved_at`).
+        let resolvedDay1 = 0;
+        const resolvedRows: TicketRow[] = [];
+        for (const r of filtered) {
+            const closedIso =
+                r.source_closed_at ??
+                (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null);
+            if (!closedIso) continue;
+            resolvedRows.push(r);
+            const opened = Date.parse(r.source_opened_at ?? r.created_at);
+            const closed = Date.parse(closedIso);
+            if (
+                Number.isFinite(opened) &&
+                Number.isFinite(closed) &&
+                closed - opened <= 24 * 60 * 60 * 1000 &&
+                closed >= opened
+            ) {
+                resolvedDay1 += 1;
+            }
+        }
+        const mttrSec = meanOf(resolvedRows, (r) => r.business_resolve_time_sec ?? r.business_duration_sec ?? null);
+        const totalTimeWorkedSec = sumOf(resolvedRows, (r) => r.resolve_time_sec ?? r.duration_sec ?? null);
+
+        return {
+            total,
+            active,
+            resolved,
+            resolvedRate,
+            aging7d,
+            aging30d,
+            resolvedDay1,
+            mttrSec,
+            totalTimeWorkedSec,
+        };
     }, [filtered, activeRows, now]);
 
     const stateDonut = useMemo(
@@ -187,6 +244,14 @@ export function CatalogDashboard() {
     const groupDonut = useMemo(() => {
         const ranked = groupBy(activeRows, (r) => r.assigned_group).slice(0, 8);
         return ranked.map((g) => ({ name: g.key, value: g.count }));
+    }, [activeRows]);
+
+    // Catalog "category" donut — uses SN's `item` (with request_item
+    // fallback) since requests don't have a category column. Top-N
+    // keeps the donut readable when the long tail is large.
+    const categoryDonut = useMemo(() => {
+        const ranked = groupBy(activeRows, (r) => r.item ?? r.request_item ?? 'Unknown').slice(0, 8);
+        return ranked.map((g) => ({ name: trimLabel(g.key, 32), value: g.count }));
     }, [activeRows]);
 
     const departmentBar = useMemo(() => {
@@ -215,6 +280,14 @@ export function CatalogDashboard() {
                 trendMonths,
                 now,
             ),
+        [filtered, trendMonths, now],
+    );
+
+    // Non-cumulative monthly opened — separate "Monthly Volume" line
+    // chart so users can spot period-over-period swings without the
+    // smoothing effect of a cumulative line.
+    const monthlyTrend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
         [filtered, trendMonths, now],
     );
 
@@ -393,33 +466,55 @@ export function CatalogDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: KPIs */}
-                <div className="grid grid-cols-6 gap-3 mb-3">
+                {/* Row 1: KPIs (top tier — total + outcome metrics) */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalCatalogTasks')}
                         value={kpis.total}
                         icon={ShoppingCart}
-                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
-                    
-                        tooltip={t('kpis.totalCatalogTasks')}
-    />
+                        tooltip={t('kpis.totalCatalogTasksInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.resolvedDay1')}
+                        value={kpis.resolvedDay1}
+                        tooltip={t('kpis.resolvedDay1Info')}
+                    />
+                    <KpiCard
+                        label={t('kpis.mttr')}
+                        value={formatDurationSec(kpis.mttrSec)}
+                        tooltip={t('kpis.mttrInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.totalTimeWorked')}
+                        value={formatDurationSec(kpis.totalTimeWorkedSec)}
+                        tooltip={t('kpis.totalTimeWorkedInfo')}
+                    />
+                </div>
+                {/* Row 1b: KPIs (volume + aging tier) */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
-                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
-                    
-                        tooltip={t('kpis.active')}
-    />
-                    <KpiCard label={t('kpis.resolved')} value={kpis.resolved} />
-                    <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
-                    <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />
-                    <KpiCard label={t('kpis.agingGt30d')} value={kpis.aging30d} />
+                        tooltip={t('kpis.activeInfo')}
+                    />
+                    <KpiCard label={t('kpis.resolvedRate')} tooltip={t('kpis.resolvedRateInfo')} value={kpis.resolvedRate} />
+                    <KpiCard label={t('kpis.agingGt7d')} tooltip={t('kpis.agingGt7dInfo')} value={kpis.aging7d} />
+                    <KpiCard label={t('kpis.agingGt30d')} tooltip={t('kpis.agingGt30dInfo')} value={kpis.aging30d} />
                 </div>
 
-                {/* Row 2: Donuts */}
-                <div className="grid gap-3 mb-3 grid-cols-2">
+                {/* Row 2: Donuts — By Category + By State + By Group */}
+                <div className="grid gap-3 mb-3 grid-cols-3">
+                    <DonutCard
+                        title={t('charts.activeByCategoryCatalog')}
+                        info={t('charts.activeByCategoryCatalogInfo')}
+                        data={categoryDonut}
+                        palette={CATALOG_PALETTE}
+                        height={220}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
                     <DonutCard
                         title={t('charts.byStateAll')}
+                        info={t('charts.byStateAllInfo')}
                         data={stateDonut}
                         palette={CATALOG_PALETTE}
                         height={220}
@@ -431,6 +526,7 @@ export function CatalogDashboard() {
                     <DonutCard
                         title={t('charts.activeByGroupCatalog')}
                         subtitle={t('charts.activeByGroupSubtitle')}
+                        info={t('charts.activeByGroupCatalogInfo')}
                         data={groupDonut}
                         palette={CATALOG_PALETTE}
                         height={220}
@@ -441,10 +537,11 @@ export function CatalogDashboard() {
                     />
                 </div>
 
-                {/* Row 3: Department bar + trend */}
+                {/* Row 3: Department bar + cumulative trend */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
                     <GroupBarCard
                         title={t('charts.byDepartment')}
+                        info={t('charts.byDepartmentInfo')}
                         data={departmentBar}
                         topN={10}
                         height={260}
@@ -454,12 +551,26 @@ export function CatalogDashboard() {
                     <TrendLineCard
                         title={t('charts.volumeTrend')}
                         subtitle={t('charts.cumulativeOpenedClosed')}
+                        info={t('charts.volumeTrendInfo')}
                         data={trend}
                         height={260}
                         series={[
                             { key: 'opened', label: 'Opened (cumulative)', color: '#0ea5e9' },
                             { key: 'closed', label: 'Closed (cumulative)', color: '#22c55e' },
                         ]}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 4: Non-cumulative monthly opened trend */}
+                <div className="mb-3">
+                    <TrendLineCard
+                        title={t('charts.monthlyVolume')}
+                        subtitle={t('charts.monthlyVolumeSubtitle')}
+                        info={t('charts.monthlyVolumeInfo')}
+                        data={monthlyTrend}
+                        height={220}
+                        color="#0ea5e9"
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
