@@ -2123,11 +2123,43 @@
     "agentOps": "AgentOps"
   },
   "SSCFAQReport": {
+    "title": "FAQ 分析报告",
+    "kpi": {
+      "totalInteractions": "总互动量",
+      "uniqueVisitors": "独立访客",
+      "faqResolutionRate": "FAQ 解决率",
+      "humanEscalationRate": "人工升级率"
+    },
     "kpiTooltip": {
       "totalInteractions": "周期内所有会话总数（含所有编码，包括 NA）。",
       "uniqueVisitors": "按 actor_stable_id 去重的独立用户数。",
       "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
       "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷（总数 − NA）× 100%"
+    },
+    "charts": {
+      "reviewCodeCurrent": "审核编码分布",
+      "reviewCodePrevious": "审核编码分布",
+      "topFaqCategories": "Top FAQ 分类",
+      "topFaqSubtitle": "按咨询量排名前 5 的分类，本期 vs 上期"
+    },
+    "sections": {
+      "codeComparison": "编码明细对比",
+      "codeComparisonSubtitle": "本期与上期按审核编码的对比",
+      "top5Faq": "Top 5 FAQ 分类",
+      "top5FaqTooltip": "本期按咨询量排名前 5 的 FAQ 分类",
+      "operationalGuidance": "运营建议"
+    },
+    "guidance": {
+      "outcomeQuality": "结果质量：",
+      "outcomeQualityDetail": "ACCT、IMP 和 QNC 为正向结果，解决率高代表 FAQ 覆盖良好。",
+      "focusAreas": "重点关注：",
+      "focusAreasDetail": "ERR、NEW、CUST 和 OOS 会推高升级率，建议排查对应知识库缺口。",
+      "naShare": "NA 流量：",
+      "naShareDetail": "NA 会话不纳入比率计算，NA 占比高可能说明存在未分类或非 FAQ 流量。"
+    },
+    "error": {
+      "title": "报告加载失败",
+      "loading": "正在加载报告数据..."
     }
   },
   "Ohla": {

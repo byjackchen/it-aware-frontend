@@ -2445,11 +2445,43 @@
     "agentOps": "AgentOps"
   },
   "SSCFAQReport": {
+    "title": "FAQ Analyst Report",
+    "kpi": {
+      "totalInteractions": "Total Interactions",
+      "uniqueVisitors": "Unique Visitors",
+      "faqResolutionRate": "FAQ Resolution Rate",
+      "humanEscalationRate": "Human Escalation Rate"
+    },
     "kpiTooltip": {
       "totalInteractions": "All sessions in the period (all codes including NA).",
       "uniqueVisitors": "COUNT(DISTINCT actor_stable_id) across all sessions.",
       "faqResolutionRate": "(ACCT + IMP + QNC) ÷ (total − NA) × 100%",
       "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷ (total − NA) × 100%"
+    },
+    "charts": {
+      "reviewCodeCurrent": "Review Code Distribution",
+      "reviewCodePrevious": "Review Code Distribution",
+      "topFaqCategories": "Top FAQ Categories",
+      "topFaqSubtitle": "Top 5 categories by enquiry volume, current vs previous"
+    },
+    "sections": {
+      "codeComparison": "Code Breakdown Comparison",
+      "codeComparisonSubtitle": "Current vs previous period by review code",
+      "top5Faq": "Top 5 FAQ Categories",
+      "top5FaqTooltip": "Top 5 FAQ categories ranked by enquiry count in the current period",
+      "operationalGuidance": "Operational Guidance"
+    },
+    "guidance": {
+      "outcomeQuality": "Outcome Quality:",
+      "outcomeQualityDetail": "ACCT, IMP, and QNC are positive outcomes. A high resolution rate indicates strong FAQ coverage.",
+      "focusAreas": "Focus Areas:",
+      "focusAreasDetail": "ERR, NEW, CUST, and OOS drive escalation. Review these categories for knowledge base gaps.",
+      "naShare": "NA Traffic:",
+      "naShareDetail": "NA sessions are excluded from rate calculations. High NA share may indicate unclassified or non-FAQ traffic."
+    },
+    "error": {
+      "title": "Failed to load report",
+      "loading": "Loading report data..."
     }
   },
   "Ohla": {
