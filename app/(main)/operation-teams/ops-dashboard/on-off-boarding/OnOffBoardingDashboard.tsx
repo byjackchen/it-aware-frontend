@@ -1,0 +1,803 @@
+'use client';
+
+/**
+ * On/Offboarding Task Dashboard — New Hire and Offboarding request flow.
+ *
+ * Layout & patterns mirror CatalogDashboard:
+ *   - Page-level header + refresh button
+ *   - TopFilterBar (Region/Country/Location in headerSlot, Opened date
+ *     range in the slicer grid, consolidated Clear-All)
+ *   - KPI row, donut row, department bar + volume trend
+ *
+ * The one divergence: a two-tab switcher between **Onboarding** and
+ * **Offboarding** sits between the filter bar and the scrollable body.
+ * Each tab narrows the base request pool via a keyword match on the
+ * `item` column (verified against the Postgres dump):
+ *   - Onboarding → `item ILIKE '%New Hire%'`   (3051 rows in dev)
+ *   - Offboarding → `item ILIKE '%Offboard%'`   (10 rows in dev)
+ *
+ * Keyword matching happens client-side over the same request fetch
+ * Catalog uses (limit=1000 slim). No new endpoint is required.
+ */
+
+import { useCallback, useMemo, useState } from 'react';
+import { UserPlus, UserMinus, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from '@/lib/contexts/theme-context';
+import { useRequests } from '@/lib/hooks/useOpsDashboard';
+import type { TicketRow } from '@/lib/api/ops_dashboard';
+import {
+    cumulativeTrendByMonth,
+    daysSinceUpdated,
+    formatMoM,
+    groupBy,
+    isActiveState,
+    momActiveSnapshot,
+    momByDate,
+    monthsFromRange,
+    type DeltaInfo,
+} from '@/lib/ops_dashboard/aggregate';
+import { KpiCard } from '@/components/ops_dashboard/KpiCard';
+import { DonutCard } from '@/components/ops_dashboard/DonutCard';
+import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
+import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
+import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTableCard';
+import {
+    TopFilterBar,
+    type FilterState,
+    type SlicerConfig,
+} from '@/components/ops_dashboard/filters/TopFilterBar';
+import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
+import type { Region } from '@/components/ops_dashboard/RegionMap';
+import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+
+/**
+ * Two flow kinds exposed as tabs. Values serve as both the tab key and
+ * the classifier label surfaced in analytics.
+ */
+type FlowKind = 'onboarding' | 'offboarding';
+
+/**
+ * Per-tab visual palette + classifier predicate.
+ *
+ * Keyword match is case-insensitive and walks `title` (the SN-side
+ * "Short Description"), `item`, and `request_item`. Patterns are
+ * deliberately tight so the cohort only contains the two SN-defined
+ * offboarding request types — rows whose title merely mentions
+ * "offboard" or sit inside an "*onoffboarding*" mailing list group
+ * are intentionally excluded; they're DL-management work, not
+ * offboarding flow.
+ *
+ * Color scheme: shared multi-hue palette across both flows so each
+ * donut's 8 slices stay visually distinct (the previous single-hue
+ * green / amber palettes blurred together at chart size). Mirrors the
+ * mixed-hue ``DONUT_PALETTE`` already used by TicketsPanel. Only the
+ * accent (KPI delta arrow / chart line color) varies per flow as a
+ * subtle in/out cue.
+ */
+const SHARED_FLOW_PALETTE: string[] = [
+    '#3b82f6',
+    '#22c55e',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#06b6d4',
+    '#ec4899',
+    '#94a3b8',
+];
+
+const FLOW_META: Record<FlowKind, { keywords: string[]; palette: string[]; accent: string }> = {
+    onboarding: {
+        // Tight — only "New Hire Equipment" titles (Provision / Check
+        // Inventory / Ship-Deliver / etc. all carry that phrase). Rows
+        // that mention "new hire" tangentially — DL adds, FAQ requests,
+        // intern license requests — are excluded so the cohort matches
+        // actual equipment-onboarding work.
+        keywords: ['new hire equipment'],
+        palette: SHARED_FLOW_PALETTE,
+        accent: '#22c55e', // green — "welcome / in" cue for the trend line.
+    },
+    offboarding: {
+        // Tight match — the two SN-defined offboarding request titles.
+        keywords: ['offboarding: retrieve it equipment', 'offboarding: revoke software'],
+        palette: SHARED_FLOW_PALETTE,
+        accent: '#f97316', // amber — "exit / out" cue for the trend line.
+    },
+};
+
+/** Substring-match against `title` / `item` / `request_item` to classify a row. */
+function matchesFlow(row: TicketRow, flow: FlowKind): boolean {
+    const text = `${row.title ?? ''} ${row.item ?? ''} ${row.request_item ?? ''}`.toLowerCase();
+    return FLOW_META[flow].keywords.some((kw) => text.includes(kw));
+}
+
+/**
+ * Extract the employee identifier from a ticket title.
+ *
+ * SN's onboarding / offboarding short descriptions follow two patterns:
+ *   - Onboarding: "Provision New Hire Equipment For {Full Name}"
+ *                 "Check Inventory New Hire Equipment For {Full Name}"
+ *   - Offboarding: "Offboarding: Retrieve IT Equipment on YYYY-MM-DD for {user_id}"
+ *                  "Offboarding: Revoke Software on YYYY-MM-DD for {user_id}"
+ *
+ * The captured token is normalised (trim + lowercase) so casing
+ * differences across rows ("Adam Swirsley" vs "adam swirsley") collapse
+ * onto the same employee. Returns null when no `(F|f)or` separator
+ * exists — the caller then skips the row in the distinct count.
+ */
+function extractEmployeeKey(title: string | null | undefined): string | null {
+    if (!title) return null;
+    // Match "for " or "For " followed by everything up to end of string.
+    const m = title.match(/\b[Ff]or\s+(.+?)\s*$/);
+    if (!m) return null;
+    const raw = m[1].trim();
+    if (!raw) return null;
+    return raw.toLowerCase();
+}
+
+function locationForFilter(row: TicketRow): string | null {
+    return row.actor?.location?.descriptor?.trim() || null;
+}
+
+function departmentOf(row: TicketRow): string {
+    // Offboarding rows carry no `request.department` — that column is
+    // null on every offboarding ticket in the dump. The actor's
+    // organization descriptor *is* set, but it's the slash-joined full
+    // path (`Overseas Functional System/Overseas IT Management Department/
+    // Americas IT Center`). Picking the leaf segment surfaces the
+    // service team / IT centre the ticket lives in, which is what
+    // "by department" means on this page. Falls through to:
+    //   1. ticket-anchored department  (catalog/incidents fill this)
+    //   2. actor-org leaf segment      (used by offboarding)
+    //   3. actor-org full descriptor   (defensive)
+    //   4. "Unknown"
+    const ticketDept = row.department?.trim();
+    if (ticketDept) return ticketDept;
+    const orgFull = row.actor?.organization?.descriptor?.trim();
+    if (orgFull) {
+        const segments = orgFull.split('/').map((s) => s.trim()).filter(Boolean);
+        if (segments.length > 0) return segments[segments.length - 1];
+        return orgFull;
+    }
+    return 'Unknown';
+}
+
+function openedDateStr(row: TicketRow): string {
+    return (row.created_at ?? '').slice(0, 10);
+}
+
+function trimLabel(label: string, max = 22): string {
+    return label.length > max ? `${label.slice(0, max)}…` : label;
+}
+
+export function OnOffBoardingDashboard() {
+    const t = useTranslations('OpsDashboard');
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+    const deltaLabel = (d: DeltaInfo) =>
+        d.trend === 'flat'
+            ? t('kpis.momFlat')
+            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
+
+    // Default 12-month lookback. On/Offboarding is lower-volume than
+    // Catalog (and Offboarding tails off especially), so a 90-day window
+    // often renders Offboarding empty even when historical data exists.
+    // 12 months keeps the page informative without exploding fetch size.
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so all MONITORING dashboards open on the
+    // same month-to-date window — easier to compare numbers
+    // across pages and matches how the team reports MTD.
+    const [defaultFromIso] = useState<string>(() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}-01`;
+    });
+    const [now] = useState<number>(() => Date.now());
+
+    // Active tab — persists via localStorage so the page remembers the
+    // user's preferred flow across reloads.
+    const [flow, setFlowState] = useState<FlowKind>(() => {
+        if (typeof window === 'undefined') return 'onboarding';
+        try {
+            const v = window.localStorage.getItem('ops-dashboard:onoffboarding:flow');
+            if (v === 'offboarding' || v === 'onboarding') return v;
+        } catch {
+            /* ignore */
+        }
+        return 'onboarding';
+    });
+    const setFlow = useCallback((next: FlowKind) => {
+        setFlowState(next);
+        try {
+            window.localStorage.setItem('ops-dashboard:onoffboarding:flow', next);
+        } catch {
+            /* ignore */
+        }
+    }, []);
+
+    const [filters, setFilters] = useState<FilterState>({
+        assigned_group: [],
+        state: [],
+        created_at_from: { from: defaultFromIso, to: null },
+        created_at_to: { from: defaultFromIso, to: null },
+    });
+
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
+
+    const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? {
+        from: null,
+        to: null,
+    };
+    const { data, loading, error, refetch } = useRequests(
+        {
+            limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const partial = data?.partial === true;
+
+    // Narrow to the active flow using client-side keyword classification.
+    const flowRows: TicketRow[] = useMemo(() => {
+        const rows = data?.items ?? [];
+        return rows.filter((r) => matchesFlow(r, flow));
+    }, [data, flow]);
+
+    // Row counts for the tab badges — derived from the ENTIRE fetched
+    // window, not the filtered subset, so switching filters doesn't
+    // nudge the tab counts and confuse users.
+    const allRows = data?.items ?? [];
+    const onboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'onboarding')).length, [allRows]);
+    const offboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'offboarding')).length, [allRows]);
+
+    const slicers: SlicerConfig[] = useMemo(
+        () => [{ type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') }],
+        [t],
+    );
+
+    const filtered = useMemo(() => {
+        const groupSel = (filters.assigned_group as string[]) ?? [];
+        const stateSel = (filters.state as string[]) ?? [];
+        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? {
+            from: null,
+            to: null,
+        };
+        return flowRows.filter((r) => {
+            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter))
+                return false;
+            if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
+            if (stateSel.length && !stateSel.includes(r.state)) return false;
+            if (range.from || range.to) {
+                const opened = openedDateStr(r);
+                if (range.from && opened && opened < range.from) return false;
+                if (range.to && opened && opened > range.to) return false;
+            }
+            return true;
+        });
+    }, [flowRows, filters, selectedRegions, selectedCountries, selectedLocations]);
+
+    const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
+
+    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => r.created_at, now)), [filtered, now]);
+    const activeMoM = useMemo(() => formatMoM(momActiveSnapshot(filtered, now)), [filtered, now]);
+
+    const kpis = useMemo(() => {
+        const total = filtered.length;
+        const active = activeRows.length;
+        const resolved = total - active;
+        const resolvedRate = total > 0 ? `${((resolved / total) * 100).toFixed(1)}%` : '—';
+        let aging7d = 0;
+        let aging30d = 0;
+        for (const r of activeRows) {
+            const days = daysSinceUpdated(r, now);
+            if (days > 7) aging7d += 1;
+            if (days > 30) aging30d += 1;
+        }
+        // Distinct employee count — one employee can have multiple
+        // onboarding / offboarding tickets (e.g. "Provision" + "Check
+        // Inventory" + "Ship" all reference the same New Hire).
+        // Extracting the trailing "for {name|id}" token and dedup'ing
+        // gives the actual headcount the page header implies.
+        const employeeSet = new Set<string>();
+        for (const r of filtered) {
+            const key = extractEmployeeKey(r.title);
+            if (key) employeeSet.add(key);
+        }
+        const totalEmployees = employeeSet.size;
+        return { total, totalEmployees, active, resolved, resolvedRate, aging7d, aging30d };
+    }, [filtered, activeRows, now]);
+
+    const stateDonut = useMemo(
+        () => groupBy(filtered, (r) => r.state).map((g) => ({ name: g.key, value: g.count })),
+        [filtered],
+    );
+    // By Group / By Department both run over `filtered` (not just
+    // active rows) so closed onboarding/offboarding tickets still
+    // surface in the breakdown — these flows finish quickly so the
+    // active subset is often empty even when the page has hundreds of
+    // resolved rows worth showing.
+    const groupDonut = useMemo(() => {
+        const ranked = groupBy(filtered, (r) => r.assigned_group).slice(0, 8);
+        return ranked.map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+    const departmentBar = useMemo(() => {
+        const ranked = groupBy(filtered, departmentOf).slice(0, 10);
+        return ranked.map((g) => ({ key: trimLabel(g.key), count: g.count }));
+    }, [filtered]);
+
+    const trendMonths = useMemo(
+        () => monthsFromRange(dateRange.from, dateRange.to, now),
+        [dateRange.from, dateRange.to, now],
+    );
+    const trend = useMemo(
+        () =>
+            cumulativeTrendByMonth(
+                filtered,
+                (r) => r.source_closed_at ?? (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null),
+                trendMonths,
+                now,
+            ),
+        [filtered, trendMonths, now],
+    );
+
+    const onGroupSliceClick = useCallback(
+        (slice: { name: string }) => {
+            const cur = (filters.assigned_group as string[]) ?? [];
+            const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
+            setFilters({ ...filters, assigned_group: next });
+        },
+        [filters],
+    );
+    const onGroupLegendToggle = useCallback((name: string) => onGroupSliceClick({ name }), [onGroupSliceClick]);
+    const onStateSliceClick = useCallback(
+        (slice: { name: string }) => {
+            const cur = (filters.state as string[]) ?? [];
+            const next = cur.includes(slice.name) ? cur.filter((x) => x !== slice.name) : [...cur, slice.name];
+            setFilters({ ...filters, state: next });
+        },
+        [filters],
+    );
+    const onStateLegendToggle = useCallback((name: string) => onStateSliceClick({ name }), [onStateSliceClick]);
+    const selectedAssignedGroups = (filters.assigned_group as string[]) ?? [];
+    const selectedStates = (filters.state as string[]) ?? [];
+
+    // Ticket-details table columns (Row 4). Kept deliberately lean —
+    // request dumps carry dozens of columns; we surface the eight the
+    // operations team triages on.
+    const tableColumns: Column<TicketRow>[] = useMemo(
+        () => [
+            {
+                key: 'stable_id',
+                label: t('charts.colTicketId'),
+                width: 'w-28',
+                render: (r) => r.stable_id || '—',
+            },
+            {
+                key: 'item',
+                label: t('charts.colItem'),
+                // Prefer SN's short description (`title`) when present —
+                // that's where "Offboarding: Retrieve IT Equipment on
+                // 2025-09-30 for v_anavya"-style copy lives. Fall back
+                // to the SN "item" classifier ("Submit a Service Request",
+                // "Offboarding IT Request Form", …) only when title is
+                // empty so the column always carries the most specific
+                // signal available.
+                render: (r) => r.title || r.item || r.request_item || '—',
+            },
+            {
+                key: 'caller_name',
+                label: t('charts.colCaller'),
+                width: 'w-40',
+                render: (r) => r.caller_name ?? r.actor?.fullname ?? '—',
+            },
+            {
+                key: 'location',
+                label: t('charts.colLocation'),
+                width: 'w-48',
+                render: (r) => r.actor?.location?.descriptor ?? r.location ?? '—',
+            },
+            {
+                key: 'state',
+                label: t('charts.colState'),
+                width: 'w-32',
+            },
+            {
+                key: 'assigned_group',
+                label: t('charts.colAssignedGroup'),
+                width: 'w-40',
+                render: (r) => r.assigned_group || '—',
+            },
+            {
+                key: 'assigned_to_name',
+                label: t('charts.colAssignee'),
+                width: 'w-40',
+                render: (r) => r.assigned_to_name ?? '—',
+            },
+            {
+                key: 'created_at',
+                label: t('charts.colOpened'),
+                width: 'w-32',
+                render: (r) => (r.created_at ?? '').slice(0, 10) || '—',
+                // Sort on parsed timestamp so newer/older ordering
+                // doesn't depend on the truncated YYYY-MM-DD string.
+                sortValue: (r) => Date.parse(r.created_at ?? '') || 0,
+            },
+        ],
+        [t],
+    );
+
+    const textMain = isLight ? 'text-slate-800' : 'text-white';
+    const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
+
+    const hasFilters = (Object.entries(filters) as [string, unknown][]).some(([, v]) => {
+        if (Array.isArray(v)) return v.length > 0;
+        const range = v as { from: string | null; to: string | null } | undefined;
+        return !!(range?.from || range?.to);
+    });
+
+    const extraActiveFilterCount = useMemo(() => {
+        let n = 0;
+        const grp = filters.assigned_group;
+        if (Array.isArray(grp)) n += grp.length;
+        const st = filters.state;
+        if (Array.isArray(st)) n += st.length;
+        const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
+        if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
+        return n;
+    }, [filters, defaultFromIso]);
+
+    function resetAllParentFilters() {
+        setFilters({
+            assigned_group: [],
+            state: [],
+            created_at_from: { from: defaultFromIso, to: null },
+            created_at_to: { from: defaultFromIso, to: null },
+        });
+    }
+
+    const totalActiveFilterCount =
+        selectedRegions.length + selectedCountries.length + selectedLocations.length + extraActiveFilterCount;
+    const hasAnyActiveFilter = totalActiveFilterCount > 0;
+    function clearEveryFilter() {
+        setSelectedRegions([]);
+        setSelectedCountries([]);
+        setSelectedLocations([]);
+        resetAllParentFilters();
+    }
+
+    const pageTitle = t('pages.onOffBoardingTitle');
+    const pageSubtitle =
+        flow === 'onboarding' ? t('pages.onboardingSubtitle') : t('pages.offboardingSubtitle');
+    const palette = FLOW_META[flow].palette;
+    const accent = FLOW_META[flow].accent;
+    const HeaderIcon = flow === 'onboarding' ? UserPlus : UserMinus;
+
+    return (
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            flow === 'onboarding'
+                                ? isLight
+                                    ? 'bg-emerald-100 text-emerald-600'
+                                    : 'bg-emerald-500/20 text-emerald-400'
+                                : isLight
+                                  ? 'bg-orange-100 text-orange-600'
+                                  : 'bg-orange-500/20 text-orange-400'
+                        }`}
+                    >
+                        <HeaderIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{pageTitle}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{pageSubtitle}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredOnOffBoarding', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: flowRows.length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${
+                            isLight
+                                ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
+                        }`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Tab switcher */}
+            <div
+                className={`flex items-center gap-1 p-1 rounded-lg border shrink-0 w-fit ${
+                    isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
+                }`}
+                role="tablist"
+            >
+                {(['onboarding', 'offboarding'] as const).map((kind) => {
+                    const active = flow === kind;
+                    const label = kind === 'onboarding' ? t('pages.tabOnboarding') : t('pages.tabOffboarding');
+                    const count = kind === 'onboarding' ? onboardingCount : offboardingCount;
+                    const Icon = kind === 'onboarding' ? UserPlus : UserMinus;
+                    return (
+                        <button
+                            key={kind}
+                            role="tab"
+                            aria-selected={active}
+                            onClick={() => setFlow(kind)}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                active
+                                    ? isLight
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-white text-slate-900'
+                                    : isLight
+                                      ? 'text-slate-600 hover:bg-slate-100'
+                                      : 'text-gray-300 hover:bg-white/10'
+                            }`}
+                        >
+                            <Icon className="w-4 h-4" />
+                            <span>{label}</span>
+                            <span
+                                className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                                    active
+                                        ? isLight
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-slate-900/20 text-slate-900'
+                                        : isLight
+                                          ? 'bg-slate-100 text-slate-600'
+                                          : 'bg-white/10 text-gray-400'
+                                }`}
+                            >
+                                {count.toLocaleString()}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Filter panel */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filters}
+                onChange={setFilters}
+                storageKey="ops-dashboard:onoffboarding:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+                hideHeaderClear
+                headerActions={
+                    <button
+                        type="button"
+                        onClick={hasAnyActiveFilter ? clearEveryFilter : undefined}
+                        disabled={!hasAnyActiveFilter}
+                        className={`text-xs rounded-lg px-3 py-1 border transition-colors ${
+                            hasAnyActiveFilter
+                                ? isLight
+                                    ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 cursor-pointer'
+                                    : 'bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25 cursor-pointer'
+                                : isLight
+                                  ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {t('filters.clearAllFilters')}
+                    </button>
+                }
+                headerSlot={
+                    <RegionCountryFilter
+                        rows={flowRows}
+                        getLocation={locationForFilter}
+                        selectedRegions={selectedRegions}
+                        selectedCountries={selectedCountries}
+                        selectedLocations={selectedLocations}
+                        onRegionsChange={setSelectedRegions}
+                        onCountriesChange={setSelectedCountries}
+                        onLocationsChange={setSelectedLocations}
+                        extraActiveCount={extraActiveFilterCount}
+                        onClearAll={resetAllParentFilters}
+                        showClearButton={false}
+                    />
+                }
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
+                {partial && (
+                    <div
+                        className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${
+                            isLight
+                                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                        }`}
+                    >
+                        <span>{t('empty.partialResult')}</span>
+                        <button
+                            onClick={() => void refetch()}
+                            className={`ml-auto px-2 py-0.5 rounded text-[11px] font-medium ${
+                                isLight
+                                    ? 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                                    : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200'
+                            }`}
+                        >
+                            {t('empty.retry')}
+                        </button>
+                    </div>
+                )}
+                {error && !partial && (
+                    <div
+                        className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${
+                            isLight
+                                ? 'border-red-200 bg-red-50 text-red-700'
+                                : 'border-red-500/30 bg-red-500/10 text-red-300'
+                        }`}
+                    >
+                        <span>{error}</span>
+                        <button
+                            onClick={() => void refetch()}
+                            className={`ml-auto px-2 py-0.5 rounded text-[11px] font-medium ${
+                                isLight
+                                    ? 'bg-red-100 hover:bg-red-200 text-red-800'
+                                    : 'bg-red-500/20 hover:bg-red-500/30 text-red-200'
+                            }`}
+                        >
+                            {t('empty.retry')}
+                        </button>
+                    </div>
+                )}
+
+                {/* Row 1a: headline KPIs — total tickets + distinct
+                    employees (one employee can have multiple tickets,
+                    so the two numbers diverge). */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={
+                            flow === 'onboarding'
+                                ? t('kpis.totalOnboarding')
+                                : t('kpis.totalOffboarding')
+                        }
+                        tooltip={
+                            flow === 'onboarding'
+                                ? t('kpis.totalOnboardingInfo')
+                                : t('kpis.totalOffboardingInfo')
+                        }
+                        value={kpis.total}
+                        icon={HeaderIcon}
+                    />
+                    <KpiCard
+                        label={
+                            flow === 'onboarding'
+                                ? t('kpis.totalOnboardingEmployees')
+                                : t('kpis.totalOffboardingEmployees')
+                        }
+                        tooltip={
+                            flow === 'onboarding'
+                                ? t('kpis.totalOnboardingEmployeesInfo')
+                                : t('kpis.totalOffboardingEmployeesInfo')
+                        }
+                        value={kpis.totalEmployees}
+                    />
+                    <KpiCard
+                        label={t('kpis.active')}
+                        tooltip={t('kpis.activeInfo')}
+                        value={kpis.active}
+                    />
+                    <KpiCard label={t('kpis.resolvedRate')} tooltip={t('kpis.resolvedRateInfo')} value={kpis.resolvedRate} />
+                </div>
+
+                {/* Row 1b: secondary KPIs — resolved volume + aging tier. */}
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                    <KpiCard label={t('kpis.resolved')} tooltip={t('kpis.resolvedInfo')} value={kpis.resolved} />
+                    <KpiCard label={t('kpis.agingGt7d')} tooltip={t('kpis.agingGt7dInfo')} value={kpis.aging7d} />
+                    <KpiCard label={t('kpis.agingGt30d')} tooltip={t('kpis.agingGt30dInfo')} value={kpis.aging30d} />
+                </div>
+
+                {/* Row 2: Donuts */}
+                <div className="grid gap-3 mb-3 grid-cols-2">
+                    <DonutCard
+                        title={t('charts.byStateAll')}
+                        info={t('charts.byStateAllInfo')}
+                        data={stateDonut}
+                        palette={palette}
+                        height={220}
+                        onSliceClick={onStateSliceClick}
+                        selectedSlices={selectedStates}
+                        onLegendToggle={onStateLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <DonutCard
+                        title={
+                            flow === 'onboarding'
+                                ? t('charts.activeByGroupOnboarding')
+                                : t('charts.activeByGroupOffboarding')
+                        }
+                        subtitle={t('charts.activeByGroupSubtitle')}
+                        info={
+                            flow === 'onboarding'
+                                ? t('charts.activeByGroupOnboardingInfo')
+                                : t('charts.activeByGroupOffboardingInfo')
+                        }
+                        data={groupDonut}
+                        palette={palette}
+                        height={220}
+                        onSliceClick={onGroupSliceClick}
+                        selectedSlices={selectedAssignedGroups}
+                        onLegendToggle={onGroupLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 3: Department bar + trend */}
+                <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
+                    <GroupBarCard
+                        title={t('charts.byDepartment')}
+                        info={t('charts.byDepartmentInfo')}
+                        data={departmentBar}
+                        topN={10}
+                        height={260}
+                        // Multi-hue rank palette so the 10 bars stay
+                        // visually distinct (was a single-colour wash).
+                        color={SHARED_FLOW_PALETTE}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <TrendLineCard
+                        title={t('charts.volumeTrend')}
+                        subtitle={t('charts.cumulativeOpenedClosed')}
+                        info={t('charts.volumeTrendInfo')}
+                        data={trend}
+                        height={260}
+                        series={[
+                            // Per-flow accent colour so onboarding =
+                            // green / offboarding = amber for opened,
+                            // and a contrasting blue for closed so the
+                            // two lines never blur together.
+                            { key: 'opened', label: 'Opened (cumulative)', color: accent },
+                            { key: 'closed', label: 'Closed (cumulative)', color: '#3b82f6' },
+                        ]}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 4: Ticket details table */}
+                <div className="mb-3">
+                    <DataTableCard
+                        title={t('charts.ticketDetails')}
+                        info={t('charts.ticketDetailsInfo')}
+                        subtitle={t('charts.ticketDetailsSubtitle', {
+                            shown: Math.min(filtered.length, 500).toLocaleString(),
+                            total: filtered.length.toLocaleString(),
+                        })}
+                        rows={filtered}
+                        columns={tableColumns}
+                        maxRows={500}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
