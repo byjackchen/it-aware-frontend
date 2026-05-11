@@ -1831,6 +1831,7 @@ export interface MonthStats {
     ok_rate: number;
     imp_rate: number;
     human_escalation_rate: number;
+    wecom_incident_count: number;
 }
 
 export interface FAQEnquiryItem {

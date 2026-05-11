@@ -2134,7 +2134,7 @@
       "totalInteractions": "周期内所有会话总数（含所有编码，包括 NA）。",
       "uniqueVisitors": "按 actor_stable_id 去重的独立用户数。",
       "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
-      "humanEscalationRate": "(ERR + NEW + CUST + OOS) ÷（总数 − NA）× 100%"
+      "humanEscalationRate": "WeCom 渠道开单数 ÷（总互动量 − NA）× 100%"
     },
     "charts": {
       "reviewCodeCurrent": "审核编码分布",

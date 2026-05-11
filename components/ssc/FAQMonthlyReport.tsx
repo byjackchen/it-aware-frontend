@@ -116,7 +116,7 @@ function buildHighlights(report: InteractionFAQReport): Array<{ title: string; d
         },
         {
             title: escalationDiff <= 0 ? 'Human handoff contained' : 'Handoff pressure rising',
-            detail: `${pct(current.human_escalation_rate)} of sessions reached a human, ${escalationDiff >= 0 ? '+' : ''}${escalationDiff.toFixed(1)} pts vs previous.`,
+            detail: `${current.wecom_incident_count} WeCom incidents (${pct(current.human_escalation_rate)} of FAQ-relevant sessions), ${escalationDiff >= 0 ? '+' : ''}${escalationDiff.toFixed(1)} pts vs previous.`,
             tone: escalationDiff <= 0 ? 'good' : 'warn',
         },
         {
