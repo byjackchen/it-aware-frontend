@@ -94,7 +94,7 @@ export function classifyRequestType(row: TicketRow): RequestType {
  * ``sys_updated_on`` and bumps only when the upstream record actually
  * changes. Fall back to ``updated_at`` (the DB-row lifecycle timestamp)
  * only when ``source_updated_at`` is null — a pre-backfill row or a
- * non-SN activity source (inquiry / interaction from chat).
+ * non-SN activity source (interaction from chat).
  *
  * Never aging off ``updated_at`` alone: after Phase 2 that field bumps
  * on every DB mutation (``onupdate=func.now()``) including internal
