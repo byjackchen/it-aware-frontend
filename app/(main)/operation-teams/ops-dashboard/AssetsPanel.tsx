@@ -108,7 +108,7 @@ export function AssetsPanel({
                     linkHref="/operation-teams/ops-dashboard/assets"
                     linkLabel={t('links.openAssetHub')}
                 
-                        tooltip={t('kpis.totalAssets')}
+                        tooltip={t('kpis.totalAssetsInfo')}
     
     />
                 <KpiCard
@@ -124,7 +124,7 @@ export function AssetsPanel({
                     linkHref="/operation-teams/ops-dashboard/in-stock-assets"
                     linkLabel={t('links.openInStockAssets')}
                 
-                        tooltip={t('kpis.inStock')}
+                        tooltip={t('kpis.inStockInfo')}
     />
                 <KpiCard
                     label={t('kpis.pendingReturn')}
@@ -133,7 +133,7 @@ export function AssetsPanel({
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
                 
-                        tooltip={t('kpis.pendingReturn')}
+                        tooltip={t('kpis.pendingReturnInfo')}
     />
                 <KpiCard
                     label={t('kpis.pendingRepair')}
@@ -142,7 +142,7 @@ export function AssetsPanel({
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
                 
-                        tooltip={t('kpis.pendingRepair')}
+                        tooltip={t('kpis.pendingRepairInfo')}
     />
                 <KpiCard
                     label={t('kpis.unconfirmed')}
@@ -151,23 +151,23 @@ export function AssetsPanel({
                     linkHref="/operation-teams/ops-dashboard/pending-assets"
                     linkLabel={t('links.openPendingAssets')}
                 
-                        tooltip={t('kpis.unconfirmed')}
+                        tooltip={t('kpis.unconfirmedInfo')}
     />
                 <KpiCard
                     label={t('kpis.zeroResidual')}
                     value={kpis.zeroResidual}
                     icon={DollarSign}
-                    linkHref="/operation-teams/ops-dashboard/assets"
-                    linkLabel={t('links.openAssetHub')}
-                
-                        tooltip={t('kpis.zeroResidual')}
-    />
+                    linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                    linkLabel={t('links.openZeroResidualAssets')}
+                    tooltip={t('kpis.zeroResidualInfo')}
+                />
             </div>
 
             {/* Charts row 1 — three donuts */}
             <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                 <DonutCard
                     title={t('charts.inStockLocation')}
+                    info={t('charts.inStockLocationInfo')}
                     data={inStockLocationSlices}
                     palette={ASSET_PALETTE}
                     height={180}
@@ -179,6 +179,7 @@ export function AssetsPanel({
                 <DonutCard
                     title={t('charts.procuredBy')}
                     subtitle={t('charts.procuredBySubtitle')}
+                    info={t('charts.procuredByInfo')}
                     data={procuredBySlices}
                     palette={ASSET_PALETTE}
                     height={180}
@@ -190,6 +191,7 @@ export function AssetsPanel({
                 <DonutCard
                     title={t('charts.supportGroup')}
                     subtitle={t('charts.supportGroupSubtitle')}
+                    info={t('charts.supportGroupInfo')}
                     data={supportGroupSlices}
                     palette={ASSET_PALETTE}
                     height={180}

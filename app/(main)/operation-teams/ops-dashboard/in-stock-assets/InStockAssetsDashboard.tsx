@@ -3,24 +3,51 @@
 /**
  * In-Stock Assets (Page 1.3.2) — ports `temp_ref/.../in-stock-assets/InStockAssetsPage.tsx`.
  *
- * Base filter: model_category ∈ DASHBOARD_ASSET_CATEGORIES AND
+ * Base filter: model_category whitelisted via `isInScopeAsset` AND
  * `isInStock(row)`. Sidebar slicers pick among the surviving
  * categories + stockrooms distinct values.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { PackageCheck, DollarSign, Calendar, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useHardwares } from '@/lib/hooks/useOpsDashboard';
 import type { HardwareRow } from '@/lib/api/ops_dashboard';
-import { groupBy, inferDeviceType, isInStock } from '@/lib/ops_dashboard/aggregate';
+import { groupBy, inferDeviceType, isInScopeAsset, isInStock, modelFamily } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
+import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { countryToRegion, extractCountry, normalizeRegion } from '@/lib/ops_dashboard/region';
 
-const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
+/**
+ * Support-group classifier — same region-fallback chain Asset Hub
+ * uses so the shared filter speaks a common vocabulary across every
+ * asset-oriented dashboard.
+ */
+function supportGroupOf(row: HardwareRow): string {
+    const r =
+        normalizeRegion(row.office_region) ??
+        normalizeRegion(row.region) ??
+        normalizeRegion(row.region_code) ??
+        normalizeRegion(row.location) ??
+        countryToRegion(extractCountry(row.location)) ??
+        countryToRegion(row.stock_room);
+    return r ? `${r} OIT Support` : 'Unassigned';
+}
+
+/**
+ * Procured-by classifier — mirrors Asset Hub: prefer explicit
+ * ``asset_owner`` (procurement entity — OIT / Studio / …) because the
+ * SN ``company`` column is the legal-entity buyer, not the same concept.
+ */
+function procuredByOf(row: HardwareRow): string {
+    return row.asset_owner?.trim() || 'Unknown';
+}
+
 const DONUT_PALETTE = ['#118DFF', '#0B72D7', '#098BF5', '#54B5FB', '#71C0A7', '#57B956', '#478F48', '#326633'];
 const PAGE_SIZE = 100;
 
@@ -51,8 +78,21 @@ function residualAsNumber(v: string | number | null): number {
     return Number.isFinite(n) ? n : 0;
 }
 
-function ageMonths(createdAt: string, now: number = Date.now()): number {
-    const t = Date.parse(createdAt);
+/**
+ * Approximate hardware age in months from the asset's true
+ * procurement/creation timestamp.
+ *
+ * Source priority:
+ *   1. erp_created_date  — SN/ERP-side asset record creation
+ *   2. first_assigned_date — first time it was given to a user
+ *   3. created_at        — our DB sync time (almost always recent;
+ *                          previous implementation used this alone
+ *                          and every asset looked < 1 month old)
+ */
+function ageMonths(row: HardwareRow, now: number = Date.now()): number {
+    const candidate = row.erp_created_date ?? row.first_assigned_date ?? row.created_at;
+    if (!candidate) return 0;
+    const t = Date.parse(candidate);
     if (!Number.isFinite(t)) return 0;
     const diffMs = now - t;
     if (diffMs <= 0) return 0;
@@ -91,20 +131,86 @@ export function InStockAssetsDashboard() {
         stock_room: [],
         device_type: [],
     });
+
+    // Support Group / Procured By / Department are SHARED across
+    // every asset-oriented dashboard via useOpsAssetFilter — picking
+    // AMER OIT Support on any asset page carries to the others.
+    const {
+        filter: assetFilter,
+        setSupportGroups,
+        setProcuredBy,
+        setDepartments,
+    } = useOpsAssetFilter();
+
+    const filterStateForBar: FilterState = useMemo(
+        () => ({
+            ...filters,
+            support_group: assetFilter.supportGroups,
+            procured_by: assetFilter.procuredBy,
+            department: assetFilter.departments,
+        }),
+        [filters, assetFilter],
+    );
+    const onFilterStateChange = useCallback(
+        (next: FilterState) => {
+            const supportGroups = (next.support_group as string[]) ?? [];
+            const procuredBy = (next.procured_by as string[]) ?? [];
+            const departments = (next.department as string[]) ?? [];
+            if (JSON.stringify(supportGroups) !== JSON.stringify(assetFilter.supportGroups)) {
+                setSupportGroups(supportGroups);
+            }
+            if (JSON.stringify(procuredBy) !== JSON.stringify(assetFilter.procuredBy)) {
+                setProcuredBy(procuredBy);
+            }
+            if (JSON.stringify(departments) !== JSON.stringify(assetFilter.departments)) {
+                setDepartments(departments);
+            }
+            const localOnly: FilterState = { ...next };
+            delete localOnly.support_group;
+            delete localOnly.procured_by;
+            delete localOnly.department;
+            setFilters(localOnly);
+        },
+        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
+    );
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     // Capture "now" at mount so age math is stable across re-renders.
     const [now] = useState<number>(() => Date.now());
 
     // Base set for this page: dashboard categories AND in-stock.
     const base = useMemo(
-        () => rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category) && isInStock(r)),
+        () => rows.filter((r) => isInScopeAsset(r) && isInStock(r)),
         [rows],
     );
 
     const slicers: SlicerConfig[] = useMemo(() => {
         const categories = groupBy(base, (r) => r.model_category).map((g) => g.key);
         const stockrooms = groupBy(base, (r) => r.stock_room).map((g) => g.key);
+        const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
+        const procured = groupBy(base, procuredByOf).map((g) => g.key);
+        const departments = groupBy(base, (r) => r.department ?? 'Unknown').map((g) => g.key);
         return [
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
             { type: 'multi', param: 'model_category', label: t('filters.modelCategory'), options: categories },
             {
                 type: 'multi',
@@ -120,18 +226,24 @@ export function InStockAssetsDashboard() {
         const catSel = (filters.model_category as string[]) ?? [];
         const stockSel = (filters.stock_room as string[]) ?? [];
         const deviceSel = (filters.device_type as string[]) ?? [];
+        const supportSel = assetFilter.supportGroups;
+        const procuredSel = assetFilter.procuredBy;
+        const deptSel = assetFilter.departments;
         return base.filter((r) => {
             if (catSel.length && (!r.model_category || !catSel.includes(r.model_category))) return false;
             if (stockSel.length && !stockSel.includes(r.stock_room ?? 'Unknown')) return false;
             if (deviceSel.length && !deviceSel.includes(inferDeviceType(r.model_name))) return false;
+            if (supportSel.length && !supportSel.includes(supportGroupOf(r))) return false;
+            if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
+            if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
             return true;
         });
-    }, [base, filters]);
+    }, [base, filters, assetFilter]);
 
     // Enrich once so both KPIs and the table can consume the same derived fields.
     const enriched: TableRow[] = useMemo(() => {
         return filtered.map((r) => {
-            const months = ageMonths(r.created_at, now);
+            const months = ageMonths(r, now);
             const enrichedRow: TableRow = {
                 ...r,
                 _residualNumber: residualAsNumber(r.residual_value),
@@ -175,6 +287,16 @@ export function InStockAssetsDashboard() {
         const counts = { Mac: 0, Windows: 0, Other: 0 };
         for (const r of filtered) counts[inferDeviceType(r.model_name)] += 1;
         return (Object.entries(counts) as [string, number][]).map(([name, value]) => ({ name, value }));
+    }, [filtered]);
+
+    // Model-family bar chart — bucket SN model_display_name into
+    // coarse families so the chart shows ~10 bars instead of
+    // hundreds of SKUs. See `modelFamily` in aggregate.ts for the
+    // bucketing rules.
+    const modelFamilyBar = useMemo(() => {
+        return groupBy(filtered, (r) => modelFamily(r.model_display_name ?? r.model_name))
+            .slice(0, 12)
+            .map((g) => ({ key: g.key, count: g.count }));
     }, [filtered]);
 
     // Donut click / legend toggle helpers — both feed the same filter
@@ -264,9 +386,9 @@ export function InStockAssetsDashboard() {
             {/* Filters */}
             <TopFilterBar
                 slicers={slicers}
-                value={filters}
+                value={filterStateForBar}
                 onChange={(next) => {
-                    setFilters(next);
+                    onFilterStateChange(next);
                     setPage({ skip: 0, limit: PAGE_SIZE });
                 }}
                 storageKey="ops-dashboard:in-stock-assets:filters"
@@ -281,7 +403,7 @@ export function InStockAssetsDashboard() {
                     label={t('kpis.inStock')}
                     value={kpis.count}
                     icon={PackageCheck}
-                    tooltip={t('kpis.inStock')}
+                    tooltip={t('kpis.inStockInfo')}
                 />
                 <KpiCard
                     label={t('pages.totalResidual')}
@@ -303,6 +425,7 @@ export function InStockAssetsDashboard() {
             <div className="grid grid-cols-3 gap-3 shrink-0">
                 <DonutCard
                     title={t('charts.inStockLocation')}
+                    info={t('charts.inStockLocationInfo')}
                     data={locationSlices}
                     palette={DONUT_PALETTE}
                     height={220}
@@ -313,6 +436,7 @@ export function InStockAssetsDashboard() {
                 />
                 <DonutCard
                     title={t('charts.byCategory')}
+                    info={t('charts.byCategoryInfo')}
                     data={categorySlices}
                     palette={DONUT_PALETTE}
                     height={220}
@@ -323,12 +447,29 @@ export function InStockAssetsDashboard() {
                 />
                 <DonutCard
                     title={t('charts.deviceType')}
+                    info={t('charts.deviceTypeInfo')}
                     data={deviceTypeSlices}
                     palette={DONUT_PALETTE}
                     height={220}
                     onSliceClick={(s) => toggleFilter('device_type', s.name)}
                     selectedSlices={selectedDeviceTypes}
                     onLegendToggle={(name) => toggleFilter('device_type', name)}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                />
+            </div>
+
+            {/* Model-family bar chart — bucketed view of the table
+                model dimension so the long tail collapses into ~10
+                bars instead of one bar per SKU. */}
+            <div className="mb-3 shrink-0">
+                <GroupBarCard
+                    title={t('charts.byModel')}
+                    subtitle={t('charts.byModelSubtitle')}
+                    info={t('charts.byModelInfo')}
+                    data={modelFamilyBar}
+                    topN={12}
+                    height={240}
+                    color={DONUT_PALETTE}
                     emptyText={loading ? t('empty.loading') : t('empty.noData')}
                 />
             </div>
