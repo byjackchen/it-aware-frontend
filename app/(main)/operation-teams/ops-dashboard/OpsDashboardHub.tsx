@@ -1,41 +1,34 @@
 'use client';
 
 /**
- * Active Monitoring Hub (Page 1.3.10) — combines active-ticket
- * monitoring with the hardware-fleet overview in a single page.
+ * Active Monitoring Hub (Page 1.3.10) — active-ticket monitoring page.
  *
- * Data sources (three concurrent fetches):
+ * Data sources (two concurrent fetches):
  *   - useIncidents({ limit: 1000 })
  *   - useRequests({ limit: 1000 })
- *   - useHardwares({ is_active, limit: 1000 })
  *
  * Incidents + requests are merged into one "tickets" array for
- * aggregation; hardwares are narrowed client-side to
- * DASHBOARD_ASSET_CATEGORIES. The page exposes two sidebar filter
- * groups (tickets + assets) plus chart cross-filters — clicking an
- * assignment-group donut slice toggles that group in the ticket
- * sidebar. Ticket / asset panel markup is factored into
- * TicketsPanel / AssetsPanel to keep this file focused on data
- * wiring.
+ * aggregation. The page exposes ticket sidebar filter groups plus
+ * chart cross-filters — clicking an assignment-group donut slice
+ * toggles that group in the sidebar. TicketsPanel handles all the
+ * KPI and chart rendering.
  */
 
 import { useMemo, useState } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { useHardwares, useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
-import type { HardwareRow, TicketRow } from '@/lib/api/ops_dashboard';
+import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
+import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
+    ACTIVE_STATES,
     classifyRequestType,
     daysSinceUpdated,
     formatMoM,
     groupBy,
-    inferDeviceType,
     isActiveState,
-    isInStock,
     momActiveSnapshot,
     monthsFromRange,
-    summarizeAssets,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
@@ -46,73 +39,39 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import {
     countryToRegion,
-    extractCountry,
     matchesRegionCountry,
     normalizeRegion,
 } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TicketsPanel, type TicketKpiDeltas, type TicketKpis } from './TicketsPanel';
-import { AssetsPanel, type SupportGroupMatrixRow } from './AssetsPanel';
-
-const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || 'Unknown';
 }
 
-/** Country/location string used by RegionCountryFilter — null when unresolved. */
 function locationForFilter(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
 
-/**
- * Asset-side equivalent of locationForFilter. The hardware row's
- * `location` column is populated for ~99.9% of assets in the same
- * "Country-City-…" format the tickets use, so RegionCountryFilter +
- * countryToRegion light up automatically.
- */
-function assetLocationForFilter(row: HardwareRow): string | null {
-    return row.location?.trim() || null;
-}
-
 function regionOf(row: TicketRow): Region {
-    const raw = (row.actor?.location?.region ?? '').trim().toUpperCase();
-    if (raw === 'AMER' || raw === 'EMEA' || raw === 'APAC') return raw;
-    // Fallback: sniff the assigned_group (e.g. "AMER OIT Support").
-    const grp = (row.assigned_group ?? '').toUpperCase();
-    if (grp.startsWith('AMER')) return 'AMER';
-    if (grp.startsWith('EMEA')) return 'EMEA';
-    if (grp.startsWith('APAC')) return 'APAC';
+    // 1. Trust the backend-resolved region when it normalises cleanly.
+    //    Backend stores values like "Americas" / "APAC" / "EMEA" / "Unknown"
+    //    — `normalizeRegion` handles every variant we've seen.
+    const fromActor = normalizeRegion(row.actor?.location?.region);
+    if (fromActor) return fromActor;
+
+    // 2. Try to resolve a region from the location descriptor
+    //    (e.g. "US-California-Palo Alto" → AMER) using the curated
+    //    country→region map shared with RegionCountryFilter.
+    const fromLocation = countryToRegion(row.actor?.location?.descriptor);
+    if (fromLocation) return fromLocation;
+
+    // 3. Last resort: sniff the assigned_group prefix
+    //    ("AMER OIT Support" / "EMEA HelpDesk" / "Asia Service").
+    const fromGroup = normalizeRegion(row.assigned_group);
+    if (fromGroup) return fromGroup;
+
     return 'OTHER';
-}
-
-function procuredByOf(row: HardwareRow): string {
-    // `asset_owner` carries the procurement-side ownership label
-    // (typically "OIT" or "Studio"). The earlier implementation used
-    // `company`, which is the legal entity that bought the device —
-    // not the same concept.
-    return row.asset_owner?.trim() || 'Unknown';
-}
-
-function supportGroupOf(row: HardwareRow): string {
-    // Hardware doesn't have a dedicated `support_group` column. Mirror
-    // the ticket assignment-group convention by deriving it from
-    // whichever region-shaped field on the row resolves first:
-    //   1. office_region  ("AMER" / "APAC" / "EMEA" — canonical)
-    //   2. region          (lowercase "amer" / "apac" / "eurp")
-    //   3. region_code     ("APAC 2" / "AMER-1" — leading token)
-    //   4. location as a region label  ("Europe", "APAC")
-    //   5. location-derived country  ("US-California-…" → AMER)
-    //   6. stock_room-derived country  ("Singapore TWP Office" → APAC)
-    // Only assets with no resolvable region anywhere land in
-    // "Unassigned".
-    const r =
-        normalizeRegion(row.office_region) ??
-        normalizeRegion(row.region) ??
-        normalizeRegion(row.region_code) ??
-        normalizeRegion(row.location) ??
-        countryToRegion(extractCountry(row.location)) ??
-        countryToRegion(row.stock_room);
-    return r ? `${r} OIT Support` : 'Unassigned';
 }
 
 export function OpsDashboardHub() {
@@ -121,35 +80,41 @@ export function OpsDashboardHub() {
     const isLight = theme === 'light';
 
     // ── Filter state ────────────────────────────────────────────
-    // assigned_group / priority / location (tickets) and support_group /
-    // procured_by / department (assets) are all donut-driven now.
+    // assigned_group / priority / location are all donut-driven now.
+    //
+    // Active Monitoring Hub is the "right now" view of every open
+    // ticket — applying the month-to-date Open-date filter would
+    // truncate older active tickets that were opened in prior months
+    // but are still unresolved (the page would suddenly drop ~80% of
+    // its volume the moment the calendar rolled over). Drill-in
+    // dashboards (Catalog / Incidents / OnOffBoarding) keep the MTD
+    // default since they're analytical / volume-trend oriented.
     const [ticketFilters, setTicketFilters] = useState<FilterState>({
         assigned_group: [],
         location: [],
         priority: [],
     });
-    const [assetFilters, setAssetFilters] = useState<FilterState>({
-        support_group: [],
-        procured_by: [],
-        department: [],
-        // Chart-only — driven by the In-Stock Location donut.
-        stock_room: [],
-    });
 
     // Two-level Region/Country slicer state — geographic. Region AND
-    // Country both apply to tickets *and* assets: the asset's
-    // `location` column carries the same "Country-City-…" vocabulary as
-    // the ticket's caller location (~99.9% fill rate), so the filter
-    // narrows both data sets in lockstep.
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Country apply to tickets. Region / Country / Location are
+    // SHARED across every MONITORING dashboard via useOpsGlobalFilter
+    // — picking AMER on one page carries the selection to the others
+    // so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
 
     const ticketDateRange =
         (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
         { from: null, to: null };
 
-    // ── Three concurrent fetches ─────────────────────────────────
+    // ── Two concurrent fetches ─────────────────────────────────
     // fetchAll: true pages through skip/limit so we don't hit the 1000-row
     // silent cutoff. created_at_from/to are read off ticketFilters so the
     // picker and the payload stay in sync.
@@ -171,19 +136,58 @@ export function OpsDashboardHub() {
         },
         { fetchAll: true },
     );
-    const hardwareQuery = useHardwares(
-        { limit: 1000, is_active: true, view: 'slim' },
+
+    // Dedicated VIP fetches — `is_vip` is a workers-table column, not a
+    // ticket-row field, so the slim view doesn't expose it. Mirroring
+    // the VipTicketsDashboard approach: ask the backend to filter by
+    // is_vip + active states + the same date window, then count the
+    // returned rows. Lightweight (single-digit volume in dev) and
+    // keeps the Hub's VIP KPI consistent with the dedicated VIP page.
+    const vipIncidentQuery = useIncidents(
+        {
+            limit: 200,
+            view: 'slim',
+            is_vip: true,
+            states_list: ACTIVE_STATES,
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+    const vipRequestQuery = useRequests(
+        {
+            limit: 200,
+            view: 'slim',
+            is_vip: true,
+            states_list: ACTIVE_STATES,
+            created_at_from: ticketDateRange.from ?? undefined,
+            created_at_to: ticketDateRange.to ?? undefined,
+        },
         { fetchAll: true },
     );
 
-    const loading = incidentQuery.loading || requestQuery.loading || hardwareQuery.loading;
+    const loading =
+        incidentQuery.loading ||
+        requestQuery.loading ||
+        vipIncidentQuery.loading ||
+        vipRequestQuery.loading;
     const partial =
         incidentQuery.data?.partial === true ||
         requestQuery.data?.partial === true ||
-        hardwareQuery.data?.partial === true;
-    const error = incidentQuery.error ?? requestQuery.error ?? hardwareQuery.error;
+        vipIncidentQuery.data?.partial === true ||
+        vipRequestQuery.data?.partial === true;
+    const error =
+        incidentQuery.error ??
+        requestQuery.error ??
+        vipIncidentQuery.error ??
+        vipRequestQuery.error;
     const refetchAll = async () => {
-        await Promise.all([incidentQuery.refetch(), requestQuery.refetch(), hardwareQuery.refetch()]);
+        await Promise.all([
+            incidentQuery.refetch(),
+            requestQuery.refetch(),
+            vipIncidentQuery.refetch(),
+            vipRequestQuery.refetch(),
+        ]);
     };
 
     // Stable clock so aging math doesn't flip during re-renders.
@@ -195,21 +199,13 @@ export function OpsDashboardHub() {
         return [...a, ...b];
     }, [incidentQuery.data, requestQuery.data]);
 
-    const allAssets: HardwareRow[] = useMemo(() => {
-        const rows = hardwareQuery.data?.items ?? [];
-        return rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category));
-    }, [hardwareQuery.data]);
-
-    // Combined ticket+asset rows fed to RegionCountryFilter so the
-    // Country + Location dropdowns surface every place that exists in
-    // either data set. Each entry exposes a single `location` field —
-    // the filter's `getLocation` extractor reads it directly.
+    // Ticket rows fed to RegionCountryFilter so Country + Location
+    // dropdowns surface every place that exists in the ticket data.
+    // Each entry exposes a single `location` field — the filter's
+    // `getLocation` extractor reads it directly.
     const regionCountryRows = useMemo(() => {
-        const out: Array<{ location: string | null }> = [];
-        for (const t of allTickets) out.push({ location: locationForFilter(t) });
-        for (const a of allAssets) out.push({ location: assetLocationForFilter(a) });
-        return out;
-    }, [allTickets, allAssets]);
+        return allTickets.map((t) => ({ location: locationForFilter(t) }));
+    }, [allTickets]);
 
     // ── Filtered tickets (Region/Country + donut filters) ─
     const filteredTickets = useMemo(() => {
@@ -230,47 +226,24 @@ export function OpsDashboardHub() {
         [filteredTickets],
     );
 
-    // ── Filtered assets ─────────────────────────────────────────
-    // Region + Country + Location apply via the asset's `location`
-    // column. The donut-driven chart filters are independent of those
-    // and live on `assetFilters` (procured_by / support_group /
-    // stock_room). stock_room is what the In-Stock Location donut
-    // toggles now (was "region"; the stockroom name reads cleaner).
-    const filteredAssets = useMemo(() => {
-        const supportGroupSel = (assetFilters.support_group as string[]) ?? [];
-        const procuredSel = (assetFilters.procured_by as string[]) ?? [];
-        const deptSel = (assetFilters.department as string[]) ?? [];
-        const stockRoomSel = (assetFilters.stock_room as string[]) ?? [];
-        return allAssets.filter((r) => {
-            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, assetLocationForFilter)) return false;
-            if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
-            if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
-            if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
-            if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
-            return true;
-        });
-    }, [allAssets, assetFilters, selectedRegions, selectedCountries, selectedLocations]);
-
     // ── Ticket KPIs ─────────────────────────────────────────────
     const ticketKpis: TicketKpis = useMemo(() => {
         let activeIncident = 0;
+        let activeIncidentHigh = 0;
         let activeCatalog = 0;
         let activeAsset = 0;
-        let vipActive = 0;
         let agingIncidentGt2d = 0;
         let agingCatalogGt30d = 0;
         let agingAssetGt30d = 0;
         for (const r of activeTickets) {
-            if (r.object_type === 'incident') activeIncident += 1;
-            else if (r.object_type === 'request') {
+            if (r.object_type === 'incident') {
+                activeIncident += 1;
+                if (r.priority === 'High') activeIncidentHigh += 1;
+            } else if (r.object_type === 'request') {
                 const rt = classifyRequestType(r);
                 if (rt === 'asset_task') activeAsset += 1;
                 else if (rt === 'catalog_task') activeCatalog += 1;
             }
-            const isVip =
-                (r as unknown as { is_vip?: boolean }).is_vip === true ||
-                (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
-            if (isVip) vipActive += 1;
             const days = daysSinceUpdated(r, now);
             if (r.object_type === 'incident' && days > 2) agingIncidentGt2d += 1;
             if (r.object_type === 'request' && days > 30) {
@@ -279,9 +252,28 @@ export function OpsDashboardHub() {
                 else if (rt === 'catalog_task') agingCatalogGt30d += 1;
             }
         }
+        // VIP count comes from a dedicated `is_vip=true` server-side
+        // query — `is_vip` is a workers-table column, not a ticket-row
+        // field, so we can't sniff it on the slim view rows. The same
+        // Region/Country slicer applies to the VIP rows so the KPI
+        // tracks any geographic narrowing the user sets.
+        const vipRows = [
+            ...(vipIncidentQuery.data?.items ?? []),
+            ...(vipRequestQuery.data?.items ?? []),
+        ];
+        const vipActive = vipRows.filter((r) =>
+            matchesRegionCountry(
+                r,
+                selectedRegions,
+                selectedCountries,
+                selectedLocations,
+                locationForFilter,
+            ),
+        ).length;
         return {
             totalActive: activeTickets.length,
             activeIncident,
+            activeIncidentHigh,
             activeCatalog,
             activeAsset,
             vipActive,
@@ -289,22 +281,34 @@ export function OpsDashboardHub() {
             agingCatalogGt30d,
             agingAssetGt30d,
         };
-    }, [activeTickets, now]);
-
-    const assetKpis = useMemo(() => summarizeAssets(filteredAssets), [filteredAssets]);
+    }, [
+        activeTickets,
+        now,
+        vipIncidentQuery.data,
+        vipRequestQuery.data,
+        selectedRegions,
+        selectedCountries,
+        selectedLocations,
+    ]);
 
     // Month-over-month deltas — snapshot replays based on created_at +
     // closure timestamps. Skipped for the four aging KPIs since their
     // "snapshot at past time" depends on `source_updated_at`, which is
     // a moving target (no per-row history available).
     const ticketKpiDeltas: TicketKpiDeltas = useMemo(() => {
-        const isVip = (r: TicketRow) =>
-            (r as unknown as { is_vip?: boolean }).is_vip === true ||
-            (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
         const isCatalog = (r: TicketRow) =>
             r.object_type === 'request' && classifyRequestType(r) === 'catalog_task';
         const isAssetTask = (r: TicketRow) =>
             r.object_type === 'request' && classifyRequestType(r) === 'asset_task';
+        // VIP MoM delta is intentionally null — vipIncidentQuery /
+        // vipRequestQuery only fetch *currently-active* VIP rows
+        // (states_list=ACTIVE_STATES filter on the server), so we
+        // don't have the historical resolution events needed to
+        // compute "VIP active a month ago". Surfacing a number here
+        // would either require a second un-filtered VIP fetch or a
+        // backend `is_vip` field on the ticket row. Defer either to
+        // Phase 2 — for now the tile shows the live VIP count with
+        // no MoM annotation.
         return {
             totalActive: formatMoM(momActiveSnapshot(filteredTickets, now)),
             activeIncident: formatMoM(
@@ -312,7 +316,7 @@ export function OpsDashboardHub() {
             ),
             activeCatalog: formatMoM(momActiveSnapshot(filteredTickets, now, isCatalog)),
             activeAsset: formatMoM(momActiveSnapshot(filteredTickets, now, isAssetTask)),
-            vipActive: formatMoM(momActiveSnapshot(filteredTickets, now, isVip)),
+            vipActive: null,
         };
     }, [filteredTickets, now]);
 
@@ -340,82 +344,16 @@ export function OpsDashboardHub() {
         return (Object.keys(counts) as Region[]).map((region) => ({ region, count: counts[region] }));
     }, [activeTickets]);
 
-    const inStockLocationSlices = useMemo(() => {
-        const inStockRows = filteredAssets.filter(isInStock);
-        // Group by the physical stock-room name ("Singapore SKY L6 IT
-        // Stockroom", "Canada Office", …). Top-N keeps the donut
-        // readable when the long tail of small rooms would otherwise
-        // dominate the slice list.
-        return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
-            .slice(0, 8)
-            .map((g) => ({ name: g.key, value: g.count }));
-    }, [filteredAssets]);
-
-    const procuredBySlices = useMemo(
-        () =>
-            groupBy(filteredAssets, procuredByOf)
-                .slice(0, 8)
-                .map((g) => ({ name: g.key, value: g.count })),
-        [filteredAssets],
-    );
-
-    const supportGroupSlices = useMemo(
-        () =>
-            groupBy(filteredAssets, supportGroupOf)
-                .slice(0, 8)
-                .map((g) => ({ name: g.key, value: g.count })),
-        [filteredAssets],
-    );
-
-    const supportGroupMatrix: SupportGroupMatrixRow[] = useMemo(() => {
-        type Bucket = { name: string; Mac: number; Windows: number; Other: number; total: number };
-        const buckets = new Map<string, Bucket>();
-        for (const row of filteredAssets) {
-            const key = supportGroupOf(row);
-            const bucket = buckets.get(key) ?? { name: key, Mac: 0, Windows: 0, Other: 0, total: 0 };
-            bucket[inferDeviceType(row.model_name)] += 1;
-            bucket.total += 1;
-            buckets.set(key, bucket);
-        }
-        return Array.from(buckets.values())
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 10)
-            .map((b) => ({
-                ...b,
-                displayName: b.name.length > 20 ? `${b.name.slice(0, 20)}…` : b.name,
-            }));
-    }, [filteredAssets]);
-
     // ── Cross-filter handlers ───────────────────────────────────
-    // Generic toggle helpers — donut slice click and interactive
-    // legend toggle both feed through these so the two stay in sync.
     const toggleTicketFilter = (param: string, name: string) => {
         const cur = (ticketFilters[param] as string[]) ?? [];
         const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
         setTicketFilters({ ...ticketFilters, [param]: next });
     };
-    const toggleAssetFilter = (param: string, name: string) => {
-        const cur = (assetFilters[param] as string[]) ?? [];
-        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
-        setAssetFilters({ ...assetFilters, [param]: next });
-    };
     const onGroupSliceClick = (slice: { name: string }) => toggleTicketFilter('assigned_group', slice.name);
     const onGroupLegendToggle = (name: string) => toggleTicketFilter('assigned_group', name);
-    const onProcuredSliceClick = (slice: { name: string }) => toggleAssetFilter('procured_by', slice.name);
-    const onProcuredLegendToggle = (name: string) => toggleAssetFilter('procured_by', name);
-    const onSupportGroupSliceClick = (slice: { name: string }) => toggleAssetFilter('support_group', slice.name);
-    const onSupportGroupLegendToggle = (name: string) => toggleAssetFilter('support_group', name);
-    const onLocationSliceClick = (slice: { name: string }) => toggleAssetFilter('stock_room', slice.name);
-    const onLocationLegendToggle = (name: string) => toggleAssetFilter('stock_room', name);
 
     const selectedAssignedGroups = (ticketFilters.assigned_group as string[]) ?? [];
-    const selectedProcured = (assetFilters.procured_by as string[]) ?? [];
-    const selectedSupportGroups = (assetFilters.support_group as string[]) ?? [];
-    // Selected slices on the In-Stock Location donut — distinct from
-    // the page-level `selectedLocations` (geographic filter). Tracks
-    // the asset's `stock_room` field directly so the donut and its
-    // legend display the chosen rooms by their full name.
-    const selectedDonutLocations = (assetFilters.stock_room as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
@@ -433,24 +371,14 @@ export function OpsDashboardHub() {
         n += arr(ticketFilters, 'assigned_group');
         n += arr(ticketFilters, 'priority');
         n += arr(ticketFilters, 'location');
-        n += arr(assetFilters, 'support_group');
-        n += arr(assetFilters, 'procured_by');
-        n += arr(assetFilters, 'department');
-        n += arr(assetFilters, 'region');
         return n;
-    }, [ticketFilters, assetFilters]);
+    }, [ticketFilters]);
 
     function resetAllParentFilters() {
         setTicketFilters({
             assigned_group: [],
             location: [],
             priority: [],
-        });
-        setAssetFilters({
-            support_group: [],
-            procured_by: [],
-            department: [],
-            stock_room: [],
         });
     }
 
@@ -490,10 +418,9 @@ export function OpsDashboardHub() {
             </div>
 
             {/* Filter panel — Region/Country in headerSlot applies to
-                tickets (full geographic match) + assets (Region only via
-                r.region). Open Date applies to tickets. Everything else
-                is donut-driven (chart filters). Single Clear All button
-                at the top-right. */}
+                tickets (full geographic match). Open Date applies to
+                tickets. Everything else is donut-driven (chart filters).
+                Single Clear All button at the top-right. */}
             <TopFilterBar
                 value={ticketFilters}
                 onChange={setTicketFilters}
@@ -571,26 +498,6 @@ export function OpsDashboardHub() {
                     onGroupSliceClick={onGroupSliceClick}
                     selectedGroups={selectedAssignedGroups}
                     onGroupLegendToggle={onGroupLegendToggle}
-                />
-
-                <AssetsPanel
-                    kpis={assetKpis}
-                    inStockLocationSlices={inStockLocationSlices}
-                    procuredBySlices={procuredBySlices}
-                    supportGroupSlices={supportGroupSlices}
-                    supportGroupMatrix={supportGroupMatrix}
-                    loading={loading}
-                    filteredCount={filteredAssets.length}
-                    totalCount={allAssets.length}
-                    onProcuredSliceClick={onProcuredSliceClick}
-                    onSupportGroupSliceClick={onSupportGroupSliceClick}
-                    onLocationSliceClick={onLocationSliceClick}
-                    selectedLocations={selectedDonutLocations}
-                    onLocationLegendToggle={onLocationLegendToggle}
-                    selectedProcured={selectedProcured}
-                    onProcuredLegendToggle={onProcuredLegendToggle}
-                    selectedSupportGroups={selectedSupportGroups}
-                    onSupportGroupLegendToggle={onSupportGroupLegendToggle}
                 />
             </div>
         </div>

@@ -51,6 +51,13 @@ export interface KpiCardProps {
      * row with taller charts.
      */
     valueSize?: 'md' | 'lg' | 'xl';
+    /**
+     * Override the headline number's text colour. Use Tailwind colour
+     * classes — e.g. `text-red-500` (red/warning when > 0) or
+     * `text-green-500` (green/ok when = 0). Defaults to the neutral
+     * slate/white colour driven by the theme.
+     */
+    valueColor?: string;
 }
 
 export function KpiCard({
@@ -66,6 +73,7 @@ export function KpiCard({
     className,
     valueSize = 'md',
     tooltip,
+    valueColor,
 }: KpiCardProps) {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -74,7 +82,6 @@ export function KpiCard({
     const cardBase = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
     const hover = onClick ? (isLight ? 'hover:bg-slate-50 cursor-pointer' : 'hover:bg-white/10 cursor-pointer') : '';
     const labelCls = isLight ? 'text-slate-500' : 'text-gray-400';
-    const valueCls = isLight ? 'text-slate-800' : 'text-white';
     const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-500';
     const arrowCls = isLight
         ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
@@ -96,6 +103,7 @@ export function KpiCard({
 
     const valueSizeCls =
         valueSize === 'xl' ? 'text-5xl' : valueSize === 'lg' ? 'text-4xl' : 'text-2xl';
+    const valueColorCls = valueColor ?? (isLight ? 'text-slate-800' : 'text-white');
 
     return (
         <div
@@ -117,7 +125,7 @@ export function KpiCard({
                 </div>
                 {accent}
             </div>
-            <p className={`${valueSizeCls} font-bold mt-1.5 ${valueCls}`}>
+            <p className={`${valueSizeCls} font-bold mt-1.5 ${valueColorCls}`}>
                 {typeof value === 'number' ? value.toLocaleString() : value}
             </p>
             {(delta || subtitle) && (
