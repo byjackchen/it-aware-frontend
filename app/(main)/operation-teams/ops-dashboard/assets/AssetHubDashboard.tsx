@@ -4,13 +4,13 @@
  * Asset Hub (Page 1.3.1) — ports `temp_ref/.../assets/AssetsDashboardPage.tsx`
  * to the real API via {@link useHardwares}.
  *
- * Base filter: model_category ∈ DASHBOARD_ASSET_CATEGORIES. We pull the
+ * Base filter: model_category whitelisted via `isInScopeAsset`. We pull the
  * data with no category filter (Phase 1 backend param is single-value)
  * and narrow client-side — `limit=1000` plus active-only covers
  * reasonable dashboard volumes.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslations } from 'next-intl';
@@ -21,6 +21,7 @@ import {
     summarizeAssets,
     groupBy,
     inferDeviceType,
+    isInScopeAsset,
     isInStock,
 } from '@/lib/ops_dashboard/aggregate';
 import {
@@ -31,8 +32,8 @@ import {
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
 
-const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 const MAC_COLOR = '#6366f1';
 const WIN_COLOR = '#3b82f6';
 const OTHER_COLOR = '#0ea5e9';
@@ -75,13 +76,54 @@ export function AssetHubDashboard() {
 
     // Sidebar filter state — three slicers + a chart-only
     // `stock_room` dimension driven exclusively by the In-Stock
-    // Location donut (no panel slicer for it).
+    // Location donut (no panel slicer for it). Support Group /
+    // Procured By / Department are SHARED across every asset-oriented
+    // dashboard via useOpsAssetFilter — picking "AMER OIT Support"
+    // on Asset Overview carries to In-Stock / Pending / Zero Residual.
+    const {
+        filter: assetFilter,
+        setSupportGroups,
+        setProcuredBy,
+        setDepartments,
+    } = useOpsAssetFilter();
     const [filters, setFilters] = useState<FilterState>({
-        support_group: [],
-        procured_by: [],
-        department: [],
         stock_room: [],
     });
+    // Mirror the three shared dims into the legacy FilterState shape
+    // the TopFilterBar expects. Updates flow back into the global hook.
+    const filterStateForBar: FilterState = useMemo(
+        () => ({
+            ...filters,
+            support_group: assetFilter.supportGroups,
+            procured_by: assetFilter.procuredBy,
+            department: assetFilter.departments,
+        }),
+        [filters, assetFilter],
+    );
+    const onFilterStateChange = useCallback(
+        (next: FilterState) => {
+            // Pull the three shared dims out and route them through
+            // the global hook. Everything else (stock_room) stays local.
+            const supportGroups = (next.support_group as string[]) ?? [];
+            const procuredBy = (next.procured_by as string[]) ?? [];
+            const departments = (next.department as string[]) ?? [];
+            if (JSON.stringify(supportGroups) !== JSON.stringify(assetFilter.supportGroups)) {
+                setSupportGroups(supportGroups);
+            }
+            if (JSON.stringify(procuredBy) !== JSON.stringify(assetFilter.procuredBy)) {
+                setProcuredBy(procuredBy);
+            }
+            if (JSON.stringify(departments) !== JSON.stringify(assetFilter.departments)) {
+                setDepartments(departments);
+            }
+            const localOnly: FilterState = { ...next };
+            delete localOnly.support_group;
+            delete localOnly.procured_by;
+            delete localOnly.department;
+            setFilters(localOnly);
+        },
+        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
+    );
 
     // Option pools derive from the fetched data.
     const slicers: SlicerConfig[] = useMemo(() => {
@@ -115,19 +157,19 @@ export function AssetHubDashboard() {
 
     // Base set: dashboard model categories + user sidebar slicers applied.
     const filtered = useMemo(() => {
-        const supportGroupSel = (filters.support_group as string[]) ?? [];
-        const procuredSel = (filters.procured_by as string[]) ?? [];
-        const deptSel = (filters.department as string[]) ?? [];
+        const supportGroupSel = assetFilter.supportGroups;
+        const procuredSel = assetFilter.procuredBy;
+        const deptSel = assetFilter.departments;
         const stockRoomSel = (filters.stock_room as string[]) ?? [];
         return rows.filter((r) => {
-            if (!r.model_category || !DASHBOARD_ASSET_CATEGORIES.has(r.model_category)) return false;
+            if (!isInScopeAsset(r)) return false;
             if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
             if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
             return true;
         });
-    }, [rows, filters]);
+    }, [rows, filters, assetFilter]);
 
     const kpis = useMemo(() => summarizeAssets(filtered), [filtered]);
 
@@ -143,6 +185,20 @@ export function AssetHubDashboard() {
         // of small rooms so the donut stays readable.
         return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
             .slice(0, TOP_LOCATIONS)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+
+    // Asset status / substatus donuts — split the inventory by SN's
+    // status taxonomy. Top 8 keeps each donut legible; the long tail
+    // collapses into "Unknown" if the SN row didn't carry a value.
+    const statusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.asset_status ?? 'Unknown')
+            .slice(0, 8)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+    const substatusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.substatus ?? 'Unknown')
+            .slice(0, 8)
             .map((g) => ({ name: g.key, value: g.count }));
     }, [filtered]);
 
@@ -184,7 +240,11 @@ export function AssetHubDashboard() {
     const cardBg = isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10';
     const axisStroke = isLight ? '#94a3b8' : '#64748b';
 
-    const hasFilters = (Object.values(filters) as string[][]).some((v) => Array.isArray(v) && v.length > 0);
+    const hasFilters =
+        (Object.values(filters) as string[][]).some((v) => Array.isArray(v) && v.length > 0) ||
+        assetFilter.supportGroups.length > 0 ||
+        assetFilter.procuredBy.length > 0 ||
+        assetFilter.departments.length > 0;
     const inStockPct = kpis.inStockRatePct;
     const inStockPctCritical = kpis.total > 0 && inStockPct < 70;
 
@@ -206,7 +266,7 @@ export function AssetHubDashboard() {
                         <span className="text-xs text-blue-400">
                             {t('pages.filteredCount', {
                                 filtered: filtered.length.toLocaleString(),
-                                total: rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category)).length.toLocaleString(),
+                                total: rows.filter(isInScopeAsset).length.toLocaleString(),
                             })}
                         </span>
                     )}
@@ -223,8 +283,8 @@ export function AssetHubDashboard() {
             {/* Filters */}
             <TopFilterBar
                 slicers={slicers}
-                value={filters}
-                onChange={setFilters}
+                value={filterStateForBar}
+                onChange={onFilterStateChange}
                 storageKey="ops-dashboard:assets:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
@@ -253,17 +313,20 @@ export function AssetHubDashboard() {
                     and the row visually matches the taller donut
                     cards on the right (no empty padding below). */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div className="grid grid-rows-2 gap-3">
+                    <div className="grid grid-rows-3 gap-3">
                         <KpiCard
                             label={t('kpis.totalAssets')}
                             value={kpis.total}
                             icon={HardDrive}
-                            valueSize="lg"
                             className="h-full flex flex-col justify-center"
-                        
-                        tooltip={t('kpis.totalAssets')}
-    
-    />
+                            tooltip={t('kpis.totalAssetsInfo')}
+                        />
+                        <KpiCard
+                            label={t('kpis.activeHardware')}
+                            value={kpis.activeAsset}
+                            className="h-full flex flex-col justify-center"
+                            tooltip={t('kpis.activeHardwareInfo')}
+                        />
                         <div
                             className={`rounded-xl border p-4 h-full flex flex-col justify-center ${cardBg}`}
                         >
@@ -271,12 +334,16 @@ export function AssetHubDashboard() {
                             <p className={`text-4xl font-bold mt-1.5 ${inStockPctCritical ? 'text-red-400' : textMain}`}>
                                 {kpis.total > 0 ? `${inStockPct}%` : '—'}
                             </p>
+                            <p className={`text-[10px] mt-1 ${textMuted}`}>
+                                {t('kpis.inStockRateInfo')}
+                            </p>
                         </div>
                     </div>
 
                     <DonutCard
                         title={t('charts.procuredBy')}
                         subtitle={t('charts.procuredBySubtitle')}
+                        info={t('charts.procuredByInfo')}
                         data={procuredBySlices}
                         palette={DONUT_PALETTE}
                         height={200}
@@ -288,12 +355,35 @@ export function AssetHubDashboard() {
 
                     <DonutCard
                         title={t('charts.inStockLocation')}
+                        info={t('charts.inStockLocationInfo')}
                         data={inStockLocationSlices}
                         palette={DONUT_PALETTE}
                         height={200}
                         onSliceClick={onLocationSliceClick}
                         selectedSlices={selectedStockRooms}
                         onLegendToggle={onLocationLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 1b: status + substatus donuts. Two-column grid
+                    so they sit beside one another at the same width as
+                    the donuts above. */}
+                <div className="grid gap-3 mb-3 grid-cols-2">
+                    <DonutCard
+                        title={t('charts.assetsByStatus')}
+                        info={t('charts.assetsByStatusInfo')}
+                        data={statusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <DonutCard
+                        title={t('charts.assetsBySubstatus')}
+                        info={t('charts.assetsBySubstatusInfo')}
+                        data={substatusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
@@ -332,8 +422,8 @@ export function AssetHubDashboard() {
                         label={t('kpis.zeroResidual')}
                         value={kpis.zeroResidual}
                         icon={DollarSign}
-                        linkHref="/operation-teams/ops-dashboard/assets"
-                        linkLabel={t('links.openAssetHub')}
+                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                        linkLabel={t('links.openZeroResidualAssets')}
                     />
                 </div>
 

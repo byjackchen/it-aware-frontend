@@ -18,13 +18,18 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
+    ACTIVE_STATES,
+    formatDurationSec,
     groupBy,
     isActiveState,
     daysSinceUpdated,
+    meanOf,
     monthsFromRange,
     cumulativeTrendByMonth,
+    trendByMonth,
     momByDate,
     momActiveSnapshot,
+    sumOf,
     formatMoM,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
@@ -40,6 +45,7 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 
 const STATE_PALETTE = [
     '#3b82f6',
@@ -113,9 +119,16 @@ export function IncidentAnalysisDashboard() {
     // 3-month default horizon on page load. Seeded into the user-facing
     // filter state so the date picker shows it — otherwise the default is
     // invisible and users mistake it for a data cutoff.
-    const [defaultFromIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    );
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so all MONITORING dashboards open on the
+    // same month-to-date window — easier to compare numbers
+    // across pages and matches how the team reports MTD.
+    const [defaultFromIso] = useState<string>(() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}-01`;
+    });
 
     // Capture "now" at mount so aging math is stable across re-renders
     // (react-hooks/purity rejects Date.now() inside useMemo).
@@ -137,9 +150,18 @@ export function IncidentAnalysisDashboard() {
     // Three-level Region / Country / Location slicer state — geographic.
     // Country is the leading-token form (US, UK, …); Location is the
     // full string (US-California-Palo Alto, …).
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
 
     // Drive the server fetch from the user-visible date range so the
     // picker and the payload stay in sync. fetchAll: true pages through
@@ -148,6 +170,24 @@ export function IncidentAnalysisDashboard() {
     const { data, loading, error, refetch } = useIncidents(
         {
             limit: 1000,
+            created_at_from: dateRange.from ?? undefined,
+            created_at_to: dateRange.to ?? undefined,
+        },
+        { fetchAll: true },
+    );
+
+    // Dedicated VIP fetch — `is_vip` is a workers-table column, not a
+    // ticket-row field, so the slim view doesn't expose it. We mirror
+    // the VipTicketsDashboard approach: ask the backend to filter by
+    // is_vip + active states + the same date window, then count the
+    // returned rows. Sniffing `r.is_vip` on the slim row would always
+    // return undefined → 0, which is what produced the "VIP Active = 0"
+    // bug seen on this page.
+    const vipQuery = useIncidents(
+        {
+            limit: 200,
+            is_vip: true,
+            states_list: ACTIVE_STATES,
             created_at_from: dateRange.from ?? undefined,
             created_at_to: dateRange.to ?? undefined,
         },
@@ -207,42 +247,96 @@ export function IncidentAnalysisDashboard() {
         () => formatMoM(momActiveSnapshot(filtered, now)),
         [filtered, now],
     );
-    const vipMoM = useMemo(
-        () =>
-            formatMoM(
-                momActiveSnapshot(filtered, now, (r) => {
-                    const vip =
-                        (r as unknown as { is_vip?: boolean }).is_vip === true ||
-                        (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
-                    return vip;
-                }),
-            ),
-        [filtered, now],
-    );
+    // VIP active comes from a dedicated is_vip=true server-side fetch
+    // (vipQuery above) — no MoM delta available because that fetch
+    // only returns currently-active rows.
 
     const kpis = useMemo(() => {
         const total = filtered.length;
         const active = activeRows.length;
-        let high = 0;
-        let medium = 0;
         let aging2d = 0;
         let aging7d = 0;
-        let vipActive = 0;
         for (const r of activeRows) {
-            const bucket = priorityBucket(r.priority);
-            if (bucket === 'High') high += 1;
-            if (bucket === 'Medium') medium += 1;
             const days = daysSinceUpdated(r, now);
             if (days > 2) aging2d += 1;
             if (days > 7) aging7d += 1;
-            const vip =
-                (r as unknown as { is_vip?: boolean }).is_vip === true ||
-                (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
-            if (vip) vipActive += 1;
         }
+
+        // Resolved-on-day-1: incidents with both an open and resolve
+        // timestamp where resolve happened within 24h of opening.
+        // Falls back to created_at when source_opened_at is null.
+        let resolvedDay1 = 0;
+        const resolvedRows: TicketRow[] = [];
+        for (const r of filtered) {
+            if (!r.source_resolved_at) continue;
+            resolvedRows.push(r);
+            const opened = Date.parse(r.source_opened_at ?? r.created_at);
+            const resolved = Date.parse(r.source_resolved_at);
+            if (
+                Number.isFinite(opened) &&
+                Number.isFinite(resolved) &&
+                resolved - opened <= 24 * 60 * 60 * 1000 &&
+                resolved >= opened
+            ) {
+                resolvedDay1 += 1;
+            }
+        }
+
+        // Mean Time to Resolve — business-hours calendar so nights /
+        // weekends don't inflate the average. Prefers SN's
+        // ``business_duration_sec`` (total business-hours from create
+        // → close) and falls back to ``business_resolve_time_sec``
+        // (business-hours from create → first resolve). The dev dump
+        // omits business_duration; production carries both.
+        const mttrSec = meanOf(
+            resolvedRows,
+            (r) => r.business_duration_sec ?? r.business_resolve_time_sec ?? null,
+        );
+
+        // Total Time Worked — sum of resolve_time_sec across every
+        // resolved row in scope. resolve_time_sec is total wall-clock
+        // resolve time (vs. business_resolve_time_sec which is
+        // business-hours-only). Falls back to duration_sec when the
+        // SN sync didn't populate resolve_time.
+        const totalTimeWorkedSec = sumOf(
+            resolvedRows,
+            (r) => r.resolve_time_sec ?? r.duration_sec ?? null,
+        );
+
+        // VIP active comes from the dedicated is_vip=true server-side
+        // fetch — see comment on `vipQuery` above. Apply the same
+        // Region/Country slicer so the KPI tracks geo narrowing.
+        const vipRows = vipQuery.data?.items ?? [];
+        const vipActive = vipRows.filter((r) =>
+            matchesRegionCountry(
+                r,
+                selectedRegions,
+                selectedCountries,
+                selectedLocations,
+                locationOf,
+            ),
+        ).length;
         const resolvedRate = total > 0 ? `${(((total - active) / total) * 100).toFixed(1)}%` : '—';
-        return { total, active, high, medium, aging2d, aging7d, vipActive, resolvedRate };
-    }, [filtered, activeRows, now]);
+        return {
+            total,
+            active,
+            resolvedDay1,
+            mttrSec,
+            totalTimeWorkedSec,
+            aging2d,
+            aging7d,
+            vipActive,
+            resolvedRate,
+        };
+    }, [
+        filtered,
+        activeRows,
+        now,
+        vipQuery.data,
+        selectedRegions,
+        selectedCountries,
+        selectedLocations,
+    ]);
 
     const priorityDonut = useMemo(() => {
         // Bucket the active rows into High/Medium/Low and emit slices
@@ -259,6 +353,18 @@ export function IncidentAnalysisDashboard() {
             color: PRIORITY_BUCKET_COLOR[bucket],
         }));
     }, [activeRows]);
+
+    // Category donut — replaces the By Priority slice on the page.
+    // Uses SN's incident.category column; rows missing a category fall
+    // into a "Unknown" bucket so the donut total still matches the
+    // active-row count.
+    const categoryDonut = useMemo(
+        () =>
+            groupBy(activeRows, (r) => r.category ?? 'Unknown')
+                .slice(0, 8)
+                .map((g) => ({ name: g.key, value: g.count })),
+        [activeRows],
+    );
 
     const stateDonut = useMemo(
         () => groupBy(filtered, (r) => r.state).map((g) => ({ name: g.key, value: g.count })),
@@ -288,6 +394,14 @@ export function IncidentAnalysisDashboard() {
                 trendMonths,
                 now,
             ),
+        [filtered, trendMonths, now],
+    );
+
+    // Non-cumulative monthly opened — separate "Monthly Volume" line
+    // chart so users can spot period-over-period swings without the
+    // smoothing effect of a cumulative line.
+    const monthlyTrend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
         [filtered, trendMonths, now],
     );
 
@@ -478,52 +592,49 @@ export function IncidentAnalysisDashboard() {
                         label={t('kpis.totalIncidents')}
                         value={kpis.total}
                         icon={AlertTriangle}
-                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
-                    
-                        tooltip={t('kpis.totalIncidents')}
-    />
+                        tooltip={t('kpis.totalIncidentsInfo')}
+                    />
                     <KpiCard
-                        label={t('kpis.active')}
-                        value={kpis.active}
+                        label={t('kpis.resolvedDay1')}
+                        value={kpis.resolvedDay1}
                         icon={Activity}
-                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
-                    
-                        tooltip={t('kpis.active')}
-    />
-                    <KpiCard label={t('kpis.highPriority')} value={kpis.high} />
-                    <KpiCard label={t('kpis.mediumPriority')} value={kpis.medium} />
+                        tooltip={t('kpis.resolvedDay1Info')}
+                    />
+                    <KpiCard
+                        label={t('kpis.mttr')}
+                        value={formatDurationSec(kpis.mttrSec)}
+                        tooltip={t('kpis.mttrInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.totalTimeWorked')}
+                        value={formatDurationSec(kpis.totalTimeWorkedSec)}
+                        tooltip={t('kpis.totalTimeWorkedInfo')}
+                    />
                 </div>
                 <div className="grid grid-cols-4 gap-3 mb-3">
-                    <KpiCard label={t('kpis.agingGt2d')} value={kpis.aging2d} />
-                    <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />
+                    <KpiCard label={t('kpis.agingGt2d')} tooltip={t('kpis.agingGt2dInfo')} value={kpis.aging2d} />
+                    <KpiCard label={t('kpis.agingGt7d')} tooltip={t('kpis.agingGt7dInfo')} value={kpis.aging7d} />
                     <KpiCard
                         label={t('kpis.vipActive')}
                         value={kpis.vipActive}
                         icon={Star}
-                        delta={vipMoM ? { value: deltaLabel(vipMoM), trend: vipMoM.trend } : undefined}
-                    
-                        tooltip={t('kpis.vipActive')}
-    />
-                    <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
+                        tooltip={t('kpis.vipActiveInfo')}
+                    />
+                    <KpiCard label={t('kpis.resolvedRate')} tooltip={t('kpis.resolvedRateInfo')} value={kpis.resolvedRate} />
                 </div>
 
                 {/* Donut row */}
                 <div className="grid gap-3 mb-3 grid-cols-2">
                     <DonutCard
-                        title={t('charts.activeByPriority')}
-                        subtitle={t('charts.activeByPrioritySubtitle')}
-                        data={priorityDonut}
+                        title={t('charts.activeByCategoryIncidents')}
+                        info={t('charts.activeByCategoryIncidentsInfo')}
+                        data={categoryDonut}
                         height={220}
-                        onSliceClick={onPrioritySliceClick}
-                        // Interactive legend — pairs with onSliceClick so a
-                        // priority can be toggled either by clicking a slice
-                        // or its legend entry.
-                        selectedSlices={selectedPriorities}
-                        onLegendToggle={togglePriority}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <DonutCard
                         title={t('charts.byStateAll')}
+                        info={t('charts.byStateAllInfo')}
                         data={stateDonut}
                         palette={STATE_PALETTE}
                         height={220}
@@ -541,6 +652,7 @@ export function IncidentAnalysisDashboard() {
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
                     <GroupBarCard
                         title={t('charts.activeByGroup')}
+                        info={t('charts.activeByGroupInfo')}
                         data={groupBar}
                         topN={10}
                         height={260}
@@ -549,12 +661,26 @@ export function IncidentAnalysisDashboard() {
                     <TrendLineCard
                         title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
                         subtitle={t('charts.cumulativeOpenedClosed')}
+                        info={t('charts.monthlyOpenedTrendInfo', { months: trendMonths })}
                         data={trend}
                         height={260}
                         series={[
                             { key: 'opened', label: 'Opened (cumulative)', color: '#ef4444' },
                             { key: 'closed', label: 'Closed (cumulative)', color: '#22c55e' },
                         ]}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row: Non-cumulative monthly opened trend */}
+                <div className="mb-3">
+                    <TrendLineCard
+                        title={t('charts.monthlyVolume')}
+                        subtitle={t('charts.monthlyVolumeSubtitle')}
+                        info={t('charts.monthlyVolumeInfo')}
+                        data={monthlyTrend}
+                        height={220}
+                        color="#ef4444"
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>

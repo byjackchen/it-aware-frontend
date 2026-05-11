@@ -118,6 +118,18 @@ export interface TicketRow {
     reopen_count?: number | null;
     reassignment_count?: number | null;
 
+    // ----- Phase 2 — duration / time-to-resolve (in seconds) ----------------
+    /** Total elapsed seconds between create and close, calendar time. */
+    duration_sec?: number | null;
+    /** Elapsed seconds excluding pause (incidents only). */
+    business_duration_w_pause_sec?: number | null;
+    /** Business-hours-only elapsed duration (SN business calendar). */
+    business_duration_sec?: number | null;
+    /** Total seconds between create and resolve (incidents only). */
+    resolve_time_sec?: number | null;
+    /** Business-hours-only seconds between create and resolve (incidents only). */
+    business_resolve_time_sec?: number | null;
+
     // ----- Phase 2 — ticket-anchored dimensions (vs. actor-derived) ---------
     location?: string | null;
     department?: string | null;
@@ -153,6 +165,10 @@ export interface HardwareRow {
     worker_oid: string | null;
     is_active: boolean;
     assigned_date: string | null;
+    /** First-time assignment timestamp — earlier than `assigned_date` when reassigned. */
+    first_assigned_date?: string | null;
+    /** SN/ERP-side asset creation timestamp — closest proxy to procurement / install date. */
+    erp_created_date?: string | null;
     location: string | null;
     created_at: string;
     updated_at: string;

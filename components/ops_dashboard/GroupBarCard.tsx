@@ -11,10 +11,13 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
 import type { GroupCount } from '@/lib/ops_dashboard/aggregate';
+import { TitleWithInfo } from './TitleWithInfo';
 
 export interface GroupBarCardProps {
     title: string;
     subtitle?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
     data: GroupCount[];
     /** Limit to the top N by count. Defaults to 10. */
     topN?: number;
@@ -31,6 +34,7 @@ export interface GroupBarCardProps {
 export function GroupBarCard({
     title,
     subtitle,
+    info,
     data,
     topN = 10,
     height,
@@ -63,10 +67,7 @@ export function GroupBarCard({
     return (
         <div className={`rounded-xl border p-4 ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                    <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                    {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
-                </div>
+                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
                 {actionSlot}
             </div>
 

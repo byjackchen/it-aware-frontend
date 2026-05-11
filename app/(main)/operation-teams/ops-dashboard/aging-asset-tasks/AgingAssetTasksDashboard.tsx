@@ -33,6 +33,7 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 
 const PAGE_SIZE = 100;
 
@@ -76,9 +77,18 @@ export function AgingAssetTasksDashboard() {
     const [now] = useState<number>(() => Date.now());
 
     const [filters, setFilters] = useState<FilterState>({});
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 

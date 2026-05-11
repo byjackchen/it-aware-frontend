@@ -37,6 +37,7 @@ import {
     PackageCheck,
     PackageOpen,
     Wrench,
+    DollarSign,
     Bot as Chatbot,
     LineChart,
     MessageSquare,
@@ -485,6 +486,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/pending-assets',
                         labelKey: 'opsPendingAssets',
                         icon: PackageOpen,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/zero-residual-assets',
+                        labelKey: 'opsZeroResidualAssets',
+                        icon: DollarSign,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),

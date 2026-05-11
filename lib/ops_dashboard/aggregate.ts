@@ -50,14 +50,37 @@ export type RequestType = 'asset_task' | 'catalog_task' | 'generic';
 
 /**
  * Phase 1 heuristic: requests don't carry a server-side request_type
- * yet, so classify via substring match on item + request_item.
- * Phase 2 adds a real column that supersedes this.
+ * yet, so classify via:
+ *   1. SN ticket-number prefix on ``stable_id`` — the authoritative
+ *      signal. ServiceNow numbers asset tasks ``ASTTASK*`` and
+ *      regular service catalog tasks ``SCTASK*``. Prefix beats text
+ *      heuristics (e.g. an SCTASK whose item happens to mention
+ *      "device" is still a catalog task, not an asset task).
+ *   2. Substring match on ``item`` / ``request_item`` — used only
+ *      when the prefix is unrecognised (legacy / non-SN sources).
+ *
+ * When neither signal matches, default to ``catalog_task`` — rows
+ * without a populated item field are still SN service catalog
+ * requests; they're just miscellaneous entries the catalog didn't
+ * pre-fill the item attribute for. Treating them as ``generic`` led
+ * to a gap on the Active Monitoring Hub where ``totalActive`` (all
+ * request types) exceeded the sum of the three bucket KPIs by the
+ * row count of unclassified requests.
+ *
+ * Phase 2 adds a real column that supersedes this heuristic.
  */
 export function classifyRequestType(row: TicketRow): RequestType {
+    // 1. ServiceNow ticket-number prefix is authoritative.
+    const sid = (row.stable_id ?? '').toUpperCase();
+    if (sid.startsWith('ASTTASK')) return 'asset_task';
+    if (sid.startsWith('SCTASK')) return 'catalog_task';
+
+    // 2. Fallback: keyword-sniff item / request_item for non-SN sources.
     const text = `${row.item ?? ''} ${row.request_item ?? ''}`.toLowerCase();
     if (/asset|hardware|device/.test(text)) return 'asset_task';
-    if (row.item || row.request_item) return 'catalog_task';
-    return 'generic';
+
+    // 3. Default — see module docstring above for rationale.
+    return 'catalog_task';
 }
 
 // =============================================================================
@@ -462,10 +485,51 @@ export function formatMoM({ current, previous }: MoMResult): DeltaInfo | null {
 
 export type DeviceType = 'Mac' | 'Windows' | 'Other';
 
+/**
+ * Whitelist of `model_category` values that count as "IT assets" for
+ * the Ops Dashboard. Hardware rows whose model_category falls outside
+ * this set (peripherals, accessories, monitors-only, etc.) are filtered
+ * out from every asset KPI, donut and bar chart so the numbers reflect
+ * only managed IT endpoints.
+ *
+ * Match is case-insensitive and trims whitespace. Values agreed with
+ * the team (2026-05-10):
+ *   - Computer
+ *   - Laptop
+ *   - Desktop
+ *   - Server
+ *   - Hardware
+ */
+export const ASSET_MODEL_CATEGORY_WHITELIST: readonly string[] = [
+    'computer',
+    'laptop',
+    'desktop',
+    'server',
+    'hardware',
+];
+
+const ASSET_MODEL_CATEGORY_SET = new Set(ASSET_MODEL_CATEGORY_WHITELIST);
+
+/**
+ * Returns true when the hardware row's `model_category` is inside the
+ * agreed whitelist. Use this as the FIRST gate when filtering assets
+ * for any Ops Dashboard view.
+ */
+export function isInScopeAsset(row: HardwareRow): boolean {
+    const cat = (row.model_category ?? '').toLowerCase().trim();
+    if (!cat) return false;
+    return ASSET_MODEL_CATEGORY_SET.has(cat);
+}
+
 export function inferDeviceType(modelName: string | null | undefined): DeviceType {
     if (!modelName) return 'Other';
     const s = modelName.toLowerCase();
     if (s.includes('mac')) return 'Mac';
+    // Brand-based shortcut — anything Lenovo or Dell ships is Windows.
+    // Catches naming conventions the model-line keyword list below
+    // would otherwise miss (e.g. "Lenovo P620 Workstation",
+    // "Dell OptiPlex 7080").
+    if (s.includes('lenovo') || s.includes('dell')) return 'Windows';
     if (s.includes('win') || s.includes('thinkpad') || s.includes('latitude') ||
         s.includes('precision') || s.includes('inspiron') || s.includes('xps') ||
         s.includes('probook') || s.includes('elitebook') || s.includes('zbook') ||
@@ -484,6 +548,31 @@ export function isInStock(row: HardwareRow): boolean {
     // Location donut, KPI tiles and bar chart.
     const s = row.asset_status?.toLowerCase() ?? '';
     return s.startsWith('in stock') || s === '(60)';
+}
+
+/**
+ * "Active" hardware as the team defines it: any of the four operational
+ * asset_status values minus rows currently sitting in a Legal Hold
+ * substatus. Used as the numerator of the In-Stock Rate KPI and as a
+ * standalone "Active Assets" tile.
+ *
+ * State whitelist matches the SN drop-down captured in the team's
+ * filter screenshot — `In stock - available` / `Unavailable` /
+ * `In use` / `Consumed`. Anything else (Retired / Awaiting Approval /
+ * `(66)` placeholder values / etc.) is excluded.
+ */
+const ACTIVE_ASSET_STATES = new Set([
+    'in stock - available',
+    'unavailable',
+    'in use',
+    'consumed',
+]);
+export function isActiveAsset(row: HardwareRow): boolean {
+    const s = (row.asset_status ?? '').toLowerCase().trim();
+    if (!ACTIVE_ASSET_STATES.has(s)) return false;
+    const sub = (row.substatus ?? '').toLowerCase();
+    if (sub.includes('legal hold')) return false;
+    return true;
 }
 
 export function isPendingReturn(row: HardwareRow): boolean {
@@ -515,7 +604,9 @@ export function isZeroResidual(row: HardwareRow): boolean {
 export interface AssetKpis {
     total: number;
     inStock: number;
-    /** 0–100, rounded to the nearest integer. */
+    /** Hardware in one of the operational states minus Legal Hold (see isActiveAsset). */
+    activeAsset: number;
+    /** activeAsset / total — 0–100, rounded to the nearest integer. */
     inStockRatePct: number;
     pendingReturn: number;
     pendingRepair: number;
@@ -525,6 +616,7 @@ export interface AssetKpis {
 
 export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
     let inStock = 0;
+    let activeAsset = 0;
     let pendingReturn = 0;
     let pendingRepair = 0;
     let unconfirmed = 0;
@@ -532,6 +624,7 @@ export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
 
     for (const row of rows) {
         if (isInStock(row)) inStock += 1;
+        if (isActiveAsset(row)) activeAsset += 1;
         if (isPendingReturn(row)) pendingReturn += 1;
         if (isPendingRepair(row)) pendingRepair += 1;
         if (isUnconfirmed(row)) unconfirmed += 1;
@@ -539,15 +632,145 @@ export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
     }
 
     const total = rows.length;
-    const inStockRatePct = total === 0 ? 0 : Math.round((inStock / total) * 100);
+    // In-Stock Rate = inStock ÷ activeAsset — share of the currently
+    // operational fleet that is sitting unassigned in a stockroom
+    // (vs. handed out to a worker / consumed / unavailable). Falls
+    // back to 0 when there are no active rows so the tile shows '—'.
+    const inStockRatePct = activeAsset === 0 ? 0 : Math.round((inStock / activeAsset) * 100);
 
     return {
         total,
         inStock,
+        activeAsset,
         inStockRatePct,
         pendingReturn,
         pendingRepair,
         unconfirmed,
         zeroResidual,
     };
+}
+
+// =============================================================================
+// Duration formatting
+// =============================================================================
+
+/**
+ * Format a seconds count as "Xd Yh" / "Yh Zm" / "Nm" — picks the
+ * coarsest two units that aren't both zero so a 14-day duration reads
+ * "14d 3h" instead of "14d 3h 22m 8s".
+ *
+ *   86_400 → "1d 0h"
+ *   90_000 → "1d 1h"
+ *    7_200 → "2h 0m"
+ *      300 → "5m"
+ *        0 → "0m"
+ *
+ * Returns "—" when the value is null / non-finite / negative — the
+ * dashboards use that as the empty-state cell.
+ */
+export function formatDurationSec(secs: number | null | undefined): string {
+    if (secs === null || secs === undefined || !Number.isFinite(secs) || secs < 0) {
+        return '—';
+    }
+    const total = Math.round(secs);
+    const days = Math.floor(total / 86_400);
+    const hours = Math.floor((total % 86_400) / 3_600);
+    const minutes = Math.floor((total % 3_600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+/**
+ * Mean of a numeric column over rows where the value is set. Returns
+ * `null` when no row has a usable value — the caller can render that
+ * as "—" via {@link formatDurationSec}.
+ */
+export function meanOf<T>(rows: T[], pick: (r: T) => number | null | undefined): number | null {
+    let total = 0;
+    let count = 0;
+    for (const r of rows) {
+        const v = pick(r);
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+            total += v;
+            count += 1;
+        }
+    }
+    return count === 0 ? null : total / count;
+}
+
+/**
+ * Sum of a numeric column over rows. Like {@link meanOf} but additive —
+ * used for "total time worked across all rows" KPIs.
+ */
+export function sumOf<T>(rows: T[], pick: (r: T) => number | null | undefined): number {
+    let total = 0;
+    for (const r of rows) {
+        const v = pick(r);
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) total += v;
+    }
+    return total;
+}
+
+// =============================================================================
+// Model-family fuzzy classifier
+// =============================================================================
+
+/**
+ * Bucket a SN model_display_name into a coarse family so the
+ * In-Stock Assets bar chart shows a digestible number of bars
+ * (~10–15) instead of one bar per SKU (the raw model dimension has
+ * hundreds of distinct values).
+ *
+ * Order matters — we check the most specific patterns first
+ * ("MacBook Pro 16" before "MacBook Pro" before plain Apple). The
+ * fallback is "Other".
+ */
+export function modelFamily(modelName: string | null | undefined): string {
+    if (!modelName) return 'Unknown';
+    const s = modelName.toLowerCase();
+
+    // Apple line — split MacBook Pro / Air / Mac mini / iMac / iPad / iPhone.
+    if (s.includes('macbook pro 16')) return 'MacBook Pro 16';
+    if (s.includes('macbook pro 14')) return 'MacBook Pro 14';
+    if (s.includes('macbook pro 13')) return 'MacBook Pro 13';
+    if (s.includes('macbook pro')) return 'MacBook Pro';
+    if (s.includes('macbook air')) return 'MacBook Air';
+    if (s.includes('mac mini')) return 'Mac mini';
+    if (s.includes('imac')) return 'iMac';
+    if (s.includes('macbook')) return 'MacBook (other)';
+    if (s.includes('ipad')) return 'iPad';
+    if (s.includes('iphone')) return 'iPhone';
+    if (s.includes('apple')) return 'Apple (other)';
+
+    // Lenovo line — X1 Carbon / Thinkpad / Workstation / generic.
+    if (s.includes('x1 carbon')) return 'Lenovo X1 Carbon';
+    if (s.includes('thinkpad')) return 'Lenovo Thinkpad';
+    if (s.includes('lenovo') && s.includes('workstation')) return 'Lenovo Workstation';
+    if (s.includes('lenovo')) return 'Lenovo (other)';
+
+    // Dell line — Latitude / OptiPlex / Precision / monitor / generic.
+    if (s.includes('latitude')) return 'Dell Latitude';
+    if (s.includes('optiplex')) return 'Dell OptiPlex';
+    if (s.includes('precision')) return 'Dell Precision';
+    if (s.includes('xps')) return 'Dell XPS';
+    if (s.includes('dell') && s.includes('monitor')) return 'Dell Monitor';
+    if (s.includes('dell')) return 'Dell (other)';
+
+    // HP / Microsoft / common other vendors.
+    if (s.includes('elitebook')) return 'HP EliteBook';
+    if (s.includes('probook')) return 'HP ProBook';
+    if (s.includes('zbook')) return 'HP ZBook';
+    if (s.includes('surface')) return 'Microsoft Surface';
+
+    // Specialty equipment — keep in their own buckets so they don't
+    // inflate "Other".
+    if (s.includes('mocap')) return 'MOCAP Camera';
+    if (s.includes('ps5') || s.includes('playstation')) return 'PlayStation';
+    if (s.includes('xbox')) return 'Xbox';
+    if (s.includes('nvidia') || s.includes('rtx ') || s.includes('gtx ')) return 'NVIDIA GPU';
+    if (s.includes('monitor')) return 'Monitor';
+    if (s.includes('custom pc') || s.includes('workstation')) return 'Custom Workstation';
+
+    return 'Other';
 }
