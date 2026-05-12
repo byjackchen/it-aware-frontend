@@ -1946,6 +1946,7 @@
     "opsOhlaOtherCase": "Other Case Analysis",
     "opsOhlaRawData": "Raw Data",
     "incidentReport": "Incident Report",
+    "surveyLookup": "Survey Lookup",
     "opsUnassigned": "Unassigned"
   },
   "OpsDashboard": {

@@ -1624,6 +1624,7 @@
     "opsOhlaOtherCase": "其它案例分析",
     "opsOhlaRawData": "原始数据",
     "incidentReport": "工单分析报告",
+    "surveyLookup": "调查链接查询",
     "opsUnassigned": "未分派"
   },
   "OpsDashboard": {
