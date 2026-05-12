@@ -245,7 +245,12 @@ export function OpsDashboardHub() {
                 if (rt === 'asset_task') activeAsset += 1;
                 else if (rt === 'catalog_task') activeCatalog += 1;
             }
-            if (!r.assigned_to_name || r.assigned_to_name.trim() === '') unassigned += 1;
+            // Use `assigned_to_oid` (sys_id) as the source of truth for
+            // unassigned. The upstream sync drops `assigned_to_name` for
+            // many rows whose sys_id is populated, so filtering on the
+            // name field over-counts unassigned by ~5x. See
+            // UnassignedTicketsDashboard.tsx for the longer note.
+            if (!r.assigned_to_oid || (typeof r.assigned_to_oid === 'string' && r.assigned_to_oid.trim() === '')) unassigned += 1;
             const days = daysSinceUpdated(r, now);
             if (r.object_type === 'incident' && days > 2) agingIncidentGt2d += 1;
             if (r.object_type === 'request' && days > 30) {

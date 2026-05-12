@@ -68,9 +68,20 @@ function formatShortDate(iso: string): string {
     return new Date(t).toLocaleDateString();
 }
 
-/** A ticket counts as unassigned when it has no human assignee name. */
+/**
+ * A ticket counts as unassigned when no human assignee sys_id is set.
+ *
+ * NOTE: We deliberately key off `assigned_to_oid` (the ServiceNow sys_id)
+ * rather than `assigned_to_name`. The upstream sync currently leaves the
+ * display name empty for many rows whose `assigned_to` sys_id is in fact
+ * populated (e.g. INC0119911 — Lennon Chong is the assignee in SN, but
+ * `assigned_to_name` is blank in our DB). Filtering on the name field
+ * mis-classified roughly 80% of active tickets as unassigned. The sys_id
+ * column is the source of truth for "is anyone on the hook for this".
+ */
 function isUnassigned(row: TicketRow): boolean {
-    return !row.assigned_to_name || row.assigned_to_name.trim() === '';
+    const oid = row.assigned_to_oid;
+    return !oid || (typeof oid === 'string' && oid.trim() === '');
 }
 
 export function UnassignedTicketsDashboard() {
