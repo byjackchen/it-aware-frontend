@@ -162,6 +162,7 @@ export function DonutCard({
                                     fontSize: '12px',
                                 }}
                                 itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                                labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                                 formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
                             />
                             {!interactive && (

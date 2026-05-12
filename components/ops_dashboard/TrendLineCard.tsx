@@ -120,6 +120,12 @@ export function TrendLineCard({
                                 color: isLight ? '#1e293b' : '#f1f5f9',
                                 fontSize: '12px',
                             }}
+                            // Recharts ignores ``contentStyle.color`` for
+                            // per-item rows + the x-axis label header,
+                            // both of which default to black and become
+                            // invisible on dark mode. Force theme-aware.
+                            itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                            labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                             labelFormatter={(label) => formatXTick(String(label))}
                         />
                         {multi && (

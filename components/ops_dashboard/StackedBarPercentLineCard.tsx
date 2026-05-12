@@ -164,8 +164,14 @@ export function StackedBarPercentLineCard({
                             contentStyle={{
                                 backgroundColor: tooltipBg,
                                 border: `1px solid ${tooltipBorder}`,
+                                color: isLight ? '#1e293b' : '#f1f5f9',
                                 fontSize: 12,
                             }}
+                            // Per-item rows + label use their own styles
+                            // and default to black; force theme-aware
+                            // colors so they're readable on dark mode.
+                            itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                            labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                             formatter={(value, name, props) => {
                                 const key = (props as { dataKey?: string }).dataKey
                                 const isPctSeries = lineKeys.some((k) => k.key === key)
