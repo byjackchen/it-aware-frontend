@@ -398,7 +398,7 @@ export async function linkAccountWorker(accountOid: string, workerOid: string) {
   }
 }
 
-export async function unlinkAccountWorker(accountOid: string) {
+export async function unlinkAccountWorker(accountOid: string, workerOid: string) {
   const requestId = logger.generateRequestId();
   const action = 'Security:unlinkAccountWorker';
   const startTime = Date.now();
@@ -406,7 +406,7 @@ export async function unlinkAccountWorker(accountOid: string) {
   logger.info(`Started`, { requestId, action });
 
   try {
-    await api.unlinkAccountWorker(accountOid);
+    await api.unlinkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
     revalidatePath('/auth/accounts');
