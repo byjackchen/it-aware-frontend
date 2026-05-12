@@ -30,6 +30,7 @@ import {
     isInScopeGroup,
     momActiveSnapshot,
     monthsFromRange,
+    openedAt,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
@@ -406,7 +407,7 @@ export function OpsDashboardHub() {
                         : rt === 'catalog_task' ? t('tables.catalogTask')
                             : t('tables.request');
             }
-            const opened = r.source_created_at ?? r.created_at ?? '';
+            const opened = openedAt(r);
             return {
                 oid: r.oid,
                 stable_id: r.stable_id,

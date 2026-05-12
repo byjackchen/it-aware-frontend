@@ -21,6 +21,7 @@ import {
     daysSinceUpdated,
     isActiveState,
     isInScopeGroup,
+    openedAt,
 } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
@@ -135,7 +136,7 @@ export function AgingScTasksDashboard() {
                 _daysNoUpdate: daysSinceUpdated(r, now),
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
-                _openedFormatted: formatShortDate(r.created_at),
+                _openedFormatted: formatShortDate(openedAt(r)),
                 _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now],

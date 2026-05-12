@@ -35,6 +35,7 @@ import {
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    openedAt,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -164,7 +165,9 @@ function departmentOf(row: TicketRow): string {
 }
 
 function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
+    // Use upstream SN open date (source_created_at) per the ops-team
+    // contract; fall back to local created_at when missing.
+    return openedAt(row).slice(0, 10);
 }
 
 function trimLabel(label: string, max = 22): string {
@@ -289,7 +292,7 @@ export function OnOffBoardingDashboard() {
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
 
-    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => r.created_at, now)), [filtered, now]);
+    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => openedAt(r), now)), [filtered, now]);
     const activeMoM = useMemo(() => formatMoM(momActiveSnapshot(filtered, now)), [filtered, now]);
 
     const kpis = useMemo(() => {
@@ -428,10 +431,12 @@ export function OnOffBoardingDashboard() {
                 key: 'created_at',
                 label: t('charts.colOpened'),
                 width: 'w-32',
-                render: (r) => (r.created_at ?? '').slice(0, 10) || '—',
+                // Show upstream SN open date (source_created_at) per ops-team
+                // contract; falls back to local created_at when missing.
+                render: (r) => openedAt(r).slice(0, 10) || '—',
                 // Sort on parsed timestamp so newer/older ordering
                 // doesn't depend on the truncated YYYY-MM-DD string.
-                sortValue: (r) => Date.parse(r.created_at ?? '') || 0,
+                sortValue: (r) => Date.parse(openedAt(r)) || 0,
             },
         ],
         [t],

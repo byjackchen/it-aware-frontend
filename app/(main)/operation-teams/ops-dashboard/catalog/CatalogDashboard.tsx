@@ -33,6 +33,7 @@ import {
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    openedAt,
     sumOf,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
@@ -73,7 +74,9 @@ function departmentOf(row: TicketRow): string {
 }
 
 function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
+    // Use upstream SN open date (source_created_at) per the ops-team
+    // contract; fall back to local created_at when missing.
+    return openedAt(row).slice(0, 10);
 }
 
 /** Trim a long department/group label to fit the horizontal bar chart. */
@@ -176,7 +179,7 @@ export function CatalogDashboard() {
 
     // Month-over-month delta for the volume + active KPIs.
     const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
         [filtered, now],
     );
     const activeMoM = useMemo(
@@ -209,7 +212,7 @@ export function CatalogDashboard() {
                 (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null);
             if (!closedIso) continue;
             resolvedRows.push(r);
-            const opened = Date.parse(r.source_opened_at ?? r.created_at);
+            const opened = Date.parse(openedAt(r));
             const closed = Date.parse(closedIso);
             if (
                 Number.isFinite(opened) &&

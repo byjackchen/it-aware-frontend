@@ -30,6 +30,7 @@ import {
     trendByMonth,
     momByDate,
     momActiveSnapshot,
+    openedAt,
     sumOf,
     formatMoM,
     type DeltaInfo,
@@ -104,7 +105,9 @@ function locationOf(row: TicketRow): string | null {
 }
 
 function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
+    // Use upstream SN open date (source_created_at) per the ops-team
+    // contract; fall back to local created_at when missing.
+    return openedAt(row).slice(0, 10);
 }
 
 export function IncidentAnalysisDashboard() {
@@ -251,7 +254,7 @@ export function IncidentAnalysisDashboard() {
     //   point-in-time replay (see momActiveSnapshot).
     // - VIP Active: same snapshot, narrowed to VIP rows.
     const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
         [filtered, now],
     );
     const activeMoM = useMemo(
@@ -281,7 +284,7 @@ export function IncidentAnalysisDashboard() {
         for (const r of filtered) {
             if (!r.source_resolved_at) continue;
             resolvedRows.push(r);
-            const opened = Date.parse(r.source_opened_at ?? r.created_at);
+            const opened = Date.parse(openedAt(r));
             const resolved = Date.parse(r.source_resolved_at);
             if (
                 Number.isFinite(opened) &&

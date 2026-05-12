@@ -43,6 +43,30 @@ export function isActiveState(state: string | null | undefined): boolean {
 }
 
 // =============================================================================
+// Open-date selector
+// =============================================================================
+
+/**
+ * Canonical "opened-at" timestamp for a ticket (incident or request).
+ *
+ * Per the ops team's decision: every ticket-facing dashboard surfaces
+ * the **upstream** ServiceNow create timestamp (``source_created_at``)
+ * rather than the local DB row create timestamp (``created_at``). The
+ * latter is just when our sync pipeline ingested the row, which can
+ * lag SN by hours-to-days and so distorts trend / aging math.
+ *
+ * Falls back to ``created_at`` when ``source_created_at`` is null
+ * (older rows synced before Phase 2 started populating SN timestamps,
+ * or rows from non-SN sources).
+ *
+ * Returns ISO string. Empty string when both sources are missing —
+ * downstream Date.parse / slice() handle that gracefully.
+ */
+export function openedAt(row: { source_created_at?: string | null; created_at?: string | null }): string {
+    return row.source_created_at ?? row.created_at ?? '';
+}
+
+// =============================================================================
 // In-scope assignment-group filter
 // =============================================================================
 
@@ -331,7 +355,7 @@ export interface CumulativeTrendPoint {
  * `source_closed_at` for requests. Rows whose extractor returns null
  * are treated as still open.
  */
-export function cumulativeTrendByMonth<T extends { created_at: string }>(
+export function cumulativeTrendByMonth<T extends { source_created_at?: string | null; created_at?: string | null }>(
     rows: T[],
     closedAtFor: (row: T) => string | null | undefined,
     monthCount: number = 10,
@@ -343,7 +367,10 @@ export function cumulativeTrendByMonth<T extends { created_at: string }>(
     const openedDelta = new Map<string, number>();
     const closedDelta = new Map<string, number>();
     for (const row of rows) {
-        const oBucket = monthStart(row.created_at);
+        // Trend lines bucket by upstream SN create date (source_created_at)
+        // per the ops-team contract; fall back to local created_at when
+        // the source field is missing.
+        const oBucket = monthStart(openedAt(row));
         if (oBucket) openedDelta.set(oBucket, (openedDelta.get(oBucket) ?? 0) + 1);
         const cAt = closedAtFor(row);
         if (cAt) {
@@ -383,11 +410,13 @@ export function cumulativeTrendByMonth<T extends { created_at: string }>(
 
 /**
  * Trailing `monthCount`-month trend (inclusive of the current month),
- * bucketed by `created_at`. Months with zero rows are filled in so the
- * chart renders a continuous axis.
+ * bucketed by upstream SN create date (``source_created_at``, falling
+ * back to local ``created_at`` when missing — see ``openedAt``).
+ * Months with zero rows are filled in so the chart renders a
+ * continuous axis.
  */
 export function trendByMonth(
-    rows: Array<{ created_at: string }>,
+    rows: Array<{ source_created_at?: string | null; created_at?: string | null }>,
     monthCount: number = 10,
     now: number = Date.now(),
 ): TrendPoint[] {
@@ -395,7 +424,7 @@ export function trendByMonth(
 
     const counts = new Map<string, number>();
     for (const row of rows) {
-        const bucket = monthStart(row.created_at);
+        const bucket = monthStart(openedAt(row));
         if (!bucket) continue;
         counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
     }
@@ -474,7 +503,10 @@ export function momByDate<T>(
  * heuristic the cumulative-trend chart uses.
  */
 function wasActiveAt(row: TicketRow, atMs: number): boolean {
-    const createdMs = Date.parse(row.created_at);
+    // "Was opened by atMs" — gated on the upstream SN open time so the
+    // snapshot reflects when the ticket actually existed in SN, not
+    // when our pipeline ingested it.
+    const createdMs = Date.parse(openedAt(row));
     if (!Number.isFinite(createdMs) || createdMs > atMs) return false;
     let closedMs: number | null = null;
     const realClosed = row.source_resolved_at ?? row.source_closed_at;
