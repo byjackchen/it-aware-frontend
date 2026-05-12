@@ -781,7 +781,8 @@ export async function deleteInteraction(oid: string): Promise<void> {
 // ==================== Agents ====================
 
 export async function getAgents(): Promise<Agent[]> {
-    return fetchApi<Agent[]>(`${OBJECTS_BASE}/agents?limit=1000`);
+    const resp = await fetchApi<AgentListResponse>(`${OBJECTS_BASE}/agents?limit=1000`);
+    return resp.items;
 }
 
 export async function getAgentsPage(params: { skip?: number; limit?: number; is_active?: boolean; agent_platform?: string }): Promise<AgentListResponse> {
@@ -820,7 +821,8 @@ export async function deleteAgent(oid: string): Promise<void> {
 // ==================== Systems ====================
 
 export async function getSystems(): Promise<System[]> {
-    return fetchApi<System[]>(`${OBJECTS_BASE}/systems?limit=1000`);
+    const resp = await fetchApi<SystemListResponse>(`${OBJECTS_BASE}/systems?limit=1000`);
+    return resp.items;
 }
 
 export async function getSystemsPage(params: { skip?: number; limit?: number; is_active?: boolean; system_platform?: string }): Promise<SystemListResponse> {
