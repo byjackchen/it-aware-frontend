@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
-import { detectLocalTimezone, formatLocalDate, localEndOfDayIso, localMidnightIso } from '@/lib/utils/datetime';
+import { detectLocalTimezone, formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -144,8 +144,8 @@ export function InteractionsPanel({
         () => ({
             sort_by: 'created_at',
             order: 'desc' as const,
-            ...(dateFrom ? { created_at_from: localMidnightIso(dateFrom, timezone) } : {}),
-            ...(dateTo ? { created_at_to: localEndOfDayIso(dateTo, timezone) } : {}),
+            ...(dateFrom ? { created_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
+            ...(dateTo ? { created_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
             ...(workerFilter ? { actor_stable_id: workerFilter } : {}),
         }),
         [dateFrom, dateTo, workerFilter, timezone],
@@ -244,8 +244,8 @@ export function InteractionsPanel({
                 sort_by: 'created_at',
                 order: 'desc',
             });
-            if (dateFrom) params.set('created_at_from', localMidnightIso(dateFrom, timezone));
-            if (dateTo) params.set('created_at_to', localEndOfDayIso(dateTo, timezone));
+            if (dateFrom) params.set('created_at_from', localDateTimeToIso(dateFrom, timezone));
+            if (dateTo) params.set('created_at_to', localDateTimeToIso(dateTo, timezone));
             if (workerFilter) params.set('actor_stable_id', workerFilter);
 
             fetch(`/api/objects/interactions?${params.toString()}`, {
@@ -344,8 +344,8 @@ export function InteractionsPanel({
                 {
                     // Interactions xlsx accepts `datetime` — send ISO-with-offset
                     // so the backend's ensure_utc converts to UTC precisely.
-                    created_at_from: dateFrom ? localMidnightIso(dateFrom, timezone) : undefined,
-                    created_at_to: dateTo ? localEndOfDayIso(dateTo, timezone) : undefined,
+                    created_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
+                    created_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,
                 },
                 `ssc_faq_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,

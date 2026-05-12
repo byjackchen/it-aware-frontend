@@ -120,6 +120,69 @@ export function localEndOfDayIso(yyyyMmDd: string, timezone: string): string {
 }
 
 /**
+ * Render a Date as the local-zone `YYYY-MM-DDTHH:MM:SS` string used by
+ * `<input type="datetime-local">`. The control needs naked wall-clock
+ * components without trailing offset — the offset is added back at
+ * submission time via {@link localDateTimeToIso}.
+ */
+export function formatLocalDateTime(value: DateInput, timezone: string): string {
+  const date = parseDate(value);
+  if (!date) return '';
+  const resolvedTimezone = resolveTimezone(timezone);
+  // sv-SE emits YYYY-MM-DD HH:MM:SS; swap the space for a 'T' to match
+  // the format the browser's datetime-local input consumes.
+  const formatted = date.toLocaleString('sv-SE', {
+    timeZone: resolvedTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  return formatted.replace(' ', 'T');
+}
+
+/**
+ * Take a local `YYYY-MM-DDTHH:MM[:SS]` value out of a datetime-local
+ * input and return a full ISO-8601 datetime with the timezone's offset
+ * appended, e.g. `2026-05-11T13:45:00-05:00`. The wire format every
+ * datetime backend filter accepts (pydantic + ensure_utc normalize the
+ * offset to UTC server-side).
+ */
+export function localDateTimeToIso(localDateTime: string, timezone: string): string {
+  if (!localDateTime) return localDateTime;
+  // Normalize the local input to YYYY-MM-DDTHH:MM:SS (some inputs emit
+  // without seconds when step=60).
+  const datePart = localDateTime.slice(0, 10);
+  let timePart = localDateTime.slice(11);
+  if (/^\d{2}:\d{2}$/.test(timePart)) timePart = `${timePart}:00`;
+  // Reuse the offset that localMidnightIso computes for this date in
+  // this timezone — the offset depends on the date for DST zones, so
+  // anchor on the chosen day rather than "now".
+  const baseIso = localMidnightIso(datePart, timezone);
+  const offsetMatch = baseIso.match(/([+-]\d{2}:\d{2})$/);
+  const offset = offsetMatch ? offsetMatch[1] : '+00:00';
+  return `${datePart}T${timePart}${offset}`;
+}
+
+/**
+ * Human-readable timezone badge string for the filter UI, e.g.
+ * "America/Chicago (GMT-05:00)". Used next to datetime-local inputs.
+ */
+export function formatTzBadge(timezone: string): string {
+  const resolvedTimezone = resolveTimezone(timezone);
+  // Re-use the same offset detection as localMidnightIso, anchored on
+  // today so DST is reflected correctly.
+  const today = new Date().toISOString().slice(0, 10);
+  const iso = localMidnightIso(today, resolvedTimezone);
+  const offsetMatch = iso.match(/([+-]\d{2}:\d{2})$/);
+  const offset = offsetMatch ? `GMT${offsetMatch[1]}` : 'GMT';
+  return `${resolvedTimezone} (${offset})`;
+}
+
+/**
  * Render a date as a short relative phrase: "just now", "3m ago",
  * "5h ago", "2d ago", "3w ago", "5mo ago", "2y ago". Returns "—"
  * for null/invalid input. Always anchored to Date.now().

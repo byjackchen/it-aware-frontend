@@ -26,6 +26,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import type { IncidentCategoryBreakdownItem, IncidentMonthlyReportData, IncidentMonthStats, IncidentTop5Item, ChatbotEscalationStats } from '@/lib/types/objects';
+import { detectLocalTimezone, formatTzBadge } from '@/lib/utils/datetime';
 
 interface Props {
     report: IncidentMonthlyReportData | null;
@@ -171,27 +172,28 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
     const router = useTransitionRouter();
     const searchParams = useSearchParams();
     const t = useTranslations('SSCIncidentReport');
-    const [draftStart, setDraftStart] = useState(startDate);
-    const [draftEnd, setDraftEnd] = useState(endDate);
+    // The analyst sees + edits wall-clock datetimes in their local zone.
+    // The backend endpoint accepts `date`, so we truncate to YYYY-MM-DD at
+    // submission time — backend treats the result as a UTC calendar day,
+    // accepting the up-to-24h skew vs the analyst's local boundary as the
+    // cost of the simpler UTC-only backend contract.
+    const [draftStart, setDraftStart] = useState(`${startDate}T00:00:00`);
+    const [draftEnd, setDraftEnd] = useState(`${endDate}T23:59:59`);
+    const timezone = detectLocalTimezone();
 
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;
         const params = new URLSearchParams(searchParams.toString());
-        // Backend interprets start_date / end_date as UTC days. Frontend
-        // owns any wall-clock TZ math (see merge-review SOP rule #11).
-        // The analyst's <input type="date"> already operates in the local
-        // calendar; we send the YYYY-MM-DD as-is and accept the up-to-24h
-        // skew at the UTC vs local-zone boundary as the cost of the
-        // simpler backend contract.
-        params.set('start_date', draftStart);
-        params.set('end_date', draftEnd);
+        params.set('start_date', draftStart.slice(0, 10));
+        params.set('end_date', draftEnd.slice(0, 10));
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 
     return (
         <div className="flex flex-wrap items-center gap-2">
             <input
-                type="date"
+                type="datetime-local"
+                step={1}
                 value={draftStart}
                 max={draftEnd}
                 onChange={(e) => setDraftStart(e.target.value)}
@@ -199,12 +201,19 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
             />
             <ArrowRight className="h-4 w-4 text-gray-500" />
             <input
-                type="date"
+                type="datetime-local"
+                step={1}
                 value={draftEnd}
                 min={draftStart}
                 onChange={(e) => setDraftEnd(e.target.value)}
                 className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-100 focus:border-blue-500 focus:outline-none"
             />
+            <span
+                className="text-xs px-2 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                title="Datetimes shown in this timezone. Report window is anchored on the date part; the time part is informational."
+            >
+                {formatTzBadge(timezone)}
+            </span>
             <button
                 type="button"
                 onClick={apply}

@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, Loader2, Download, Filter, X, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
-import { detectLocalTimezone, formatLocalDate, localEndOfDayIso, localMidnightIso } from '@/lib/utils/datetime';
+import { detectLocalTimezone, formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -84,8 +84,8 @@ export function IncidentsPanel({
     // midnight, shifting the window 5-12 hours from the analyst's intent.
     // See `docs/it_aware_merge_review.md` Appendix A rule #11.
     const query = useMemo(() => ({
-        ...(dateFrom ? { source_created_at_from: localMidnightIso(dateFrom, timezone) } : {}),
-        ...(dateTo ? { source_created_at_to: localEndOfDayIso(dateTo, timezone) } : {}),
+        ...(dateFrom ? { source_created_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
+        ...(dateTo ? { source_created_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
     }), [dateFrom, dateTo, timezone]);
 
     const {
@@ -160,8 +160,8 @@ export function IncidentsPanel({
 
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
-        if (dateFrom) params.set('source_created_at_from', localMidnightIso(dateFrom, timezone));
-        if (dateTo) params.set('source_created_at_to', localEndOfDayIso(dateTo, timezone));
+        if (dateFrom) params.set('source_created_at_from', localDateTimeToIso(dateFrom, timezone));
+        if (dateTo) params.set('source_created_at_to', localDateTimeToIso(dateTo, timezone));
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -202,11 +202,14 @@ export function IncidentsPanel({
     const handleDownload = async () => {
         setIsDownloading(true);
         try {
+            // Incidents xlsx endpoint accepts `date`, not `datetime` — truncate
+            // the YYYY-MM-DDTHH:MM:SS local-datetime strings to the date part.
+            // The backend treats the resulting bare YYYY-MM-DD as a UTC day.
             await downloadDashboardXlsx(
                 'incidents',
                 {
-                    source_created_at_from: dateFrom,
-                    source_created_at_to: dateTo,
+                    source_created_at_from: dateFrom ? dateFrom.slice(0, 10) : undefined,
+                    source_created_at_to: dateTo ? dateTo.slice(0, 10) : undefined,
                 },
                 `ssc_ticket_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );

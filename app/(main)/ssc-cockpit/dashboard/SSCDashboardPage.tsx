@@ -8,7 +8,7 @@ import { InteractionsPanel } from '@/components/ssc/InteractionsPanel';
 import { IncidentsPanel } from '@/components/ssc/IncidentsPanel';
 import { AlignmentStatusBar } from '@/components/ssc/AlignmentStatusBar';
 import type { WorkerContext, Incident, Interaction } from '@/lib/types/objects';
-import { detectLocalTimezone, formatLocalDate } from '@/lib/utils/datetime';
+import { detectLocalTimezone, formatLocalDateTime } from '@/lib/utils/datetime';
 
 interface SSCDashboardPageProps {
     initialWorkerMap: Record<string, WorkerContext>;
@@ -18,17 +18,21 @@ interface SSCDashboardPageProps {
 const ALIGN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 // TZ-aware defaults — the analyst's "today" is their local calendar day,
-// not the UTC day. Otherwise at 23:00 Chicago on May 31, the dashboard
-// defaults the window to "May 25 → June 1" (UTC) which the analyst sees
-// as "May 24 19:00 → May 31 19:00 local" — off by a day on both edges.
+// not the UTC day. Each value is the wall-clock string consumed by
+// `<input type="datetime-local">`: `YYYY-MM-DDTHH:MM:SS`. The dashboard
+// composes ISO-with-offset at submission time via `localDateTimeToIso`.
 function getDefaultDateFrom(timezone: string): string {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return formatLocalDate(d, timezone);
+    // Start of the day 7 days ago in the analyst's calendar.
+    const dayPart = formatLocalDateTime(d, timezone).slice(0, 10);
+    return `${dayPart}T00:00:00`;
 }
 
 function getDefaultDateTo(timezone: string): string {
-    return formatLocalDate(new Date(), timezone);
+    // End of "today" in the analyst's calendar.
+    const dayPart = formatLocalDateTime(new Date(), timezone).slice(0, 10);
+    return `${dayPart}T23:59:59`;
 }
 
 /**
@@ -160,13 +164,12 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
             : (incident.actor_stable_id ?? null);
 
         // Narrow interactions panel to the 30-min window so it fetches the right data.
-        // Use the analyst's local calendar — comparing UTC-ISO YYYY-MM-DD would shift
-        // the panel by a day around the boundary even when the incident's wall-clock
-        // time is unambiguous.
-        const windowStartDate = formatLocalDate(new Date(windowStart), timezone);
-        const windowEndDate = formatLocalDate(new Date(incidentTs + 86400000), timezone);
-        setInteractionDateFrom(windowStartDate);
-        setInteractionDateTo(windowEndDate);
+        // Datetime-local strings (no offset) sit on the page state; the panel adds
+        // the offset back at submission via `localDateTimeToIso`.
+        const startLocal = formatLocalDateTime(new Date(windowStart), timezone);
+        const endLocal = formatLocalDateTime(new Date(incidentTs + 30 * 60 * 1000), timezone);
+        setInteractionDateFrom(startLocal);
+        setInteractionDateTo(endLocal);
 
         setAlignedIncidentOid(incident.oid);
         setAlignedIncidentStableId(incident.stable_id ?? incident.oid);
@@ -211,6 +214,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                     dateFrom={dateFrom}
                     dateTo={dateTo}
                     workerFilter={workerFilter}
+                    timezone={timezone}
                     onDateFromChange={setDateFrom}
                     onDateToChange={setDateTo}
                     onWorkerFilterChange={setWorkerFilter}
