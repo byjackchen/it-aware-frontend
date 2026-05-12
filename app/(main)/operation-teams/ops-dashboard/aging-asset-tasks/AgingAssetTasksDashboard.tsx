@@ -19,6 +19,7 @@ import {
     classifyRequestType,
     daysSinceUpdated,
     isActiveState,
+    isInScopeGroup,
 } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
@@ -92,13 +93,16 @@ export function AgingAssetTasksDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Base: asset tasks + active + aging > 30d.
+    // Base: asset tasks + active + aging > 30d + OIT scope.
+    // OIT-scope keeps this aligned with the Active Monitoring Hub's
+    // Aging >30d asset-task KPI.
     const base: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
         return rows.filter(
             (r) =>
                 classifyRequestType(r) === 'asset_task' &&
                 isActiveState(r.state) &&
+                isInScopeGroup(r.assigned_group) &&
                 daysSinceUpdated(r, now) > 30,
         );
     }, [data, now]);

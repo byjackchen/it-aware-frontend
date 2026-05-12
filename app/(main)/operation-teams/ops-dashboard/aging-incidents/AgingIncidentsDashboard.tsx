@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -94,10 +94,18 @@ export function AgingIncidentsDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Base: active + aging > 2d.
+    // Base: active + aging > 2d + OIT scope.
+    // OIT-scope filter keeps this page's count aligned with the Active
+    // Monitoring Hub's "Aging >2d" KPI, which also scopes to OIT
+    // assignment groups. Without it non-OIT queues (Workday / SN_WD /
+    // etc.) inflate the Aging page by ~15 rows on the current snapshot.
     const base: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
-        return rows.filter((r) => isActiveState(r.state) && daysSinceUpdated(r, now) > 2);
+        return rows.filter((r) =>
+            isActiveState(r.state)
+            && isInScopeGroup(r.assigned_group)
+            && daysSinceUpdated(r, now) > 2,
+        );
     }, [data, now]);
 
     // No panel slicers — the Region/Country/Location filter lives in
