@@ -2211,7 +2211,10 @@
       "incident": "Incident",
       "request": "Request",
       "daysNoUpdate": "Days No Update",
-      "shortDescription": "Short Description"
+      "shortDescription": "Short Description",
+      "detailTitle": "Ticket Detail",
+      "assetTask": "Asset Task",
+      "catalogTask": "Catalog Task"
     },
     "tabs": {
       "pendingReturn": "Pending Return",
