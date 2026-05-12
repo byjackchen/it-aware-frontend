@@ -190,7 +190,7 @@ export function AgentSupportDashboard() {
                         label={t('agentSupport.kpis.agentSupport')}
                         value={fmtNum(kpis.count)}
                         valueSize="xl"
-                        tooltip={t('agentSupport.kpis.agentSupport')}
+                        tooltip={t('agentSupport.kpis.agentSupportInfo')}
                     />
                     <div className="md:col-span-2">
                         <TrendLineCard
@@ -209,6 +209,7 @@ export function AgentSupportDashboard() {
                     columns={columns}
                     totalCount={detailRows.length}
                     emptyText={t('common.noData')}
+                    csvFilename="ohla_agent_support"
                 />
             </div>
         </div>

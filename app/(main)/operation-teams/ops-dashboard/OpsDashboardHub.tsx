@@ -232,6 +232,7 @@ export function OpsDashboardHub() {
         let activeIncidentHigh = 0;
         let activeCatalog = 0;
         let activeAsset = 0;
+        let unassigned = 0;
         let agingIncidentGt2d = 0;
         let agingCatalogGt30d = 0;
         let agingAssetGt30d = 0;
@@ -244,6 +245,7 @@ export function OpsDashboardHub() {
                 if (rt === 'asset_task') activeAsset += 1;
                 else if (rt === 'catalog_task') activeCatalog += 1;
             }
+            if (!r.assigned_to_name || r.assigned_to_name.trim() === '') unassigned += 1;
             const days = daysSinceUpdated(r, now);
             if (r.object_type === 'incident' && days > 2) agingIncidentGt2d += 1;
             if (r.object_type === 'request' && days > 30) {
@@ -277,6 +279,7 @@ export function OpsDashboardHub() {
             activeCatalog,
             activeAsset,
             vipActive,
+            unassigned,
             agingIncidentGt2d,
             agingCatalogGt30d,
             agingAssetGt30d,
@@ -326,6 +329,18 @@ export function OpsDashboardHub() {
             groupBy(activeTickets, (r) => r.assigned_group)
                 .slice(0, 8)
                 .map((g) => ({ name: g.key, value: g.count })),
+        [activeTickets],
+    );
+
+    // By-Assignee bar — top 10 by active ticket count. Bar chart over
+    // donut because assignee names are long (user IDs / full names)
+    // and a donut with > 8 slices becomes unreadable at chart size.
+    // Unassigned rows fall into the "Unassigned" bucket so the chart
+    // surfaces the backlog-without-an-owner signal.
+    const assigneeBar = useMemo(
+        () =>
+            groupBy(activeTickets, (r) => r.assigned_to_name?.trim() || 'Unassigned')
+                .slice(0, 10),
         [activeTickets],
     );
 
@@ -489,6 +504,7 @@ export function OpsDashboardHub() {
                     kpis={ticketKpis}
                     kpiDeltas={ticketKpiDeltas}
                     groupDonut={groupDonut}
+                    assigneeBar={assigneeBar}
                     trend={trend}
                     trendMonths={trendMonths}
                     regionData={regionData}

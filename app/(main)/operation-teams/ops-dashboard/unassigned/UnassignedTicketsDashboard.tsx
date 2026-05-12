@@ -1,23 +1,19 @@
 'use client';
 
 /**
- * VIP Tickets (Page 1.3.5) — ports `temp_ref/.../dashboard/vip-tickets/VipTicketsPage.tsx`.
+ * Unassigned Tickets (Page 1.3.x) — active incidents + requests whose
+ * `assigned_to_name` is NULL or empty. Surfaces the "no owner yet"
+ * backlog so the Ops Lead can pick rows up and assign them.
  *
- * The VIP cohort spans both incidents and requests. We fetch both with
- * `is_vip=true`, merge, and run an active-state client
- * filter to keep Phase 1's contract. Each endpoint caps at 1000 rows —
- * the merged union gives us up to 2000 tickets, which comfortably
- * covers the current VIP volume; flagged as a known ceiling if it ever
- * spills over.
- *
- * Pagination is client-side (slice the merged array). The DataTable
- * primitive is designed for server-side pagination but accepts a
- * client-side workflow as long as we pass `total = merged.length` and
- * hold the `skip/limit` state locally.
+ * Mirrors VipTicketsDashboard structure: merge both object types, keep
+ * only active states, client-filter on the unassigned predicate, and
+ * render in a paginated DataTable with CSV export. Region/Country/
+ * Location filter is shared across all Monitoring dashboards via
+ * useOpsGlobalFilter.
  */
 
 import { useMemo, useState } from 'react';
-import { Star, RefreshCw } from 'lucide-react';
+import { UserX, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
@@ -30,13 +26,12 @@ import {
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
-import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 
 const PAGE_SIZE = 100;
 
-interface VipTableRow extends Record<string, unknown> {
+interface UnassignedTableRow extends Record<string, unknown> {
     oid: string;
     stable_id: string;
     object_type: 'incident' | 'request';
@@ -44,7 +39,6 @@ interface VipTableRow extends Record<string, unknown> {
     state: string;
     priority: string;
     assigned_group: string | null;
-    assigned_to_name: string | null;
     caller_name: string | null;
     _typeLabel: string;
     _daysNoUpdate: number;
@@ -58,7 +52,6 @@ function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || '—';
 }
 
-/** RegionCountryFilter wants null on missing locations (vs the table's '—'). */
 function locationForFilter(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
@@ -75,20 +68,26 @@ function formatShortDate(iso: string): string {
     return new Date(t).toLocaleDateString();
 }
 
-export function VipTicketsDashboard() {
+/** A ticket counts as unassigned when it has no human assignee name. */
+function isUnassigned(row: TicketRow): boolean {
+    return !row.assigned_to_name || row.assigned_to_name.trim() === '';
+}
+
+export function UnassignedTicketsDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    // Fetch both endpoints in parallel — both filtered by is_vip + OIT +
-    // active-only (VIP page only shows open tickets). fetchAll pages
-    // through so we don't silently drop older VIP tickets past the first 1000.
+    // Server-side filter by active states; client-side filter for the
+    // null-assignee predicate (backend doesn't expose an `is_unassigned`
+    // param, and adding one for a single page doesn't clear the "only
+    // new endpoints when scope demands it" bar in the review SOP).
     const incidentQuery = useIncidents(
-        { limit: 1000, is_vip: true, states_list: ACTIVE_STATES },
+        { limit: 1000, states_list: ACTIVE_STATES, view: 'slim' },
         { fetchAll: true },
     );
     const requestQuery = useRequests(
-        { limit: 1000, is_vip: true, states_list: ACTIVE_STATES },
+        { limit: 1000, states_list: ACTIVE_STATES, view: 'slim' },
         { fetchAll: true },
     );
 
@@ -99,16 +98,8 @@ export function VipTicketsDashboard() {
         await Promise.all([incidentQuery.refetch(), requestQuery.refetch()]);
     };
 
-    // Capture "now" at mount so aging math is stable across re-renders
-    // (react-hooks/purity rejects Date.now() inside useMemo).
     const [now] = useState<number>(() => Date.now());
-
-    // FilterState kept for TopFilterBar's controlled-shell contract;
-    // the Region/Country/Location filter owns the only filter state.
     const [filters, setFilters] = useState<FilterState>({});
-    // Region / Country / Location are SHARED across every MONITORING
-    // dashboard via useOpsGlobalFilter — picking AMER on one page
-    // carries the selection to the others so users don't repeat it.
     const {
         filter: globalFilter,
         setRegions: setSelectedRegions,
@@ -121,9 +112,8 @@ export function VipTicketsDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Merge, narrow to active states, sort by source_updated_at DESC
-    // (Phase 2 aging clock; fall back to updated_at on pre-backfill rows
-    // or non-SN activity sources).
+    // Merge incidents + requests → active-only → unassigned-only →
+    // sort by source_updated_at DESC (oldest stale at the bottom).
     const merged: TicketRow[] = useMemo(() => {
         const a = incidentQuery.data?.items ?? [];
         const b = requestQuery.data?.items ?? [];
@@ -131,6 +121,7 @@ export function VipTicketsDashboard() {
         const all: TicketRow[] = [];
         for (const row of [...a, ...b]) {
             if (!isActiveState(row.state)) continue;
+            if (!isUnassigned(row)) continue;
             if (seen.has(row.oid)) continue;
             seen.add(row.oid);
             all.push(row);
@@ -143,8 +134,6 @@ export function VipTicketsDashboard() {
         return all;
     }, [incidentQuery.data, requestQuery.data]);
 
-    // No panel slicers — Region/Country/Location filter lives in
-    // TopFilterBar's headerSlot.
     const slicers: SlicerConfig[] = useMemo(() => [], []);
 
     const filtered = useMemo(() => {
@@ -163,7 +152,7 @@ export function VipTicketsDashboard() {
         resetPage();
     }
 
-    const enriched: VipTableRow[] = useMemo(
+    const enriched: UnassignedTableRow[] = useMemo(
         () =>
             filtered.map((r) => ({
                 ...r,
@@ -185,7 +174,7 @@ export function VipTicketsDashboard() {
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
-    const cols: ColDef<VipTableRow>[] = useMemo(() => {
+    const cols: ColDef<UnassignedTableRow>[] = useMemo(() => {
         const typeBadgeCls = (type: 'incident' | 'request') =>
             type === 'incident'
                 ? isLight
@@ -223,8 +212,12 @@ export function VipTicketsDashboard() {
                 sortValue: (r) => r._daysNoUpdate,
             },
             { key: 'priority', label: t('tables.priority'), width: '100px' },
-            { key: 'assigned_group', label: t('tables.assignmentGroup'), width: '160px', render: (r) => r.assigned_group ?? '—' },
-            { key: 'assigned_to_name', label: t('tables.assignedTo'), width: '150px', render: (r) => r.assigned_to_name ?? '—' },
+            {
+                key: 'assigned_group',
+                label: t('tables.assignmentGroup'),
+                width: '170px',
+                render: (r) => r.assigned_group ?? '—',
+            },
             { key: '_openedBy', label: t('tables.openedBy'), width: '150px' },
             { key: '_location', label: t('tables.location'), width: '140px' },
             {
@@ -242,13 +235,13 @@ export function VipTicketsDashboard() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-400'}`}>
-                        <Star className="w-5 h-5 fill-current" />
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-orange-100 text-orange-600' : 'bg-orange-500/20 text-orange-400'}`}>
+                        <UserX className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.vipTitle')}</h1>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.unassignedTitle')}</h1>
                         <p className={`text-sm mt-0.5 ${textMuted}`}>
-                            {t('pages.vipSubtitle')} · {t('pages.vipRecords', { count: filtered.length.toLocaleString() })}
+                            {t('pages.unassignedSubtitle')} · {t('pages.unassignedRecords', { count: filtered.length.toLocaleString() })}
                         </p>
                     </div>
                 </div>
@@ -261,14 +254,12 @@ export function VipTicketsDashboard() {
                 </button>
             </div>
 
-            {/* Filter panel — Region/Country/Location only. VIP page
-                shows active VIP tickets across incidents + requests
-                (no Open Date / sub-filters beyond geography). */}
+            {/* Filter panel — Region/Country/Location only. */}
             <TopFilterBar
                 slicers={slicers}
                 value={filters}
                 onChange={setFilters}
-                storageKey="ops-dashboard:vip-tickets:filters"
+                storageKey="ops-dashboard:unassigned:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
                 clientSideTooltip={t('filters.clientSideTooltip')}
@@ -318,10 +309,10 @@ export function VipTicketsDashboard() {
 
             {/* Table */}
             <div className="flex-1 min-h-0">
-                <DataTable<VipTableRow>
+                <DataTable<UnassignedTableRow>
                     rows={pageRows}
                     cols={cols}
-                    searchKeys={['stable_id', 'title', 'assigned_to_name', '_openedBy'] as (keyof VipTableRow)[]}
+                    searchKeys={['stable_id', 'title', 'assigned_group', '_openedBy'] as (keyof UnassignedTableRow)[]}
                     total={enriched.length}
                     skip={page.skip}
                     limit={page.limit}
@@ -334,7 +325,7 @@ export function VipTicketsDashboard() {
                     loadingText={t('empty.loading')}
                     partialText={t('empty.partialResult')}
                     pageSizeOptions={[50, 100, 200, 500]}
-                    csvFilename="vip_tickets"
+                    csvFilename="unassigned_tickets"
                     csvRows={enriched}
                 />
             </div>
