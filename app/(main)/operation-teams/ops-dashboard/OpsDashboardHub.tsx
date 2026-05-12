@@ -27,6 +27,7 @@ import {
     formatMoM,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     momActiveSnapshot,
     monthsFromRange,
     trendByMonth,
@@ -222,7 +223,14 @@ export function OpsDashboardHub() {
     }, [allTickets, ticketFilters, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeTickets = useMemo(
-        () => filteredTickets.filter((r) => isActiveState(r.state)),
+        // Narrow to OIT-scope assignment groups so KPIs / aging / unassigned
+        // reflect "tickets in OIT's queue" rather than the full firehose of
+        // every ServiceNow group (HR / Amazon Ordering / Workday / etc.).
+        // See isInScopeGroup for the keyword list.
+        () =>
+            filteredTickets.filter(
+                (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
+            ),
         [filteredTickets],
     );
 
@@ -379,7 +387,13 @@ export function OpsDashboardHub() {
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
     const allTicketsActive = useMemo(
-        () => allTickets.filter((r) => isActiveState(r.state)).length,
+        // Match the scoping applied in ``activeTickets`` so the
+        // "filtered / total" denominator in the filter bar also reflects
+        // the OIT queue size, not the full SN firehose.
+        () =>
+            allTickets.filter(
+                (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
+            ).length,
         [allTickets],
     );
 

@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup } from '@/lib/ops_dashboard/aggregate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
     TopFilterBar,
@@ -132,6 +132,11 @@ export function UnassignedTicketsDashboard() {
         const all: TicketRow[] = [];
         for (const row of [...a, ...b]) {
             if (!isActiveState(row.state)) continue;
+            // Scope to OIT assignment groups — keeps the page consistent
+            // with the Active Monitoring Hub's unassigned KPI and keeps
+            // external groups (HR / Amazon Ordering / Workday / etc.)
+            // out of the view.
+            if (!isInScopeGroup(row.assigned_group)) continue;
             if (!isUnassigned(row)) continue;
             if (seen.has(row.oid)) continue;
             seen.add(row.oid);

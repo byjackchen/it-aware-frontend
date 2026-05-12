@@ -43,6 +43,59 @@ export function isActiveState(state: string | null | undefined): boolean {
 }
 
 // =============================================================================
+// In-scope assignment-group filter
+// =============================================================================
+
+/**
+ * Assignment-group substrings that identify tickets the OIT team is on
+ * the hook for. Mirrors the ServiceNow condition builder the team uses
+ * when eyeballing their own queue:
+ *
+ *   assignment_group CONTAINS  OIT
+ *     OR assignment_group CONTAINS servicenow
+ *     OR assignment_group CONTAINS microsoft o365
+ *     OR assignment_group CONTAINS security
+ *     OR assignment_group CONTAINS myaccess
+ *
+ * Without this filter the ops-dashboard surfaces tickets owned by HR /
+ * Amazon Ordering / Workday / other external groups, which drowns out
+ * the signal — e.g. a single "Amazon Ordering Group" carries 213
+ * un-triaged catalog orders that are part of an automated flow and are
+ * not OIT's problem. Scoping the dashboard to the OIT footprint makes
+ * the Unassigned / Aging / By-Assignee numbers actionable instead of
+ * alarming.
+ *
+ * Comparisons are case-insensitive; the canonical SN labels we've seen
+ * include "OIT SSC", "APAC OIT Support", "Microsoft O365 group",
+ * "ServiceNow Support", "MyAccess Support", "OIT Security and
+ * Compliance Support", etc.
+ */
+export const OIT_SCOPE_GROUP_KEYWORDS: readonly string[] = [
+    'oit',
+    'servicenow',
+    'microsoft o365',
+    'security',
+    'myaccess',
+] as const;
+
+/**
+ * True when a ticket's ``assigned_group`` contains any of the OIT-scope
+ * keywords (case-insensitive). Rows with a null / empty assigned_group
+ * are excluded — the dashboard is about "what's in OIT's queue", and a
+ * ticket with no queue at all isn't in it.
+ */
+export function isInScopeGroup(
+    assignedGroup: string | null | undefined,
+): boolean {
+    if (!assignedGroup) return false;
+    const low = assignedGroup.toLowerCase();
+    for (const kw of OIT_SCOPE_GROUP_KEYWORDS) {
+        if (low.includes(kw)) return true;
+    }
+    return false;
+}
+
+// =============================================================================
 // Request-type classifier (Phase 1 client-side)
 // =============================================================================
 
