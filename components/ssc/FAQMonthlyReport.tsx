@@ -25,9 +25,9 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
-import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import type { FAQEnquiryItem, InteractionFAQReport, MonthStats } from '@/lib/types/objects';
 import { formatTzBadge } from '@/lib/utils/datetime';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -48,26 +48,37 @@ const CODE_COLORS: Record<string, string> = {
     OOS: '#ec4899',
 };
 
+const CODE_DEF_KEYS = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS', 'NA'] as const;
+
 function pct(value: number): string {
     return `${value.toFixed(1)}%`;
 }
 
-function formatCountDelta(current: number, previous: number): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatDateRange(start: string, end: string): string {
+    const fmt = (d: string) => {
+        const date = d.slice(0, 10).replace(/-/g, '/');
+        const time = d.slice(11, 16);
+        return time ? `${date} ${time}` : date;
+    };
+    return `${fmt(start)} ~ ${fmt(end)}`;
+}
+
+function formatCountDelta(current: number, previous: number, prevRange: string): { value: string; trend: 'up' | 'down' | 'flat'; tooltip: string } {
     const diff = current - previous;
-    if (diff === 0) return { value: 'Flat vs prev', trend: 'flat' };
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} vs prev`,
-        trend: diff > 0 ? 'up' : 'down',
+        value: diff === 0 ? 'Flat vs prev' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()} vs prev`,
+        trend: diff === 0 ? 'flat' : diff > 0 ? 'up' : 'down',
+        tooltip: prevRange,
     };
 }
 
-function formatRateDelta(current: number, previous: number, lowerIsBetter = false): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatRateDelta(current: number, previous: number, prevRange: string, lowerIsBetter = false): { value: string; trend: 'up' | 'down' | 'flat'; tooltip: string } {
     const diff = Number((current - previous).toFixed(2));
-    if (diff === 0) return { value: 'Flat vs prev', trend: 'flat' };
     const improved = lowerIsBetter ? diff < 0 : diff > 0;
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toFixed(1)} pts`,
-        trend: improved ? 'up' : 'down',
+        value: diff === 0 ? 'Flat vs prev' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)} pts vs prev`,
+        trend: diff === 0 ? 'flat' : improved ? 'up' : 'down',
+        tooltip: prevRange,
     };
 }
 
@@ -102,7 +113,10 @@ function compareCodes(current: MonthStats, previous: MonthStats) {
         .sort((a, b) => b.currentCount - a.currentCount);
 }
 
-function buildHighlights(report: InteractionFAQReport): Array<{ title: string; detail: string; tone: 'good' | 'warn' | 'neutral' }> {
+function buildHighlights(
+    report: InteractionFAQReport,
+    t: ReturnType<typeof useTranslations>,
+): Array<{ title: string; detail: string; tone: 'good' | 'warn' | 'neutral' }> {
     const { current, previous, top5_faq } = report;
     const topFaq = top5_faq[0];
     const resolutionDiff = Number((current.faq_resolution_rate - previous.faq_resolution_rate).toFixed(2));
@@ -112,25 +126,35 @@ function buildHighlights(report: InteractionFAQReport): Array<{ title: string; d
 
     return [
         {
-            title: resolutionDiff >= 0 ? 'Resolution is improving' : 'Resolution slipped',
-            detail: `${pct(current.faq_resolution_rate)} this period, ${resolutionDiff >= 0 ? '+' : ''}${resolutionDiff.toFixed(1)} pts vs previous.`,
+            title: t(`highlights.${resolutionDiff >= 0 ? 'resolutionImproving' : 'resolutionSlipped'}`),
+            detail: t('highlights.resolutionDetail', {
+                rate: pct(current.faq_resolution_rate),
+                diff: `${resolutionDiff >= 0 ? '+' : ''}${resolutionDiff.toFixed(1)}`,
+            }),
             tone: resolutionDiff >= 0 ? 'good' : 'warn',
         },
         {
-            title: escalationDiff <= 0 ? 'Human handoff contained' : 'Handoff pressure rising',
-            detail: `${current.wecom_incident_count} WeCom incidents (${pct(current.human_escalation_rate)} of FAQ-relevant sessions), ${escalationDiff >= 0 ? '+' : ''}${escalationDiff.toFixed(1)} pts vs previous.`,
+            title: t(`highlights.${escalationDiff <= 0 ? 'handoffContained' : 'handoffPressureRising'}`),
+            detail: t('highlights.handoffDetail', {
+                count: current.wecom_incident_count,
+                rate: pct(current.human_escalation_rate),
+                diff: `${escalationDiff >= 0 ? '+' : ''}${escalationDiff.toFixed(1)}`,
+            }),
             tone: escalationDiff <= 0 ? 'good' : 'warn',
         },
         {
-            title: naShare >= 20 ? 'High non-FAQ traffic' : 'Most traffic looks FAQ-relevant',
-            detail: `NA share is ${pct(naShare)}. ACCT share of all traffic is ${pct(acctShare)}.`,
+            title: t(`highlights.${naShare >= 20 ? 'highNonFaq' : 'mostTrafficFaq'}`),
+            detail: t('highlights.naDetail', { naShare: pct(naShare), acctShare: pct(acctShare) }),
             tone: naShare >= 20 ? 'warn' : 'neutral',
         },
         {
-            title: topFaq ? `Top demand: ${topFaq.name}` : 'No top FAQ data',
+            title: topFaq ? t('highlights.topDemand', { name: topFaq.name }) : t('highlights.noTopFaqData'),
             detail: topFaq
-                ? `${topFaq.count.toLocaleString()} enquiries, ${pct(topFaq.percentage)} of top-5 demand.`
-                : 'No catalog-linked FAQ enquiries were returned for this period.',
+                ? t('highlights.topDemandDetail', {
+                      count: topFaq.count.toLocaleString(),
+                      pct: pct(topFaq.percentage),
+                  })
+                : t('highlights.noTopFaqDataDetail'),
             tone: topFaq ? 'neutral' : 'warn',
         },
     ];
@@ -138,13 +162,14 @@ function buildHighlights(report: InteractionFAQReport): Array<{ title: string; d
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function Tooltip({ text }: { text: string }) {
+function Tooltip({ text, position = 'below' }: { text: string; position?: 'below' | 'right' }) {
+    const popoverCls = position === 'right'
+        ? 'pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden w-64 -translate-y-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block'
+        : 'pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block';
     return (
         <span className="group relative inline-flex items-center">
             <HelpCircle className="h-3.5 w-3.5 text-gray-400 transition-colors group-hover:text-white" />
-            <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block">
-                {text}
-            </span>
+            <span className={popoverCls}>{text}</span>
         </span>
     );
 }
@@ -263,6 +288,7 @@ function HighlightCard({ title, detail, tone, isLight }: { title: string; detail
 }
 
 function BreakdownComparisonTable({ current, previous, isLight }: { current: MonthStats; previous: MonthStats; isLight: boolean }) {
+    const tFaq = useTranslations('SSCFAQReport');
     const rows = compareCodes(current, previous);
     const headerCls = `px-3 py-2.5 text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-400'}`;
 
@@ -271,12 +297,12 @@ function BreakdownComparisonTable({ current, previous, isLight }: { current: Mon
             <table className="w-full text-sm">
                 <thead>
                     <tr className={`border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
-                        <th className={`${headerCls} text-left`}>Code</th>
-                        <th className={`${headerCls} text-right`}>Current</th>
-                        <th className={`${headerCls} text-right`}>Share</th>
-                        <th className={`${headerCls} text-right`}>Previous</th>
-                        <th className={`${headerCls} text-right`}>&Delta; Count</th>
-                        <th className={`${headerCls} text-right`}>&Delta; %pts</th>
+                        <th className={`${headerCls} text-left`}>{tFaq('table.code')}</th>
+                        <th className={`${headerCls} text-right`}>{formatDateRange(current.start_date, current.end_date)}</th>
+                        <th className={`${headerCls} text-right`}>{tFaq('table.share')}</th>
+                        <th className={`${headerCls} text-right`}>{formatDateRange(previous.start_date, previous.end_date)}</th>
+                        <th className={`${headerCls} text-right`}>{tFaq('table.deltaCount')}</th>
+                        <th className={`${headerCls} text-right`}>{tFaq('table.deltaPts')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -289,6 +315,9 @@ function BreakdownComparisonTable({ current, previous, isLight }: { current: Mon
                                         style={{ backgroundColor: CODE_COLORS[row.code] || '#cbd5e1' }}
                                     />
                                     <span className={`text-sm font-medium ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.display}</span>
+                                    {(CODE_DEF_KEYS as readonly string[]).includes(row.code) && (
+                                        <Tooltip text={tFaq(`codeDef.${row.code as typeof CODE_DEF_KEYS[number]}`)} position="right" />
+                                    )}
                                 </div>
                             </td>
                             <td className={`px-3 py-2.5 text-right font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{row.currentCount.toLocaleString()}</td>
@@ -388,18 +417,18 @@ export function FAQMonthlyReport({ report, error }: Props) {
         );
     }
 
-    const highlights = buildHighlights(report);
+    const highlights = buildHighlights(report, tFaq);
     const { current, previous } = report;
+    const prevRange = formatDateRange(previous.start_date, previous.end_date);
 
     const sectionBg = isLight
         ? 'rounded-xl border border-slate-200 bg-white'
         : 'rounded-xl border border-white/10 bg-white/[0.03]';
 
-    // Build bar chart data for top FAQ categories
-    const topFaqBarData = report.top5_faq.map((item) => ({
-        key: item.name || item.code,
+    const topFaqBarData = report.top5_faq.map((item, i) => ({
+        name: item.name || item.code,
         count: item.count,
-        items: [],
+        color: ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'][i] ?? '#94a3b8',
     }));
 
     return (
@@ -415,7 +444,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                     <div>
                         <h1 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{tFaq('title')}</h1>
                         <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                            {current.label} vs {previous.label}
+                            {formatDateRange(current.start_date, current.end_date)} vs {formatDateRange(previous.start_date, previous.end_date)}
                         </p>
                     </div>
                 </div>
@@ -427,28 +456,28 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 <KpiCard
                     label={tFaq('kpi.totalInteractions')}
                     value={current.grand_total.toLocaleString()}
-                    delta={formatCountDelta(current.grand_total, previous.grand_total)}
+                    delta={formatCountDelta(current.grand_total, previous.grand_total, prevRange)}
                     icon={MessageCircle}
                     tooltip={tFaq('kpiTooltip.totalInteractions')}
                 />
                 <KpiCard
                     label={tFaq('kpi.uniqueVisitors')}
                     value={current.unique_visitors.toLocaleString()}
-                    delta={formatCountDelta(current.unique_visitors, previous.unique_visitors)}
+                    delta={formatCountDelta(current.unique_visitors, previous.unique_visitors, prevRange)}
                     icon={Users}
                     tooltip={tFaq('kpiTooltip.uniqueVisitors')}
                 />
                 <KpiCard
                     label={tFaq('kpi.faqResolutionRate')}
                     value={pct(current.faq_resolution_rate)}
-                    delta={formatRateDelta(current.faq_resolution_rate, previous.faq_resolution_rate)}
+                    delta={formatRateDelta(current.faq_resolution_rate, previous.faq_resolution_rate, prevRange)}
                     icon={CheckCircle2}
                     tooltip={tFaq('kpiTooltip.faqResolutionRate')}
                 />
                 <KpiCard
                     label={tFaq('kpi.humanEscalationRate')}
                     value={pct(current.human_escalation_rate)}
-                    delta={formatRateDelta(current.human_escalation_rate, previous.human_escalation_rate, true)}
+                    delta={formatRateDelta(current.human_escalation_rate, previous.human_escalation_rate, prevRange, true)}
                     icon={PhoneCall}
                     tooltip={tFaq('kpiTooltip.humanEscalationRate')}
                 />
@@ -465,7 +494,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <DonutCard
                     title={tFaq('charts.reviewCodeCurrent')}
-                    subtitle={current.label}
+                    subtitle={formatDateRange(current.start_date, current.end_date)}
                     data={current.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
                         value: item.count,
@@ -475,7 +504,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 />
                 <DonutCard
                     title={tFaq('charts.reviewCodePrevious')}
-                    subtitle={previous.label}
+                    subtitle={formatDateRange(previous.start_date, previous.end_date)}
                     data={previous.breakdown.filter((item) => item.code !== 'NA').map((item) => ({
                         name: item.display,
                         value: item.count,
@@ -485,14 +514,66 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 />
             </div>
 
-            {/* Top FAQ bar chart — full width so labels aren't truncated */}
-            <GroupBarCard
-                title={tFaq('charts.topFaqCategories')}
-                subtitle={tFaq('charts.topFaqSubtitle')}
-                data={topFaqBarData}
-                topN={5}
-                color={['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']}
-            />
+            {/* Top FAQ horizontal bar chart */}
+            <div className={`p-4 ${sectionBg}`}>
+                <SectionHeading
+                    title={tFaq('charts.topFaqCategories')}
+                    subtitle={tFaq('charts.topFaqSubtitle')}
+                    isLight={isLight}
+                />
+                <div className="mt-4">
+                    {topFaqBarData.length === 0 ? (
+                        <p className={`text-center text-xs py-8 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                            {tFaq('error.loading')}
+                        </p>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={topFaqBarData.length * 52 + 16}>
+                            <BarChart
+                                data={topFaqBarData}
+                                layout="vertical"
+                                margin={{ top: 0, right: 64, bottom: 0, left: 8 }}
+                                barCategoryGap="28%"
+                            >
+                                <XAxis
+                                    type="number"
+                                    hide
+                                    domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.18)]}
+                                />
+                                <YAxis
+                                    type="category"
+                                    dataKey="name"
+                                    width={200}
+                                    tick={{ fontSize: 12, fill: isLight ? '#475569' : '#94a3b8' }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <RechartTooltip
+                                    contentStyle={{
+                                        backgroundColor: isLight ? '#fff' : '#1e293b',
+                                        border: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                    }}
+                                    itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                                    cursor={{ fill: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' }}
+                                    formatter={(value) => [Number(value).toLocaleString(), '']}
+                                />
+                                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                                    {topFaqBarData.map((entry, i) => (
+                                        <Cell key={i} fill={entry.color} />
+                                    ))}
+                                    <LabelList
+                                        dataKey="count"
+                                        position="right"
+                                        formatter={(v: unknown) => Number(v).toLocaleString()}
+                                        style={{ fontSize: 12, fontWeight: 600, fill: isLight ? '#475569' : '#cbd5e1' }}
+                                    />
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
 
             {/* Code Comparison Table */}
             <div className={`p-4 ${sectionBg}`}>

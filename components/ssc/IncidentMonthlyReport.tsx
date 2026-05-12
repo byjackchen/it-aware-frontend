@@ -43,6 +43,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     SECURITY: '#06b6d4',
     MONITORING: '#ec4899',
     OUT_OF_SCOPE: '#94a3b8',
+    UNCLASSIFIED: '#64748b',
 };
 
 const STATE_COLORS: Record<string, string> = {
@@ -86,28 +87,37 @@ const CATEGORY_LABELS: Record<string, string> = {
     SECURITY: 'Security',
     MONITORING: 'Monitoring',
     OUT_OF_SCOPE: 'Out of Scope',
+    UNCLASSIFIED: 'Unclassified',
 };
 
 function pct(value: number): string {
     return `${value.toFixed(1)}%`;
 }
 
-function formatCountDelta(current: number, previous: number, flatLabel: string, vsPrevLabel: string): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatDateRange(start: string, end: string): string {
+    const fmt = (d: string) => {
+        const date = d.slice(0, 10).replace(/-/g, '/');
+        const time = d.slice(11, 16);
+        return time ? `${date} ${time}` : date;
+    };
+    return `${fmt(start)} ~ ${fmt(end)}`;
+}
+
+function formatCountDelta(current: number, previous: number, flatLabel: string, vsPrevLabel: string, prevRange: string): { value: string; trend: 'up' | 'down' | 'flat'; tooltip: string } {
     const diff = current - previous;
-    if (diff === 0) return { value: flatLabel, trend: 'flat' };
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
-        trend: diff > 0 ? 'up' : 'down',
+        value: diff === 0 ? flatLabel : `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
+        trend: diff === 0 ? 'flat' : diff > 0 ? 'up' : 'down',
+        tooltip: prevRange,
     };
 }
 
-function formatCountDeltaInverse(current: number, previous: number, flatLabel: string, vsPrevLabel: string): { value: string; trend: 'up' | 'down' | 'flat' } {
+function formatCountDeltaInverse(current: number, previous: number, flatLabel: string, vsPrevLabel: string, prevRange: string): { value: string; trend: 'up' | 'down' | 'flat'; tooltip: string } {
     const diff = current - previous;
-    if (diff === 0) return { value: flatLabel, trend: 'flat' };
-    // Lower is better for this metric
     return {
-        value: `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
-        trend: diff < 0 ? 'up' : 'down',
+        value: diff === 0 ? flatLabel : `${diff > 0 ? '+' : ''}${diff.toLocaleString()} ${vsPrevLabel}`,
+        trend: diff === 0 ? 'flat' : diff < 0 ? 'up' : 'down',
+        tooltip: prevRange,
     };
 }
 
@@ -155,7 +165,7 @@ function Tooltip({ text }: { text: string }) {
     );
 }
 
-function SectionHeading({ title, subtitle, tooltip, isLight }: { title: string; subtitle?: string; tooltip?: string; isLight: boolean }) {
+function SectionHeading({ title, subtitle, subtitleTooltip, tooltip, isLight }: { title: string; subtitle?: string; subtitleTooltip?: string; tooltip?: string; isLight: boolean }) {
     return (
         <div className="flex items-start justify-between gap-3">
             <div>
@@ -163,7 +173,12 @@ function SectionHeading({ title, subtitle, tooltip, isLight }: { title: string; 
                     <h2 className={`text-sm font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{title}</h2>
                     {tooltip ? <Tooltip text={tooltip} /> : null}
                 </div>
-                {subtitle ? <p className={`mt-0.5 text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{subtitle}</p> : null}
+                {subtitle ? (
+                    <p className={`mt-0.5 text-xs flex items-center gap-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <span>{subtitle}</span>
+                        {subtitleTooltip ? <Tooltip text={subtitleTooltip} /> : null}
+                    </p>
+                ) : null}
             </div>
         </div>
     );
@@ -178,16 +193,16 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
     // submission time — backend treats the result as a UTC calendar day,
     // accepting the up-to-24h skew vs the analyst's local boundary as the
     // cost of the simpler UTC-only backend contract.
-    const [draftStart, setDraftStart] = useState(`${startDate}T00:00:00`);
-    const [draftEnd, setDraftEnd] = useState(`${endDate}T23:59:59`);
+    const [draftStart, setDraftStart] = useState(`${startDate.slice(0, 10)}T00:00:00`);
+    const [draftEnd, setDraftEnd] = useState(`${endDate.slice(0, 10)}T23:59:59`);
     // Sourced from the user-profile preference (TopBar dropdown → cookie).
     const { timezone } = useTimezone();
 
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;
         const params = new URLSearchParams(searchParams.toString());
-        params.set('start_date', draftStart.slice(0, 10));
-        params.set('end_date', draftEnd.slice(0, 10));
+        params.set('start_date', draftStart);
+        params.set('end_date', draftEnd);
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 
@@ -240,8 +255,10 @@ function BreakdownComparisonTable({
     labels: {
         category: string;
         current: string;
+        currentRange: string;
         share: string;
         previous: string;
+        previousRange: string;
         deltaCount: string;
         deltaPts: string;
     };
@@ -255,9 +272,13 @@ function BreakdownComparisonTable({
                 <thead>
                     <tr className={`border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
                         <th className={`${headerCls} text-left`}>{labels.category}</th>
-                        <th className={`${headerCls} text-right`}>{labels.current}</th>
+                        <th className={`${headerCls} text-right`}>
+                            <span className="inline-flex items-center gap-1">{labels.current}<Tooltip text={labels.currentRange} /></span>
+                        </th>
                         <th className={`${headerCls} text-right`}>{labels.share}</th>
-                        <th className={`${headerCls} text-right`}>{labels.previous}</th>
+                        <th className={`${headerCls} text-right`}>
+                            <span className="inline-flex items-center gap-1">{labels.previous}<Tooltip text={labels.previousRange} /></span>
+                        </th>
                         <th className={`${headerCls} text-right`}>{labels.deltaCount}</th>
                         <th className={`${headerCls} text-right`}>{labels.deltaPts}</th>
                     </tr>
@@ -384,6 +405,8 @@ function ChatbotEscalationSection({
         afterBotEscalation: string;
         flatVsPrev: string;
         vsPrev: string;
+        curRange: string;
+        prevRange: string;
     };
 }) {
     const prevEscRate = previous?.escalation_rate ?? 0;
@@ -403,6 +426,7 @@ function ChatbotEscalationSection({
             <SectionHeading
                 title={labels.title}
                 subtitle={labels.subtitle.replace('{label}', current.label).replace('{count}', String(current.meaningful_sessions))}
+                subtitleTooltip={labels.curRange}
                 tooltip={labels.tooltip}
                 isLight={isLight}
             />
@@ -473,6 +497,7 @@ function ChatbotEscalationSection({
                 <DonutCard
                     title={labels.sessionOutcomeCurrent}
                     subtitle={current.label}
+                    subtitleTooltip={labels.curRange}
                     data={[
                         { name: labels.botHandled, value: current.bot_handled_sessions, color: '#22c55e' },
                         { name: labels.directEscalationLegend, value: current.direct_escalation_sessions, color: '#f59e0b' },
@@ -484,6 +509,7 @@ function ChatbotEscalationSection({
                     <DonutCard
                         title={labels.sessionOutcomePrevious}
                         subtitle={previous.label}
+                        subtitleTooltip={labels.prevRange}
                         data={[
                             { name: labels.botHandled, value: previous.bot_handled_sessions, color: '#22c55e' },
                             { name: labels.directEscalationLegend, value: previous.direct_escalation_sessions, color: '#f59e0b' },
@@ -525,6 +551,8 @@ export function IncidentMonthlyReport({ report, error }: Props) {
     }
 
     const { current, previous } = report;
+    const curRange = formatDateRange(current.start_date, current.end_date);
+    const prevRange = formatDateRange(previous.start_date, previous.end_date);
     const flatVsPrev = t('delta.flatVsPrev');
     const vsPrev = t('delta.vsPrev');
     const chatbotLabels = {
@@ -551,6 +579,8 @@ export function IncidentMonthlyReport({ report, error }: Props) {
         afterBotEscalation: t('chatbot.legend.afterBotEscalation'),
         flatVsPrev: t('delta.flatVsPrev'),
         vsPrev: t('delta.vsPrev'),
+        curRange,
+        prevRange,
     };
     const priorityLabels: Record<string, string> = {
         ...PRIORITY_LABELS,
@@ -586,28 +616,28 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <KpiCard
                     label={t('kpi.totalIncidents')}
                     value={current.grand_total.toLocaleString()}
-                    delta={formatCountDelta(current.grand_total, previous.grand_total, flatVsPrev, vsPrev)}
+                    delta={formatCountDelta(current.grand_total, previous.grand_total, flatVsPrev, vsPrev, prevRange)}
                     icon={AlertTriangle}
                     tooltip={t('kpiTooltip.totalIncidents')}
                 />
                 <KpiCard
                     label={t('kpi.resolved')}
                     value={current.resolved_count.toLocaleString()}
-                    delta={formatCountDelta(current.resolved_count, previous.resolved_count, flatVsPrev, vsPrev)}
+                    delta={formatCountDelta(current.resolved_count, previous.resolved_count, flatVsPrev, vsPrev, prevRange)}
                     icon={CheckCircle2}
                     tooltip={t('kpiTooltip.resolved')}
                 />
                 <KpiCard
                     label={t('kpi.highPriority')}
                     value={current.high_priority_count.toLocaleString()}
-                    delta={formatCountDeltaInverse(current.high_priority_count, previous.high_priority_count, flatVsPrev, vsPrev)}
+                    delta={formatCountDeltaInverse(current.high_priority_count, previous.high_priority_count, flatVsPrev, vsPrev, prevRange)}
                     icon={Flame}
                     tooltip={t('kpiTooltip.highPriority')}
                 />
                 <KpiCard
                     label={t('kpi.overdue')}
                     value={current.overdue_count.toLocaleString()}
-                    delta={formatCountDeltaInverse(current.overdue_count, previous.overdue_count, flatVsPrev, vsPrev)}
+                    delta={formatCountDeltaInverse(current.overdue_count, previous.overdue_count, flatVsPrev, vsPrev, prevRange)}
                     icon={Clock}
                     tooltip={t('kpiTooltip.overdue')}
                 />
@@ -618,6 +648,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title={t('charts.aiCategoryCurrent')}
                     subtitle={current.label}
+                    subtitleTooltip={curRange}
                     data={current.breakdown.map((item) => ({
                         name: CATEGORY_LABELS[item.code] || item.display,
                         value: item.count,
@@ -628,6 +659,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title={t('charts.aiCategoryPrevious')}
                     subtitle={previous.label}
+                    subtitleTooltip={prevRange}
                     data={previous.breakdown.map((item) => ({
                         name: CATEGORY_LABELS[item.code] || item.display,
                         value: item.count,
@@ -642,6 +674,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title={t('charts.stateDistribution')}
                     subtitle={current.label}
+                    subtitleTooltip={curRange}
                     data={current.state_breakdown.map((item) => ({
                         name: item.display,
                         value: item.count,
@@ -652,6 +685,7 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                 <DonutCard
                     title={t('charts.priorityDistribution')}
                     subtitle={current.label}
+                    subtitleTooltip={curRange}
                     data={current.priority_breakdown.map((item) => ({
                         name: priorityLabels[item.code] || item.display,
                         value: item.count,
@@ -677,8 +711,10 @@ export function IncidentMonthlyReport({ report, error }: Props) {
                         labels={{
                             category: t('table.category'),
                             current: t('table.current'),
+                            currentRange: curRange,
                             share: t('table.share'),
                             previous: t('table.previous'),
+                            previousRange: prevRange,
                             deltaCount: t('table.deltaCount'),
                             deltaPts: t('table.deltaPts'),
                         }}

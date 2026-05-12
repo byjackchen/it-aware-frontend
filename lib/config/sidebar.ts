@@ -15,6 +15,7 @@ import {
     Layers,
     AlertCircle,
     ClipboardList,
+    Link2,
     MousePointerClick,
     Bell,
     BellRing,
@@ -390,6 +391,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 href: '/ssc-cockpit/incident-report',
                 labelKey: 'incidentReport',
                 icon: AlertCircle,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+            {
+                href: '/ssc-cockpit/survey-lookup',
+                labelKey: 'surveyLookup',
+                icon: Link2,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_SSC,
                     PERMISSIONS.OBJECTS.INCIDENTS_READ,

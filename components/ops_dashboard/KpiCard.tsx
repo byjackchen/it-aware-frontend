@@ -29,6 +29,8 @@ export interface KpiCardProps {
     delta?: {
         value: string;
         trend: 'up' | 'down' | 'flat';
+        /** If provided, a small ? icon next to the delta text reveals this on hover. */
+        tooltip?: string;
     };
     icon?: LucideIcon;
     onClick?: () => void;
@@ -130,7 +132,19 @@ export function KpiCard({
             </p>
             {(delta || subtitle) && (
                 <div className="flex items-center gap-2 mt-1">
-                    {delta && <span className={`text-xs font-medium ${deltaCls}`}>{delta.value}</span>}
+                    {delta && (
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${deltaCls}`}>
+                            {delta.value}
+                            {delta.tooltip && (
+                                <span className="group relative inline-flex items-center">
+                                    <HelpCircle className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
+                                    <span className={`pointer-events-none absolute left-1/2 bottom-full z-50 mb-2 hidden w-max max-w-[200px] -translate-x-1/2 rounded-lg border px-2.5 py-1.5 text-[11px] leading-4 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
+                                        {delta.tooltip}
+                                    </span>
+                                </span>
+                            )}
+                        </span>
+                    )}
                     {subtitle && <span className={`text-xs ${subtitleCls}`}>{subtitle}</span>}
                 </div>
             )}
