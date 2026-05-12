@@ -925,18 +925,34 @@ export async function deleteTicketComment(ticketOid: string, commentOid: string)
     await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
 }
 
-export async function getFAQMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').InteractionFAQReport> {
+// SSC analyst reports — `tz` is an IANA timezone name (e.g.
+// `America/Chicago`). The backend uses it for both default-window
+// computation (month-to-date in the analyst's local calendar) and for
+// materializing user-supplied start_date/end_date as full wall-clock
+// days. See `docs/it_aware_merge_review.md` Appendix A rule #11.
+
+export async function getFAQMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+    tz?: string,
+): Promise<import('@/lib/types/objects').InteractionFAQReport> {
     const params = new URLSearchParams();
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
+    if (tz) params.set('tz', tz);
     const qs = params.toString();
     return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
 }
 
-export async function getIncidentMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
+export async function getIncidentMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+    tz?: string,
+): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
     const params = new URLSearchParams();
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
+    if (tz) params.set('tz', tz);
     const qs = params.toString();
     return fetchApi(`${OBJECTS_BASE}/activities/incidents/report/incident-monthly${qs ? `?${qs}` : ''}`);
 }

@@ -26,6 +26,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import type { IncidentCategoryBreakdownItem, IncidentMonthlyReportData, IncidentMonthStats, IncidentTop5Item, ChatbotEscalationStats } from '@/lib/types/objects';
+import { detectLocalTimezone } from '@/lib/utils/datetime';
 
 interface Props {
     report: IncidentMonthlyReportData | null;
@@ -179,6 +180,10 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
         const params = new URLSearchParams(searchParams.toString());
         params.set('start_date', draftStart);
         params.set('end_date', draftEnd);
+        // TZ-aware 2026-05-11 — send the analyst's local timezone so the
+        // backend materializes the chosen dates as full wall-clock days in
+        // their calendar, not UTC. See merge-review SOP rule #11.
+        params.set('tz', detectLocalTimezone());
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 

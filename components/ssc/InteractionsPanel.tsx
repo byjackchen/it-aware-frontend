@@ -4,6 +4,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
+import { detectLocalTimezone, formatLocalDate, localEndOfDayIso, localMidnightIso } from '@/lib/utils/datetime';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -57,6 +58,7 @@ export function InteractionsPanel({
 }: InteractionsPanelProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const timezone = detectLocalTimezone();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const alignedRef = useRef<HTMLDivElement | null>(null);
     const firstFocusedRef = useRef<HTMLDivElement | null>(null);
@@ -136,16 +138,17 @@ export function InteractionsPanel({
         return map;
     }, [workerMap]);
 
-    // Data loading — initial batch (first 500); later pages fetched on demand
+    // Data loading — initial batch (first 500); later pages fetched on demand.
+    // TZ-aware 2026-05-11 — see Appendix A rule #11 in merge-review SOP.
     const query = useMemo(
         () => ({
             sort_by: 'created_at',
             order: 'desc' as const,
-            ...(dateFrom ? { created_at_from: dateFrom } : {}),
-            ...(dateTo ? { created_at_to: dateTo } : {}),
+            ...(dateFrom ? { created_at_from: localMidnightIso(dateFrom, timezone) } : {}),
+            ...(dateTo ? { created_at_to: localEndOfDayIso(dateTo, timezone) } : {}),
             ...(workerFilter ? { actor_stable_id: workerFilter } : {}),
         }),
-        [dateFrom, dateTo, workerFilter],
+        [dateFrom, dateTo, workerFilter, timezone],
     );
 
     const {
@@ -241,8 +244,8 @@ export function InteractionsPanel({
                 sort_by: 'created_at',
                 order: 'desc',
             });
-            if (dateFrom) params.set('created_at_from', dateFrom);
-            if (dateTo) params.set('created_at_to', dateTo);
+            if (dateFrom) params.set('created_at_from', localMidnightIso(dateFrom, timezone));
+            if (dateTo) params.set('created_at_to', localEndOfDayIso(dateTo, timezone));
             if (workerFilter) params.set('actor_stable_id', workerFilter);
 
             fetch(`/api/objects/interactions?${params.toString()}`, {
@@ -339,11 +342,12 @@ export function InteractionsPanel({
             await downloadDashboardXlsx(
                 'interactions',
                 {
-                    created_at_from: dateFrom,
-                    created_at_to: dateTo,
+                    created_at_from: dateFrom ? localMidnightIso(dateFrom, timezone) : undefined,
+                    created_at_to: dateTo ? localEndOfDayIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,
+                    tz: timezone,
                 },
-                `ssc_faq_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                `ssc_faq_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Download failed');

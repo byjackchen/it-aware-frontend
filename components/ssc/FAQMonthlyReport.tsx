@@ -29,6 +29,7 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import type { FAQEnquiryItem, InteractionFAQReport, MonthStats } from '@/lib/types/objects';
+import { detectLocalTimezone } from '@/lib/utils/datetime';
 
 interface Props {
     report: InteractionFAQReport | null;
@@ -172,6 +173,8 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
         const params = new URLSearchParams(searchParams.toString());
         params.set('start_date', draftStart);
         params.set('end_date', draftEnd);
+        // TZ-aware 2026-05-11 — see merge-review SOP rule #11.
+        params.set('tz', detectLocalTimezone());
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 

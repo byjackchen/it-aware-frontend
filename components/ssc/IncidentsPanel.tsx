@@ -4,6 +4,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, Loader2, Download, Filter, X, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
+import { detectLocalTimezone, formatLocalDate, localEndOfDayIso, localMidnightIso } from '@/lib/utils/datetime';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -42,6 +43,7 @@ export function IncidentsPanel({
 }: IncidentsPanelProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    const timezone = detectLocalTimezone();
     const t = useTranslations('SSCDashboard');
     const locale = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -75,10 +77,16 @@ export function IncidentsPanel({
     // rather than DB-ingest time, so the default 7-day window reflects real
     // SN business chronology (and survives backfill spikes). See
     // docs/superpowers/specs/2026-05-11-activities-list-sort-and-row-detail-design.md.
+    //
+    // TZ-aware 2026-05-11 — datetimes are submitted as full ISO-8601 with
+    // the analyst's local offset so the backend's `ensure_utc` materializes
+    // the correct UTC instant. Naked `YYYY-MM-DD` would be misread as UTC
+    // midnight, shifting the window 5-12 hours from the analyst's intent.
+    // See `docs/it_aware_merge_review.md` Appendix A rule #11.
     const query = useMemo(() => ({
-        ...(dateFrom ? { source_created_at_from: dateFrom } : {}),
-        ...(dateTo ? { source_created_at_to: dateTo } : {}),
-    }), [dateFrom, dateTo]);
+        ...(dateFrom ? { source_created_at_from: localMidnightIso(dateFrom, timezone) } : {}),
+        ...(dateTo ? { source_created_at_to: localEndOfDayIso(dateTo, timezone) } : {}),
+    }), [dateFrom, dateTo, timezone]);
 
     const {
         items: incidents,
@@ -152,8 +160,8 @@ export function IncidentsPanel({
 
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
-        if (dateFrom) params.set('source_created_at_from', dateFrom);
-        if (dateTo) params.set('source_created_at_to', dateTo);
+        if (dateFrom) params.set('source_created_at_from', localMidnightIso(dateFrom, timezone));
+        if (dateTo) params.set('source_created_at_to', localEndOfDayIso(dateTo, timezone));
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -199,8 +207,9 @@ export function IncidentsPanel({
                 {
                     source_created_at_from: dateFrom,
                     source_created_at_to: dateTo,
+                    tz: timezone,
                 },
-                `ssc_ticket_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                `ssc_ticket_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Download failed');

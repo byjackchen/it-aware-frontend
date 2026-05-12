@@ -60,6 +60,66 @@ export function formatDate(
 }
 
 /**
+ * Render today's calendar day as `YYYY-MM-DD` *as seen in* `timezone`.
+ *
+ * Use this for any default filter date in the UI — `new Date().toISOString().slice(0, 10)`
+ * silently returns the UTC day, which shifts the analyst's "today" by
+ * 5-12 hours near midnight. Pair with `detectLocalTimezone()`.
+ */
+export function formatLocalDate(value: DateInput, timezone: string): string {
+  const date = parseDate(value);
+  if (!date) return '—';
+  const resolvedTimezone = resolveTimezone(timezone);
+  // sv-SE gives ISO-formatted YYYY-MM-DD; explicit timeZone option pins the
+  // calendar to the analyst's locale instead of the JS runtime's.
+  return date.toLocaleDateString('sv-SE', { timeZone: resolvedTimezone });
+}
+
+/**
+ * Convert a `YYYY-MM-DD` (local calendar day) to a full ISO-8601 datetime
+ * at local midnight in `timezone`, e.g. `2026-05-11T00:00:00-05:00`.
+ *
+ * Send this to backend filter params (`created_at_from`,
+ * `source_created_at_from`, etc.) so pydantic + `ensure_utc` materialize
+ * the correct UTC instant — no `tz` query param needed for the filter
+ * predicate.
+ */
+export function localMidnightIso(yyyyMmDd: string, timezone: string): string {
+  if (!yyyyMmDd) return yyyyMmDd;
+  const resolvedTimezone = resolveTimezone(timezone);
+  // Compute the UTC offset of yyyyMmDd 12:00 local in `timezone`, then
+  // build the ISO offset string. Using noon avoids DST-edge ambiguity.
+  const noonLocal = new Date(`${yyyyMmDd}T12:00:00Z`);
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: resolvedTimezone,
+    timeZoneName: 'shortOffset',
+    hour: '2-digit',
+  });
+  const parts = fmt.formatToParts(noonLocal);
+  const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
+  // shortOffset emits values like "GMT-5", "GMT+8", "GMT" (UTC), "GMT-05:30"
+  const match = tzPart.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/);
+  let offset = '+00:00';
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    const sign = hours >= 0 ? '+' : '-';
+    offset = `${sign}${String(Math.abs(hours)).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+  return `${yyyyMmDd}T00:00:00${offset}`;
+}
+
+/**
+ * Inclusive end-of-day ISO at 23:59:59 local in `timezone`. Pair with
+ * `localMidnightIso` for `<= :end` SQL semantics.
+ */
+export function localEndOfDayIso(yyyyMmDd: string, timezone: string): string {
+  const start = localMidnightIso(yyyyMmDd, timezone);
+  // Replace the time portion only; the offset suffix is preserved.
+  return start.replace('T00:00:00', 'T23:59:59');
+}
+
+/**
  * Render a date as a short relative phrase: "just now", "3m ago",
  * "5h ago", "2d ago", "3w ago", "5mo ago", "2y ago". Returns "—"
  * for null/invalid input. Always anchored to Date.now().
