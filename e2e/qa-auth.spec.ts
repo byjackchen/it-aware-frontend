@@ -137,7 +137,9 @@ test.describe('Auth module — authenticated', () => {
   }) => {
     test.skip(!created.permissionOid, 'depends on create permission');
     await page.goto(`/auth/permissions/${created.permissionOid}`);
-    await expect(page.locator(`text=${PERM_CODE}`)).toBeVisible();
+    // The permission code is rendered in both the code-preview header and the
+    // labeled detail row, so the locator legitimately resolves to 2 elements.
+    await expect(page.locator(`text=${PERM_CODE}`).first()).toBeVisible();
     await expect(page.locator('text=qatest').first()).toBeVisible();
     await expect(page.locator(`text=perm_${RUN_ID}`).first()).toBeVisible();
     await expect(page.locator('text=verify').first()).toBeVisible();
@@ -151,7 +153,7 @@ test.describe('Auth module — authenticated', () => {
     await page.getByRole('button', { name: /^Delete$/ }).click();
     // Still on detail page, entity intact.
     await expect(page).toHaveURL(new RegExp(`/auth/permissions/${created.permissionOid}$`));
-    await expect(page.locator(`text=${PERM_CODE}`)).toBeVisible();
+    await expect(page.locator(`text=${PERM_CODE}`).first()).toBeVisible();
   });
 
   // -- roles --------------------------------------------------------------
@@ -450,10 +452,12 @@ test.describe('Auth module — authenticated', () => {
   }) => {
     await page.goto('/dashboard/data-overview');
 
-    // The Logout button lives inside the user-menu popover triggered by the
-    // avatar button in the top-right ("B" for byjackchen). Open the menu first,
-    // then click Logout once it becomes visible.
-    await page.locator('header button').last().click();
+    // The Logout button lives inside the user-menu popover, which is opened by
+    // *hovering* the `.group` wrapper (Tailwind `group-hover:visible`), not by
+    // clicking the avatar. Hover the wrapper, wait for Logout to become visible,
+    // click. There are several `.group` divs in the layout — the user menu is
+    // the one that wraps a `rounded-full` avatar button.
+    await page.locator('div.group:has(button.rounded-full)').hover();
     const logoutBtn = page.locator('button').filter({ hasText: /^Logout$/ }).first();
     await expect(logoutBtn).toBeVisible({ timeout: 5_000 });
     await logoutBtn.click();
