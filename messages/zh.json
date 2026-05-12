@@ -2169,6 +2169,39 @@
       "naShare": "NA 流量：",
       "naShareDetail": "NA 会话不纳入比率计算，NA 占比高可能说明存在未分类或非 FAQ 流量。"
     },
+    "table": {
+      "code": "编码",
+      "current": "本期",
+      "share": "占比",
+      "previous": "上期",
+      "deltaCount": "Δ 数量",
+      "deltaPts": "Δ 百分点"
+    },
+    "codeDef": {
+      "ACCT": "内容准确 — FAQ 内容完整、清晰，能准确回应用户问题，无需修改。",
+      "IMP": "需优化改进 — FAQ 内容基本可用，但表达不够清晰或结构可优化，建议改进。",
+      "ERR": "错误需修正 — FAQ 含有错误或误导性信息，必须尽快修正。",
+      "NEW": "新增问题 — 用户提出了现有 FAQ 未涵盖的新问题，建议补充为新 FAQ。",
+      "QNC": "问题不清 — 用户的问题表达模糊，现有 FAQ 无法准确回应。",
+      "CUST": "客制化问题 — 用户的问题过于个别化，无法用通用 FAQ 解决，需人工处理。",
+      "OOS": "不在支援范围内 — 用户的问题超出支持范围，无法由现有资源处理。",
+      "NA": "非 AI 生成回复 — 机械/固定回复，非 AI 模型生成，不纳入 FAQ 质量评估。"
+    },
+    "highlights": {
+      "resolutionImproving": "解决率提升",
+      "resolutionSlipped": "解决率下滑",
+      "resolutionDetail": "本期 {rate}，较上期 {diff} 个百分点。",
+      "handoffContained": "人工升级受控",
+      "handoffPressureRising": "人工升级压力上升",
+      "handoffDetail": "{count} 个 WeCom 工单（占 FAQ 有效会话的 {rate}），较上期 {diff} 个百分点。",
+      "highNonFaq": "非 FAQ 流量较高",
+      "mostTrafficFaq": "大部分流量属于 FAQ 范畴",
+      "naDetail": "NA 占比为 {naShare}，ACCT 占所有流量的 {acctShare}。",
+      "topDemand": "最高需求：{name}",
+      "noTopFaqData": "暂无 Top FAQ 数据",
+      "topDemandDetail": "{count} 次咨询，占 Top 5 需求的 {pct}。",
+      "noTopFaqDataDetail": "本周期内未返回任何关联目录的 FAQ 咨询记录。"
+    },
     "error": {
       "title": "报告加载失败",
       "loading": "正在加载报告数据..."
@@ -2428,7 +2461,7 @@
     },
     "chatbot": {
       "title": "Chatbot 转人工指标",
-      "subtitle": "{label} — {count} 个有效会话",
+      "subtitle": "'{label}' — '{count}' 个有效会话",
       "tooltip": "Session = 同一用户按 15 分钟无操作间隔切分的会话。Escalation = 用户确认转人工（agentsupport-confirm）。",
       "kpi": {
         "escalationRate": "转人工率",
@@ -2442,7 +2475,7 @@
         "adjustedBotFailure": "(转人工 - 直接转人工) ÷ (有效会话 - 直接转人工)，排除从未尝试机器人的用户。",
         "avgStepsToEscalate": "用户确认转人工前的平均非 enter_chat 交互次数"
       },
-      "repeatUsers": "{count} 个重复转人工用户",
+      "repeatUsers": "'{count}' 个重复转人工用户",
       "breakdown": {
         "escalatedSessions": "转人工会话",
         "directEscalation": "直接转人工（跳过机器人）",

@@ -37,6 +37,8 @@ export interface DonutSlice {
 export interface DonutCardProps {
     title: string;
     subtitle?: string;
+    /** If provided, a ? icon next to the subtitle reveals this on hover. */
+    subtitleTooltip?: string;
     /** Optional definition / formula shown on hover as a tooltip next to the title. */
     info?: string;
     data: DonutSlice[];
@@ -73,6 +75,7 @@ const DEFAULT_PALETTE = [
 export function DonutCard({
     title,
     subtitle,
+    subtitleTooltip,
     info,
     data,
     palette = DEFAULT_PALETTE,
@@ -112,7 +115,7 @@ export function DonutCard({
     return (
         <div className={`rounded-xl border p-4 w-full h-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
+                <TitleWithInfo title={title} subtitle={subtitle} subtitleTooltip={subtitleTooltip} info={info} />
                 {actionSlot}
             </div>
 

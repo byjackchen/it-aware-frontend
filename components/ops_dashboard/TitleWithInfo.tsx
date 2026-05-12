@@ -16,11 +16,13 @@ export interface TitleWithInfoProps {
     title: string;
     /** Optional secondary line rendered below the title (smaller, muted). */
     subtitle?: string;
+    /** If provided, a ? icon next to the subtitle reveals this on hover. */
+    subtitleTooltip?: string;
     /** Definition / formula shown on hover in a small popover beside the title. */
     info?: string;
 }
 
-export function TitleWithInfo({ title, subtitle, info }: TitleWithInfoProps) {
+export function TitleWithInfo({ title, subtitle, subtitleTooltip, info }: TitleWithInfoProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -47,7 +49,19 @@ export function TitleWithInfo({ title, subtitle, info }: TitleWithInfoProps) {
                     </span>
                 )}
             </h3>
-            {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
+            {subtitle && (
+                <p className={`text-xs mt-0.5 flex items-center gap-1 ${subtitleCls}`}>
+                    <span>{subtitle}</span>
+                    {subtitleTooltip && (
+                        <span className="group relative inline-flex items-center">
+                            <HelpCircle className={`h-3 w-3 transition-colors ${iconIdleCls} ${iconHoverCls}`} />
+                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-max max-w-[240px] -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${popoverCls}`}>
+                                {subtitleTooltip}
+                            </span>
+                        </span>
+                    )}
+                </p>
+            )}
         </div>
     );
 }
