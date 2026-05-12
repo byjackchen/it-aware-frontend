@@ -58,3 +58,27 @@ export function formatDate(
   const formatted = date.toLocaleDateString(locale, { ...options, timeZone: resolvedTimezone });
   return `${formatted} (${resolvedTimezone})`;
 }
+
+/**
+ * Render a date as a short relative phrase: "just now", "3m ago",
+ * "5h ago", "2d ago", "3w ago", "5mo ago", "2y ago". Returns "—"
+ * for null/invalid input. Always anchored to Date.now().
+ */
+export function formatRelative(value: DateInput): string {
+  const date = parseDate(value);
+  if (!date) return '—';
+  const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+  if (seconds < 45) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.round(days / 7);
+  if (weeks < 5) return `${weeks}w ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.round(days / 365);
+  return `${years}y ago`;
+}
