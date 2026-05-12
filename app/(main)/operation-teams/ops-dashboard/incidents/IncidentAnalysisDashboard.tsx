@@ -22,6 +22,7 @@ import {
     formatDurationSec,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     daysSinceUpdated,
     meanOf,
     monthsFromRange,
@@ -215,6 +216,11 @@ export function IncidentAnalysisDashboard() {
         const groupSel = (filters.assigned_group as string[]) ?? [];
         const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return rows.filter((r) => {
+            // Scope to OIT assignment groups so the dashboard reflects
+            // OIT's own queue (matches Active Monitoring Hub +
+            // Unassigned Tab). Non-OIT groups like Workday HQ BA Group
+            // / SN_WD-* are filtered out.
+            if (!isInScopeGroup(r.assigned_group)) return false;
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationOf)) return false;
             if (prioSel.length) {
                 const bucket = priorityBucket(r.priority);
