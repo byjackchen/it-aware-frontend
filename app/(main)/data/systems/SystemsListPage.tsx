@@ -7,7 +7,6 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import type { System, SystemListResponse } from '@/lib/types/objects';
-import type { AccountSystem } from '@/lib/types/security';
 
 export function SystemsListPage() {
     const { theme } = useTheme();
@@ -19,20 +18,6 @@ export function SystemsListPage() {
     const [remotePage, setRemotePage] = useState<{ page: number; items: System[] } | null>(null);
     const [isPageLoading, setIsPageLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
-    // map system_oid -> account_oid (pre-fetched once)
-    const [linkMap, setLinkMap] = useState<Map<string, string>>(new Map());
-
-    useEffect(() => {
-        let cancelled = false;
-        fetch('/api/auth/config/account_systems?limit=1000')
-            .then((r) => (r.ok ? r.json() : []))
-            .then((links: AccountSystem[]) => {
-                if (cancelled) return;
-                setLinkMap(new Map(links.map((l) => [l.system_oid, l.account_oid])));
-            })
-            .catch(() => {/* leave map empty */});
-        return () => { cancelled = true; };
-    }, []);
 
     const {
         items: systems,
@@ -157,12 +142,11 @@ export function SystemsListPage() {
 
                 {/* Column Headers */}
                 <div className={`rounded-t-xl border-x border-t px-4 py-2 grid grid-cols-12 gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'border-slate-200 bg-slate-50 text-slate-500' : 'border-white/10 bg-white/5 text-gray-500'}`}>
-                    <div className="col-span-3">Name</div>
+                    <div className="col-span-4">Name</div>
                     <div className="col-span-2">System ID</div>
                     <div className="col-span-2">Platform</div>
-                    <div className="col-span-2">Contact Worker</div>
+                    <div className="col-span-3">Contact Worker</div>
                     <div className="col-span-1">Active</div>
-                    <div className="col-span-2">Account</div>
                 </div>
 
                 {/* List */}
@@ -183,7 +167,7 @@ export function SystemsListPage() {
                                     onClick={() => router.push(`/data/systems/${system.oid}`)}
                                     className={`w-full grid grid-cols-12 gap-2 items-center px-4 py-3 text-left transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
                                 >
-                                    <div className={`col-span-3 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                                    <div className={`col-span-4 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                         {system.name}
                                     </div>
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -192,7 +176,7 @@ export function SystemsListPage() {
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {system.system_platform}
                                     </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    <div className={`col-span-3 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {system.contact_worker_oid || '—'}
                                     </div>
                                     <div className="col-span-1">
@@ -202,9 +186,6 @@ export function SystemsListPage() {
                                         }`}>
                                             {system.is_active ? 'Yes' : 'No'}
                                         </span>
-                                    </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                        {linkMap.get(system.oid) || '—'}
                                     </div>
                                 </button>
                             ))}

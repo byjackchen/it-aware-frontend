@@ -51,12 +51,6 @@ import {
     deleteScenario,
 } from '@/lib/api/scenarios';
 import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
-import {
-    linkAccountAgent,
-    unlinkAccountAgent,
-    linkAccountSystem,
-    unlinkAccountSystem,
-} from '@/lib/api/security';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -1508,70 +1502,3 @@ export async function deleteTicketAction(oid: string) {
     }
 }
 
-// ============================================================================
-// Account-Agent / Account-System Link Actions
-// ============================================================================
-
-export async function linkAccountAgentAction(accountOid: string, agentOid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:linkAccountAgent';
-    logger.info(`Started - account=${accountOid} agent=${agentOid}`, { requestId, action });
-    try {
-        const link = await linkAccountAgent(accountOid, agentOid);
-        revalidatePath('/data/agents');
-        revalidatePath(`/data/agents/${agentOid}`);
-        logger.info('Success', { requestId, action });
-        return { success: true, link };
-    } catch (error) {
-        logger.error('Failed', error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function unlinkAccountAgentAction(accountOid: string, agentOid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:unlinkAccountAgent';
-    logger.info(`Started - account=${accountOid} agent=${agentOid}`, { requestId, action });
-    try {
-        await unlinkAccountAgent(accountOid, agentOid);
-        revalidatePath('/data/agents');
-        revalidatePath(`/data/agents/${agentOid}`);
-        logger.info('Success', { requestId, action });
-        return { success: true };
-    } catch (error) {
-        logger.error('Failed', error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function linkAccountSystemAction(accountOid: string, systemOid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:linkAccountSystem';
-    logger.info(`Started - account=${accountOid} system=${systemOid}`, { requestId, action });
-    try {
-        const link = await linkAccountSystem(accountOid, systemOid);
-        revalidatePath('/data/systems');
-        revalidatePath(`/data/systems/${systemOid}`);
-        logger.info('Success', { requestId, action });
-        return { success: true, link };
-    } catch (error) {
-        logger.error('Failed', error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function unlinkAccountSystemAction(accountOid: string, systemOid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:unlinkAccountSystem';
-    logger.info(`Started - account=${accountOid} system=${systemOid}`, { requestId, action });
-    try {
-        await unlinkAccountSystem(accountOid, systemOid);
-        revalidatePath('/data/systems');
-        revalidatePath(`/data/systems/${systemOid}`);
-        logger.info('Success', { requestId, action });
-        return { success: true };
-    } catch (error) {
-        logger.error('Failed', error, { requestId, action });
-        throw error;
-    }
-}

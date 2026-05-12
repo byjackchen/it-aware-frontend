@@ -7,7 +7,6 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import type { Agent, AgentListResponse } from '@/lib/types/objects';
-import type { AccountAgent } from '@/lib/types/security';
 
 export function AgentsListPage() {
     const { theme } = useTheme();
@@ -19,22 +18,6 @@ export function AgentsListPage() {
     const [remotePage, setRemotePage] = useState<{ page: number; items: Agent[] } | null>(null);
     const [isPageLoading, setIsPageLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
-    // map agent_oid -> account_oid (pre-fetched once)
-    const [linkMap, setLinkMap] = useState<Map<string, string>>(new Map());
-
-    useEffect(() => {
-        let cancelled = false;
-        fetch('/api/auth/config/account_agents?limit=1000')
-            .then((r) => (r.ok ? r.json() : []))
-            .then((links: AccountAgent[]) => {
-                if (cancelled) return;
-                setLinkMap(new Map(links.map((l) => [l.agent_oid, l.account_oid])));
-            })
-            .catch(() => {/* leave map empty */});
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const {
         items: agents,
@@ -162,12 +145,11 @@ export function AgentsListPage() {
 
                 {/* Column Headers */}
                 <div className={`rounded-t-xl border-x border-t px-4 py-2 grid grid-cols-12 gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'border-slate-200 bg-slate-50 text-slate-500' : 'border-white/10 bg-white/5 text-gray-500'}`}>
-                    <div className="col-span-3">Name</div>
+                    <div className="col-span-4">Name</div>
                     <div className="col-span-2">Agent ID</div>
                     <div className="col-span-2">Platform</div>
-                    <div className="col-span-2">Contact Worker</div>
+                    <div className="col-span-3">Contact Worker</div>
                     <div className="col-span-1">Active</div>
-                    <div className="col-span-2">Account</div>
                 </div>
 
                 {/* List */}
@@ -188,7 +170,7 @@ export function AgentsListPage() {
                                     onClick={() => router.push(`/data/agents/${agent.oid}`)}
                                     className={`w-full grid grid-cols-12 gap-2 items-center px-4 py-3 text-left transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
                                 >
-                                    <div className={`col-span-3 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                                    <div className={`col-span-4 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                         {agent.name}
                                     </div>
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -197,7 +179,7 @@ export function AgentsListPage() {
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {agent.agent_platform}
                                     </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    <div className={`col-span-3 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {agent.contact_worker_oid}
                                     </div>
                                     <div className="col-span-1">
@@ -207,9 +189,6 @@ export function AgentsListPage() {
                                         }`}>
                                             {agent.is_active ? 'Yes' : 'No'}
                                         </span>
-                                    </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                        {linkMap.get(agent.oid) || '—'}
                                     </div>
                                 </button>
                             ))}
