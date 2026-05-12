@@ -64,6 +64,11 @@ export async function updateIncidentReview(
 export interface ExportFilters {
   created_at_from?: string;
   created_at_to?: string;
+  // SSC dashboard 2026-05-11 — SN-business-time bounds for the incidents
+  // export. Interactions export still uses created_at_from/to because
+  // activities.interactions has no source_created_at column.
+  source_created_at_from?: string;
+  source_created_at_to?: string;
   actor_stable_id?: string;
   needs_optimization?: boolean;
   completed?: boolean;

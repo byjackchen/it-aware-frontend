@@ -71,9 +71,13 @@ export function IncidentsPanel({
         }
     }, [showCategoryDropdown]);
 
+    // SSC dashboard 2026-05-11 — filter by ServiceNow ticket creation time
+    // rather than DB-ingest time, so the default 7-day window reflects real
+    // SN business chronology (and survives backfill spikes). See
+    // docs/superpowers/specs/2026-05-11-activities-list-sort-and-row-detail-design.md.
     const query = useMemo(() => ({
-        ...(dateFrom ? { created_at_from: dateFrom } : {}),
-        ...(dateTo ? { created_at_to: dateTo } : {}),
+        ...(dateFrom ? { source_created_at_from: dateFrom } : {}),
+        ...(dateTo ? { source_created_at_to: dateTo } : {}),
     }), [dateFrom, dateTo]);
 
     const {
@@ -148,8 +152,8 @@ export function IncidentsPanel({
 
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
-        if (dateFrom) params.set('created_at_from', dateFrom);
-        if (dateTo) params.set('created_at_to', dateTo);
+        if (dateFrom) params.set('source_created_at_from', dateFrom);
+        if (dateTo) params.set('source_created_at_to', dateTo);
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -193,8 +197,8 @@ export function IncidentsPanel({
             await downloadDashboardXlsx(
                 'incidents',
                 {
-                    created_at_from: dateFrom,
-                    created_at_to: dateTo,
+                    source_created_at_from: dateFrom,
+                    source_created_at_to: dateTo,
                 },
                 `ssc_ticket_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
             );
