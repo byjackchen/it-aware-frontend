@@ -49,7 +49,22 @@ export async function login(formData: FormData) {
         if (!response.ok) {
             const responseText = await response.text()
             logger.info(`Login failed - status: ${response.status}`, { requestId, action })
-            return { error: `Login failed: ${response.status} ${responseText}` }
+            // Backend errors are shaped `{"detail":{"message": "...", "code": "..."}}`.
+            // Surface only the human-readable message; fall back to the raw body
+            // if parsing fails so we never lose information.
+            let message = responseText
+            try {
+                const parsed = JSON.parse(responseText)
+                const inner = parsed?.detail
+                if (typeof inner === 'string') {
+                    message = inner
+                } else if (inner && typeof inner.message === 'string') {
+                    message = inner.message
+                }
+            } catch {
+                // Non-JSON body — keep the raw text.
+            }
+            return { error: message || `Login failed (${response.status})` }
         }
 
         const cookieStore = await cookies()

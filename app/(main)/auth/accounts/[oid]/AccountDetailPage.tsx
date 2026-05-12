@@ -95,8 +95,9 @@ export function AccountDetailPage({
     };
 
     const handleUnlinkWorker = async () => {
+        if (!linkedWorker) return;
         startTransition(async () => {
-            await unlinkAccountWorker(account.oid);
+            await unlinkAccountWorker(account.oid, linkedWorker.oid);
             router.refresh();
         });
     };
@@ -164,10 +165,15 @@ export function AccountDetailPage({
                                             <Bot className="w-4 h-4" />
                                             <span>{t('accounts.typeSystem')}</span>
                                         </span>
-                                    ) : (
+                                    ) : account.account_type === 'agent' ? (
                                         <span className="flex items-center gap-1.5 text-blue-400">
+                                            <Bot className="w-4 h-4" />
+                                            <span>{t('accounts.typeAgent')}</span>
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-1.5 text-green-400">
                                             <UserCircle className="w-4 h-4" />
-                                            <span>{t('accounts.typeRegular')}</span>
+                                            <span>{t('accounts.typeUser')}</span>
                                         </span>
                                     )}
                                 </div>

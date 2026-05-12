@@ -194,10 +194,11 @@ export async function linkAccountWorker(accountOid: string, workerOid: string): 
   });
 }
 
-export async function unlinkAccountWorker(accountOid: string): Promise<void> {
-  return fetchApi<void>(`${AUTH_CONFIG_BASE}/account_workers/${encodeURIComponent(accountOid)}`, {
-    method: 'DELETE',
-  });
+export async function unlinkAccountWorker(accountOid: string, workerOid: string): Promise<void> {
+  return fetchApi<void>(
+    `${AUTH_CONFIG_BASE}/account_workers/${encodeURIComponent(accountOid)}/${encodeURIComponent(workerOid)}`,
+    { method: 'DELETE' }
+  );
 }
 
 // ============================================================================

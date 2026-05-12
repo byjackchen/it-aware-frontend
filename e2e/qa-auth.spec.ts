@@ -5,8 +5,7 @@ import { test, expect, Page } from '@playwright/test';
  *
  * Walks the login flow + admin CRUD for accounts, groups, roles, permissions,
  * plus relationship management (account↔worker, account↔groups,
- * group↔permissions, group↔roles). Verified live via Playwright MCP before
- * codification; flows known to be broken are listed at the bottom of this file.
+ * group↔permissions, group↔roles).
  *
  * Auth is established once by `auth.setup.ts` and shared via storageState.
  * The login-flow describe overrides that to use a fresh context.
@@ -15,12 +14,6 @@ import { test, expect, Page } from '@playwright/test';
  *   - Backend on localhost:8007, frontend on localhost:3007.
  *   - byjackchen exists with password=byjackchen and has admins membership.
  *   - Auth seeding (P0–P3) completed so the standard permissions/groups exist.
- *
- * Known bugs (intentionally NOT covered — would always fail):
- *   - BUG-001: Account → Unlink Worker silently fails. Frontend hits
- *     `DELETE /auth/config/account_workers/{accountOid}` but backend expects
- *     `DELETE /auth/config/account_workers/{accountOid}/{workerOid}`.
- *     See lib/api/security.ts:198 vs app/auth/routes.py:814.
  */
 
 const RUN_ID = `qaauth${Date.now()}`;
@@ -148,7 +141,7 @@ test.describe('Auth module — authenticated', () => {
     await expect(page.locator('text=qatest').first()).toBeVisible();
     await expect(page.locator(`text=perm_${RUN_ID}`).first()).toBeVisible();
     await expect(page.locator('text=verify').first()).toBeVisible();
-    await expect(page.locator(/no groups|not assigned/i)).toBeVisible();
+    await expect(page.getByText(/no groups|not assigned/i).first()).toBeVisible();
   });
 
   test('permission delete dismissal preserves entity', async ({ page }) => {
@@ -223,29 +216,30 @@ test.describe('Auth module — authenticated', () => {
     await page.getByRole('button', { name: /^Create$/ }).click();
     await page.waitForURL(/\/auth\/groups$/);
 
-    // Verify list shows all three with correct scope badges.
-    await expect(page.locator(`tbody tr:has-text("group_${RUN_ID}_unc")`)).toContainText(
-      /Unconstrained/
-    );
-    await expect(page.locator(`tbody tr:has-text("group_${RUN_ID}_self")`)).toContainText(
-      /Self Scoped/
-    );
-    await expect(page.locator(`tbody tr:has-text("group_${RUN_ID}_rb")`)).toContainText(
-      /Role Based/
-    );
+    // Verify list shows all three with correct scope badges. `.first()` guards
+    // against the dev-mode double-render that occasionally inserts twin rows.
+    await expect(
+      page.locator(`tbody tr:has-text("group_${RUN_ID}_unc")`).first()
+    ).toContainText(/Unconstrained/);
+    await expect(
+      page.locator(`tbody tr:has-text("group_${RUN_ID}_self")`).first()
+    ).toContainText(/Self Scoped/);
+    await expect(
+      page.locator(`tbody tr:has-text("group_${RUN_ID}_rb")`).first()
+    ).toContainText(/Role Based/);
 
     // Capture OIDs by clicking each.
-    await page.locator(`tbody tr:has-text("group_${RUN_ID}_unc")`).click();
+    await page.locator(`tbody tr:has-text("group_${RUN_ID}_unc")`).first().click();
     await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupUncOid = page.url().split('/').pop()!;
 
     await page.goto('/auth/groups');
-    await page.locator(`tbody tr:has-text("group_${RUN_ID}_self")`).click();
+    await page.locator(`tbody tr:has-text("group_${RUN_ID}_self")`).first().click();
     await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupSelfOid = page.url().split('/').pop()!;
 
     await page.goto('/auth/groups');
-    await page.locator(`tbody tr:has-text("group_${RUN_ID}_rb")`).click();
+    await page.locator(`tbody tr:has-text("group_${RUN_ID}_rb")`).first().click();
     await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupRbOid = page.url().split('/').pop()!;
   });
@@ -351,21 +345,31 @@ test.describe('Auth module — authenticated', () => {
     await page.waitForURL(/\/auth\/accounts$/);
 
     // Verify list rows + type badges.
-    await expect(page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`)).toContainText(/User/);
-    await expect(page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`)).toContainText(/System/);
-    await expect(page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`)).toContainText(/Agent/);
+    await expect(
+      page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`).first()
+    ).toContainText(/User/);
+    await expect(
+      page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`).first()
+    ).toContainText(/System/);
+    await expect(
+      page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`).first()
+    ).toContainText(/Agent/);
 
-    // Capture OIDs.
-    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`).click();
+    // Capture OIDs. Always wait for the navigation before reading page.url(),
+    // otherwise we capture the listing URL ("/auth/accounts") and assign
+    // "accounts" to the OID.
+    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`).first().click();
     await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
     created.acctUserOid = page.url().split('/').pop()!;
 
     await page.goto('/auth/accounts');
-    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`).click();
+    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`).first().click();
+    await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
     created.acctSysOid = page.url().split('/').pop()!;
 
     await page.goto('/auth/accounts');
-    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`).click();
+    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`).first().click();
+    await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
     created.acctAgtOid = page.url().split('/').pop()!;
   });
 
@@ -385,7 +389,7 @@ test.describe('Auth module — authenticated', () => {
     await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toHaveCount(0);
   });
 
-  test('link a worker to user account via WorkerSearchDialog', async ({ page }) => {
+  test('link then unlink a worker to user account', async ({ page }) => {
     test.skip(!created.acctUserOid, 'depends on create user account');
     await page.goto(`/auth/accounts/${created.acctUserOid}`);
     await page.getByRole('button', { name: /^Link Worker$/ }).click();
@@ -400,8 +404,14 @@ test.describe('Auth module — authenticated', () => {
     // Dialog closes and Unlink replaces Link Worker.
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('button', { name: /^Link Worker$/ })).toHaveCount(0);
-    // NOTE: Unlink button exists but is BROKEN — see BUG-001 at top of file.
-    // We don't drive it here; cleanup uses the backend directly.
+    await expect(page.getByRole('button', { name: /^Unlink$/ })).toBeVisible();
+
+    // Unlink the worker — re-renders into the "no linked worker" empty state.
+    await page.getByRole('button', { name: /^Unlink$/ }).click();
+    await expect(page.getByRole('button', { name: /^Unlink$/ })).toHaveCount(0, {
+      timeout: 5_000,
+    });
+    await expect(page.getByRole('button', { name: /^Link Worker$/ })).toBeVisible();
   });
 
   test('assign group to system account via AssignmentManager', async ({ page }) => {
@@ -439,7 +449,15 @@ test.describe('Auth module — authenticated', () => {
     context,
   }) => {
     await page.goto('/dashboard/data-overview');
-    await page.locator('button').filter({ hasText: /^Logout$/ }).first().click();
+
+    // The Logout button lives inside the user-menu popover triggered by the
+    // avatar button in the top-right ("B" for byjackchen). Open the menu first,
+    // then click Logout once it becomes visible.
+    await page.locator('header button').last().click();
+    const logoutBtn = page.locator('button').filter({ hasText: /^Logout$/ }).first();
+    await expect(logoutBtn).toBeVisible({ timeout: 5_000 });
+    await logoutBtn.click();
+
     await page.waitForURL(/\/login$/, { timeout: 10_000 });
 
     const cookies = await context.cookies();
@@ -459,7 +477,9 @@ test.describe('Auth module — authenticated', () => {
     });
     const setCookie = tokenResp.headers()['set-cookie'] ?? '';
     const accessMatch = /it_aware_access=([^;]+)/.exec(setCookie);
-    const headers = accessMatch ? { Cookie: `it_aware_access=${accessMatch[1]}` } : {};
+    const headers: Record<string, string> = accessMatch
+      ? { Cookie: `it_aware_access=${accessMatch[1]}` }
+      : {};
 
     const deletes: Array<[string, string | undefined]> = [
       ['accounts', created.acctUserOid],
@@ -472,8 +492,8 @@ test.describe('Auth module — authenticated', () => {
       ['permissions', created.permissionOid],
     ];
 
-    // Also clean any account_worker the link test created — required because of
-    // BUG-001 (UI unlink is broken). Iterate user accounts and force-delete links.
+    // Safety net: drop any account_worker link still hanging off the test
+    // user account in case the link/unlink test bailed out mid-way.
     if (created.acctUserOid) {
       const links = await request.get(
         `http://localhost:8007/auth/config/account_workers?account_oid=${created.acctUserOid}`,

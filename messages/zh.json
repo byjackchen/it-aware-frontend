@@ -24,6 +24,8 @@
       "usernamePlaceholder": "例如：john.doe",
       "type": "类型",
       "typeSystem": "系统",
+      "typeAgent": "Agent",
+      "typeUser": "用户",
       "typeRegular": "普通",
       "status": "状态",
       "accountType": "账户类型",

@@ -30,6 +30,8 @@
       "usernamePlaceholder": "e.g., john.doe",
       "type": "Type",
       "typeSystem": "System",
+      "typeAgent": "Agent",
+      "typeUser": "User",
       "typeRegular": "Regular",
       "status": "Status",
       "accountType": "Account Type",
