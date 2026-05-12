@@ -8,6 +8,8 @@ import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { useServerSearch } from '@/lib/hooks/useServerSearch';
 import { Pagination } from '@/components/data/Pagination';
 import type { Incident, IncidentListResponse } from '@/lib/types/objects';
+import { detectLocalTimezone, formatDateTime, formatRelative } from '@/lib/utils/datetime';
+import { getStateDotColor, resolveCaller, resolveCallerOrg } from '@/lib/utils/activityState';
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
     critical: { bg: 'bg-red-500/20', text: 'text-red-500' },
@@ -21,6 +23,7 @@ export function IncidentsListPage() {
     const { theme } = useTheme();
     const router = useTransitionRouter();
     const isLight = theme === 'light';
+    const timezone = detectLocalTimezone();
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
@@ -128,9 +131,17 @@ export function IncidentsListPage() {
 
     const renderIncidentRow = (incident: Incident, highlighted = false) => {
         const style = getPriorityStyle(incident.priority);
+        const dotColor = getStateDotColor(incident.state);
+        const caller = resolveCaller(incident);
+        const callerOrg = resolveCallerOrg(incident);
+        const snCreatedSource = incident.source_created_at ?? incident.created_at;
+        const snCreatedAbsolute = formatDateTime(snCreatedSource, timezone);
+        const snCreatedRelative = formatRelative(snCreatedSource);
+        const assignedGroup = incident.assigned_group ?? '—';
         return (
             <button
                 key={incident.oid}
+                data-source-created-at={incident.source_created_at ?? ''}
                 onClick={() => router.push(`/data/incidents/${incident.oid}`)}
                 className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${highlighted
                     ? (isLight ? 'bg-blue-50 hover:bg-blue-100' : 'bg-blue-500/10 hover:bg-blue-500/20')
@@ -139,8 +150,21 @@ export function IncidentsListPage() {
             >
                 <div className="flex-1 min-w-0">
                     <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{incident.title}</div>
-                    <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                        {(incident.stable_id || '—')} • {incident.state}
+                    <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'} flex items-center gap-2`}>
+                        <span>{incident.stable_id || '—'}</span>
+                        <span>•</span>
+                        <span className={`inline-block w-2 h-2 rounded-full ${dotColor}`} aria-hidden />
+                        <span>{incident.state}</span>
+                    </div>
+                    <div
+                        data-role="meta"
+                        className={`text-xs mt-1 ${isLight ? 'text-slate-400' : 'text-gray-500'} truncate`}
+                    >
+                        <span title={callerOrg ?? undefined}>{caller}</span>
+                        <span className="mx-1.5">·</span>
+                        <span title={snCreatedAbsolute}>SN created {snCreatedRelative}</span>
+                        <span className="mx-1.5">·</span>
+                        <span>{assignedGroup}</span>
                     </div>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full capitalize ${style.bg} ${style.text}`}>
