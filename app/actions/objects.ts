@@ -51,6 +51,12 @@ import {
     deleteScenario,
 } from '@/lib/api/scenarios';
 import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
+import {
+    linkAccountAgent,
+    unlinkAccountAgent,
+    linkAccountSystem,
+    unlinkAccountSystem,
+} from '@/lib/api/security';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -1297,7 +1303,6 @@ export async function createAgentAction(formData: FormData) {
             agent_platform: formData.get('agent_platform') as string,
             contact_worker_oid: formData.get('contact_worker_oid') as string,
             agent_key: formData.get('agent_key') as string || undefined,
-            account_oid: formData.get('account_oid') as string || undefined,
             description: formData.get('description') as string || undefined,
         });
         revalidatePath('/agentops/agents');
@@ -1323,7 +1328,6 @@ export async function updateAgentAction(oid: string, formData: FormData) {
             agent_key: formData.get('agent_key') as string || undefined,
             agent_platform: formData.get('agent_platform') as string || undefined,
             contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
-            account_oid: formData.get('account_oid') as string || undefined,
             description: formData.get('description') as string || undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
@@ -1365,14 +1369,12 @@ export async function createSystemAction(formData: FormData) {
 
     try {
         const contactWorkerOid = formData.get('contact_worker_oid') as string;
-        const accountOid = formData.get('account_oid') as string;
         const description = formData.get('description') as string;
         const system = await createSystem({
             name: formData.get('name') as string,
             system_id: formData.get('system_id') as string,
             system_platform: formData.get('system_platform') as string,
             contact_worker_oid: contactWorkerOid || undefined,
-            account_oid: accountOid || undefined,
             description: description || undefined,
         });
         revalidatePath('/data/systems');
@@ -1397,7 +1399,6 @@ export async function updateSystemAction(oid: string, formData: FormData) {
             name: (formData.get('name') as string) || undefined,
             system_platform: (formData.get('system_platform') as string) || undefined,
             contact_worker_oid: (formData.get('contact_worker_oid') as string) || undefined,
-            account_oid: (formData.get('account_oid') as string) || undefined,
             description: (formData.get('description') as string) || undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
@@ -1503,6 +1504,74 @@ export async function deleteTicketAction(oid: string) {
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });
+        throw error;
+    }
+}
+
+// ============================================================================
+// Account-Agent / Account-System Link Actions
+// ============================================================================
+
+export async function linkAccountAgentAction(accountOid: string, agentOid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:linkAccountAgent';
+    logger.info(`Started - account=${accountOid} agent=${agentOid}`, { requestId, action });
+    try {
+        const link = await linkAccountAgent(accountOid, agentOid);
+        revalidatePath('/data/agents');
+        revalidatePath(`/data/agents/${agentOid}`);
+        logger.info('Success', { requestId, action });
+        return { success: true, link };
+    } catch (error) {
+        logger.error('Failed', error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function unlinkAccountAgentAction(accountOid: string, agentOid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:unlinkAccountAgent';
+    logger.info(`Started - account=${accountOid} agent=${agentOid}`, { requestId, action });
+    try {
+        await unlinkAccountAgent(accountOid, agentOid);
+        revalidatePath('/data/agents');
+        revalidatePath(`/data/agents/${agentOid}`);
+        logger.info('Success', { requestId, action });
+        return { success: true };
+    } catch (error) {
+        logger.error('Failed', error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function linkAccountSystemAction(accountOid: string, systemOid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:linkAccountSystem';
+    logger.info(`Started - account=${accountOid} system=${systemOid}`, { requestId, action });
+    try {
+        const link = await linkAccountSystem(accountOid, systemOid);
+        revalidatePath('/data/systems');
+        revalidatePath(`/data/systems/${systemOid}`);
+        logger.info('Success', { requestId, action });
+        return { success: true, link };
+    } catch (error) {
+        logger.error('Failed', error, { requestId, action });
+        throw error;
+    }
+}
+
+export async function unlinkAccountSystemAction(accountOid: string, systemOid: string) {
+    const requestId = logger.generateRequestId();
+    const action = 'Objects:unlinkAccountSystem';
+    logger.info(`Started - account=${accountOid} system=${systemOid}`, { requestId, action });
+    try {
+        await unlinkAccountSystem(accountOid, systemOid);
+        revalidatePath('/data/systems');
+        revalidatePath(`/data/systems/${systemOid}`);
+        logger.info('Success', { requestId, action });
+        return { success: true };
+    } catch (error) {
+        logger.error('Failed', error, { requestId, action });
         throw error;
     }
 }

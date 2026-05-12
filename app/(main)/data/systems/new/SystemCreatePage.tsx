@@ -27,7 +27,6 @@ export function SystemCreatePage() {
     const [systemId, setSystemId] = useState('');
     const [systemPlatform, setSystemPlatform] = useState('');
     const [contactWorkerOid, setContactWorkerOid] = useState('');
-    const [accountOid, setAccountOid] = useState('');
     const [description, setDescription] = useState('');
 
     const {
@@ -55,7 +54,6 @@ export function SystemCreatePage() {
             formData.set('system_id', systemId.trim());
             formData.set('system_platform', systemPlatform.trim());
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
-            if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
             if (description.trim()) formData.set('description', description.trim());
 
             await createSystemAction(formData);
@@ -162,17 +160,6 @@ export function SystemCreatePage() {
                                     </option>
                                 ))}
                             </select>
-                        </div>
-
-                        <div>
-                            <label className={labelClass}>Account OID</label>
-                            <input
-                                type="text"
-                                value={accountOid}
-                                onChange={(e) => setAccountOid(e.target.value)}
-                                className={inputClass}
-                                placeholder="Optional account OID"
-                            />
                         </div>
 
                         <div>

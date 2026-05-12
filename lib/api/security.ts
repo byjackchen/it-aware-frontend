@@ -19,6 +19,8 @@ import type {
   PermissionCreate,
   Worker,
   AccountWorker,
+  AccountAgent,
+  AccountSystem,
   AccountGroup,
   GroupPermission,
   GroupRole,
@@ -197,6 +199,56 @@ export async function linkAccountWorker(accountOid: string, workerOid: string): 
 export async function unlinkAccountWorker(accountOid: string, workerOid: string): Promise<void> {
   return fetchApi<void>(
     `${AUTH_CONFIG_BASE}/account_workers/${encodeURIComponent(accountOid)}/${encodeURIComponent(workerOid)}`,
+    { method: 'DELETE' }
+  );
+}
+
+// ============================================================================
+// Account-Agent Link APIs
+// ============================================================================
+
+export async function getAccountAgents(filter?: { account_oid?: string; agent_oid?: string }): Promise<AccountAgent[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (filter?.account_oid) params.set('account_oid', filter.account_oid);
+  if (filter?.agent_oid) params.set('agent_oid', filter.agent_oid);
+  return fetchApi<AccountAgent[]>(`${AUTH_CONFIG_BASE}/account_agents?${params.toString()}`);
+}
+
+export async function linkAccountAgent(accountOid: string, agentOid: string): Promise<AccountAgent> {
+  return fetchApi<AccountAgent>(`${AUTH_CONFIG_BASE}/account_agents`, {
+    method: 'POST',
+    body: JSON.stringify({ account_oid: accountOid, agent_oid: agentOid }),
+  });
+}
+
+export async function unlinkAccountAgent(accountOid: string, agentOid: string): Promise<void> {
+  return fetchApi<void>(
+    `${AUTH_CONFIG_BASE}/account_agents/${encodeURIComponent(accountOid)}/${encodeURIComponent(agentOid)}`,
+    { method: 'DELETE' }
+  );
+}
+
+// ============================================================================
+// Account-System Link APIs
+// ============================================================================
+
+export async function getAccountSystems(filter?: { account_oid?: string; system_oid?: string }): Promise<AccountSystem[]> {
+  const params = new URLSearchParams({ limit: '1000' });
+  if (filter?.account_oid) params.set('account_oid', filter.account_oid);
+  if (filter?.system_oid) params.set('system_oid', filter.system_oid);
+  return fetchApi<AccountSystem[]>(`${AUTH_CONFIG_BASE}/account_systems?${params.toString()}`);
+}
+
+export async function linkAccountSystem(accountOid: string, systemOid: string): Promise<AccountSystem> {
+  return fetchApi<AccountSystem>(`${AUTH_CONFIG_BASE}/account_systems`, {
+    method: 'POST',
+    body: JSON.stringify({ account_oid: accountOid, system_oid: systemOid }),
+  });
+}
+
+export async function unlinkAccountSystem(accountOid: string, systemOid: string): Promise<void> {
+  return fetchApi<void>(
+    `${AUTH_CONFIG_BASE}/account_systems/${encodeURIComponent(accountOid)}/${encodeURIComponent(systemOid)}`,
     { method: 'DELETE' }
   );
 }

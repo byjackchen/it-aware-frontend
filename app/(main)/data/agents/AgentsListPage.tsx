@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import type { Agent, AgentListResponse } from '@/lib/types/objects';
+import type { AccountAgent } from '@/lib/types/security';
 
 export function AgentsListPage() {
     const { theme } = useTheme();
@@ -18,6 +19,22 @@ export function AgentsListPage() {
     const [remotePage, setRemotePage] = useState<{ page: number; items: Agent[] } | null>(null);
     const [isPageLoading, setIsPageLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
+    // map agent_oid -> account_oid (pre-fetched once)
+    const [linkMap, setLinkMap] = useState<Map<string, string>>(new Map());
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/auth/config/account_agents?limit=1000')
+            .then((r) => (r.ok ? r.json() : []))
+            .then((links: AccountAgent[]) => {
+                if (cancelled) return;
+                setLinkMap(new Map(links.map((l) => [l.agent_oid, l.account_oid])));
+            })
+            .catch(() => {/* leave map empty */});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const {
         items: agents,
@@ -192,7 +209,7 @@ export function AgentsListPage() {
                                         </span>
                                     </div>
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                        {agent.account_oid || '—'}
+                                        {linkMap.get(agent.oid) || '—'}
                                     </div>
                                 </button>
                             ))}

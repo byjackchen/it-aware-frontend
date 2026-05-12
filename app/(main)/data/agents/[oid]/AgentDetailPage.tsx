@@ -4,7 +4,7 @@
  * Agent detail page client component.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
@@ -14,12 +14,20 @@ import {
     Trash2,
     Loader2,
     X,
+    Link2,
+    Link2Off,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Agent, Worker } from '@/lib/types/objects';
-import { updateAgentAction, deleteAgentAction } from '@/app/actions/objects';
+import type { AccountAgent } from '@/lib/types/security';
+import {
+    updateAgentAction,
+    deleteAgentAction,
+    linkAccountAgentAction,
+    unlinkAccountAgentAction,
+} from '@/app/actions/objects';
 
 interface AgentDetailPageProps {
     agent: Agent;
@@ -40,9 +48,60 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const [workspaceId, setWorkspaceId] = useState(agent.agent_workspace_id || '');
     const [agentPlatform, setAgentPlatform] = useState(agent.agent_platform);
     const [contactWorkerOid, setContactWorkerOid] = useState(agent.contact_worker_oid);
-    const [accountOid, setAccountOid] = useState(agent.account_oid || '');
     const [description, setDescription] = useState(agent.description || '');
     const [isActive, setIsActive] = useState(agent.is_active);
+
+    // Linked account (via auth.account_agent)
+    const [linkedAccount, setLinkedAccount] = useState<AccountAgent | null>(null);
+    const [pendingAccountOid, setPendingAccountOid] = useState('');
+    const [linkPending, setLinkPending] = useState(false);
+    const [linkError, setLinkError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`/api/auth/config/account_agents?agent_oid=${agent.oid}`)
+            .then((r) => (r.ok ? r.json() : []))
+            .then((items: AccountAgent[]) => {
+                if (!cancelled) setLinkedAccount(items[0] ?? null);
+            })
+            .catch(() => {
+                if (!cancelled) setLinkedAccount(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [agent.oid]);
+
+    const handleLink = async () => {
+        if (!pendingAccountOid.trim()) return;
+        setLinkPending(true);
+        setLinkError(null);
+        try {
+            await linkAccountAgentAction(pendingAccountOid.trim(), agent.oid);
+            const fresh = await fetch(`/api/auth/config/account_agents?agent_oid=${agent.oid}`)
+                .then((r) => (r.ok ? r.json() : []));
+            setLinkedAccount((fresh as AccountAgent[])[0] ?? null);
+            setPendingAccountOid('');
+        } catch (err) {
+            setLinkError(err instanceof Error ? err.message : 'Link failed');
+        } finally {
+            setLinkPending(false);
+        }
+    };
+
+    const handleUnlink = async () => {
+        if (!linkedAccount) return;
+        setLinkPending(true);
+        setLinkError(null);
+        try {
+            await unlinkAccountAgentAction(linkedAccount.account_oid, agent.oid);
+            setLinkedAccount(null);
+        } catch (err) {
+            setLinkError(err instanceof Error ? err.message : 'Unlink failed');
+        } finally {
+            setLinkPending(false);
+        }
+    };
 
     const contactWorker = workers.find((w) => w.oid === agent.contact_worker_oid);
     const contactWorkerDisplay = contactWorker
@@ -63,7 +122,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (agentPlatform) formData.set('agent_platform', agentPlatform);
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
-            if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
             if (description.trim()) formData.set('description', description.trim());
             formData.set('is_active', String(isActive));
 
@@ -99,7 +157,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
         setWorkspaceId(agent.agent_workspace_id || '');
         setAgentPlatform(agent.agent_platform);
         setContactWorkerOid(agent.contact_worker_oid);
-        setAccountOid(agent.account_oid || '');
         setDescription(agent.description || '');
         setIsActive(agent.is_active);
         setIsEditing(false);
@@ -301,20 +358,46 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                         />
                     </div>
 
-                    {/* Account OID */}
-                    <div>
-                        <label className={labelClass}>Account OID</label>
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                value={accountOid}
-                                onChange={(e) => setAccountOid(e.target.value)}
-                                className={inputClass}
-                                placeholder="Optional account OID"
-                            />
+                    {/* Linked Account (via auth.account_agent) */}
+                    <div className={`p-4 rounded-lg border ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Link2 className="w-4 h-4" />
+                            <span className={labelClass}>Linked Account</span>
+                        </div>
+                        {linkedAccount ? (
+                            <div className="flex items-center justify-between gap-3">
+                                <code className={`font-mono text-xs break-all ${valueClass}`}>{linkedAccount.account_oid}</code>
+                                <button
+                                    type="button"
+                                    onClick={handleUnlink}
+                                    disabled={linkPending}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50"
+                                >
+                                    {linkPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2Off className="w-3 h-3" />}
+                                    <span>Unlink</span>
+                                </button>
+                            </div>
                         ) : (
-                            <div className={valueClass}>{agent.account_oid || '—'}</div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={pendingAccountOid}
+                                    onChange={(e) => setPendingAccountOid(e.target.value)}
+                                    placeholder="account oid"
+                                    className={inputClass}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleLink}
+                                    disabled={linkPending || !pendingAccountOid.trim()}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50"
+                                >
+                                    {linkPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                                    <span>Link</span>
+                                </button>
+                            </div>
                         )}
+                        {linkError && <div className="mt-2 text-xs text-red-400">{linkError}</div>}
                     </div>
 
                     {/* Description */}

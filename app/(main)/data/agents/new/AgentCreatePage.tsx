@@ -28,7 +28,6 @@ export function AgentCreatePage() {
     // Optional fields
     const [agentKey, setAgentKey] = useState('');
     const [agentAdminKey, setAgentAdminKey] = useState('');
-    const [accountOid, setAccountOid] = useState('');
     const [description, setDescription] = useState('');
     const [workspaceId, setWorkspaceId] = useState('');
 
@@ -61,7 +60,6 @@ export function AgentCreatePage() {
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
             if (agentAdminKey.trim()) formData.set('agent_admin_key', agentAdminKey.trim());
             if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
-            if (accountOid.trim()) formData.set('account_oid', accountOid.trim());
             if (description.trim()) formData.set('description', description.trim());
 
             await createAgentAction(formData);
@@ -201,17 +199,6 @@ export function AgentCreatePage() {
                                 onChange={(e) => setWorkspaceId(e.target.value)}
                                 className={inputClass}
                                 placeholder="e.g. f6c90bea-1078-408c-86ac-2090633ed5d3"
-                            />
-                        </div>
-
-                        <div>
-                            <label className={labelClass}>Account OID</label>
-                            <input
-                                type="text"
-                                value={accountOid}
-                                onChange={(e) => setAccountOid(e.target.value)}
-                                className={inputClass}
-                                placeholder="Associated account OID"
                             />
                         </div>
 
