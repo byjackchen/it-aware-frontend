@@ -357,19 +357,19 @@ export function OhlaOverviewDashboard() {
                         label={t('kpis.totalInteractions')}
                         value={fmtNum(kpis.totalInteractions)}
                         icon={MessagesSquare}
-                        tooltip={t('kpis.totalInteractions')}
+                        tooltip={t('kpis.totalInteractionsInfo')}
                     />
                     <KpiCard
                         label={t('kpis.userAsk')}
                         value={fmtNum(kpis.queryCount)}
                         icon={HelpCircle}
-                        tooltip={t('kpis.userAsk')}
+                        tooltip={t('kpis.userAskInfo')}
                     />
                     <KpiCard
                         label={t('kpis.totalActionChain')}
                         value={fmtNum(kpis.totalActionChain)}
                         icon={MousePointerClick}
-                        tooltip={t('kpis.totalActionChain')}
+                        tooltip={t('kpis.totalActionChainInfo')}
                     />
                 </div>
 
@@ -380,31 +380,31 @@ export function OhlaOverviewDashboard() {
                         label={t('kpis.distinctUsers')}
                         value={fmtNum(kpis.distinctUsers)}
                         icon={Users}
-                        tooltip={t('kpis.distinctUsers')}
+                        tooltip={t('kpis.distinctUsersInfo')}
                     />
                     <KpiCard
                         label={t('kpis.tier0Supported')}
                         value={fmtNum(kpis.tier0Supported)}
                         icon={ShieldCheck}
-                        tooltip={t('kpis.tier0Supported')}
+                        tooltip={t('kpis.tier0SupportedInfo')}
                     />
                     <KpiCard
                         label={t('kpis.nonAutoSupport')}
                         value={fmtNum(kpis.liveAgentSupport)}
                         icon={Headphones}
-                        tooltip={t('kpis.nonAutoSupport')}
+                        tooltip={t('kpis.nonAutoSupportInfo')}
                     />
                     <KpiCard
                         label={t('kpis.userSurvey')}
                         value={fmtNum(kpis.userSurvey)}
                         icon={ClipboardList}
-                        tooltip={t('kpis.userSurvey')}
+                        tooltip={t('kpis.userSurveyInfo')}
                     />
                     <KpiCard
                         label={t('kpis.avgSurveyRate')}
                         value={fmtSurveyRate(kpis.avgSurveyRate)}
                         icon={Stars}
-                        tooltip={t('kpis.avgSurveyRate')}
+                        tooltip={t('kpis.avgSurveyRateInfo')}
                     />
                 </div>
 

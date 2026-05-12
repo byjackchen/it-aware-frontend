@@ -204,6 +204,7 @@ export function RawDataDashboard() {
                     totalCount={filtered.length}
                     maxRows={1000}
                     emptyText={t('common.noData')}
+                    csvFilename="ohla_raw_data"
                 />
             </div>
         </div>

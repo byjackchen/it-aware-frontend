@@ -272,7 +272,7 @@ export function SurveyDetailsDashboard() {
                         value={fmtNum(kpis.surveyCount)}
                         valueSize="xl"
                     
-                        tooltip={t('surveyDetails.kpis.survey')}
+                        tooltip={t('surveyDetails.kpis.surveyInfo')}
     />
                     <div className={`rounded-xl border p-4 flex flex-col justify-center ${mutedCardCls}`}>
                         <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>
@@ -293,6 +293,7 @@ export function SurveyDetailsDashboard() {
                     columns={columns}
                     totalCount={detailRows.length}
                     emptyText={t('common.noData')}
+                    csvFilename="ohla_survey_details"
                 />
             </div>
         </div>

@@ -190,7 +190,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="xl"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.userAsk')}
+                        tooltip={t('userAsk.kpis.userAskInfo')}
     
     />
                         </div>
@@ -201,7 +201,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="xl"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.faqMatchRate')}
+                        tooltip={t('userAsk.kpis.faqMatchRateInfo')}
     />
                         </div>
                         <div className="md:col-span-3">
@@ -211,7 +211,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="xl"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.overallMatchRate')}
+                        tooltip={t('userAsk.kpis.overallMatchRateInfo')}
     />
                         </div>
                         <div className="md:col-span-3">
@@ -221,7 +221,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="lg"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.faqMatched')}
+                        tooltip={t('userAsk.kpis.faqMatchedInfo')}
     />
                         </div>
                         <div className="md:col-span-3">
@@ -231,7 +231,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="lg"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.actionChain')}
+                        tooltip={t('userAsk.kpis.actionChainInfo')}
     />
                         </div>
                         <div className="md:col-span-3">
@@ -241,7 +241,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="lg"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.kbMatched')}
+                        tooltip={t('userAsk.kpis.kbMatchedInfo')}
     />
                         </div>
                         <div className="md:col-span-3">
@@ -251,7 +251,7 @@ export function UserAskAnalysisDashboard() {
                                 valueSize="lg"
                                 className="h-full"
                             
-                        tooltip={t('userAsk.kpis.other')}
+                        tooltip={t('userAsk.kpis.otherInfo')}
     />
                         </div>
                     </div>

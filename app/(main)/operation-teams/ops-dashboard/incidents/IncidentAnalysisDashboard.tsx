@@ -22,6 +22,7 @@ import {
     formatDurationSec,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     daysSinceUpdated,
     meanOf,
     monthsFromRange,
@@ -35,7 +36,6 @@ import {
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
-import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import {
     TopFilterBar,
@@ -213,14 +213,25 @@ export function IncidentAnalysisDashboard() {
         // toggleState below), not by slicers in the filter panel.
         const prioSel = (filters.priority as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
+        const groupSel = (filters.assigned_group as string[]) ?? [];
         const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return rows.filter((r) => {
+            // Scope to OIT assignment groups so the dashboard reflects
+            // OIT's own queue (matches Active Monitoring Hub +
+            // Unassigned Tab). Non-OIT groups like Workday HQ BA Group
+            // / SN_WD-* are filtered out.
+            if (!isInScopeGroup(r.assigned_group)) return false;
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationOf)) return false;
             if (prioSel.length) {
                 const bucket = priorityBucket(r.priority);
                 if (!bucket || !prioSel.includes(bucket)) return false;
             }
             if (stateSel.length && !stateSel.includes(r.state)) return false;
+            // Assigned-group filter is driven by the By-Group donut
+            // (slice click + legend toggle). NULL groups never match
+            // when the filter is active — same convention as the other
+            // chart-driven filters.
+            if (groupSel.length && (!r.assigned_group || !groupSel.includes(r.assigned_group))) return false;
             if (range.from || range.to) {
                 const opened = openedDateStr(r);
                 if (range.from && opened && opened < range.from) return false;
@@ -371,7 +382,19 @@ export function IncidentAnalysisDashboard() {
         [filtered],
     );
 
-    const groupBar = useMemo(() => groupBy(activeRows, (r) => r.assigned_group), [activeRows]);
+    // By-Group donut: top 8 assignment groups + "Other" rollup. Donut
+    // beats horizontal bar here because we want slice-click to act as
+    // a filter (matching the priority / state donuts above) and
+    // because at typical dataset sizes 8 groups + Other reads cleaner
+    // than 10+ thin bars.
+    const groupDonut = useMemo(() => {
+        const ranked = groupBy(activeRows, (r) => r.assigned_group);
+        const TOP = 8;
+        const top = ranked.slice(0, TOP).map((g) => ({ name: g.key, value: g.count }));
+        const restCount = ranked.slice(TOP).reduce((acc, g) => acc + g.count, 0);
+        if (restCount > 0) top.push({ name: 'Other', value: restCount });
+        return top;
+    }, [activeRows]);
 
     const trendMonths = useMemo(
         () => monthsFromRange(dateRange.from, dateRange.to, now),
@@ -424,6 +447,19 @@ export function IncidentAnalysisDashboard() {
     const onStateSliceClick = (slice: { name: string }) => toggleState(slice.name);
     const selectedStates = (filters.state as string[]) ?? [];
 
+    const toggleAssignedGroup = (name: string) => {
+        // The "Other" rollup in the donut isn't a real assigned_group
+        // value — clicking it would set a filter that matches nothing.
+        // Treat it as a no-op so the click stays inert (no state
+        // change, no surprising empty dashboard).
+        if (name === 'Other') return;
+        const cur = (filters.assigned_group as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, assigned_group: next });
+    };
+    const onGroupSliceClick = (slice: { name: string }) => toggleAssignedGroup(slice.name);
+    const selectedAssignedGroups = (filters.assigned_group as string[]) ?? [];
+
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
@@ -438,6 +474,7 @@ export function IncidentAnalysisDashboard() {
      * to drive the consolidated Clear All button. Counts:
      *   - Priority (Active by Priority donut)
      *   - State (By State donut)
+     *   - Assigned Group (By Group donut)
      *   - Open Date range (when not at the page default)
      */
     const extraActiveFilterCount = useMemo(() => {
@@ -446,6 +483,8 @@ export function IncidentAnalysisDashboard() {
         if (Array.isArray(prio)) n += prio.length;
         const st = filters.state;
         if (Array.isArray(st)) n += st.length;
+        const grp = filters.assigned_group;
+        if (Array.isArray(grp)) n += grp.length;
         const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
         // Default state has from=defaultFromIso, to=null. Anything other
         // than that should count as "active" so the clear button lights
@@ -650,12 +689,23 @@ export function IncidentAnalysisDashboard() {
 
                 {/* Bar + trend row */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
-                    <GroupBarCard
+                    <DonutCard
                         title={t('charts.activeByGroup')}
                         info={t('charts.activeByGroupInfo')}
-                        data={groupBar}
-                        topN={10}
+                        data={groupDonut}
                         height={260}
+                        // Slice click + legend toggle drive the
+                        // assigned_group filter, mirroring the
+                        // priority / state donut interaction model.
+                        // The "Other" bucket is intentionally not
+                        // clickable as a filter target — clicking it
+                        // is a no-op because we don't track which
+                        // groups it rolls up; if a user wants to
+                        // filter inside "Other" they'd need a list
+                        // view which this card isn't.
+                        onSliceClick={onGroupSliceClick}
+                        selectedSlices={selectedAssignedGroups}
+                        onLegendToggle={toggleAssignedGroup}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <TrendLineCard

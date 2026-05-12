@@ -337,6 +337,8 @@ export function ZeroResidualAssetsDashboard() {
                     emptyText={t('empty.noData')}
                     loadingText={t('empty.loading')}
                     partialText={t('empty.partialResult')}
+                    csvFilename="zero_residual_assets"
+                    csvRows={enriched}
                 />
             </div>
         </div>

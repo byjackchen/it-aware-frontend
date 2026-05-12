@@ -107,6 +107,13 @@ export function GroupBarCard({
                                 color: isLight ? '#1e293b' : '#f1f5f9',
                                 fontSize: '12px',
                             }}
+                            // Recharts ignores ``contentStyle.color`` for the
+                            // per-item line and the category label — those
+                            // are rendered with their own styles and default
+                            // to black, which is invisible on the dark
+                            // dashboard. Force them to follow the theme.
+                            itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                            labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                             cursor={{ fill: isLight ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.12)' }}
                             formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
                         />

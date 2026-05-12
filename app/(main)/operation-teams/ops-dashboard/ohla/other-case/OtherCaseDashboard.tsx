@@ -220,7 +220,7 @@ export function OtherCaseDashboard() {
                     label={t('otherCase.kpis.other')}
                     value={fmtNum(kpis.other)}
                     valueSize="xl"
-                    tooltip={t('otherCase.kpis.other')}
+                    tooltip={t('otherCase.kpis.otherInfo')}
                 />
                     <DonutCard
                         title={t('otherCase.charts.distribution')}
@@ -251,6 +251,7 @@ export function OtherCaseDashboard() {
                     columns={columns}
                     totalCount={detailRows.length}
                     emptyText={t('common.noData')}
+                    csvFilename="ohla_other_case"
                 />
             </div>
         </div>

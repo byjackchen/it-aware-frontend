@@ -27,6 +27,7 @@ import {
     formatMoM,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     momActiveSnapshot,
     monthsFromRange,
     trendByMonth,
@@ -222,7 +223,14 @@ export function OpsDashboardHub() {
     }, [allTickets, ticketFilters, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeTickets = useMemo(
-        () => filteredTickets.filter((r) => isActiveState(r.state)),
+        // Narrow to OIT-scope assignment groups so KPIs / aging / unassigned
+        // reflect "tickets in OIT's queue" rather than the full firehose of
+        // every ServiceNow group (HR / Amazon Ordering / Workday / etc.).
+        // See isInScopeGroup for the keyword list.
+        () =>
+            filteredTickets.filter(
+                (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
+            ),
         [filteredTickets],
     );
 
@@ -232,6 +240,7 @@ export function OpsDashboardHub() {
         let activeIncidentHigh = 0;
         let activeCatalog = 0;
         let activeAsset = 0;
+        let unassigned = 0;
         let agingIncidentGt2d = 0;
         let agingCatalogGt30d = 0;
         let agingAssetGt30d = 0;
@@ -244,6 +253,12 @@ export function OpsDashboardHub() {
                 if (rt === 'asset_task') activeAsset += 1;
                 else if (rt === 'catalog_task') activeCatalog += 1;
             }
+            // Use `assigned_to_oid` (sys_id) as the source of truth for
+            // unassigned. The upstream sync drops `assigned_to_name` for
+            // many rows whose sys_id is populated, so filtering on the
+            // name field over-counts unassigned by ~5x. See
+            // UnassignedTicketsDashboard.tsx for the longer note.
+            if (!r.assigned_to_oid || (typeof r.assigned_to_oid === 'string' && r.assigned_to_oid.trim() === '')) unassigned += 1;
             const days = daysSinceUpdated(r, now);
             if (r.object_type === 'incident' && days > 2) agingIncidentGt2d += 1;
             if (r.object_type === 'request' && days > 30) {
@@ -277,6 +292,7 @@ export function OpsDashboardHub() {
             activeCatalog,
             activeAsset,
             vipActive,
+            unassigned,
             agingIncidentGt2d,
             agingCatalogGt30d,
             agingAssetGt30d,
@@ -329,6 +345,18 @@ export function OpsDashboardHub() {
         [activeTickets],
     );
 
+    // By-Assignee bar — top 10 by active ticket count. Bar chart over
+    // donut because assignee names are long (user IDs / full names)
+    // and a donut with > 8 slices becomes unreadable at chart size.
+    // Unassigned rows fall into the "Unassigned" bucket so the chart
+    // surfaces the backlog-without-an-owner signal.
+    const assigneeBar = useMemo(
+        () =>
+            groupBy(activeTickets, (r) => r.assigned_to_name?.trim() || 'Unassigned')
+                .slice(0, 10),
+        [activeTickets],
+    );
+
     const trendMonths = useMemo(
         () => monthsFromRange(ticketDateRange.from, ticketDateRange.to, now),
         [ticketDateRange.from, ticketDateRange.to, now],
@@ -359,7 +387,13 @@ export function OpsDashboardHub() {
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
     const allTicketsActive = useMemo(
-        () => allTickets.filter((r) => isActiveState(r.state)).length,
+        // Match the scoping applied in ``activeTickets`` so the
+        // "filtered / total" denominator in the filter bar also reflects
+        // the OIT queue size, not the full SN firehose.
+        () =>
+            allTickets.filter(
+                (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
+            ).length,
         [allTickets],
     );
 
@@ -489,6 +523,7 @@ export function OpsDashboardHub() {
                     kpis={ticketKpis}
                     kpiDeltas={ticketKpiDeltas}
                     groupDonut={groupDonut}
+                    assigneeBar={assigneeBar}
                     trend={trend}
                     trendMonths={trendMonths}
                     regionData={regionData}

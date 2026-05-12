@@ -390,6 +390,8 @@ export function PendingAssetsDashboard() {
                     emptyText={t('empty.noData')}
                     loadingText={t('empty.loading')}
                     partialText={t('empty.partialResult')}
+                    csvFilename="pending_assets"
+                    csvRows={enriched}
                 />
             </div>
         </div>

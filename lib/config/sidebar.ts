@@ -46,6 +46,8 @@ import {
     ClipboardSignature,
     Search,
     Database,
+    UserPlus,
+    UserX,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -428,6 +430,22 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/vip-tickets',
                         labelKey: 'opsVipTickets',
                         icon: Crown,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/unassigned',
+                        labelKey: 'opsUnassigned',
+                        icon: UserX,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/on-off-boarding',
+                        labelKey: 'opsOnOffBoarding',
+                        icon: UserPlus,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),

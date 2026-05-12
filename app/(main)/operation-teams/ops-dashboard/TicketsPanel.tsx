@@ -8,14 +8,15 @@
  * lives on the parent so the sidebar can drive it.
  */
 
-import { Activity, AlertTriangle, AlertCircle, Boxes, Briefcase, Star } from 'lucide-react';
+import { Activity, AlertTriangle, AlertCircle, Boxes, Briefcase, Star, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
+import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 // TrendLineCard dropped along with the monthly-opened trend card.
 import { RegionMap, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
-import type { DeltaInfo, TrendPoint } from '@/lib/ops_dashboard/aggregate';
+import type { DeltaInfo, GroupCount, TrendPoint } from '@/lib/ops_dashboard/aggregate';
 
 const DONUT_PALETTE = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#94a3b8'];
 
@@ -26,6 +27,7 @@ export interface TicketKpis {
     activeCatalog: number;
     activeAsset: number;
     vipActive: number;
+    unassigned: number;
     agingIncidentGt2d: number;
     agingCatalogGt30d: number;
     agingAssetGt30d: number;
@@ -42,6 +44,8 @@ export interface TicketKpiDeltas {
 export interface TicketsPanelProps {
     kpis: TicketKpis;
     groupDonut: Array<{ name: string; value: number }>;
+    /** Top-N assignee bar chart data — ranked by active ticket count. */
+    assigneeBar: GroupCount[];
     trend: TrendPoint[];
     trendMonths: number;
     regionData: RegionBubble[];
@@ -60,6 +64,7 @@ export interface TicketsPanelProps {
 export function TicketsPanel({
     kpis,
     groupDonut,
+    assigneeBar,
     // `trend` / `trendMonths` are still on the props contract for
     // backwards-compat with OpsDashboardHub; the monthly-opened trend
     // card was removed from the row, so we deliberately don't read
@@ -105,7 +110,7 @@ export function TicketsPanel({
             </div>
 
             {/* KPI row 1 */}
-            <div className="grid grid-cols-4 gap-2 mb-2">
+            <div className="grid grid-cols-5 gap-2 mb-2">
                 <KpiCard
                     label={t('kpis.totalActive')}
                     value={kpis.totalActive}
@@ -134,6 +139,15 @@ export function TicketsPanel({
                 
                         tooltip={t('kpis.activeAssetInfo')}
     />
+                <KpiCard
+                    label={t('kpis.unassigned')}
+                    value={kpis.unassigned}
+                    icon={UserX}
+                    tooltip={t('kpis.unassignedInfo')}
+                    linkHref="/operation-teams/ops-dashboard/unassigned"
+                    linkLabel={t('links.openUnassigned')}
+                    valueColor={kpis.unassigned > 10 ? 'text-red-500' : kpis.unassigned > 0 ? 'text-yellow-500' : 'text-green-500'}
+                />
             </div>
             {/* KPI row 2 — High Priority + VIP + Aging tiles share one row.
                 Each tile (except High Priority) drills into its dedicated
@@ -202,6 +216,23 @@ export function TicketsPanel({
                     info={t('charts.worldMapInfo')}
                     data={regionData}
                     height={200}
+                />
+            </div>
+            {/* By Assignee — horizontal bar. Bar chart over donut because
+                assignee names are long (username / full-name) and the
+                count of assignees can easily exceed 8, which renders
+                a donut unreadable. Top 10 keeps it comparable at a
+                glance. */}
+            <div className="mt-3">
+                <GroupBarCard
+                    title={t('charts.byAssignee')}
+                    subtitle={t('charts.byAssigneeSubtitle')}
+                    info={t('charts.byAssigneeInfo')}
+                    data={assigneeBar}
+                    topN={10}
+                    height={260}
+                    color={DONUT_PALETTE}
+                    emptyText={emptyText}
                 />
             </div>
         </div>

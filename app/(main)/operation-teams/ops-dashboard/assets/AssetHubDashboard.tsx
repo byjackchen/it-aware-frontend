@@ -161,12 +161,16 @@ export function AssetHubDashboard() {
         const procuredSel = assetFilter.procuredBy;
         const deptSel = assetFilter.departments;
         const stockRoomSel = (filters.stock_room as string[]) ?? [];
+        const statusSel = (filters.asset_status as string[]) ?? [];
+        const substatusSel = (filters.substatus as string[]) ?? [];
         return rows.filter((r) => {
             if (!isInScopeAsset(r)) return false;
             if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
             if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
+            if (statusSel.length && !statusSel.includes(r.asset_status ?? 'Unknown')) return false;
+            if (substatusSel.length && !substatusSel.includes(r.substatus ?? 'Unknown')) return false;
             return true;
         });
     }, [rows, filters, assetFilter]);
@@ -232,8 +236,14 @@ export function AssetHubDashboard() {
     const onProcuredLegendToggle = (name: string) => toggleFilter('procured_by', name);
     const onLocationSliceClick = (slice: { name: string }) => toggleFilter('stock_room', slice.name);
     const onLocationLegendToggle = (name: string) => toggleFilter('stock_room', name);
+    const onStatusSliceClick = (slice: { name: string }) => toggleFilter('asset_status', slice.name);
+    const onStatusLegendToggle = (name: string) => toggleFilter('asset_status', name);
+    const onSubstatusSliceClick = (slice: { name: string }) => toggleFilter('substatus', slice.name);
+    const onSubstatusLegendToggle = (name: string) => toggleFilter('substatus', name);
     const selectedProcured = (filters.procured_by as string[]) ?? [];
     const selectedStockRooms = (filters.stock_room as string[]) ?? [];
+    const selectedStatuses = (filters.asset_status as string[]) ?? [];
+    const selectedSubstatuses = (filters.substatus as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
@@ -246,7 +256,23 @@ export function AssetHubDashboard() {
         assetFilter.procuredBy.length > 0 ||
         assetFilter.departments.length > 0;
     const inStockPct = kpis.inStockRatePct;
-    const inStockPctCritical = kpis.total > 0 && inStockPct < 70;
+    // In-Stock Rate colour — asset spec:
+    //   < 15%  → green (healthy — stock is moving)
+    //   15-25% → yellow (watch)
+    //   > 25%  → red (too much idle stock)
+    const inStockRateColor =
+        kpis.total === 0
+            ? textMain
+            : inStockPct > 25
+                ? 'text-red-500'
+                : inStockPct > 15
+                    ? 'text-yellow-500'
+                    : 'text-green-500';
+
+    // Unconfirmed / Pending Repair / Pending Return colour rule:
+    //   > 10 → red, > 0 → yellow, = 0 → green
+    const pendingRuleColor = (n: number): string =>
+        n > 10 ? 'text-red-500' : n > 0 ? 'text-yellow-500' : 'text-green-500';
 
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
@@ -307,68 +333,100 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: Total + In Stock Rate + donuts.
-                    Column 1 uses `grid-rows-2` + `h-full` so the two
-                    big-number tiles each fill half the column height
-                    and the row visually matches the taller donut
-                    cards on the right (no empty padding below). */}
-                <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div className="grid grid-rows-3 gap-3">
-                        <KpiCard
-                            label={t('kpis.totalAssets')}
-                            value={kpis.total}
-                            icon={HardDrive}
-                            className="h-full flex flex-col justify-center"
-                            tooltip={t('kpis.totalAssetsInfo')}
-                        />
-                        <KpiCard
-                            label={t('kpis.activeHardware')}
-                            value={kpis.activeAsset}
-                            className="h-full flex flex-col justify-center"
-                            tooltip={t('kpis.activeHardwareInfo')}
-                        />
-                        <div
-                            className={`rounded-xl border p-4 h-full flex flex-col justify-center ${cardBg}`}
-                        >
-                            <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>{t('kpis.inStockRate')}</p>
-                            <p className={`text-4xl font-bold mt-1.5 ${inStockPctCritical ? 'text-red-400' : textMain}`}>
-                                {kpis.total > 0 ? `${inStockPct}%` : '—'}
-                            </p>
-                            <p className={`text-[10px] mt-1 ${textMuted}`}>
-                                {t('kpis.inStockRateInfo')}
-                            </p>
-                        </div>
-                    </div>
+                {/* Row 1: Big-number KPI tiles — all sit on top so the
+                    at-a-glance health signal (Total / Active / InStock
+                    Rate + the operational sub-counts) is above the fold.
+                    Conditional colour rules:
+                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red
+                    - Unconfirmed / PendingRepair / PendingReturn:
+                      0 green, >0 yellow, >10 red
+                    Row is 8 cols wide — 3 headline tiles + 5 sub-tiles. */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.totalAssets')}
+                        value={kpis.total}
+                        icon={HardDrive}
+                        tooltip={t('kpis.totalAssetsInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.activeHardware')}
+                        value={kpis.activeAsset}
+                        tooltip={t('kpis.activeHardwareInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStockRate')}
+                        value={kpis.total > 0 ? `${inStockPct}%` : '—'}
+                        tooltip={t('kpis.inStockRateInfo')}
+                        valueColor={inStockRateColor}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStock')}
+                        value={kpis.inStock}
+                        icon={PackageCheck}
+                        linkHref="/operation-teams/ops-dashboard/in-stock-assets"
+                        linkLabel={t('links.openInStockAssets')}
+                    />
+                </div>
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.pendingReturn')}
+                        value={kpis.pendingReturn}
+                        icon={Truck}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingReturn)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingRepair')}
+                        value={kpis.pendingRepair}
+                        icon={Wrench}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingRepair)}
+                    />
+                    <KpiCard
+                        label={t('kpis.unconfirmed')}
+                        value={kpis.unconfirmed}
+                        icon={HelpCircle}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.unconfirmed)}
+                    />
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                        linkLabel={t('links.openZeroResidualAssets')}
+                    />
+                </div>
 
+                {/* Row 2: Donuts — 4 across, click-to-filter. */}
+                <div className="grid gap-3 mb-3 grid-cols-2">
                     <DonutCard
                         title={t('charts.procuredBy')}
                         subtitle={t('charts.procuredBySubtitle')}
                         info={t('charts.procuredByInfo')}
                         data={procuredBySlices}
                         palette={DONUT_PALETTE}
-                        height={200}
+                        height={220}
                         onSliceClick={onProcuredSliceClick}
                         selectedSlices={selectedProcured}
                         onLegendToggle={onProcuredLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
-
                     <DonutCard
                         title={t('charts.inStockLocation')}
                         info={t('charts.inStockLocationInfo')}
                         data={inStockLocationSlices}
                         palette={DONUT_PALETTE}
-                        height={200}
+                        height={220}
                         onSliceClick={onLocationSliceClick}
                         selectedSlices={selectedStockRooms}
                         onLegendToggle={onLocationLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
-
-                {/* Row 1b: status + substatus donuts. Two-column grid
-                    so they sit beside one another at the same width as
-                    the donuts above. */}
                 <div className="grid gap-3 mb-3 grid-cols-2">
                     <DonutCard
                         title={t('charts.assetsByStatus')}
@@ -376,6 +434,9 @@ export function AssetHubDashboard() {
                         data={statusSlices}
                         palette={DONUT_PALETTE}
                         height={220}
+                        onSliceClick={onStatusSliceClick}
+                        selectedSlices={selectedStatuses}
+                        onLegendToggle={onStatusLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <DonutCard
@@ -384,46 +445,10 @@ export function AssetHubDashboard() {
                         data={substatusSlices}
                         palette={DONUT_PALETTE}
                         height={220}
+                        onSliceClick={onSubstatusSliceClick}
+                        selectedSlices={selectedSubstatuses}
+                        onLegendToggle={onSubstatusLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                    />
-                </div>
-
-                {/* Row 2: KPI tiles */}
-                <div className="grid grid-cols-5 gap-3 mb-3">
-                    <KpiCard
-                        label={t('kpis.inStock')}
-                        value={kpis.inStock}
-                        icon={PackageCheck}
-                        linkHref="/operation-teams/ops-dashboard/in-stock-assets"
-                        linkLabel={t('links.openInStockAssets')}
-                    />
-                    <KpiCard
-                        label={t('kpis.pendingReturn')}
-                        value={kpis.pendingReturn}
-                        icon={Truck}
-                        linkHref="/operation-teams/ops-dashboard/pending-assets"
-                        linkLabel={t('links.openPendingAssets')}
-                    />
-                    <KpiCard
-                        label={t('kpis.pendingRepair')}
-                        value={kpis.pendingRepair}
-                        icon={Wrench}
-                        linkHref="/operation-teams/ops-dashboard/pending-assets"
-                        linkLabel={t('links.openPendingAssets')}
-                    />
-                    <KpiCard
-                        label={t('kpis.unconfirmed')}
-                        value={kpis.unconfirmed}
-                        icon={HelpCircle}
-                        linkHref="/operation-teams/ops-dashboard/pending-assets"
-                        linkLabel={t('links.openPendingAssets')}
-                    />
-                    <KpiCard
-                        label={t('kpis.zeroResidual')}
-                        value={kpis.zeroResidual}
-                        icon={DollarSign}
-                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
-                        linkLabel={t('links.openZeroResidualAssets')}
                     />
                 </div>
 

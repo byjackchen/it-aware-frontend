@@ -491,6 +491,8 @@ export function InStockAssetsDashboard() {
                     emptyText={t('empty.noData')}
                     loadingText={t('empty.loading')}
                     partialText={t('empty.partialResult')}
+                    csvFilename="in_stock_assets"
+                    csvRows={enriched}
                 />
             </div>
         </div>

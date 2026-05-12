@@ -1623,7 +1623,8 @@
     "opsOhlaSurveyDetails": "满意度详情",
     "opsOhlaOtherCase": "其它案例分析",
     "opsOhlaRawData": "原始数据",
-    "incidentReport": "工单分析报告"
+    "incidentReport": "工单分析报告",
+    "opsUnassigned": "未分派"
   },
   "OpsDashboard": {
     "title": "运维仪表盘",
@@ -1722,7 +1723,9 @@
       "mediumPriority": "中优先级",
       "mediumPriorityInfo": "中优先级事件",
       "momDelta": "{arrow} 较上月 {pct}%",
-      "momFlat": "较上月持平"
+      "momFlat": "较上月持平",
+      "unassigned": "未分派",
+      "unassignedInfo": "没有处理人的活跃工单（assigned_to 为空）"
     },
     "charts": {
       "ticketsByAssignmentGroup": "按分配组",
@@ -1812,7 +1815,10 @@
       "supportGroupSubtitle": "按支持组统计的资产",
       "supportGroupInfo": "硬件按负责支持该设备的支持组分组",
       "cumulativeOpenedClosed": "累计开单 vs 关闭",
-      "filterLegend": "图表筛选图例"
+      "filterLegend": "图表筛选图例",
+      "byAssignee": "按处理人",
+      "byAssigneeSubtitle": "按活跃工单数排名前 10 的处理人",
+      "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）"
     },
     "filters": {
       "title": "筛选器",
@@ -1930,7 +1936,10 @@
       "hubTicketsSection": "工单",
       "hubAssetsSection": "资产",
       "hubFilteredTickets": "已筛选：{filtered} / {total} 条活动工单",
-      "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产"
+      "hubFilteredAssets": "已筛选：{filtered} / {total} 项资产",
+      "unassignedTitle": "未分派工单",
+      "unassignedSubtitle": "没有处理人的活跃 incidents 和 requests",
+      "unassignedRecords": "{count} 条"
     },
     "classifierCaveat": "阶段 1 中“服务目录 vs 资产”的分类为前端启发式判定，阶段 2 将由服务端提供正式字段。",
     "links": {
@@ -1942,7 +1951,8 @@
       "openVipTickets": "打开 VIP 工单仪表盘",
       "openAgingIncidents": "打开老化事件仪表盘",
       "openAgingCatalogTasks": "打开老化服务目录任务仪表盘",
-      "openAgingAssetTasks": "打开老化资产任务仪表盘"
+      "openAgingAssetTasks": "打开老化资产任务仪表盘",
+      "openUnassigned": "打开未分派工单"
     },
     "empty": {
       "noData": "暂无数据",
@@ -2187,19 +2197,27 @@
       "subtitle": "Ohla Chatbot Performance"
     },
     "kpis": {
-      "totalInteractions": "Total count of chatbot interaction sessions in the selected window",
-      "userAsk": "User queries classified as 'query' behaviour",
-      "userSurvey": "Sessions where user submitted a rate-ticket (1-5 scale)",
-      "distinctUsers": "Unique WeCom IDs with at least one interaction",
-      "tier0Supported": "Queries resolved by Ohla Auto Support without live agent escalation",
+      "totalInteractions": "Page Views#",
+      "userAsk": "User Ask#",
+      "userSurvey": "User Survey#",
+      "distinctUsers": "Unique Visitors#",
+      "tier0Supported": "Ohla Auto Support#",
       "faqMatchRate": "FAQ Match Rate",
       "overallMatchRate": "Overall Match Rate",
-      "avgSurveyRate": "Average survey rate across all sessions (1-5 scale)",
+      "avgSurveyRate": "Avg Rate",
       "avgSurveyRateHint": "Survey 均分 (1-5)",
-      "totalActionChain": "Total user clicks / action chain completions",
-      "nonAutoSupport": "Queries escalated to live agent (ticket created via Agent Support)",
+      "totalActionChain": "User Click#",
+      "nonAutoSupport": "Live Agent Support#",
       "dataLagDays": "Data Lag Days",
-      "dataLagDaysHint": "最新数据：{date}"
+      "dataLagDaysHint": "最新数据：{date}",
+      "totalInteractionsInfo": "所选时间窗口内的聊天机器人交互会话总数",
+      "userAskInfo": "被分类为 'query' 行为的用户查询",
+      "totalActionChainInfo": "用户总点击数 / 动作链完成数",
+      "distinctUsersInfo": "至少发生过一次交互的唯一 WeCom ID 数",
+      "tier0SupportedInfo": "Ohla 自动支持直接解决、未升级到人工的查询",
+      "nonAutoSupportInfo": "升级到人工客服（通过 Agent Support 创建工单）的查询",
+      "userSurveyInfo": "用户提交了评分（1-5 分）的会话",
+      "avgSurveyRateInfo": "所有会话的平均评分（1-5 分）"
     },
     "charts": {
       "businessGroup": "Unique Visitors by BG",
@@ -2217,13 +2235,20 @@
       "title": "User Ask Analysis",
       "subtitle": "用户向 Ohla 的提问分析 — FAQ 命中与 Behaviour 分布",
       "kpis": {
-        "userAsk": "User queries classified as 'query' behaviour",
-        "faqMatchRate": "Percentage of queries matched to an FAQ",
-        "overallMatchRate": "Percentage of queries matched to FAQ, Action Chain, or KB",
-        "faqMatched": "Queries matched to an FAQ response",
-        "actionChain": "Queries matched to an action chain workflow",
-        "kbMatched": "Queries matched to a knowledge base article",
-        "other": "Queries with no FAQ / Action Chain / KB match"
+        "userAsk": "用户提问",
+        "faqMatchRate": "FAQ 匹配率",
+        "overallMatchRate": "总匹配率",
+        "faqMatched": "FAQ 命中",
+        "actionChain": "动作链",
+        "kbMatched": "KB 命中",
+        "other": "其他",
+        "userAskInfo": "被分类为 'query' 行为的用户查询",
+        "faqMatchRateInfo": "匹配到 FAQ 的查询占比",
+        "overallMatchRateInfo": "匹配到 FAQ、Action Chain 或 KB 的查询占比",
+        "faqMatchedInfo": "匹配到 FAQ 响应的查询",
+        "actionChainInfo": "匹配到 action chain 工作流的查询",
+        "kbMatchedInfo": "匹配到知识库文章的查询",
+        "otherInfo": "未匹配 FAQ / Action Chain / KB 的查询"
       },
       "charts": {
         "behaviourDistribution": "Behaviour Distribution",
@@ -2242,7 +2267,8 @@
       "title": "Agent Support",
       "subtitle": "由人工客服接手的会话",
       "kpis": {
-        "agentSupport": "Sessions where user clicked Agent Support button (escalated to live agent)"
+        "agentSupport": "人工介入",
+        "agentSupportInfo": "用户点击 Agent Support 按钮（升级到人工客服）的会话"
       },
       "charts": {
         "dailyTrend": "Agent Support Daily Trend",
@@ -2264,7 +2290,8 @@
       "title": "Other Case Analysis",
       "subtitle": "未命中 FAQ / 动作链 / KB 的提问 — bot 止步之处",
       "kpis": {
-        "other": "Queries that could not be matched to FAQ, Action Chain, or KB"
+        "other": "其他",
+        "otherInfo": "无法匹配 FAQ、Action Chain 或 KB 的查询"
       },
       "charts": {
         "distribution": "Other#",
@@ -2292,8 +2319,10 @@
       "title": "Survey Details",
       "subtitle": "来自评分按钮的用户反馈 (1-5 分)",
       "kpis": {
-        "survey": "Total user survey responses via rate-ticket button (1-5 scale)",
-        "avgRate": "Average survey rate across all responses (1-5 scale)"
+        "survey": "评价数",
+        "avgRate": "平均评分",
+        "surveyInfo": "通过 rate-ticket 按钮提交的评价总数（1-5 分）",
+        "avgRateInfo": "所有评价的平均分（1-5 分）"
       },
       "filters": {
         "vip": "VIP Filter",
