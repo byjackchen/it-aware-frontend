@@ -207,7 +207,6 @@ export function IncidentsPanel({
                 {
                     source_created_at_from: dateFrom,
                     source_created_at_to: dateTo,
-                    tz: timezone,
                 },
                 `ssc_ticket_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );

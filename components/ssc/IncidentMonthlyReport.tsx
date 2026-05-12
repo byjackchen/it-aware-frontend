@@ -26,7 +26,6 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import type { IncidentCategoryBreakdownItem, IncidentMonthlyReportData, IncidentMonthStats, IncidentTop5Item, ChatbotEscalationStats } from '@/lib/types/objects';
-import { detectLocalTimezone } from '@/lib/utils/datetime';
 
 interface Props {
     report: IncidentMonthlyReportData | null;
@@ -178,12 +177,14 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;
         const params = new URLSearchParams(searchParams.toString());
+        // Backend interprets start_date / end_date as UTC days. Frontend
+        // owns any wall-clock TZ math (see merge-review SOP rule #11).
+        // The analyst's <input type="date"> already operates in the local
+        // calendar; we send the YYYY-MM-DD as-is and accept the up-to-24h
+        // skew at the UTC vs local-zone boundary as the cost of the
+        // simpler backend contract.
         params.set('start_date', draftStart);
         params.set('end_date', draftEnd);
-        // TZ-aware 2026-05-11 — send the analyst's local timezone so the
-        // backend materializes the chosen dates as full wall-clock days in
-        // their calendar, not UTC. See merge-review SOP rule #11.
-        params.set('tz', detectLocalTimezone());
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 

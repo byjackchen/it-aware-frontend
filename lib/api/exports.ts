@@ -69,11 +69,6 @@ export interface ExportFilters {
   // activities.interactions has no source_created_at column.
   source_created_at_from?: string;
   source_created_at_to?: string;
-  // TZ-aware 2026-05-11 — IANA timezone name (e.g. "America/Chicago").
-  // When supplied alongside *date* fields, the backend materializes them
-  // as wall-clock days in this zone. ISO-with-offset datetimes carry
-  // their own offset and ignore this field.
-  tz?: string;
   actor_stable_id?: string;
   needs_optimization?: boolean;
   completed?: boolean;

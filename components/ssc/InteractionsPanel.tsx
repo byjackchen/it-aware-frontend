@@ -342,10 +342,11 @@ export function InteractionsPanel({
             await downloadDashboardXlsx(
                 'interactions',
                 {
+                    // Interactions xlsx accepts `datetime` — send ISO-with-offset
+                    // so the backend's ensure_utc converts to UTC precisely.
                     created_at_from: dateFrom ? localMidnightIso(dateFrom, timezone) : undefined,
                     created_at_to: dateTo ? localEndOfDayIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,
-                    tz: timezone,
                 },
                 `ssc_faq_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );
