@@ -29,6 +29,8 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import type { FAQEnquiryItem, InteractionFAQReport, MonthStats } from '@/lib/types/objects';
+import { formatTzBadge } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface Props {
     report: InteractionFAQReport | null;
@@ -164,21 +166,26 @@ function SectionHeading({ title, subtitle, tooltip, isLight }: { title: string; 
 function DateRangeControls({ startDate, endDate }: { startDate: string; endDate: string }) {
     const router = useTransitionRouter();
     const searchParams = useSearchParams();
-    const [draftStart, setDraftStart] = useState(startDate);
-    const [draftEnd, setDraftEnd] = useState(endDate);
+    // Wall-clock datetime-local edit; truncated to YYYY-MM-DD at submit
+    // because the report endpoint takes `date` (UTC-day) — see SOP rule #11.
+    const [draftStart, setDraftStart] = useState(`${startDate}T00:00:00`);
+    const [draftEnd, setDraftEnd] = useState(`${endDate}T23:59:59`);
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
 
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;
         const params = new URLSearchParams(searchParams.toString());
-        params.set('start_date', draftStart);
-        params.set('end_date', draftEnd);
+        params.set('start_date', draftStart.slice(0, 10));
+        params.set('end_date', draftEnd.slice(0, 10));
         router.push(`?${params.toString()}`);
     }, [draftEnd, draftStart, router, searchParams]);
 
     return (
         <div className="flex flex-wrap items-center gap-2">
             <input
-                type="date"
+                type="datetime-local"
+                step={1}
                 value={draftStart}
                 max={draftEnd}
                 onChange={(e) => setDraftStart(e.target.value)}
@@ -186,12 +193,19 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
             />
             <ArrowRight className="h-4 w-4 text-gray-500" />
             <input
-                type="date"
+                type="datetime-local"
+                step={1}
                 value={draftEnd}
                 min={draftStart}
                 onChange={(e) => setDraftEnd(e.target.value)}
                 className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-100 focus:border-blue-500 focus:outline-none"
             />
+            <span
+                className="text-xs px-2 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                title="Datetimes shown in this timezone. Report window is anchored on the date part; the time part is informational."
+            >
+                {formatTzBadge(timezone)}
+            </span>
             <button
                 type="button"
                 onClick={apply}

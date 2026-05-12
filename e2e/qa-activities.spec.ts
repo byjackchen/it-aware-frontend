@@ -66,18 +66,23 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
   });
 
   test('I-2 /data/incidents/[oid] detail renders QA Score + actor_stable_id (Phase 3)', async ({ page }) => {
-    const sample = await fetchFirstItem<{
+    // The list endpoint defaults to source_created_at DESC, so the very
+    // first row is often a system actor (e.g. grafana_integration). Walk
+    // a larger sample to find a worker-actor incident — that path is the
+    // one exercising the /data/workers/<stable_id> profile link.
+    const list = await (await page.request.get('/api/objects/incidents?limit=200')).json();
+    const items = extractItems(list) as Array<{
       oid: string;
       stable_id: string;
       actor_type?: string;
       actor_oid?: string;
       actor_stable_id?: string;
-    }>(page, '/api/objects/incidents?limit=1');
-    expect(sample?.oid).toBeTruthy();
-    // Phase 3 surfacing: every legacy incident defaults to actor_type='worker'.
-    expect(sample?.actor_type).toBe('worker');
+    }>;
+    expect(items.length).toBeGreaterThan(0);
+    const sample = items.find((it) => it.actor_type === 'worker') ?? items[0];
+    expect(sample.oid).toBeTruthy();
 
-    await page.goto(`/data/incidents/${sample!.oid}`);
+    await page.goto(`/data/incidents/${sample.oid}`);
     // QA Score section renders unconditionally (even when score is null).
     await expect(page.getByText(/^QA Score$/).first()).toBeVisible({ timeout: 15_000 });
     // The denormalized actors-section heading from Phase 2.
@@ -88,11 +93,11 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     await expect(badge).toHaveText(/Worker|System|Agent|External/);
     const id = page.getByTestId('actor-stable-id');
     await expect(id).toBeVisible();
-    if (sample?.actor_stable_id) {
+    if (sample.actor_stable_id) {
       await expect(id).toHaveText(sample.actor_stable_id);
     }
     // Worker actors get a profile link; non-worker actors render as plain text.
-    if (sample?.actor_type === 'worker' && sample.actor_stable_id) {
+    if (sample.actor_type === 'worker' && sample.actor_stable_id) {
       await expect(id).toHaveAttribute('href', `/data/workers/${sample.actor_stable_id}`);
     }
   });
@@ -134,7 +139,10 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     await page.goto('/operation-teams/ops-dashboard/incidents');
     expect((await slimPromise).ok()).toBeTruthy();
     await expect(page.getByRole('heading', { name: /Incident Analysis/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Active by Priority/i })).toBeVisible();
+    // Previous build had an "Active by Priority" donut; the current dashboard
+    // surfaces "By Category", "By State", "By Group" chart cards. Assert one
+    // of the stable chart headings as a low-flake liveness check.
+    await expect(page.getByRole('heading', { name: /^By State$/i })).toBeVisible();
   });
 
   test('I-6 /operation-teams/ops-dashboard/aging-incidents loads with active-state filter', async ({ page }) => {
@@ -253,9 +261,11 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     const list = await listPromise;
     expect(list.ok()).toBeTruthy();
     const items = extractItems(await list.json()) as Array<{ system_id: string }>;
-    // P5 seeds 3 default systems; CRUD tests may add transient ones, so allow more.
-    expect(items.length).toBeGreaterThanOrEqual(3);
-    expect(items.some((s) => s.system_id === 'it-aware-backend')).toBe(true);
+    // Current seed (commit c442767) installs two default systems:
+    // ``grafana_integration`` and ``super_admin``. CRUD tests may add
+    // transient ones, so allow more.
+    expect(items.length).toBeGreaterThanOrEqual(2);
+    expect(items.some((s) => s.system_id === 'grafana_integration')).toBe(true);
   });
 
   test('S-2 /data/systems/[oid] detail page loads with edit+delete affordances', async ({ page }) => {

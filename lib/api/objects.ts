@@ -925,7 +925,14 @@ export async function deleteTicketComment(ticketOid: string, commentOid: string)
     await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
 }
 
-export async function getFAQMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').InteractionFAQReport> {
+// SSC analyst reports. Backend interprets start_date / end_date as
+// UTC days; frontend pages own any wall-clock TZ math. See
+// `docs/it_aware_merge_review.md` Appendix A rule #11.
+
+export async function getFAQMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+): Promise<import('@/lib/types/objects').InteractionFAQReport> {
     const params = new URLSearchParams();
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
@@ -933,7 +940,10 @@ export async function getFAQMonthlyReport(startDate?: string, endDate?: string):
     return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
 }
 
-export async function getIncidentMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
+export async function getIncidentMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
     const params = new URLSearchParams();
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
