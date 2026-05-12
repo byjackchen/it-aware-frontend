@@ -26,7 +26,8 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import type { IncidentCategoryBreakdownItem, IncidentMonthlyReportData, IncidentMonthStats, IncidentTop5Item, ChatbotEscalationStats } from '@/lib/types/objects';
-import { detectLocalTimezone, formatTzBadge } from '@/lib/utils/datetime';
+import { formatTzBadge } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface Props {
     report: IncidentMonthlyReportData | null;
@@ -179,7 +180,8 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
     // cost of the simpler UTC-only backend contract.
     const [draftStart, setDraftStart] = useState(`${startDate}T00:00:00`);
     const [draftEnd, setDraftEnd] = useState(`${endDate}T23:59:59`);
-    const timezone = detectLocalTimezone();
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
 
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;

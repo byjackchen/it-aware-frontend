@@ -4,7 +4,8 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, Loader2, Download, Filter, X, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
-import { detectLocalTimezone, formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
+import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -43,7 +44,8 @@ export function IncidentsPanel({
 }: IncidentsPanelProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const timezone = detectLocalTimezone();
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
     const t = useTranslations('SSCDashboard');
     const locale = useLocale();
     const [isDownloading, setIsDownloading] = useState(false);

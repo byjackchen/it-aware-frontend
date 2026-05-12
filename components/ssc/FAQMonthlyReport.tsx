@@ -29,7 +29,8 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import type { FAQEnquiryItem, InteractionFAQReport, MonthStats } from '@/lib/types/objects';
-import { detectLocalTimezone, formatTzBadge } from '@/lib/utils/datetime';
+import { formatTzBadge } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface Props {
     report: InteractionFAQReport | null;
@@ -169,7 +170,8 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
     // because the report endpoint takes `date` (UTC-day) — see SOP rule #11.
     const [draftStart, setDraftStart] = useState(`${startDate}T00:00:00`);
     const [draftEnd, setDraftEnd] = useState(`${endDate}T23:59:59`);
-    const timezone = detectLocalTimezone();
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
 
     const apply = useCallback(() => {
         if (!draftStart || !draftEnd || draftStart > draftEnd) return;

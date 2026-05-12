@@ -4,7 +4,8 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
-import { detectLocalTimezone, formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
+import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -58,7 +59,8 @@ export function InteractionsPanel({
 }: InteractionsPanelProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const timezone = detectLocalTimezone();
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const alignedRef = useRef<HTMLDivElement | null>(null);
     const firstFocusedRef = useRef<HTMLDivElement | null>(null);

@@ -8,7 +8,8 @@ import { InteractionsPanel } from '@/components/ssc/InteractionsPanel';
 import { IncidentsPanel } from '@/components/ssc/IncidentsPanel';
 import { AlignmentStatusBar } from '@/components/ssc/AlignmentStatusBar';
 import type { WorkerContext, Incident, Interaction } from '@/lib/types/objects';
-import { detectLocalTimezone, formatLocalDateTime } from '@/lib/utils/datetime';
+import { formatLocalDateTime } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface SSCDashboardPageProps {
     initialWorkerMap: Record<string, WorkerContext>;
@@ -74,11 +75,13 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
     const workerMap = initialWorkerMap;
     const catalogMap = initialCatalogMap;
 
-    // Single source of timezone truth for this page — both filter
-    // submission AND any datetime display read from this constant so the
-    // SSC dashboard never shows a row in one zone while filtering in
-    // another. See `docs/it_aware_merge_review.md` Appendix A rule #11.
-    const timezone = detectLocalTimezone();
+    // Single source of timezone truth for this page. Sourced from the
+    // user's profile preference (set via the TopBar dropdown, persisted in
+    // the user-data cookie) so changing the TZ there dynamically updates
+    // every filter on the dashboard. Falls back to the browser-detected
+    // zone when the user hasn't picked one yet.
+    // See `docs/it_aware_merge_review.md` Appendix A rule #11.
+    const { timezone } = useTimezone();
 
     // Filter state — computed in the analyst's local timezone
     const [dateFrom, setDateFrom] = useState(() => getDefaultDateFrom(timezone));
