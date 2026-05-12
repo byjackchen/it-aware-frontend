@@ -1664,7 +1664,6 @@ export interface Agent {
     agent_admin_key: string | null;
     agent_platform: string;
     contact_worker_oid: string;
-    account_oid: string | null;
     description: string | null;
     agent_workspace_id: string | null;
     is_active: boolean;
@@ -1679,7 +1678,6 @@ export interface AgentCreate {
     agent_admin_key?: string;
     agent_platform: string;
     contact_worker_oid: string;
-    account_oid?: string;
     description?: string;
     agent_workspace_id?: string;
 }
@@ -1690,7 +1688,6 @@ export interface AgentUpdate {
     agent_admin_key?: string;
     agent_platform?: string;
     contact_worker_oid?: string;
-    account_oid?: string;
     description?: string;
     agent_workspace_id?: string;
     is_active?: boolean;
@@ -1716,7 +1713,6 @@ export interface System {
     system_id: string;
     system_platform: string;
     contact_worker_oid: string | null;
-    account_oid: string | null;
     description: string | null;
     is_active: boolean;
     created_at: string;
@@ -1728,7 +1724,6 @@ export interface SystemCreate {
     system_id: string;
     system_platform: string;
     contact_worker_oid?: string;
-    account_oid?: string;
     description?: string;
 }
 
@@ -1736,7 +1731,6 @@ export interface SystemUpdate {
     name?: string;
     system_platform?: string;
     contact_worker_oid?: string;
-    account_oid?: string;
     description?: string;
     is_active?: boolean;
 }
