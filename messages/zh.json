@@ -2186,15 +2186,15 @@
       "avgSurveyRateInfo": "所有会话的平均评分（1-5 分）"
     },
     "charts": {
-      "businessGroup": "BG",
-      "region": "地区",
-      "behaviour": "行为",
-      "behaviourTrend": "自动 vs 总量",
+      "businessGroup": "Unique Visitors by BG",
+      "region": "Unique Visitor by Region",
+      "behaviour": "Page Views by Action",
+      "behaviourTrend": "Auto Support vs Total Ask",
       "behaviourTrendSubtitle": "按月 Auto / Live Agent 占比",
-      "autoRate": "自动率",
-      "volumeTrend": "页面访问",
+      "autoRate": "Auto 占比",
+      "volumeTrend": "Page Views Daily Trend",
       "volumeTrendSubtitle": "按日交互总数",
-      "distinctUserTrend": "独立访客",
+      "distinctUserTrend": "Unique Visitors Daily Trend",
       "distinctUserTrendSubtitle": "按日独立 WeCom ID"
     },
     "userAsk": {
@@ -2217,10 +2217,10 @@
         "otherInfo": "未匹配 FAQ / Action Chain / KB 的查询"
       },
       "charts": {
-        "behaviourDistribution": "行为",
-        "behaviourAndMatchRateTrend": "行为与匹配率",
-        "countOfBehaviour": "行为数量",
-        "matchRateLabel": "匹配率"
+        "behaviourDistribution": "Behaviour Distribution",
+        "behaviourAndMatchRateTrend": "Behaviour & Overall Match Rate Trend",
+        "countOfBehaviour": "Count of Behaviour",
+        "matchRateLabel": "FAQ Match Rate and Overall Match Rate"
       },
       "behaviour": {
         "faqMatched": "FAQ Matched",
@@ -2237,8 +2237,8 @@
         "agentSupportInfo": "用户点击 Agent Support 按钮（升级到人工客服）的会话"
       },
       "charts": {
-        "dailyTrend": "每日趋势",
-        "details": "详情"
+        "dailyTrend": "Agent Support Daily Trend",
+        "details": "Agent Support Details"
       },
       "columns": {
         "year": "年",
@@ -2260,9 +2260,9 @@
         "otherInfo": "无法匹配 FAQ、Action Chain 或 KB 的查询"
       },
       "charts": {
-        "distribution": "分布",
-        "dailyTrend": "每日趋势",
-        "details": "详情"
+        "distribution": "Other#",
+        "dailyTrend": "Other#",
+        "details": "Details"
       },
       "categories": {
         "interaction": "Interaction",

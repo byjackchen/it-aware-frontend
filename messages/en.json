@@ -2508,15 +2508,15 @@
       "avgSurveyRateInfo": "Average survey rate across all sessions (1-5 scale)"
     },
     "charts": {
-      "businessGroup": "BG",
-      "region": "Region",
-      "behaviour": "Behaviour",
-      "behaviourTrend": "Auto vs Total",
+      "businessGroup": "Unique Visitors by BG",
+      "region": "Unique Visitor by Region",
+      "behaviour": "Page Views by Action",
+      "behaviourTrend": "Auto Support vs Total Ask",
       "behaviourTrendSubtitle": "Monthly auto vs live agent split",
-      "autoRate": "Auto Rate",
-      "volumeTrend": "Page Views",
+      "autoRate": "Auto Support Rate",
+      "volumeTrend": "Page Views Daily Trend",
       "volumeTrendSubtitle": "Daily total interactions",
-      "distinctUserTrend": "Unique Visitors",
+      "distinctUserTrend": "Unique Visitors Daily Trend",
       "distinctUserTrendSubtitle": "Daily distinct WeCom IDs"
     },
     "userAsk": {
@@ -2539,10 +2539,10 @@
         "otherInfo": "Queries with no FAQ / Action Chain / KB match"
       },
       "charts": {
-        "behaviourDistribution": "Behaviour",
-        "behaviourAndMatchRateTrend": "Behaviour & Match Rate",
-        "countOfBehaviour": "Behaviour Count",
-        "matchRateLabel": "Match Rate"
+        "behaviourDistribution": "Behaviour Distribution",
+        "behaviourAndMatchRateTrend": "Behaviour & Overall Match Rate Trend",
+        "countOfBehaviour": "Count of Behaviour",
+        "matchRateLabel": "FAQ Match Rate and Overall Match Rate"
       },
       "behaviour": {
         "faqMatched": "FAQ Matched",
@@ -2559,8 +2559,8 @@
         "agentSupportInfo": "Sessions where user clicked Agent Support button (escalated to live agent)"
       },
       "charts": {
-        "dailyTrend": "Daily Trend",
-        "details": "Details"
+        "dailyTrend": "Agent Support Daily Trend",
+        "details": "Agent Support Details"
       },
       "columns": {
         "year": "Year",
@@ -2582,8 +2582,8 @@
         "otherInfo": "Queries that could not be matched to FAQ, Action Chain, or KB"
       },
       "charts": {
-        "distribution": "Distribution",
-        "dailyTrend": "Daily Trend",
+        "distribution": "Other#",
+        "dailyTrend": "Other#",
         "details": "Details"
       },
       "categories": {
