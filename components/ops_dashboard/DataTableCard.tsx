@@ -49,7 +49,7 @@ export interface Column<T> {
 }
 
 export interface DataTableCardProps<T> {
-    title: string
+    title?: string
     subtitle?: string
     /** Optional definition / formula shown on hover as a tooltip next to the title. */
     info?: string
@@ -177,7 +177,11 @@ export function DataTableCard<T>({
     return (
         <div className={`rounded-xl border p-4 ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
+                {title ? (
+                    <TitleWithInfo title={title} subtitle={subtitle} info={info} />
+                ) : (
+                    <span />
+                )}
                 <div className="flex items-center gap-3">
                     {csvFilename && rows.length > 0 && (
                         <button

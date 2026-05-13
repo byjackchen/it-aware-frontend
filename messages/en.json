@@ -802,7 +802,10 @@
         "request": "Request",
         "daysNoUpdate": "Days No Update",
         "shortDescription": "Short Description",
-        "assetsTable": "Assets Detail"
+        "assetsTable": "Assets Detail",
+        "incidentDetail": "Incident Detail",
+        "catalogDetail": "Catalog Detail",
+        "assetDetail": "Asset Detail"
       },
       "tabs": {
         "pendingReturn": "Pending Return",
@@ -2243,7 +2246,10 @@
       "detailTitle": "Ticket Detail",
       "assetTask": "Asset Task",
       "catalogTask": "Catalog Task",
-      "assetsTable": "Assets Detail"
+      "assetsTable": "Assets Detail",
+      "incidentDetail": "Incident Detail",
+      "catalogDetail": "Catalog Detail",
+      "assetDetail": "Asset Detail"
     },
     "tabs": {
       "pendingReturn": "Pending Return",

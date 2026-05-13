@@ -34,6 +34,8 @@ import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 const MAC_COLOR = '#6366f1';
 const WIN_COLOR = '#3b82f6';
@@ -286,6 +288,73 @@ export function AssetHubDashboard() {
     const pendingRuleColor = (n: number): string =>
         n > 10 ? 'text-red-500' : n > 0 ? 'text-yellow-500' : 'text-green-500';
 
+    // ── Detail table at the bottom — collapsible. Rows mirror the
+    //   `filtered` HardwareRow set so it always reflects the current
+    //   slicer + donut-driven filter state.
+    interface AssetDetailRow extends Record<string, unknown> {
+        oid: string;
+        serial_number: string;
+        model_category: string | null;
+        model_name: string | null;
+        asset_status: string | null;
+        substatus: string | null;
+        stock_room: string | null;
+        assigned_to_display_name: string | null;
+        department: string | null;
+        _supportGroup: string;
+        _procuredBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: AssetDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            serial_number: r.serial_number,
+            model_category: r.model_category,
+            model_name: r.model_name,
+            asset_status: r.asset_status,
+            substatus: r.substatus,
+            stock_room: r.stock_room,
+            assigned_to_display_name: r.assigned_to_display_name,
+            department: r.department,
+            _supportGroup: supportGroupOf(r),
+            _procuredBy: procuredByOf(r),
+        }));
+    }, [filtered]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<AssetDetailRow>[] = useMemo(() => [
+        {
+            key: 'serial_number',
+            label: t('tables.serialNumber'),
+            width: '160px',
+            render: (r) => <span className="font-mono text-xs">{r.serial_number}</span>,
+        },
+        { key: 'model_category', label: t('tables.modelCategory'), width: '120px' },
+        {
+            key: 'model_name',
+            label: t('tables.model'),
+            width: '200px',
+            render: (r) => r.model_name ?? '—',
+        },
+        { key: 'asset_status', label: t('tables.state'), width: '120px', render: (r) => r.asset_status ?? '—' },
+        { key: 'substatus', label: t('tables.substate'), width: '160px', render: (r) => r.substatus ?? '—' },
+        { key: 'stock_room', label: t('filters.stockroom'), width: '140px', render: (r) => r.stock_room ?? '—' },
+        {
+            key: 'assigned_to_display_name',
+            label: t('tables.assignedTo'),
+            width: '160px',
+            render: (r) => r.assigned_to_display_name ?? '—',
+        },
+        { key: 'department', label: t('tables.department'), width: '140px', render: (r) => r.department ?? '—' },
+        { key: '_supportGroup', label: t('tables.supportGroup'), width: '150px' },
+        { key: '_procuredBy', label: t('filters.procuredBy'), width: '120px' },
+    ], [t]);
+
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
             {/* Header */}
@@ -527,6 +596,35 @@ export function AssetHubDashboard() {
                             </BarChart>
                         </ResponsiveContainer>
                     )}
+                </div>
+
+                {/* Detail table — collapsible. Mirrors the filtered
+                    HardwareRow set with search, sort, pagination, and
+                    CSV export. */}
+                <div className="mt-3 mb-3">
+                    <CollapsibleDetailTable<AssetDetailRow>
+                        storageKey="ops-dashboard:assets:detail-open"
+                        title={t('tables.assetDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['serial_number', 'model_name', 'assigned_to_display_name', '_supportGroup', 'stock_room'] as (keyof AssetDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="assets_detail"
+                    />
                 </div>
             </div>
         </div>

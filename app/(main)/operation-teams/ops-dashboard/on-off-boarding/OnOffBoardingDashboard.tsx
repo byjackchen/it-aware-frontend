@@ -21,7 +21,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { UserPlus, UserMinus, RefreshCw } from 'lucide-react';
+import { UserPlus, UserMinus, RefreshCw, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useRequests } from '@/lib/hooks/useOpsDashboard';
@@ -788,23 +788,105 @@ export function OnOffBoardingDashboard() {
                     />
                 </div>
 
-                {/* Row 4: Ticket details table */}
-                <div className="mb-3">
-                    <DataTableCard
-                        title={t('charts.ticketDetails')}
-                        info={t('charts.ticketDetailsInfo')}
-                        subtitle={t('charts.ticketDetailsSubtitle', {
-                            shown: Math.min(filtered.length, 500).toLocaleString(),
-                            total: filtered.length.toLocaleString(),
-                        })}
-                        rows={filtered}
-                        columns={tableColumns}
-                        maxRows={500}
-                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                        csvFilename={`onoffboarding_${flow}`}
-                    />
-                </div>
+                {/* Row 4: Ticket details table — collapsible. Heavy on
+                    DOM (up to 500 rows) so we keep it folded by default
+                    and persist the user's choice per page. */}
+                <OnOffBoardingDetailSection
+                    isLight={isLight}
+                    title={t('charts.ticketDetails')}
+                    subtitle={t('charts.ticketDetailsSubtitle', {
+                        shown: Math.min(filtered.length, 500).toLocaleString(),
+                        total: filtered.length.toLocaleString(),
+                    })}
+                    info={t('charts.ticketDetailsInfo')}
+                    rows={filtered}
+                    columns={tableColumns}
+                    csvFilename={`onoffboarding_${flow}`}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    storageKey={`ops-dashboard:on-off-boarding:${flow}:detail-open`}
+                />
             </div>
         </div>
+    );
+}
+
+interface OnOffBoardingDetailSectionProps {
+    isLight: boolean;
+    title: string;
+    subtitle: string;
+    info: string;
+    rows: TicketRow[];
+    columns: Column<TicketRow>[];
+    csvFilename: string;
+    emptyText: string;
+    storageKey: string;
+}
+
+function OnOffBoardingDetailSection({
+    isLight,
+    title,
+    subtitle,
+    info,
+    rows,
+    columns,
+    csvFilename,
+    emptyText,
+    storageKey,
+}: OnOffBoardingDetailSectionProps) {
+    const [open, setOpen] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return window.localStorage.getItem(storageKey) === '1';
+        } catch {
+            return false;
+        }
+    });
+
+    const titleCls = isLight ? 'text-slate-800' : 'text-white';
+    const mutedCls = isLight ? 'text-slate-500' : 'text-gray-400';
+    const cardCls = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
+
+    return (
+        <details
+            className={`mb-3 rounded-xl border ${cardCls}`}
+            open={open}
+            onToggle={(e) => {
+                const next = (e.currentTarget as HTMLDetailsElement).open;
+                setOpen(next);
+                try {
+                    window.localStorage.setItem(storageKey, next ? '1' : '0');
+                } catch {
+                    /* ignore */
+                }
+            }}
+        >
+            <summary
+                className={`list-none cursor-pointer select-none px-4 py-3 flex items-center justify-between ${titleCls}`}
+            >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                    <ChevronDown
+                        className={`w-4 h-4 transition-transform ${open ? 'rotate-0' : '-rotate-90'}`}
+                    />
+                    <span>{title}</span>
+                    <span
+                        className={`text-xs font-normal ${mutedCls}`}
+                        title={info}
+                    >
+                        — {subtitle}
+                    </span>
+                </span>
+            </summary>
+            {open && (
+                <div className="px-4 pb-4">
+                    <DataTableCard
+                        rows={rows}
+                        columns={columns}
+                        maxRows={500}
+                        emptyText={emptyText}
+                        csvFilename={csvFilename}
+                    />
+                </div>
+            )}
+        </details>
     );
 }

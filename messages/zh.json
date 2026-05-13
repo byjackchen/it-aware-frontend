@@ -482,7 +482,10 @@
         "request": "请求",
         "daysNoUpdate": "未更新天数",
         "shortDescription": "简要描述",
-        "assetsTable": "资产明细"
+        "assetsTable": "资产明细",
+        "incidentDetail": "事件明细",
+        "catalogDetail": "服务目录明细",
+        "assetDetail": "资产明细"
       },
       "tabs": {
         "pendingReturn": "待归还",
@@ -1921,7 +1924,10 @@
       "detailTitle": "工单明细",
       "assetTask": "Asset Task",
       "catalogTask": "Catalog Task",
-      "assetsTable": "资产明细"
+      "assetsTable": "资产明细",
+      "incidentDetail": "事件明细",
+      "catalogDetail": "服务目录明细",
+      "assetDetail": "资产明细"
     },
     "tabs": {
       "pendingReturn": "待归还",

@@ -499,7 +499,7 @@ export function InStockAssetsDashboard() {
                 the page stays light on first render. Choice is
                 persisted to localStorage. */}
             <details
-                className={`flex-1 min-h-0 flex flex-col rounded-xl border ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
+                className={`${detailOpen ? 'flex-1 min-h-0 flex flex-col' : 'shrink-0'} rounded-xl border ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
                 open={detailOpen}
                 onToggle={(e) => {
                     const open = (e.currentTarget as HTMLDetailsElement).open;

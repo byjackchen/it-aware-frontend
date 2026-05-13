@@ -48,6 +48,8 @@ import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 const STATE_PALETTE = [
     '#3b82f6',
@@ -529,6 +531,98 @@ export function IncidentAnalysisDashboard() {
         resetAllParentFilters();
     }
 
+    // ── Detail table at the bottom — collapsible. Renders the
+    //   `filtered` Incident set as a row-level breakdown with search,
+    //   sort, pagination, and CSV export. Heavy enrichment only runs
+    //   when the disclosure is open.
+    interface IncDetailRow extends Record<string, unknown> {
+        oid: string;
+        stable_id: string;
+        title: string | null;
+        state: string;
+        priority: string;
+        assigned_group: string | null;
+        assigned_to_name: string | null;
+        _daysNoUpdate: number;
+        _location: string;
+        _openedAt: string;
+        _openedBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: IncDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            stable_id: r.stable_id,
+            title: r.title,
+            state: r.state,
+            priority: r.priority,
+            assigned_group: r.assigned_group,
+            assigned_to_name: r.assigned_to_name,
+            _daysNoUpdate: daysSinceUpdated(r, now),
+            _location: locationOf(r) ?? '—',
+            _openedAt: openedAt(r),
+            _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
+        }));
+    }, [filtered, now]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<IncDetailRow>[] = useMemo(() => [
+        {
+            key: 'stable_id',
+            label: t('tables.number'),
+            width: '120px',
+            render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+        },
+        { key: 'state', label: t('tables.state'), width: '130px' },
+        { key: 'priority', label: t('tables.priority'), width: '90px' },
+        {
+            key: '_daysNoUpdate',
+            label: t('tables.daysNoUpdate'),
+            width: '110px',
+            render: (r) => {
+                const cls =
+                    r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
+                    : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                return <span className={cls}>{r._daysNoUpdate}d</span>;
+            },
+            sortValue: (r) => r._daysNoUpdate,
+            csvValue: (r) => r._daysNoUpdate,
+        },
+        {
+            key: 'assigned_group',
+            label: t('tables.assignmentGroup'),
+            width: '170px',
+            render: (r) => r.assigned_group ?? '—',
+        },
+        {
+            key: 'assigned_to_name',
+            label: t('tables.assignedTo'),
+            width: '140px',
+            render: (r) => r.assigned_to_name ?? '—',
+        },
+        { key: '_openedBy', label: t('tables.openedBy'), width: '140px' },
+        { key: '_location', label: t('tables.location'), width: '150px' },
+        {
+            key: '_openedAt',
+            label: t('tables.openedAt'),
+            width: '110px',
+            render: (r) => (r._openedAt ? new Date(r._openedAt).toLocaleDateString() : '—'),
+            sortValue: (r) => r._openedAt,
+            csvValue: (r) => r._openedAt,
+        },
+        {
+            key: 'title',
+            label: t('tables.title'),
+            width: '360px',
+            render: (r) => <span className="truncate block" title={r.title ?? ''}>{r.title ?? ''}</span>,
+        },
+    ], [t]);
+
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
             {/* Header */}
@@ -739,6 +833,34 @@ export function IncidentAnalysisDashboard() {
                         height={220}
                         color="#ef4444"
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Detail table — collapsible. Heavy DOM stays out of the
+                    initial render; user choice persists per page. */}
+                <div className="mb-3">
+                    <CollapsibleDetailTable<IncDetailRow>
+                        storageKey="ops-dashboard:incidents:detail-open"
+                        title={t('tables.incidentDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['stable_id', 'title', 'assigned_group', 'assigned_to_name', '_openedBy'] as (keyof IncDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="incidents_detail"
                     />
                 </div>
             </div>
