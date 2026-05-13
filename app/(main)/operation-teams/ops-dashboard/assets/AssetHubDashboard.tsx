@@ -348,12 +348,9 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: headline counts + Zero Residual on the right.
-                    5-up grid so each tile reads as a big number.
-                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red
-                    - Pending Image / Unconfirmed / PendingRepair /
-                      PendingReturn: 0 green, >0 yellow, >10 red */}
-                <div className="grid grid-cols-5 gap-3 mb-3">
+                {/* Row 1: headline counts.
+                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalAssets')}
                         value={kpis.total}
@@ -378,22 +375,16 @@ export function AssetHubDashboard() {
                         tooltip={t('kpis.inStockRateInfo')}
                         valueColor={inStockRateColor}
                     />
-                    <KpiCard
-                        label={t('kpis.zeroResidual')}
-                        value={kpis.zeroResidual}
-                        icon={DollarSign}
-                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
-                        linkLabel={t('links.openZeroResidualAssets')}
-                    />
                 </div>
 
                 {/* Row 2: Pending Return / Pending Repair / Pending Image
-                    / Unconfirmed. Four "pending"-style sub-counts share
-                    the same 0-green / 1-10-yellow / >10-red colour rule.
+                    / Unconfirmed / Zero Residual. Pending* sub-counts
+                    share the 0-green / 1-10-yellow / >10-red rule.
                     Pending Image clicking applies a substatus filter so
                     the donuts + sub-status counts narrow to the imaging
-                    queue. */}
-                <div className="grid grid-cols-4 gap-3 mb-3">
+                    queue. Zero Residual sits on the right as the
+                    operational tail. */}
+                <div className="grid grid-cols-5 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.pendingReturn')}
                         value={kpis.pendingReturn}
@@ -427,6 +418,13 @@ export function AssetHubDashboard() {
                         linkHref="/operation-teams/ops-dashboard/pending-assets"
                         linkLabel={t('links.openPendingAssets')}
                         valueColor={pendingRuleColor(kpis.unconfirmed)}
+                    />
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                        linkLabel={t('links.openZeroResidualAssets')}
                     />
                 </div>
 
