@@ -2157,6 +2157,7 @@
       "colModel": "Model",
       "colAssetStatus": "Status",
       "colStockRoom": "Location / Stock Room",
+      "colResidualValue": "Residual Value (as of)",
       "colAssignedDate": "Assigned",
       "activeByGroupSubtitle": "Click a slice to filter",
       "byDepartment": "By Department",

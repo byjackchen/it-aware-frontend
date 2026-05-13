@@ -211,6 +211,10 @@ interface OffboardedAssetRow {
     assignedDate: string | null;
     stockRoom: string | null;
     location: string | null;
+    /** Residual book value at last snapshot — string|number from backend. */
+    residualValue: string | number | null;
+    /** ISO timestamp the residual_value snapshot was taken. */
+    residualDate: string | null;
 }
 
 export function OnOffBoardingDashboard() {
@@ -435,6 +439,8 @@ export function OnOffBoardingDashboard() {
                     assignedDate: null,
                     stockRoom: null,
                     location: null,
+                    residualValue: null,
+                    residualDate: null,
                 });
                 continue;
             }
@@ -450,6 +456,8 @@ export function OnOffBoardingDashboard() {
                     assignedDate: hw.assigned_date,
                     stockRoom: hw.stock_room,
                     location: hw.location,
+                    residualValue: hw.residual_value,
+                    residualDate: hw.residual_date,
                 });
             }
         }
@@ -683,6 +691,32 @@ export function OnOffBoardingDashboard() {
                 label: t('charts.colStockRoom'),
                 width: 'w-40',
                 render: (r) => r.stockRoom ?? r.location ?? '—',
+            },
+            {
+                key: 'residualValue',
+                // Combined cell: book value + the date that snapshot was
+                // taken. Both columns are 100% / 81% populated on the
+                // dev hardware roster, so this is reliable signal for
+                // ops to gauge how much equipment value is still in the
+                // wild for each leaver.
+                label: t('charts.colResidualValue'),
+                width: 'w-40',
+                render: (r) => {
+                    if (r.residualValue === null || r.residualValue === undefined) return '—';
+                    const num = typeof r.residualValue === 'string' ? Number(r.residualValue) : r.residualValue;
+                    if (!Number.isFinite(num)) return '—';
+                    const formatted = `$${num.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}`;
+                    const dateLabel = r.residualDate ? r.residualDate.slice(0, 10) : null;
+                    return dateLabel ? `${formatted} (${dateLabel})` : formatted;
+                },
+                sortValue: (r) => {
+                    if (r.residualValue === null || r.residualValue === undefined) return -Infinity;
+                    const num = typeof r.residualValue === 'string' ? Number(r.residualValue) : r.residualValue;
+                    return Number.isFinite(num) ? num : -Infinity;
+                },
             },
             {
                 key: 'assignedDate',

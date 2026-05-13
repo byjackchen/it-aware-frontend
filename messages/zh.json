@@ -1835,6 +1835,7 @@
       "colModel": "型号",
       "colAssetStatus": "状态",
       "colStockRoom": "位置 / 库房",
+      "colResidualValue": "残值（截至）",
       "colAssignedDate": "分配日期",
       "activeByGroupSubtitle": "点击切片以筛选",
       "byDepartment": "按部门",
