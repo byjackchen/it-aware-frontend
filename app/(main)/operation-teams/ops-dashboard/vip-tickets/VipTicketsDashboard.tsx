@@ -22,7 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, isActiveState, openedAt } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup, openedAt } from '@/lib/ops_dashboard/aggregate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
     TopFilterBar,
@@ -124,7 +124,11 @@ export function VipTicketsDashboard() {
 
     // Merge, narrow to active states, sort by source_updated_at DESC
     // (Phase 2 aging clock; fall back to updated_at on pre-backfill rows
-    // or non-SN activity sources).
+    // or non-SN activity sources). Also scope to OIT assignment groups
+    // — the is_vip endpoint parameter narrows by the *caller's* VIP
+    // status but doesn't restrict by queue, so HR / IT Automation /
+    // Amazon Ordering / Workday Ops rows for VIP callers would leak in
+    // if we didn't filter here.
     const merged: TicketRow[] = useMemo(() => {
         const a = incidentQuery.data?.items ?? [];
         const b = requestQuery.data?.items ?? [];
@@ -132,6 +136,7 @@ export function VipTicketsDashboard() {
         const all: TicketRow[] = [];
         for (const row of [...a, ...b]) {
             if (!isActiveState(row.state)) continue;
+            if (!isInScopeGroup(row.assigned_group)) continue;
             if (seen.has(row.oid)) continue;
             seen.add(row.oid);
             all.push(row);
