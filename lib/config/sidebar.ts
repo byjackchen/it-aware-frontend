@@ -46,7 +46,6 @@ import {
     Headphones,
     ClipboardSignature,
     Search,
-    Database,
     UserPlus,
     UserX,
 } from 'lucide-react';
@@ -571,14 +570,9 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
                     },
-                    {
-                        href: '/operation-teams/ops-dashboard/ohla/raw-data',
-                        labelKey: 'opsOhlaRawData',
-                        icon: Database,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_OPERATION,
-                        ]),
-                    },
+                    // Raw Data sub-page deleted as part of the Ohla Chatbot
+                    // dashboard perf overhaul — it was the only consumer that
+                    // required pulling the full 200k-row /interactions list.
                 ],
             },
         ],

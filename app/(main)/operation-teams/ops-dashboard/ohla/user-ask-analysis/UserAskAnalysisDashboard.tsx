@@ -16,16 +16,11 @@
  * Date slicer default: from the 1st of the current month through today.
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Clock, RefreshCw, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
-import { useOhla } from '@/lib/hooks/useOhla'
-import {
-    computeAskKpis,
-    filterByDateRange,
-    groupAskByDay,
-} from '@/lib/ohla/aggregate'
+import { useOhlaChatbotReport } from '@/lib/hooks/useOhlaChatbotReport'
 import { OHLA_PALETTE } from '@/lib/ohla/colors'
 import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
@@ -40,42 +35,52 @@ function pct(v: number, digits = 1): string {
     return `${(v * 100).toFixed(digits)}%`
 }
 
+const ZERO_KPIS = {
+    user_ask_count: 0,
+    faq_match_rate: 0,
+    overall_match_rate: 0,
+    faq_matched_count: 0,
+    action_chain_count: 0,
+    kb_matched_count: 0,
+    other_count: 0,
+} as const
+
 export function UserAskAnalysisDashboard() {
     const t = useTranslations('Ohla')
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
     const { range: { from, to }, setRange } = useOhlaDateRange()
-    const { rows, loading, error, refetch } = useOhla({ from, to })
+    const { data, loading, error, refetch } = useOhlaChatbotReport('user-ask', { from, to })
 
-    const filtered = useMemo(() => filterByDateRange(rows, from, to), [rows, from, to])
-    const kpis = useMemo(() => computeAskKpis(filtered), [filtered])
-    const daily = useMemo(() => groupAskByDay(filtered), [filtered])
+    const block = data?.current
+    const kpis = block?.kpis ?? ZERO_KPIS
+    const dailyRows = block?.charts.behaviour_daily ?? []
+    const distribution = block?.charts.behaviour_distribution ?? []
+
+    // Map BE bucket strings -> i18n labels and stable colors. The 4-bucket
+    // donut order matches the FE PBIX layout: faq -> ac -> interaction -> irrelevant.
+    const COLOR_BY_BUCKET: Record<string, string> = {
+        faqMatched: OHLA_PALETTE.faqMatched,
+        actionChainMatched: OHLA_PALETTE.actionChainMatched,
+        interaction: OHLA_PALETTE.interaction,
+        irrelevant: OHLA_PALETTE.irrelevant,
+    }
+    const LABEL_KEY_BY_BUCKET: Record<string, string> = {
+        faqMatched: 'userAsk.behaviour.faqMatched',
+        actionChainMatched: 'userAsk.behaviour.actionChainMatched',
+        interaction: 'userAsk.behaviour.interaction',
+        irrelevant: 'userAsk.behaviour.irrelevant',
+    }
 
     const behaviourSlices = useMemo(
-        () => [
-            {
-                name: t('userAsk.behaviour.faqMatched'),
-                value: kpis.faqMatchedBehaviour,
-                color: OHLA_PALETTE.faqMatched,
-            },
-            {
-                name: t('userAsk.behaviour.actionChainMatched'),
-                value: kpis.actionChainMatched,
-                color: OHLA_PALETTE.actionChainMatched,
-            },
-            {
-                name: t('userAsk.behaviour.interaction'),
-                value: kpis.interaction,
-                color: OHLA_PALETTE.interaction,
-            },
-            {
-                name: t('userAsk.behaviour.irrelevant'),
-                value: kpis.irrelevant,
-                color: OHLA_PALETTE.irrelevant,
-            },
-        ],
-        [kpis, t],
+        () =>
+            distribution.map((b) => ({
+                name: t(LABEL_KEY_BY_BUCKET[b.bucket] ?? b.bucket),
+                value: b.count,
+                color: COLOR_BY_BUCKET[b.bucket],
+            })),
+        [distribution, t],
     )
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'
@@ -148,7 +153,7 @@ export function UserAskAnalysisDashboard() {
                     }`}
                 />
                 <span className={`ml-auto text-xs ${textMuted}`}>
-                    {t('filters.rowCount', { count: filtered.length })}
+                    {t('filters.rowCount', { count: kpis.user_ask_count })}
                 </span>
             </div>
 
@@ -186,73 +191,65 @@ export function UserAskAnalysisDashboard() {
                         <div className="md:col-span-6">
                             <KpiCard
                                 label={t('userAsk.kpis.userAsk')}
-                                value={fmtNum(kpis.userAsk)}
+                                value={fmtNum(kpis.user_ask_count)}
                                 valueSize="xl"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.userAskInfo')}
-    
-    />
+                                tooltip={t('userAsk.kpis.userAskInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.faqMatchRate')}
-                                value={pct(kpis.faqMatchRate)}
+                                value={pct(kpis.faq_match_rate)}
                                 valueSize="xl"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.faqMatchRateInfo')}
-    />
+                                tooltip={t('userAsk.kpis.faqMatchRateInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.overallMatchRate')}
-                                value={pct(kpis.overallMatchRate)}
+                                value={pct(kpis.overall_match_rate)}
                                 valueSize="xl"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.overallMatchRateInfo')}
-    />
+                                tooltip={t('userAsk.kpis.overallMatchRateInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.faqMatched')}
-                                value={fmtNum(kpis.faqMatched)}
+                                value={fmtNum(kpis.faq_matched_count)}
                                 valueSize="lg"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.faqMatchedInfo')}
-    />
+                                tooltip={t('userAsk.kpis.faqMatchedInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.actionChain')}
-                                value={fmtNum(kpis.actionChain)}
+                                value={fmtNum(kpis.action_chain_count)}
                                 valueSize="lg"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.actionChainInfo')}
-    />
+                                tooltip={t('userAsk.kpis.actionChainInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.kbMatched')}
-                                value={fmtNum(kpis.kbMatched)}
+                                value={fmtNum(kpis.kb_matched_count)}
                                 valueSize="lg"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.kbMatchedInfo')}
-    />
+                                tooltip={t('userAsk.kpis.kbMatchedInfo')}
+                            />
                         </div>
                         <div className="md:col-span-3">
                             <KpiCard
                                 label={t('userAsk.kpis.other')}
-                                value={fmtNum(kpis.other)}
+                                value={fmtNum(kpis.other_count)}
                                 valueSize="lg"
                                 className="h-full"
-                            
-                        tooltip={t('userAsk.kpis.otherInfo')}
-    />
+                                tooltip={t('userAsk.kpis.otherInfo')}
+                            />
                         </div>
                     </div>
                     <div className="md:col-span-3">
@@ -265,10 +262,20 @@ export function UserAskAnalysisDashboard() {
                     </div>
                 </div>
 
-                {/* Row 3 — combo chart: stacked bar + 2 match-rate lines */}
+                {/* Row 3 — combo chart: stacked bar + 2 match-rate lines.
+                 *  Server returns per-day buckets already classified; map snake
+                 *  case to the chart's expected keys. */}
                 <StackedBarPercentLineCard
                     title={t('userAsk.charts.behaviourAndMatchRateTrend')}
-                    data={daily.map((d) => ({ ...d }))}
+                    data={dailyRows.map((d) => ({
+                        day: d.date,
+                        faqMatched: d.faq_matched,
+                        actionChainMatched: d.action_chain_matched,
+                        interaction: d.interaction,
+                        irrelevant: d.irrelevant,
+                        faqMatchRate: d.faq_match_rate,
+                        overallMatchRate: d.overall_match_rate,
+                    }))}
                     xKey="day"
                     height={320}
                     leftAxisLabel={t('userAsk.charts.countOfBehaviour')}
