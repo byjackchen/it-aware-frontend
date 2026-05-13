@@ -138,6 +138,18 @@ function extractEmployeeKey(title: string | null | undefined): string | null {
     return raw.toLowerCase();
 }
 
+/**
+ * Extract a Last Working Day ISO date (YYYY-MM-DD) from an offboarding
+ * SCTASK title. SN templates always carry the date as
+ * `... on YYYY-MM-DD for <username>`. Returns null if the title isn't
+ * one of the two SN-defined offboarding flavours.
+ */
+function extractLwdIso(title: string | null | undefined): string | null {
+    if (!title) return null;
+    const m = title.match(/\bon\s+(\d{4}-\d{2}-\d{2})\s+for\b/);
+    return m ? m[1] : null;
+}
+
 function locationForFilter(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
@@ -265,10 +277,22 @@ export function OnOffBoardingDashboard() {
     const onboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'onboarding')).length, [allRows]);
     const offboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'offboarding')).length, [allRows]);
 
-    const slicers: SlicerConfig[] = useMemo(
-        () => [{ type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') }],
-        [t],
-    );
+    const slicers: SlicerConfig[] = useMemo(() => {
+        const base: SlicerConfig[] = [
+            { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
+        ];
+        if (flow === 'offboarding') {
+            // LWD filter is offboarding-only — extracted from the
+            // "Offboarding: ... on YYYY-MM-DD for <user>" SN title.
+            base.push({
+                type: 'date-range',
+                param: ['lwd_from', 'lwd_to'],
+                label: t('filters.lastWorkingDay'),
+                clientSide: true,
+            });
+        }
+        return base;
+    }, [t, flow]);
 
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
@@ -277,9 +301,28 @@ export function OnOffBoardingDashboard() {
             from: null,
             to: null,
         };
+        const lwdRange = (filters.lwd_from as { from: string | null; to: string | null }) ?? {
+            from: null,
+            to: null,
+        };
         return flowRows.filter((r) => {
-            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter))
-                return false;
+            // Region/Country/Location filter only meaningful for the
+            // Onboarding tab — the offboarding ticket caller is the
+            // Workday automation account, so r.actor.location ends up
+            // null/non-physical and the filter strips every row. Skip
+            // the predicate entirely when we're on Offboarding.
+            if (flow === 'onboarding') {
+                if (
+                    !matchesRegionCountry(
+                        r,
+                        selectedRegions,
+                        selectedCountries,
+                        selectedLocations,
+                        locationForFilter,
+                    )
+                )
+                    return false;
+            }
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;
             if (range.from || range.to) {
@@ -287,9 +330,19 @@ export function OnOffBoardingDashboard() {
                 if (range.from && opened && opened < range.from) return false;
                 if (range.to && opened && opened > range.to) return false;
             }
+            // LWD range — offboarding-only. Rows whose title doesn't
+            // carry an SN-template "on YYYY-MM-DD" date are dropped
+            // when a range is active so the user only sees rows whose
+            // date actually falls in their window.
+            if (flow === 'offboarding' && (lwdRange.from || lwdRange.to)) {
+                const lwd = extractLwdIso(r.title);
+                if (!lwd) return false;
+                if (lwdRange.from && lwd < lwdRange.from) return false;
+                if (lwdRange.to && lwd > lwdRange.to) return false;
+            }
             return true;
         });
-    }, [flowRows, filters, selectedRegions, selectedCountries, selectedLocations]);
+    }, [flowRows, filters, flow, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
 
@@ -615,19 +668,29 @@ export function OnOffBoardingDashboard() {
                     </button>
                 }
                 headerSlot={
-                    <RegionCountryFilter
-                        rows={flowRows}
-                        getLocation={locationForFilter}
-                        selectedRegions={selectedRegions}
-                        selectedCountries={selectedCountries}
-                        selectedLocations={selectedLocations}
-                        onRegionsChange={setSelectedRegions}
-                        onCountriesChange={setSelectedCountries}
-                        onLocationsChange={setSelectedLocations}
-                        extraActiveCount={extraActiveFilterCount}
-                        onClearAll={resetAllParentFilters}
-                        showClearButton={false}
-                    />
+                    flow === 'offboarding' ? (
+                        // Offboarding tickets are filed by the Workday
+                        // automation account, so r.actor carries no
+                        // physical region/country/location for the
+                        // offboarded user. Hide the geographic filter
+                        // here — the LWD slicer in the row below covers
+                        // the offboarding-specific date dimension.
+                        null
+                    ) : (
+                        <RegionCountryFilter
+                            rows={flowRows}
+                            getLocation={locationForFilter}
+                            selectedRegions={selectedRegions}
+                            selectedCountries={selectedCountries}
+                            selectedLocations={selectedLocations}
+                            onRegionsChange={setSelectedRegions}
+                            onCountriesChange={setSelectedCountries}
+                            onLocationsChange={setSelectedLocations}
+                            extraActiveCount={extraActiveFilterCount}
+                            onClearAll={resetAllParentFilters}
+                            showClearButton={false}
+                        />
+                    )
                 }
             />
 
