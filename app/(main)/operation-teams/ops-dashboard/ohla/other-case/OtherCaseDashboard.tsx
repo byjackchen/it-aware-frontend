@@ -3,6 +3,10 @@
 /**
  * Ohla Other Case Analysis — Power BI "Other Case Analysis" page port.
  *
+ * Performance: KPI + 2 charts come from /report/ohla-chatbot-other-case
+ * (server-aggregated, 120s Redis cache). The detail table loads small
+ * filtered rows from /interactions?ask_classification=other.
+ *
  * Layout (PBIX parity):
  *  - Top left: big Other# KPI tile
  *  - Top right: 3-slice pie (Interaction / Irrelevant / unmatched_anywhere)
@@ -10,19 +14,12 @@
  *  - Bottom: details table
  */
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Clock, RefreshCw, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
-import { useOhla } from '@/lib/hooks/useOhla'
-import {
-    computeOtherKpis,
-    filterByDateRange,
-    groupOtherByDay,
-} from '@/lib/ohla/aggregate'
-import { classifyAsk, classifyOther } from '@/lib/ohla/classify'
+import { useOhlaChatbotReport } from '@/lib/hooks/useOhlaChatbotReport'
 import { OHLA_PALETTE } from '@/lib/ohla/colors'
-import type { OhlaRow } from '@/lib/ohla/types'
 import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
@@ -30,6 +27,7 @@ import { DataTableCard, type Column } from '@/components/ops_dashboard/DataTable
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
 import { ExpandableText } from '@/components/ohla/ExpandableText'
+import type { Interaction } from '@/lib/types/objects'
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -55,22 +53,23 @@ interface DetailRow {
     response: string | null
 }
 
-function toDetailRow(r: OhlaRow, behaviourLabel: string): DetailRow {
-    const d = new Date(r.createdAt)
-    const y = d.getUTCFullYear()
+function toDetailRow(i: Interaction): DetailRow {
+    const d = new Date(i.created_at)
     const m = d.getUTCMonth() + 1
     return {
-        year: y,
+        year: d.getUTCFullYear(),
         quarter: quarterOf(m),
         month: monthName(m),
         day: d.getUTCDate(),
-        behaviour: behaviourLabel,
-        userActionCorrected: r.userActionCorrected,
-        actorStableId: r.actorStableId,
-        userContent: r.userContent,
-        response: r.responseText,
+        behaviour: i.action_type,
+        userActionCorrected: i.ai_code ?? null,
+        actorStableId: i.actor_stable_id,
+        userContent: i.content_text ?? null,
+        response: i.response_text ?? null,
     }
 }
+
+const ZERO_KPIS = { other_count: 0 } as const
 
 export function OtherCaseDashboard() {
     const t = useTranslations('Ohla')
@@ -78,49 +77,86 @@ export function OtherCaseDashboard() {
     const isLight = theme === 'light'
 
     const { range: { from, to }, setRange } = useOhlaDateRange()
-    const { rows, loading, error, refetch } = useOhla({ from, to })
 
-    const filtered = useMemo(() => filterByDateRange(rows, from, to), [rows, from, to])
-    const kpis = useMemo(() => computeOtherKpis(filtered), [filtered])
-    const daily = useMemo(() => groupOtherByDay(filtered), [filtered])
+    const {
+        data: report,
+        loading: reportLoading,
+        error: reportError,
+        refetch: refetchReport,
+    } = useOhlaChatbotReport('other-case', { from, to })
+
+    const block = report?.current
+    const kpis = block?.kpis ?? ZERO_KPIS
+    const distribution = block?.charts.distribution ?? []
+    const dailyRows = block?.charts.daily ?? []
+
+    // Detail rows from /interactions?ask_classification=other.
+    const [detailRows, setDetailRows] = useState<Interaction[]>([])
+    const [detailLoading, setDetailLoading] = useState(false)
+    const [detailError, setDetailError] = useState<string | null>(null)
+
+    const loadDetails = useCallback(async () => {
+        if (!from || !to) {
+            setDetailRows([])
+            return
+        }
+        setDetailLoading(true)
+        setDetailError(null)
+        try {
+            const params = new URLSearchParams()
+            params.set('source_system', 'chatbot')
+            params.set('ask_classification', 'other')
+            params.set('skip', '0')
+            params.set('limit', '1000')
+            params.set('sort_by', 'created_at')
+            params.set('order', 'desc')
+            params.set('created_at_from', `${from}T00:00:00.000Z`)
+            params.set('created_at_to', `${to}T23:59:59.999Z`)
+            const resp = await fetch(`/api/objects/interactions?${params.toString()}`, { cache: 'no-store' })
+            if (!resp.ok) throw new Error(`Detail fetch failed: ${resp.status}`)
+            const env = (await resp.json()) as { items?: Interaction[] }
+            setDetailRows(env.items ?? [])
+        } catch (err) {
+            setDetailError(err instanceof Error ? err.message : String(err))
+            setDetailRows([])
+        } finally {
+            setDetailLoading(false)
+        }
+    }, [from, to])
+
+    useEffect(() => {
+        void loadDetails()
+    }, [loadDetails])
+
+    const refetch = useCallback(async () => {
+        await Promise.all([refetchReport(), loadDetails()])
+    }, [refetchReport, loadDetails])
+
+    const detailRowsMapped = useMemo(() => detailRows.map(toDetailRow), [detailRows])
+    const loading = reportLoading || detailLoading
+    const error = reportError ?? detailError
+
+    // Slice color/label mapping by bucket (BE returns 'interaction' / 'irrelevant' / 'unmatched_anywhere').
+    const COLOR_BY_BUCKET: Record<string, string> = {
+        interaction: OHLA_PALETTE.interaction,
+        irrelevant: OHLA_PALETTE.irrelevant,
+        unmatched_anywhere: OHLA_PALETTE.unmatchedAnywhere,
+    }
+    const LABEL_KEY_BY_BUCKET: Record<string, string> = {
+        interaction: 'otherCase.categories.interaction',
+        irrelevant: 'otherCase.categories.irrelevant',
+        unmatched_anywhere: 'otherCase.categories.unmatchedAnywhere',
+    }
 
     const slices = useMemo(
-        () => [
-            {
-                name: t('otherCase.categories.interaction'),
-                value: kpis.interaction,
-                color: OHLA_PALETTE.interaction,
-            },
-            {
-                name: t('otherCase.categories.irrelevant'),
-                value: kpis.irrelevant,
-                color: OHLA_PALETTE.irrelevant,
-            },
-            {
-                name: t('otherCase.categories.unmatchedAnywhere'),
-                value: kpis.unmatchedAnywhere,
-                color: OHLA_PALETTE.unmatchedAnywhere,
-            },
-        ],
-        [kpis, t],
+        () =>
+            distribution.map((b) => ({
+                name: t(LABEL_KEY_BY_BUCKET[b.bucket] ?? b.bucket),
+                value: b.count,
+                color: COLOR_BY_BUCKET[b.bucket],
+            })),
+        [distribution, t],
     )
-
-    const detailRows = useMemo(() => {
-        const out: DetailRow[] = []
-        for (const r of filtered) {
-            if (r.behaviour !== 'query') continue
-            if (classifyAsk(r) !== 'other') continue
-            const c = classifyOther(r)
-            const label =
-                c === 'interaction'
-                    ? t('otherCase.categories.interaction')
-                    : c === 'irrelevant'
-                      ? t('otherCase.categories.irrelevant')
-                      : t('otherCase.categories.unmatchedAnywhere')
-            out.push(toDetailRow(r, label))
-        }
-        return out
-    }, [filtered, t])
 
     const columns: Column<DetailRow>[] = [
         { key: 'year', label: t('otherCase.columns.year') },
@@ -198,7 +234,7 @@ export function OtherCaseDashboard() {
                     }`}
                 />
                 <span className={`ml-auto text-xs ${textMuted}`}>
-                    {t('filters.rowCount', { count: filtered.length })}
+                    {t('filters.rowCount', { count: kpis.other_count })}
                 </span>
             </div>
 
@@ -217,11 +253,11 @@ export function OtherCaseDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <KpiCard
-                    label={t('otherCase.kpis.other')}
-                    value={fmtNum(kpis.other)}
-                    valueSize="xl"
-                    tooltip={t('otherCase.kpis.otherInfo')}
-                />
+                        label={t('otherCase.kpis.other')}
+                        value={fmtNum(kpis.other_count)}
+                        valueSize="xl"
+                        tooltip={t('otherCase.kpis.otherInfo')}
+                    />
                     <DonutCard
                         title={t('otherCase.charts.distribution')}
                         data={slices}
@@ -233,7 +269,12 @@ export function OtherCaseDashboard() {
                 <div className="mb-3">
                     <StackedBarPercentLineCard
                         title={t('otherCase.charts.dailyTrend')}
-                        data={daily.map((d) => ({ ...d }))}
+                        data={dailyRows.map((d) => ({
+                            day: d.date,
+                            interaction: d.interaction,
+                            irrelevant: d.irrelevant,
+                            unmatched_anywhere: d.unmatched_anywhere,
+                        }))}
                         xKey="day"
                         height={240}
                         stackedKeys={[
@@ -247,9 +288,9 @@ export function OtherCaseDashboard() {
 
                 <DataTableCard
                     title={t('otherCase.charts.details')}
-                    rows={detailRows}
+                    rows={detailRowsMapped}
                     columns={columns}
-                    totalCount={detailRows.length}
+                    totalCount={detailRowsMapped.length}
                     emptyText={t('common.noData')}
                     csvFilename="ohla_other_case"
                 />

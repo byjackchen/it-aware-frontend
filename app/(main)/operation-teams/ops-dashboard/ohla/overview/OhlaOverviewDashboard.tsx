@@ -3,10 +3,11 @@
 /**
  * Ohla Overview — Power BI "Overview" page port.
  *
- * Source of truth: Ohla_Chat_History_Zach_2 table in the Power BI report,
- * backed locally by activities.interactions rows where
- * source_system = 'chatbot' enriched with worker-hierarchy metadata
- * (region, country, VIP, business group) from /objects/workers.
+ * Performance: KPIs and charts come from the server-aggregated
+ * /report/ohla-chatbot-overview endpoint by default (one small payload,
+ * 120s Redis-cached). The legacy 200k-row /interactions pull only
+ * happens lazily when the user engages a cross-filter (donut click),
+ * because the report endpoint doesn't support per-facet filters.
  *
  * 17 visuals from the PBIX:
  *  - 1 textbox header (rendered inline as subtitle)
@@ -17,11 +18,6 @@
  *  - 3 donut charts: Business Group / Region / User Action
  *  - 2 line charts: daily chat volume trend + active users trend
  *  - 1 line+stacked-column combo: behaviour mix by month
- *
- * Data loading: `useOhla({from, to})` hook does a single parallel fetch of
- * all Ohla interactions within the window + the full active worker list
- * for enrichment. Switching slicer dates re-requests only when the bounds
- * materially change; in-memory cache keeps sibling Ohla pages snappy.
  */
 
 import { useCallback, useMemo, useState } from 'react'
@@ -42,25 +38,20 @@ import {
 import { useTranslations } from 'next-intl'
 import { useTheme } from '@/lib/contexts/theme-context'
 import { useOhla } from '@/lib/hooks/useOhla'
+import { useOhlaChatbotReport } from '@/lib/hooks/useOhlaChatbotReport'
 import {
     computeKpis,
     countBy,
     filterByDateRange,
     groupAutoVsAskByMonth,
-    groupByMonth,
     topN,
 } from '@/lib/ohla/aggregate'
 import type { OhlaRow } from '@/lib/ohla/types'
-import { OHLA_PALETTE } from '@/lib/ohla/colors'
 import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
-
-function pct(v: number, digits = 1): string {
-    return `${(v * 100).toFixed(digits)}%`
-}
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -71,13 +62,27 @@ function fmtSurveyRate(v: number | null): string {
     return v.toFixed(2)
 }
 
+const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+] as const
+
+function monthLabel(month: string): string {
+    const idx = parseInt(month.slice(5, 7), 10) - 1
+    return MONTH_NAMES[idx] ?? month
+}
+
+function quarterLabel(month: string): string {
+    const idx = parseInt(month.slice(5, 7), 10) - 1
+    return `Qtr ${Math.floor(idx / 3) + 1}`
+}
+
 export function OhlaOverviewDashboard() {
     const t = useTranslations('Ohla')
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
     const { range: { from, to }, setRange } = useOhlaDateRange()
-    const { rows, loading, error, refetch } = useOhla({ from, to })
 
     // Cross-filter state — each donut slice click toggles membership in the
     // matching selection set. Multiple picks within a donut are OR; different
@@ -86,6 +91,33 @@ export function OhlaOverviewDashboard() {
     const [bgSel, setBgSel] = useState<string[]>([])
     const [regionSel, setRegionSel] = useState<string[]>([])
     const [behaviourSel, setBehaviourSel] = useState<string[]>([])
+
+    const hasCrossFilter =
+        bgSel.length > 0 || regionSel.length > 0 || behaviourSel.length > 0
+
+    // Fast path: server-aggregated report (no row pull, 120s Redis cache).
+    const {
+        data: reportData,
+        loading: reportLoading,
+        error: reportError,
+        refetch: refetchReport,
+    } = useOhlaChatbotReport('overview', { from, to })
+
+    // Lazy path: only spin up the heavy /interactions row pull when the user
+    // actually engages cross-filter. computeKpis + countBy then run on rows.
+    const {
+        rows,
+        loading: rowsLoading,
+        error: rowsError,
+        refetch: refetchRows,
+    } = useOhla({ from, to, enabled: hasCrossFilter })
+
+    const loading = hasCrossFilter ? rowsLoading : reportLoading
+    const error = hasCrossFilter ? rowsError : reportError
+    const refetch = useCallback(async () => {
+        if (hasCrossFilter) await refetchRows()
+        else await refetchReport()
+    }, [hasCrossFilter, refetchRows, refetchReport])
 
     const toggle = useCallback(
         (setter: React.Dispatch<React.SetStateAction<string[]>>) =>
@@ -102,20 +134,11 @@ export function OhlaOverviewDashboard() {
         setBehaviourSel([])
     }, [])
 
-    // Defensive: while the hook is loading the cached/stale rows stay
-    // visible, but we still want filterByDateRange to work on the current
-    // `from/to` so we re-filter on the client — the server call may have
-    // returned a wider window because the user only nudged a boundary.
     const dateFiltered: OhlaRow[] = useMemo(
         () => filterByDateRange(rows, from, to),
         [rows, from, to],
     )
 
-    /**
-     * Apply cross-filter facets. `exclude` lets each donut compute its own
-     * slice data ignoring its own selection — otherwise picking a BG slice
-     * would collapse the BG donut to a single wedge. PBI does the same.
-     */
     const applyCrossFilter = useCallback(
         (
             base: OhlaRow[],
@@ -137,69 +160,128 @@ export function OhlaOverviewDashboard() {
         [bgSel, regionSel, behaviourSel],
     )
 
-    /** Fully cross-filtered set — powers KPIs, line charts, and combo. */
     const filtered: OhlaRow[] = useMemo(
         () => applyCrossFilter(dateFiltered),
         [dateFiltered, applyCrossFilter],
     )
 
-    /** Per-donut data excludes that donut's own facet so the user can see
-     * the full distribution along the axis they're currently selecting. */
-    const bgBase = useMemo(() => applyCrossFilter(dateFiltered, 'bg'), [dateFiltered, applyCrossFilter])
-    const regionBase = useMemo(
-        () => applyCrossFilter(dateFiltered, 'region'),
-        [dateFiltered, applyCrossFilter],
-    )
-    const behaviourBase = useMemo(
-        () => applyCrossFilter(dateFiltered, 'behaviour'),
-        [dateFiltered, applyCrossFilter],
-    )
+    // ── KPI + chart data sources ────────────────────────────────────────────
+    // When NOT cross-filtered: read straight from the server report payload.
+    // When cross-filtered: fall back to client-side compute over rows.
 
-    const kpis = useMemo(() => computeKpis(filtered, new Date()), [filtered])
+    const block = reportData?.current
 
-    const behaviourSlices = useMemo(
-        () => topN(countBy(behaviourBase, (r) => r.behaviour), 4),
-        [behaviourBase],
-    )
+    const kpis = useMemo(() => {
+        if (hasCrossFilter) {
+            const k = computeKpis(filtered, new Date())
+            return {
+                totalInteractions: k.totalInteractions,
+                queryCount: k.queryCount,
+                totalActionChain: k.totalActionChain,
+                distinctUsers: k.distinctUsers,
+                tier0Supported: k.tier0Supported,
+                liveAgentSupport: k.liveAgentSupport,
+                userSurvey: k.userSurvey,
+                avgSurveyRate: k.avgSurveyRate,
+            }
+        }
+        if (!block) {
+            return {
+                totalInteractions: 0,
+                queryCount: 0,
+                totalActionChain: 0,
+                distinctUsers: 0,
+                tier0Supported: 0,
+                liveAgentSupport: 0,
+                userSurvey: 0,
+                avgSurveyRate: null as number | null,
+            }
+        }
+        return {
+            totalInteractions: block.kpis.total_interactions,
+            queryCount: block.kpis.user_ask_count,
+            totalActionChain: block.kpis.total_action_chain,
+            distinctUsers: block.kpis.distinct_users,
+            tier0Supported: block.kpis.tier0_supported,
+            liveAgentSupport: block.kpis.live_agent_support_count,
+            userSurvey: block.kpis.user_survey_count,
+            avgSurveyRate: block.kpis.avg_survey_rate,
+        }
+    }, [hasCrossFilter, filtered, block])
 
-    const regionSlices = useMemo(
-        () => topN(countBy(regionBase, (r) => r.region), 6),
-        [regionBase],
-    )
+    // Donuts: server payload preferred; cross-filter mode rebuilds locally.
+    const bgSlices = useMemo(() => {
+        if (hasCrossFilter) {
+            const base = applyCrossFilter(dateFiltered, 'bg')
+            return topN(countBy(base, (r) => r.businessGroup), 8)
+        }
+        return (block?.charts.by_business_group ?? []).map((s) => ({ name: s.label, value: s.count }))
+    }, [hasCrossFilter, dateFiltered, applyCrossFilter, block])
 
-    const bgSlices = useMemo(
-        () => topN(countBy(bgBase, (r) => r.businessGroup), 8),
-        [bgBase],
-    )
+    const behaviourSlices = useMemo(() => {
+        if (hasCrossFilter) {
+            const base = applyCrossFilter(dateFiltered, 'behaviour')
+            return topN(countBy(base, (r) => r.behaviour), 4)
+        }
+        return (block?.charts.by_action ?? []).map((s) => ({ name: s.label, value: s.count }))
+    }, [hasCrossFilter, dateFiltered, applyCrossFilter, block])
 
-    const monthly = useMemo(() => groupByMonth(filtered), [filtered])
+    const regionSlices = useMemo(() => {
+        if (hasCrossFilter) {
+            const base = applyCrossFilter(dateFiltered, 'region')
+            return topN(countBy(base, (r) => r.region), 6)
+        }
+        return (block?.charts.by_region ?? []).map((s) => ({ name: s.label, value: s.count }))
+    }, [hasCrossFilter, dateFiltered, applyCrossFilter, block])
 
-    /** Daily Page Views trend (PBIX 'Page Views Daily Trend'). */
     const volumeSeries = useMemo(() => {
-        const map = new Map<string, number>()
-        for (const r of filtered) {
-            map.set(r.createdDate, (map.get(r.createdDate) ?? 0) + 1)
+        if (hasCrossFilter) {
+            const map = new Map<string, number>()
+            for (const r of filtered) {
+                map.set(r.createdDate, (map.get(r.createdDate) ?? 0) + 1)
+            }
+            return [...map.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([day, count]) => ({ bucket: day, count }))
         }
-        return [...map.entries()]
-            .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(([day, count]) => ({ bucket: day, count }))
-    }, [filtered])
+        return (block?.charts.page_views_daily ?? []).map((p) => ({
+            bucket: p.date, count: p.count,
+        }))
+    }, [hasCrossFilter, filtered, block])
 
-    /** Daily distinct visitors (PBIX 'Unique Visitors Daily Trend'). */
     const distinctUserSeries = useMemo(() => {
-        const bucket = new Map<string, Set<string>>()
-        for (const r of filtered) {
-            if (!bucket.has(r.createdDate)) bucket.set(r.createdDate, new Set())
-            bucket.get(r.createdDate)!.add(r.actorStableId)
+        if (hasCrossFilter) {
+            const bucket = new Map<string, Set<string>>()
+            for (const r of filtered) {
+                if (!bucket.has(r.createdDate)) bucket.set(r.createdDate, new Set())
+                bucket.get(r.createdDate)!.add(r.actorStableId)
+            }
+            return [...bucket.entries()]
+                .map(([day, users]) => ({ bucket: day, count: users.size }))
+                .sort((a, b) => a.bucket.localeCompare(b.bucket))
         }
-        return [...bucket.entries()]
-            .map(([day, users]) => ({ bucket: day, count: users.size }))
-            .sort((a, b) => a.bucket.localeCompare(b.bucket))
-    }, [filtered])
+        return (block?.charts.unique_visitors_daily ?? []).map((p) => ({
+            bucket: p.date, count: p.distinct_users,
+        }))
+    }, [hasCrossFilter, filtered, block])
 
-    /** Monthly Auto Support vs Live Agent (PBIX bottom combo chart). */
-    const autoVsAskMonthly = useMemo(() => groupAutoVsAskByMonth(filtered), [filtered])
-    void monthly // kept for future, not currently rendered as a series
+    const autoVsAskMonthly = useMemo(() => {
+        if (hasCrossFilter) {
+            return groupAutoVsAskByMonth(filtered)
+        }
+        return (block?.charts.auto_vs_total_monthly ?? []).map((m) => ({
+            month: m.month,
+            monthLabel: monthLabel(m.month),
+            quarterLabel: quarterLabel(m.month),
+            autoSupport: m.auto_support,
+            liveAgentSupport: m.live_agent_support,
+            autoRate: m.auto_rate,
+        }))
+    }, [hasCrossFilter, filtered, block])
+
+    const visibleRowCount = hasCrossFilter
+        ? filtered.length
+        : kpis.totalInteractions
 
     const bg = isLight ? 'bg-slate-50' : 'bg-slate-900'
     const textMain = isLight ? 'text-slate-900' : 'text-gray-100'
@@ -270,7 +352,7 @@ export function OhlaOverviewDashboard() {
                     }`}
                 />
                 <span className={`ml-auto text-xs ${textMuted}`}>
-                    {t('filters.rowCount', { count: filtered.length })}
+                    {t('filters.rowCount', { count: visibleRowCount })}
                 </span>
             </div>
 
@@ -298,11 +380,7 @@ export function OhlaOverviewDashboard() {
                     </div>
                 )}
 
-                {/* Active cross-filter chips — mirrors the donut selection
-                 *  state. Each chip removes one slice from its facet; the
-                 *  "Clear all" pill on the right nukes every facet at once.
-                 */}
-                {(bgSel.length > 0 || regionSel.length > 0 || behaviourSel.length > 0) && (
+                {hasCrossFilter && (
                     <div
                         className={`flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 mb-3 text-xs ${
                             isLight
@@ -351,7 +429,7 @@ export function OhlaOverviewDashboard() {
                     </div>
                 )}
 
-                {/* Row 1 — 3 headline KPIs (PBIX: Page Views# / User Ask# / User Click#) */}
+                {/* Row 1 — 3 headline KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-1">
                     <KpiCard
                         label={t('kpis.totalInteractions')}
@@ -373,8 +451,7 @@ export function OhlaOverviewDashboard() {
                     />
                 </div>
 
-                {/* Row 2 — 5 secondary KPIs (PBIX: Unique Visitors# / Ohla Auto Support# /
-                 *  Live Agent Support# / User Survey# / Avg Rate). */}
+                {/* Row 2 — 5 secondary KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mb-1">
                     <KpiCard
                         label={t('kpis.distinctUsers')}
@@ -408,10 +485,7 @@ export function OhlaOverviewDashboard() {
                     />
                 </div>
 
-                {/* Row 3 — PBIX 5-cell layout: left big BG donut, middle two donuts
-                 *  (Page Views by Action / Unique Visitor by Region), right two daily
-                 *  trend lines (Page Views Daily Trend / Unique Visitors Daily Trend).
-                 *  Fixed-height row so middle and right cells stay bottom-aligned. */}
+                {/* Row 3 — donuts + line trends */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-1 mb-1">
                     <div className="md:col-span-5">
                         <DonutCard
@@ -464,7 +538,7 @@ export function OhlaOverviewDashboard() {
                     </div>
                 </div>
 
-                {/* Row 4 — Auto Support vs Total Ask (PBIX bottom combo chart) */}
+                {/* Row 4 — Auto Support vs Total Ask */}
                 <div className="mb-1">
                     <StackedBarPercentLineCard
                         title={t('charts.behaviourTrend')}
