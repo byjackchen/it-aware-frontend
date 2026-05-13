@@ -162,10 +162,18 @@ export function ZeroResidualAssetsDashboard() {
         [rows],
     );
 
+    // Pre-narrow to zero-residual rows so the State / Substate option
+    // pools only surface values that actually exist within the page's
+    // dataset — picking, say, "Available - New" from the substate
+    // slicer never returns 0 rows surprisingly.
+    const zeroBase = useMemo(() => base.filter(isZeroResidual), [base]);
+
     const slicers: SlicerConfig[] = useMemo(() => {
         const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
         const procured = groupBy(base, procuredByOf).map((g) => g.key);
         const departments = groupBy(base, (r) => r.department ?? 'Unknown').map((g) => g.key);
+        const states = groupBy(zeroBase, (r) => r.asset_status ?? 'Unknown').map((g) => g.key);
+        const substates = groupBy(zeroBase, (r) => r.substatus ?? 'Unknown').map((g) => g.key);
         return [
             {
                 type: 'multi',
@@ -188,21 +196,39 @@ export function ZeroResidualAssetsDashboard() {
                 options: departments,
                 clientSide: true,
             },
+            {
+                type: 'multi',
+                param: 'asset_status',
+                label: t('filters.state'),
+                options: states,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'substatus',
+                label: t('filters.substate'),
+                options: substates,
+                clientSide: true,
+            },
         ];
-    }, [base, t]);
+    }, [base, zeroBase, t]);
 
     const filtered = useMemo(() => {
         const supportSel = assetFilter.supportGroups;
         const procuredSel = assetFilter.procuredBy;
         const deptSel = assetFilter.departments;
+        const stateSel = (filters.asset_status as string[]) ?? [];
+        const substateSel = (filters.substatus as string[]) ?? [];
         return base.filter((r) => {
             if (!isZeroResidual(r)) return false;
             if (supportSel.length && !supportSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
+            if (stateSel.length && !stateSel.includes(r.asset_status ?? 'Unknown')) return false;
+            if (substateSel.length && !substateSel.includes(r.substatus ?? 'Unknown')) return false;
             return true;
         });
-    }, [base, assetFilter]);
+    }, [base, assetFilter, filters]);
 
     const enriched: TableRow[] = useMemo(() => {
         return filtered.map((r) => {

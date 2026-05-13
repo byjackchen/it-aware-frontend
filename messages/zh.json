@@ -441,7 +441,8 @@
         "showingLocations": "显示 {count} 个地点（{scope}）",
         "scopeAllRegions": "所有区域",
         "scopeInItems": "{items}",
-        "scopeInItemsPlus": "{items} +{count}"
+        "scopeInItemsPlus": "{items} +{count}",
+        "substate": "子状态"
       },
       "tables": {
         "number": "编号",
@@ -1874,7 +1875,8 @@
       "showingLocations": "显示 {count} 个地点（{scope}）",
       "scopeAllRegions": "所有区域",
       "scopeInItems": "{items}",
-      "scopeInItemsPlus": "{items} +{count}"
+      "scopeInItemsPlus": "{items} +{count}",
+      "substate": "子状态"
     },
     "tables": {
       "number": "编号",
