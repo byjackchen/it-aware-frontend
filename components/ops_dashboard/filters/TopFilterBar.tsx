@@ -223,13 +223,18 @@ function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGri
                         </div>
                     );
                 }
+                const drLabel = slicer.clientSide ? `${slicer.label} ⓘ` : slicer.label;
                 return (
-                    <DateRangePicker
+                    <div
                         key={slicer.param.join(':')}
-                        label={slicer.label}
-                        value={getRange(slicer.param)}
-                        onChange={(next) => setDateRange(slicer.param, next)}
-                    />
+                        title={slicer.clientSide ? clientSideTooltip : undefined}
+                    >
+                        <DateRangePicker
+                            label={drLabel}
+                            value={getRange(slicer.param)}
+                            onChange={(next) => setDateRange(slicer.param, next)}
+                        />
+                    </div>
                 );
             })}
         </div>
