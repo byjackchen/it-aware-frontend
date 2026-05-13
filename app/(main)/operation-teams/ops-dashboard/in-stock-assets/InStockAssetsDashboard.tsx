@@ -185,7 +185,6 @@ export function InStockAssetsDashboard() {
     );
 
     const slicers: SlicerConfig[] = useMemo(() => {
-        const categories = groupBy(base, (r) => r.model_category).map((g) => g.key);
         const stockrooms = groupBy(base, (r) => r.stock_room).map((g) => g.key);
         const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
         const procured = groupBy(base, procuredByOf).map((g) => g.key);
@@ -212,7 +211,9 @@ export function InStockAssetsDashboard() {
                 options: departments,
                 clientSide: true,
             },
-            { type: 'multi', param: 'model_category', label: t('filters.modelCategory'), options: categories },
+            // Model Category slicer removed — the "By Category" donut on
+            // this page already supports click-to-filter, which makes
+            // the explicit slicer redundant.
             {
                 type: 'multi',
                 param: 'stock_room',
