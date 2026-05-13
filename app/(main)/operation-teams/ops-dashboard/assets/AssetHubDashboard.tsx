@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw } from 'lucide-react';
+import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -348,15 +348,12 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: Big-number KPI tiles — all sit on top so the
-                    at-a-glance health signal (Total / Active / InStock
-                    Rate + the operational sub-counts) is above the fold.
-                    Conditional colour rules:
+                {/* Row 1: headline counts + Zero Residual on the right.
+                    5-up grid so each tile reads as a big number.
                     - In-Stock Rate: <15% green, 15-25% yellow, >25% red
-                    - Unconfirmed / PendingRepair / PendingReturn:
-                      0 green, >0 yellow, >10 red
-                    Row is 8 cols wide — 3 headline tiles + 5 sub-tiles. */}
-                <div className="grid grid-cols-4 gap-3 mb-3">
+                    - Pending Image / Unconfirmed / PendingRepair /
+                      PendingReturn: 0 green, >0 yellow, >10 red */}
+                <div className="grid grid-cols-5 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalAssets')}
                         value={kpis.total}
@@ -381,27 +378,21 @@ export function AssetHubDashboard() {
                         tooltip={t('kpis.inStockRateInfo')}
                         valueColor={inStockRateColor}
                     />
-                </div>
-
-                {/* Pending Image — big banner. Surfaces the count of
-                    assets with substatus = "Pending Image" so the Ops
-                    team can spot a growing imaging queue at a glance.
-                    Colour rule:
-                      = 0   → green  (no backlog)
-                      1-10  → yellow (watch)
-                      > 10  → red    (attention)
-                    Clicking drills into the Asset Hub filtered to
-                    substatus = "Pending Image". */}
-                <div className="mb-3">
-                    <PendingImageBanner
-                        count={pendingImageCount}
-                        onClick={() => setFilters((f) => ({ ...f, substatus: ['Pending Image'] }))}
-                        isLight={isLight}
-                        title={t('charts.pendingImageTitle')}
-                        subtitle={t('charts.pendingImageSubtitle')}
-                        cta={t('charts.pendingImageCta')}
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                        linkLabel={t('links.openZeroResidualAssets')}
                     />
                 </div>
+
+                {/* Row 2: Pending Return / Pending Repair / Pending Image
+                    / Unconfirmed. Four "pending"-style sub-counts share
+                    the same 0-green / 1-10-yellow / >10-red colour rule.
+                    Pending Image clicking applies a substatus filter so
+                    the donuts + sub-status counts narrow to the imaging
+                    queue. */}
                 <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.pendingReturn')}
@@ -420,19 +411,22 @@ export function AssetHubDashboard() {
                         valueColor={pendingRuleColor(kpis.pendingRepair)}
                     />
                     <KpiCard
+                        label={t('kpis.pendingImage')}
+                        value={pendingImageCount}
+                        icon={ImageIcon}
+                        tooltip={t('kpis.pendingImageInfo')}
+                        valueColor={pendingRuleColor(pendingImageCount)}
+                        onClick={() =>
+                            setFilters((f) => ({ ...f, substatus: ['Pending Image'] }))
+                        }
+                    />
+                    <KpiCard
                         label={t('kpis.unconfirmed')}
                         value={kpis.unconfirmed}
                         icon={HelpCircle}
                         linkHref="/operation-teams/ops-dashboard/pending-assets"
                         linkLabel={t('links.openPendingAssets')}
                         valueColor={pendingRuleColor(kpis.unconfirmed)}
-                    />
-                    <KpiCard
-                        label={t('kpis.zeroResidual')}
-                        value={kpis.zeroResidual}
-                        icon={DollarSign}
-                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
-                        linkLabel={t('links.openZeroResidualAssets')}
                     />
                 </div>
 
@@ -538,117 +532,5 @@ export function AssetHubDashboard() {
                 </div>
             </div>
         </div>
-    );
-}
-
-/**
- * PendingImageBanner — full-width "big chart" banner that visualises the
- * Pending Image count as a single large number plus a traffic-light
- * coloured bar. Colour thresholds:
- *   • 0        → green  (healthy, no backlog)
- *   • 1-10     → yellow (watch)
- *   • > 10     → red    (attention)
- * The bar fills proportionally against a soft-cap of 30 so small values
- * still show movement, while anything above 30 saturates the bar.
- */
-interface PendingImageBannerProps {
-    count: number;
-    onClick: () => void;
-    isLight: boolean;
-    title: string;
-    subtitle: string;
-    cta: string;
-}
-
-function PendingImageBanner({
-    count,
-    onClick,
-    isLight,
-    title,
-    subtitle,
-    cta,
-}: PendingImageBannerProps) {
-    // Traffic-light bucket.
-    const bucket: 'green' | 'yellow' | 'red' =
-        count === 0 ? 'green' : count > 10 ? 'red' : 'yellow';
-
-    // Visual ramp — saturate the bar at 30 so the needle is meaningful
-    // for the common 0-30 range while still full-red beyond.
-    const BAR_CAP = 30;
-    const barPct = Math.min(100, (count / BAR_CAP) * 100);
-
-    const tone = {
-        green: {
-            border: isLight ? 'border-emerald-300' : 'border-emerald-500/40',
-            bg: isLight ? 'bg-gradient-to-br from-emerald-50 to-white' : 'bg-gradient-to-br from-emerald-500/10 to-slate-800/50',
-            ring: isLight ? 'ring-emerald-200' : 'ring-emerald-500/20',
-            text: isLight ? 'text-emerald-600' : 'text-emerald-300',
-            bar: 'bg-emerald-500',
-            barTrack: isLight ? 'bg-emerald-100' : 'bg-emerald-500/10',
-            chip: isLight ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-500/20 text-emerald-200',
-        },
-        yellow: {
-            border: isLight ? 'border-amber-300' : 'border-amber-500/40',
-            bg: isLight ? 'bg-gradient-to-br from-amber-50 to-white' : 'bg-gradient-to-br from-amber-500/10 to-slate-800/50',
-            ring: isLight ? 'ring-amber-200' : 'ring-amber-500/20',
-            text: isLight ? 'text-amber-600' : 'text-amber-300',
-            bar: 'bg-amber-500',
-            barTrack: isLight ? 'bg-amber-100' : 'bg-amber-500/10',
-            chip: isLight ? 'bg-amber-100 text-amber-700' : 'bg-amber-500/20 text-amber-200',
-        },
-        red: {
-            border: isLight ? 'border-red-300' : 'border-red-500/40',
-            bg: isLight ? 'bg-gradient-to-br from-red-50 to-white' : 'bg-gradient-to-br from-red-500/10 to-slate-800/50',
-            ring: isLight ? 'ring-red-200' : 'ring-red-500/20',
-            text: isLight ? 'text-red-600' : 'text-red-300',
-            bar: 'bg-red-500',
-            barTrack: isLight ? 'bg-red-100' : 'bg-red-500/10',
-            chip: isLight ? 'bg-red-100 text-red-700' : 'bg-red-500/20 text-red-200',
-        },
-    }[bucket];
-
-    const titleCls = isLight ? 'text-slate-800' : 'text-white';
-    const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-400';
-
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            title={cta}
-            className={`w-full text-left rounded-2xl border-2 p-5 ring-1 transition-all hover:shadow-md ${tone.border} ${tone.bg} ${tone.ring}`}
-        >
-            <div className="flex items-center justify-between gap-6">
-                {/* Left: title + subtitle */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                            className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wide ${tone.chip}`}
-                        >
-                            <span
-                                className={`w-1.5 h-1.5 rounded-full ${tone.bar}`}
-                                aria-hidden
-                            />
-                            {bucket === 'green' ? 'OK' : bucket === 'yellow' ? 'Watch' : 'Attention'}
-                        </span>
-                        <h3 className={`text-base font-semibold ${titleCls}`}>{title}</h3>
-                    </div>
-                    <p className={`text-xs mt-1 ${subtitleCls}`}>{subtitle}</p>
-                    {/* Bar */}
-                    <div className={`mt-3 h-2 rounded-full overflow-hidden ${tone.barTrack}`}>
-                        <div
-                            className={`h-full rounded-full ${tone.bar} transition-all`}
-                            style={{ width: `${barPct}%` }}
-                        />
-                    </div>
-                </div>
-                {/* Right: big number */}
-                <div className="shrink-0 text-right">
-                    <div className={`text-5xl font-bold tabular-nums ${tone.text}`}>
-                        {count.toLocaleString()}
-                    </div>
-                    <div className={`text-[11px] mt-0.5 ${subtitleCls}`}>{cta}</div>
-                </div>
-            </div>
-        </button>
     );
 }

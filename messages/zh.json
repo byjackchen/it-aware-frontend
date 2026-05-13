@@ -365,7 +365,9 @@
         "highPriority": "高优先级",
         "mediumPriority": "中优先级",
         "momDelta": "{arrow} 较上月 {pct}%",
-        "momFlat": "较上月持平"
+        "momFlat": "较上月持平",
+        "pendingImage": "待装机 (Pending Image)",
+        "pendingImageInfo": "substatus = 'Pending Image' 的资产数量。0 = 绿色；1-10 = 黄色；>10 = 红色。点击应用 substatus 过滤。"
       },
       "charts": {
         "ticketsByAssignmentGroup": "按分配组划分的工单",
@@ -1743,7 +1745,9 @@
       "momDelta": "{arrow} 较上月 {pct}%",
       "momFlat": "较上月持平",
       "unassigned": "未分派",
-      "unassignedInfo": "没有处理人的活跃工单（assigned_to 为空）"
+      "unassignedInfo": "没有处理人的活跃工单（assigned_to 为空）",
+      "pendingImage": "待装机 (Pending Image)",
+      "pendingImageInfo": "substatus = 'Pending Image' 的资产数量。0 = 绿色；1-10 = 黄色；>10 = 红色。点击应用 substatus 过滤。"
     },
     "charts": {
       "ticketsByAssignmentGroup": "按分配组",

@@ -685,7 +685,9 @@
         "highPriority": "High Priority",
         "mediumPriority": "Medium Priority",
         "momDelta": "{arrow} {pct}% vs last mo",
-        "momFlat": "flat vs last mo"
+        "momFlat": "flat vs last mo",
+        "pendingImage": "Pending Image",
+        "pendingImageInfo": "Assets with substatus = 'Pending Image'. 0 = green, 1-10 = yellow, >10 = red. Click to apply substatus filter."
       },
       "charts": {
         "ticketsByAssignmentGroup": "Tickets by Assignment Group",
@@ -2065,7 +2067,9 @@
       "momDelta": "{arrow} {pct}% vs last mo",
       "momFlat": "flat vs last mo",
       "unassigned": "Unassigned",
-      "unassignedInfo": "Active tickets with no assignee name (assigned_to is null or empty)"
+      "unassignedInfo": "Active tickets with no assignee name (assigned_to is null or empty)",
+      "pendingImage": "Pending Image",
+      "pendingImageInfo": "Assets with substatus = 'Pending Image'. 0 = green, 1-10 = yellow, >10 = red. Click to apply substatus filter."
     },
     "charts": {
       "ticketsByAssignmentGroup": "By Group",
