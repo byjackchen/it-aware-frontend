@@ -162,6 +162,7 @@ export interface HardwareRow {
     residual_value: string | number | null;
     cost: string | number | null;
     assigned_to_display_name: string | null;
+    assigned_to_username: string | null;
     worker_oid: string | null;
     is_active: boolean;
     assigned_date: string | null;
