@@ -154,7 +154,7 @@ export function TicketsPanel({
                     tooltip={t('kpis.unassignedInfo')}
                     linkHref="/operation-teams/ops-dashboard/unassigned"
                     linkLabel={t('links.openUnassigned')}
-                    valueColor={kpis.unassigned > 10 ? 'text-red-500' : kpis.unassigned > 0 ? 'text-yellow-500' : 'text-green-500'}
+                    valueColor={kpis.unassigned > 100 ? 'text-red-500' : kpis.unassigned > 0 ? 'text-yellow-500' : 'text-green-500'}
                 />
                 <KpiCard
                     label={t('kpis.highPriorityIncident')}
