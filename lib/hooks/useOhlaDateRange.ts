@@ -15,7 +15,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'itaware.ohla.dateRange.v1'
+// v2 — bumped to invalidate any persisted ranges from before the
+// "first-of-month → today" default landed. With v1 still cached, users
+// were seeing whatever wide window we shipped earlier (often months
+// out) even though the code's defaultRange() already returned MTD.
+const STORAGE_KEY = 'itaware.ohla.dateRange.v2'
+const LEGACY_STORAGE_KEYS = ['itaware.ohla.dateRange.v1']
 
 export interface OhlaDateRange {
     from: string // YYYY-MM-DD
@@ -44,6 +49,11 @@ function defaultRange(): OhlaDateRange {
 function readStored(): OhlaDateRange {
     if (typeof window === 'undefined') return defaultRange()
     try {
+        // Drop any legacy v1 (or earlier) entries so a stale wide
+        // window doesn't override the new MTD default.
+        for (const k of LEGACY_STORAGE_KEYS) {
+            window.localStorage.removeItem(k)
+        }
         const raw = window.localStorage.getItem(STORAGE_KEY)
         if (!raw) return defaultRange()
         const parsed = JSON.parse(raw) as Partial<OhlaDateRange>

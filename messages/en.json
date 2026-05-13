@@ -685,7 +685,9 @@
         "highPriority": "High Priority",
         "mediumPriority": "Medium Priority",
         "momDelta": "{arrow} {pct}% vs last mo",
-        "momFlat": "flat vs last mo"
+        "momFlat": "flat vs last mo",
+        "pendingImage": "Pending Image",
+        "pendingImageInfo": "Assets with substatus = 'Pending Image'. 0 = green, 1-10 = yellow, >10 = red. Click to apply substatus filter."
       },
       "charts": {
         "ticketsByAssignmentGroup": "Tickets by Assignment Group",
@@ -725,7 +727,10 @@
         "supportGroup": "Support Group",
         "supportGroupSubtitle": "Assets by support group",
         "cumulativeOpenedClosed": "Cumulative opened vs. closed",
-        "filterLegend": "Chart filter legend"
+        "filterLegend": "Chart filter legend",
+        "pendingImageTitle": "Pending Image devices",
+        "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
+        "pendingImageCta": "Click to filter"
       },
       "filters": {
         "title": "Filters",
@@ -756,7 +761,8 @@
         "showingLocations": "Showing {count, plural, one {# location} other {# locations}} {scope}",
         "scopeAllRegions": "across all regions",
         "scopeInItems": "in {items}",
-        "scopeInItemsPlus": "in {items} +{count}"
+        "scopeInItemsPlus": "in {items} +{count}",
+        "substate": "Substate"
       },
       "tables": {
         "number": "Number",
@@ -795,7 +801,11 @@
         "incident": "Incident",
         "request": "Request",
         "daysNoUpdate": "Days No Update",
-        "shortDescription": "Short Description"
+        "shortDescription": "Short Description",
+        "assetsTable": "Assets Detail",
+        "incidentDetail": "Incident Detail",
+        "catalogDetail": "Catalog Detail",
+        "assetDetail": "Asset Detail"
       },
       "tabs": {
         "pendingReturn": "Pending Return",
@@ -853,6 +863,21 @@
         "partialResult": "Still loading — the server is taking longer than expected. Please retry.",
         "loadFailed": "Failed to load data",
         "retry": "Retry"
+      },
+      "autoRefresh": {
+        "label": "Auto refresh",
+        "off": "Off",
+        "offShort": "Off",
+        "m5": "5 min",
+        "m5Short": "5m",
+        "m10": "10 min",
+        "m10Short": "10m",
+        "m15": "15 min",
+        "m15Short": "15m",
+        "m30": "30 min",
+        "m30Short": "30m",
+        "h1": "1 hour",
+        "h1Short": "1h"
       }
     },
     "SurveyAnalytics": {
@@ -1976,18 +2001,18 @@
       "activeIncidentInfo": "Open incident tickets count",
       "highPriorityIncident": "High Priority Incidents",
       "highPriorityIncidentInfo": "Open incidents with High priority",
-      "activeCatalog": "Catalog Requests",
-      "activeCatalogInfo": "Open service catalog requests count",
+      "activeCatalog": "Catalog Tasks",
+      "activeCatalogInfo": "Open service catalog tasks count",
       "activeAsset": "Asset Tasks",
       "activeAssetInfo": "Open asset task requests count",
-      "agingAsset30d": "Aging Assets >30d",
+      "agingAsset30d": "Aging Assets Task >30d",
       "agingAsset30dInfo": "Asset tasks unresolved for more than 30 days",
       "vipActive": "VIP Active",
       "vipActiveInfo": "Active incidents assigned to VIP stakeholders",
-      "agingIncidentsGt2d": "Aging >2d",
+      "agingIncidentsGt2d": "Aging Incident >2d",
       "agingIncidentsGt2dInfo": "Incidents open longer than 2 days",
-      "agingCatalogGt30d": "Aging Catalog >30d",
-      "agingCatalogGt30dInfo": "Catalog requests open longer than 30 days",
+      "agingCatalogGt30d": "Aging Catalog Task >30d",
+      "agingCatalogGt30dInfo": "Catalog tasks open longer than 30 days",
       "agingAssetsGt30d": "Aging Assets >30d",
       "agingAssetsGt30dInfo": "Asset tasks aging over 30 days",
       "totalAssets": "Total Assets",
@@ -2047,7 +2072,9 @@
       "momDelta": "{arrow} {pct}% vs last mo",
       "momFlat": "flat vs last mo",
       "unassigned": "Unassigned",
-      "unassignedInfo": "Active tickets with no assignee name (assigned_to is null or empty)"
+      "unassignedInfo": "Active tickets with no assignee name (assigned_to is null or empty)",
+      "pendingImage": "Pending Image",
+      "pendingImageInfo": "Assets with substatus = 'Pending Image'. 0 = green, 1-10 = yellow, >10 = red. Click to apply substatus filter."
     },
     "charts": {
       "ticketsByAssignmentGroup": "By Group",
@@ -2140,7 +2167,10 @@
       "filterLegend": "Chart filter legend",
       "byAssignee": "By Assignee",
       "byAssigneeSubtitle": "Top 10 assignees by active ticket count",
-      "byAssigneeInfo": "Active tickets grouped by assignee (top 10)"
+      "byAssigneeInfo": "Active tickets grouped by assignee (top 10)",
+      "pendingImageTitle": "Pending Image devices",
+      "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
+      "pendingImageCta": "Click to filter"
     },
     "filters": {
       "title": "Filters",
@@ -2171,7 +2201,8 @@
       "showingLocations": "Showing {count, plural, one {# location} other {# locations}} {scope}",
       "scopeAllRegions": "across all regions",
       "scopeInItems": "in {items}",
-      "scopeInItemsPlus": "in {items} +{count}"
+      "scopeInItemsPlus": "in {items} +{count}",
+      "substate": "Substate"
     },
     "tables": {
       "number": "Number",
@@ -2211,7 +2242,14 @@
       "incident": "Incident",
       "request": "Request",
       "daysNoUpdate": "Days No Update",
-      "shortDescription": "Short Description"
+      "shortDescription": "Short Description",
+      "detailTitle": "Ticket Detail",
+      "assetTask": "Asset Task",
+      "catalogTask": "Catalog Task",
+      "assetsTable": "Assets Detail",
+      "incidentDetail": "Incident Detail",
+      "catalogDetail": "Catalog Detail",
+      "assetDetail": "Asset Detail"
     },
     "tabs": {
       "pendingReturn": "Pending Return",
@@ -2282,6 +2320,21 @@
       "partialResult": "Still loading — the server is taking longer than expected. Please retry.",
       "loadFailed": "Failed to load data",
       "retry": "Retry"
+    },
+    "autoRefresh": {
+      "label": "Auto refresh",
+      "off": "Off",
+      "offShort": "Off",
+      "m5": "5 min",
+      "m5Short": "5m",
+      "m10": "10 min",
+      "m10Short": "10m",
+      "m15": "15 min",
+      "m15Short": "15m",
+      "m30": "30 min",
+      "m30Short": "30m",
+      "h1": "1 hour",
+      "h1Short": "1h"
     }
   },
   "SSCDashboard": {

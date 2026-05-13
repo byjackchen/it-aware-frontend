@@ -20,6 +20,8 @@ import {
     classifyRequestType,
     daysSinceUpdated,
     isActiveState,
+    isInScopeGroup,
+    openedAt,
 } from '@/lib/ops_dashboard/aggregate';
 import {
     AgingTable,
@@ -35,6 +37,7 @@ import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCo
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const PAGE_SIZE = 100;
 
@@ -94,13 +97,16 @@ export function AgingScTasksDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Base: catalog tasks + active + aging > 30d.
+    // Base: catalog tasks + active + aging > 30d + OIT scope.
+    // OIT-scope keeps this aligned with the Active Monitoring Hub's
+    // Aging >30d catalog-task KPI.
     const base: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
         return rows.filter(
             (r) =>
                 classifyRequestType(r) === 'catalog_task' &&
                 isActiveState(r.state) &&
+                isInScopeGroup(r.assigned_group) &&
                 daysSinceUpdated(r, now) > 30,
         );
     }, [data, now]);
@@ -131,7 +137,7 @@ export function AgingScTasksDashboard() {
                 _daysNoUpdate: daysSinceUpdated(r, now),
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
-                _openedFormatted: formatShortDate(r.created_at),
+                _openedFormatted: formatShortDate(openedAt(r)),
                 _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now],
@@ -164,13 +170,16 @@ export function AgingScTasksDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:aging-sc-tasks:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             <TopFilterBar

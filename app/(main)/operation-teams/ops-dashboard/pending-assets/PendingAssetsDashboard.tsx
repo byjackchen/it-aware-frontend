@@ -30,6 +30,7 @@ import { countryToRegion, extractCountry, normalizeRegion } from '@/lib/ops_dash
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const PAGE_SIZE = 100;
 
@@ -318,13 +319,16 @@ export function PendingAssetsDashboard() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.pendingSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:pending-assets:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Shared asset filter bar */}

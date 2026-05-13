@@ -26,6 +26,7 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard'
 import { DonutCard } from '@/components/ops_dashboard/DonutCard'
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -116,13 +117,16 @@ export function UserAskAnalysisDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:ohla-user-ask:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${chipBtn}`}
                     title={t('common.refresh')}
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
+                </div>
             </div>
 
             {/* Date slicer */}

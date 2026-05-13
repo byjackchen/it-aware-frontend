@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup, openedAt } from '@/lib/ops_dashboard/aggregate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
     TopFilterBar,
@@ -28,6 +28,7 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const PAGE_SIZE = 100;
 
@@ -176,7 +177,7 @@ export function UnassignedTicketsDashboard() {
                 _daysNoUpdate: daysSinceUpdated(r, now),
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
-                _openedFormatted: formatShortDate(r.created_at),
+                _openedFormatted: formatShortDate(openedAt(r)),
                 _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now, t],
@@ -240,7 +241,11 @@ export function UnassignedTicketsDashboard() {
                 key: '_openedFormatted',
                 label: t('tables.openedAt'),
                 width: '110px',
-                sortValue: (r) => Date.parse(String((r as unknown as { created_at: string }).created_at)) || 0,
+                // Sort on the upstream SN open time (source_created_at,
+                // falling back to created_at) to match the rendered date
+                // column. _openedFormatted is the YYYY-MM-DD slice of
+                // the same value, computed in the enrichment pass above.
+                sortValue: (r) => Date.parse(openedAt(r as unknown as { source_created_at?: string | null; created_at?: string | null })) || 0,
             },
             { key: 'title', label: t('tables.shortDescription') },
         ];
@@ -261,13 +266,16 @@ export function UnassignedTicketsDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:unassigned:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filter panel — Region/Country/Location only. */}

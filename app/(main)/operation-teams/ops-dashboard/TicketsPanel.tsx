@@ -109,8 +109,11 @@ export function TicketsPanel({
                 </span>
             </div>
 
-            {/* KPI row 1 */}
-            <div className="grid grid-cols-5 gap-2 mb-2">
+            {/* KPI row 1 — Total + per-type breakdown (Incidents,
+                Catalog Tasks, Asset Tasks). Unassigned moved to row 2
+                per user request so it sits next to the other
+                "needs-attention" tiles. */}
+            <div className="grid grid-cols-4 gap-2 mb-2">
                 <KpiCard
                     label={t('kpis.totalActive')}
                     value={kpis.totalActive}
@@ -139,6 +142,11 @@ export function TicketsPanel({
                 
                         tooltip={t('kpis.activeAssetInfo')}
     />
+            </div>
+            {/* KPI row 2 — Unassigned (lead) + High Priority + VIP +
+                Aging tiles share one row. Each tile drills into its
+                dedicated dashboard via the right-side arrow. */}
+            <div className="grid grid-cols-6 gap-2 mb-3">
                 <KpiCard
                     label={t('kpis.unassigned')}
                     value={kpis.unassigned}
@@ -148,11 +156,6 @@ export function TicketsPanel({
                     linkLabel={t('links.openUnassigned')}
                     valueColor={kpis.unassigned > 10 ? 'text-red-500' : kpis.unassigned > 0 ? 'text-yellow-500' : 'text-green-500'}
                 />
-            </div>
-            {/* KPI row 2 — High Priority + VIP + Aging tiles share one row.
-                Each tile (except High Priority) drills into its dedicated
-                dashboard via the right-side arrow. */}
-            <div className="grid grid-cols-5 gap-2 mb-3">
                 <KpiCard
                     label={t('kpis.highPriorityIncident')}
                     value={kpis.activeIncidentHigh}

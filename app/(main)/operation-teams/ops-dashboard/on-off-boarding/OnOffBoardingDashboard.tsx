@@ -21,7 +21,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { UserPlus, UserMinus, RefreshCw } from 'lucide-react';
+import { UserPlus, UserMinus, RefreshCw, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useRequests } from '@/lib/hooks/useOpsDashboard';
@@ -35,6 +35,7 @@ import {
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    openedAt,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -51,6 +52,7 @@ import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCo
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 /**
  * Two flow kinds exposed as tabs. Values serve as both the tab key and
@@ -164,7 +166,9 @@ function departmentOf(row: TicketRow): string {
 }
 
 function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
+    // Use upstream SN open date (source_created_at) per the ops-team
+    // contract; fall back to local created_at when missing.
+    return openedAt(row).slice(0, 10);
 }
 
 function trimLabel(label: string, max = 22): string {
@@ -289,7 +293,7 @@ export function OnOffBoardingDashboard() {
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
 
-    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => r.created_at, now)), [filtered, now]);
+    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => openedAt(r), now)), [filtered, now]);
     const activeMoM = useMemo(() => formatMoM(momActiveSnapshot(filtered, now)), [filtered, now]);
 
     const kpis = useMemo(() => {
@@ -428,10 +432,12 @@ export function OnOffBoardingDashboard() {
                 key: 'created_at',
                 label: t('charts.colOpened'),
                 width: 'w-32',
-                render: (r) => (r.created_at ?? '').slice(0, 10) || '—',
+                // Show upstream SN open date (source_created_at) per ops-team
+                // contract; falls back to local created_at when missing.
+                render: (r) => openedAt(r).slice(0, 10) || '—',
                 // Sort on parsed timestamp so newer/older ordering
                 // doesn't depend on the truncated YYYY-MM-DD string.
-                sortValue: (r) => Date.parse(r.created_at ?? '') || 0,
+                sortValue: (r) => Date.parse(openedAt(r)) || 0,
             },
         ],
         [t],
@@ -515,7 +521,9 @@ export function OnOffBoardingDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:on-off-boarding:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${
                             isLight
@@ -526,6 +534,7 @@ export function OnOffBoardingDashboard() {
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -779,23 +788,105 @@ export function OnOffBoardingDashboard() {
                     />
                 </div>
 
-                {/* Row 4: Ticket details table */}
-                <div className="mb-3">
-                    <DataTableCard
-                        title={t('charts.ticketDetails')}
-                        info={t('charts.ticketDetailsInfo')}
-                        subtitle={t('charts.ticketDetailsSubtitle', {
-                            shown: Math.min(filtered.length, 500).toLocaleString(),
-                            total: filtered.length.toLocaleString(),
-                        })}
-                        rows={filtered}
-                        columns={tableColumns}
-                        maxRows={500}
-                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
-                        csvFilename={`onoffboarding_${flow}`}
-                    />
-                </div>
+                {/* Row 4: Ticket details table — collapsible. Heavy on
+                    DOM (up to 500 rows) so we keep it folded by default
+                    and persist the user's choice per page. */}
+                <OnOffBoardingDetailSection
+                    isLight={isLight}
+                    title={t('charts.ticketDetails')}
+                    subtitle={t('charts.ticketDetailsSubtitle', {
+                        shown: Math.min(filtered.length, 500).toLocaleString(),
+                        total: filtered.length.toLocaleString(),
+                    })}
+                    info={t('charts.ticketDetailsInfo')}
+                    rows={filtered}
+                    columns={tableColumns}
+                    csvFilename={`onoffboarding_${flow}`}
+                    emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    storageKey={`ops-dashboard:on-off-boarding:${flow}:detail-open`}
+                />
             </div>
         </div>
+    );
+}
+
+interface OnOffBoardingDetailSectionProps {
+    isLight: boolean;
+    title: string;
+    subtitle: string;
+    info: string;
+    rows: TicketRow[];
+    columns: Column<TicketRow>[];
+    csvFilename: string;
+    emptyText: string;
+    storageKey: string;
+}
+
+function OnOffBoardingDetailSection({
+    isLight,
+    title,
+    subtitle,
+    info,
+    rows,
+    columns,
+    csvFilename,
+    emptyText,
+    storageKey,
+}: OnOffBoardingDetailSectionProps) {
+    const [open, setOpen] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return window.localStorage.getItem(storageKey) === '1';
+        } catch {
+            return false;
+        }
+    });
+
+    const titleCls = isLight ? 'text-slate-800' : 'text-white';
+    const mutedCls = isLight ? 'text-slate-500' : 'text-gray-400';
+    const cardCls = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
+
+    return (
+        <details
+            className={`mb-3 rounded-xl border ${cardCls}`}
+            open={open}
+            onToggle={(e) => {
+                const next = (e.currentTarget as HTMLDetailsElement).open;
+                setOpen(next);
+                try {
+                    window.localStorage.setItem(storageKey, next ? '1' : '0');
+                } catch {
+                    /* ignore */
+                }
+            }}
+        >
+            <summary
+                className={`list-none cursor-pointer select-none px-4 py-3 flex items-center justify-between ${titleCls}`}
+            >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                    <ChevronDown
+                        className={`w-4 h-4 transition-transform ${open ? 'rotate-0' : '-rotate-90'}`}
+                    />
+                    <span>{title}</span>
+                    <span
+                        className={`text-xs font-normal ${mutedCls}`}
+                        title={info}
+                    >
+                        — {subtitle}
+                    </span>
+                </span>
+            </summary>
+            {open && (
+                <div className="px-4 pb-4">
+                    <DataTableCard
+                        rows={rows}
+                        columns={columns}
+                        maxRows={500}
+                        emptyText={emptyText}
+                        csvFilename={csvFilename}
+                    />
+                </div>
+            )}
+        </details>
     );
 }

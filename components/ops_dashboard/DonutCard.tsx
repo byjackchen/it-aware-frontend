@@ -153,20 +153,101 @@ export function DonutCard({
                                     );
                                 })}
                             </Pie>
-                            {/* Themed tooltip — recharts' default is
-                                a white panel with black text, which is
-                                illegible on the dark dashboard theme. */}
+                            {/* Themed tooltip — shows slice name + count
+                                + share-of-total. recharts' default is a
+                                white panel with black text, which is
+                                illegible on the dark dashboard theme,
+                                AND it doesn't surface the slice name on
+                                Pie charts unless we render a custom
+                                content. */}
                             <Tooltip
-                                contentStyle={{
-                                    backgroundColor: isLight ? '#fff' : '#1e293b',
-                                    border: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '8px',
-                                    color: isLight ? '#1e293b' : '#f1f5f9',
-                                    fontSize: '12px',
+                                cursor={false}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const entry = payload[0];
+                                    const name = (entry.payload as { name?: string }).name ?? '';
+                                    const value = Number(entry.value ?? 0);
+                                    const pct = total > 0 ? (value / total) * 100 : 0;
+                                    const swatch = (entry.payload as { color?: string }).color;
+                                    return (
+                                        <div
+                                            style={{
+                                                backgroundColor: isLight ? '#fff' : '#1e293b',
+                                                border: isLight
+                                                    ? '1px solid #e2e8f0'
+                                                    : '1px solid rgba(255,255,255,0.12)',
+                                                borderRadius: 8,
+                                                color: isLight ? '#1e293b' : '#f1f5f9',
+                                                fontSize: 12,
+                                                padding: '8px 10px',
+                                                lineHeight: 1.4,
+                                                boxShadow: isLight
+                                                    ? '0 4px 12px rgba(15,23,42,0.08)'
+                                                    : '0 4px 12px rgba(0,0,0,0.4)',
+                                                minWidth: 140,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    fontWeight: 600,
+                                                    marginBottom: 2,
+                                                }}
+                                            >
+                                                {swatch && (
+                                                    <span
+                                                        style={{
+                                                            width: 8,
+                                                            height: 8,
+                                                            borderRadius: 2,
+                                                            background: swatch,
+                                                            display: 'inline-block',
+                                                        }}
+                                                    />
+                                                )}
+                                                <span>{name}</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    gap: 12,
+                                                    color: isLight ? '#475569' : '#94a3b8',
+                                                }}
+                                            >
+                                                <span>Count</span>
+                                                <span
+                                                    style={{
+                                                        color: isLight ? '#1e293b' : '#f1f5f9',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                    }}
+                                                >
+                                                    {value.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    gap: 12,
+                                                    color: isLight ? '#475569' : '#94a3b8',
+                                                }}
+                                            >
+                                                <span>Share</span>
+                                                <span
+                                                    style={{
+                                                        color: isLight ? '#1e293b' : '#f1f5f9',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                    }}
+                                                >
+                                                    {pct.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
                                 }}
-                                itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
-                                labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
-                                formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
                             />
                             {!interactive && (
                                 <Legend

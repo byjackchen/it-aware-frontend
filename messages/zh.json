@@ -365,7 +365,9 @@
         "highPriority": "高优先级",
         "mediumPriority": "中优先级",
         "momDelta": "{arrow} 较上月 {pct}%",
-        "momFlat": "较上月持平"
+        "momFlat": "较上月持平",
+        "pendingImage": "待装机 (Pending Image)",
+        "pendingImageInfo": "substatus = 'Pending Image' 的资产数量。0 = 绿色；1-10 = 黄色；>10 = 红色。点击应用 substatus 过滤。"
       },
       "charts": {
         "ticketsByAssignmentGroup": "按分配组划分的工单",
@@ -405,7 +407,10 @@
         "supportGroup": "支持组",
         "supportGroupSubtitle": "按支持组统计的资产",
         "cumulativeOpenedClosed": "累计开单 vs 关闭",
-        "filterLegend": "图表筛选图例"
+        "filterLegend": "图表筛选图例",
+        "pendingImageTitle": "待装机设备 (Pending Image)",
+        "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
+        "pendingImageCta": "点击查看详情"
       },
       "filters": {
         "title": "筛选器",
@@ -436,7 +441,8 @@
         "showingLocations": "显示 {count} 个地点（{scope}）",
         "scopeAllRegions": "所有区域",
         "scopeInItems": "{items}",
-        "scopeInItemsPlus": "{items} +{count}"
+        "scopeInItemsPlus": "{items} +{count}",
+        "substate": "子状态"
       },
       "tables": {
         "number": "编号",
@@ -475,7 +481,11 @@
         "incident": "事件",
         "request": "请求",
         "daysNoUpdate": "未更新天数",
-        "shortDescription": "简要描述"
+        "shortDescription": "简要描述",
+        "assetsTable": "资产明细",
+        "incidentDetail": "事件明细",
+        "catalogDetail": "服务目录明细",
+        "assetDetail": "资产明细"
       },
       "tabs": {
         "pendingReturn": "待归还",
@@ -533,6 +543,21 @@
         "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
         "loadFailed": "加载数据失败",
         "retry": "重试"
+      },
+      "autoRefresh": {
+        "label": "自动刷新",
+        "off": "关闭",
+        "offShort": "关",
+        "m5": "5 分钟",
+        "m5Short": "5分",
+        "m10": "10 分钟",
+        "m10Short": "10分",
+        "m15": "15 分钟",
+        "m15Short": "15分",
+        "m30": "30 分钟",
+        "m30Short": "30分",
+        "h1": "1 小时",
+        "h1Short": "1时"
       }
     },
     "SurveyAnalytics": {
@@ -1654,18 +1679,18 @@
       "activeIncidentInfo": "待处理事件工单数",
       "highPriorityIncident": "高优先级事件",
       "highPriorityIncidentInfo": "高优先级待处理事件数",
-      "activeCatalog": "目录请求",
-      "activeCatalogInfo": "待处理的服务目录请求数",
+      "activeCatalog": "Catalog Tasks",
+      "activeCatalogInfo": "Open service catalog tasks count",
       "activeAsset": "资产任务",
       "activeAssetInfo": "待处理的资产任务请求数",
-      "agingAsset30d": "积压资产 >30 天",
-      "agingAsset30dInfo": "超过 30 天未解决的资产任务",
+      "agingAsset30d": "Aging Assets Task >30d",
+      "agingAsset30dInfo": "Asset tasks unresolved for more than 30 days",
       "vipActive": "VIP 活动",
       "vipActiveInfo": "分配给 VIP 用户的活动事件",
-      "agingIncidentsGt2d": "积压 >2 天",
-      "agingIncidentsGt2dInfo": "打开超过 2 天的事件",
-      "agingCatalogGt30d": "积压目录 >30 天",
-      "agingCatalogGt30dInfo": "打开超过 30 天的目录请求",
+      "agingIncidentsGt2d": "Aging Incident >2d",
+      "agingIncidentsGt2dInfo": "Incidents open longer than 2 days",
+      "agingCatalogGt30d": "Aging Catalog Task >30d",
+      "agingCatalogGt30dInfo": "Catalog tasks open longer than 30 days",
       "agingAssetsGt30d": "积压资产 >30 天",
       "agingAssetsGt30dInfo": "超过 30 天的资产任务",
       "totalAssets": "硬件总数",
@@ -1725,7 +1750,9 @@
       "momDelta": "{arrow} 较上月 {pct}%",
       "momFlat": "较上月持平",
       "unassigned": "未分派",
-      "unassignedInfo": "没有处理人的活跃工单（assigned_to 为空）"
+      "unassignedInfo": "没有处理人的活跃工单（assigned_to 为空）",
+      "pendingImage": "待装机 (Pending Image)",
+      "pendingImageInfo": "substatus = 'Pending Image' 的资产数量。0 = 绿色；1-10 = 黄色；>10 = 红色。点击应用 substatus 过滤。"
     },
     "charts": {
       "ticketsByAssignmentGroup": "按分配组",
@@ -1818,7 +1845,10 @@
       "filterLegend": "图表筛选图例",
       "byAssignee": "按处理人",
       "byAssigneeSubtitle": "按活跃工单数排名前 10 的处理人",
-      "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）"
+      "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）",
+      "pendingImageTitle": "待装机设备 (Pending Image)",
+      "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
+      "pendingImageCta": "点击查看详情"
     },
     "filters": {
       "title": "筛选器",
@@ -1849,7 +1879,8 @@
       "showingLocations": "显示 {count} 个地点（{scope}）",
       "scopeAllRegions": "所有区域",
       "scopeInItems": "{items}",
-      "scopeInItemsPlus": "{items} +{count}"
+      "scopeInItemsPlus": "{items} +{count}",
+      "substate": "子状态"
     },
     "tables": {
       "number": "编号",
@@ -1889,7 +1920,14 @@
       "incident": "事件",
       "request": "请求",
       "daysNoUpdate": "未更新天数",
-      "shortDescription": "简要描述"
+      "shortDescription": "简要描述",
+      "detailTitle": "工单明细",
+      "assetTask": "Asset Task",
+      "catalogTask": "Catalog Task",
+      "assetsTable": "资产明细",
+      "incidentDetail": "事件明细",
+      "catalogDetail": "服务目录明细",
+      "assetDetail": "资产明细"
     },
     "tabs": {
       "pendingReturn": "待归还",
@@ -1960,6 +1998,21 @@
       "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
       "loadFailed": "加载数据失败",
       "retry": "重试"
+    },
+    "autoRefresh": {
+      "label": "自动刷新",
+      "off": "关闭",
+      "offShort": "关",
+      "m5": "5 分钟",
+      "m5Short": "5分",
+      "m10": "10 分钟",
+      "m10Short": "10分",
+      "m15": "15 分钟",
+      "m15Short": "15分",
+      "m30": "30 分钟",
+      "m30Short": "30分",
+      "h1": "1 小时",
+      "h1Short": "1时"
     }
   },
   "SSCDashboard": {

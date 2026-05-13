@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { PackageCheck, DollarSign, Calendar, RefreshCw } from 'lucide-react';
+import { PackageCheck, DollarSign, Calendar, RefreshCw, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useHardwares } from '@/lib/hooks/useOpsDashboard';
@@ -22,6 +22,7 @@ import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
 import { countryToRegion, extractCountry, normalizeRegion } from '@/lib/ops_dashboard/region';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 /**
  * Support-group classifier — same region-fallback chain Asset Hub
@@ -176,6 +177,20 @@ export function InStockAssetsDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     // Capture "now" at mount so age math is stable across re-renders.
     const [now] = useState<number>(() => Date.now());
+    // Detail table is collapsed by default — keeps the page light on
+    // first render. Choice persists per page via localStorage.
+    const [detailOpen, setDetailOpen] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return (
+                window.localStorage.getItem(
+                    'ops-dashboard:in-stock-assets:detail-open',
+                ) === '1'
+            );
+        } catch {
+            return false;
+        }
+    });
 
     // Base set for this page: dashboard categories AND in-stock.
     const base = useMemo(
@@ -184,7 +199,6 @@ export function InStockAssetsDashboard() {
     );
 
     const slicers: SlicerConfig[] = useMemo(() => {
-        const categories = groupBy(base, (r) => r.model_category).map((g) => g.key);
         const stockrooms = groupBy(base, (r) => r.stock_room).map((g) => g.key);
         const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
         const procured = groupBy(base, procuredByOf).map((g) => g.key);
@@ -211,7 +225,9 @@ export function InStockAssetsDashboard() {
                 options: departments,
                 clientSide: true,
             },
-            { type: 'multi', param: 'model_category', label: t('filters.modelCategory'), options: categories },
+            // Model Category slicer removed — the "By Category" donut on
+            // this page already supports click-to-filter, which makes
+            // the explicit slicer redundant.
             {
                 type: 'multi',
                 param: 'stock_room',
@@ -374,13 +390,16 @@ export function InStockAssetsDashboard() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.inStockSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:in-stock-assets:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -474,27 +493,63 @@ export function InStockAssetsDashboard() {
                 />
             </div>
 
-            {/* Table */}
-            <div className="flex-1 min-h-0">
-                <DataTable<TableRow>
-                    rows={pageRows}
-                    cols={cols}
-                    searchKeys={['serial_number', 'model_display_name', 'model_name', 'stock_room', 'model_category'] as (keyof TableRow)[]}
-                    total={enriched.length}
-                    skip={page.skip}
-                    limit={page.limit}
-                    onPageChange={setPage}
-                    loading={loading}
-                    partial={partial}
-                    error={error}
-                    onRetry={() => void refetch()}
-                    emptyText={t('empty.noData')}
-                    loadingText={t('empty.loading')}
-                    partialText={t('empty.partialResult')}
-                    csvFilename="in_stock_assets"
-                    csvRows={enriched}
-                />
-            </div>
+            {/* Detail table — collapsible. The page header, KPIs,
+                donuts, and bar chart cover the at-a-glance view; the
+                full row-level breakdown lives behind a disclosure so
+                the page stays light on first render. Choice is
+                persisted to localStorage. */}
+            <details
+                className={`${detailOpen ? 'flex-1 min-h-0 flex flex-col' : 'shrink-0'} rounded-xl border ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
+                open={detailOpen}
+                onToggle={(e) => {
+                    const open = (e.currentTarget as HTMLDetailsElement).open;
+                    setDetailOpen(open);
+                    try {
+                        window.localStorage.setItem(
+                            'ops-dashboard:in-stock-assets:detail-open',
+                            open ? '1' : '0',
+                        );
+                    } catch {
+                        /* ignore */
+                    }
+                }}
+            >
+                <summary
+                    className={`list-none cursor-pointer select-none px-4 py-3 flex items-center justify-between shrink-0 ${textMain}`}
+                >
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                        <ChevronDown
+                            className={`w-4 h-4 transition-transform ${detailOpen ? 'rotate-0' : '-rotate-90'}`}
+                        />
+                        {t('tables.assetsTable')}
+                    </span>
+                    <span className={`text-xs ${textMuted}`}>
+                        {t('pages.records', { count: enriched.length.toLocaleString() })}
+                    </span>
+                </summary>
+                {detailOpen && (
+                    <div className="px-4 pb-4 flex-1 min-h-0 overflow-auto">
+                        <DataTable<TableRow>
+                            rows={pageRows}
+                            cols={cols}
+                            searchKeys={['serial_number', 'model_display_name', 'model_name', 'stock_room', 'model_category'] as (keyof TableRow)[]}
+                            total={enriched.length}
+                            skip={page.skip}
+                            limit={page.limit}
+                            onPageChange={setPage}
+                            loading={loading}
+                            partial={partial}
+                            error={error}
+                            onRetry={() => void refetch()}
+                            emptyText={t('empty.noData')}
+                            loadingText={t('empty.loading')}
+                            partialText={t('empty.partialResult')}
+                            csvFilename="in_stock_assets"
+                            csvRows={enriched}
+                        />
+                    </div>
+                )}
+            </details>
         </div>
     );
 }

@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw } from 'lucide-react';
+import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -33,6 +33,9 @@ import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 const MAC_COLOR = '#6366f1';
 const WIN_COLOR = '#3b82f6';
@@ -177,6 +180,17 @@ export function AssetHubDashboard() {
 
     const kpis = useMemo(() => summarizeAssets(filtered), [filtered]);
 
+    // Pending Image — count assets whose `substatus` equals "Pending Image"
+    // (case-insensitive). Surfaced as a dedicated big-chart banner below
+    // Row 1 so the operations team can spot a growing queue at a glance.
+    const pendingImageCount = useMemo(() => {
+        let n = 0;
+        for (const r of filtered) {
+            if ((r.substatus ?? '').trim().toLowerCase() === 'pending image') n += 1;
+        }
+        return n;
+    }, [filtered]);
+
     const procuredBySlices = useMemo(() => {
         return groupBy(filtered, procuredByOf)
             .slice(0, 8)
@@ -274,6 +288,73 @@ export function AssetHubDashboard() {
     const pendingRuleColor = (n: number): string =>
         n > 10 ? 'text-red-500' : n > 0 ? 'text-yellow-500' : 'text-green-500';
 
+    // ── Detail table at the bottom — collapsible. Rows mirror the
+    //   `filtered` HardwareRow set so it always reflects the current
+    //   slicer + donut-driven filter state.
+    interface AssetDetailRow extends Record<string, unknown> {
+        oid: string;
+        serial_number: string;
+        model_category: string | null;
+        model_name: string | null;
+        asset_status: string | null;
+        substatus: string | null;
+        stock_room: string | null;
+        assigned_to_display_name: string | null;
+        department: string | null;
+        _supportGroup: string;
+        _procuredBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: AssetDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            serial_number: r.serial_number,
+            model_category: r.model_category,
+            model_name: r.model_name,
+            asset_status: r.asset_status,
+            substatus: r.substatus,
+            stock_room: r.stock_room,
+            assigned_to_display_name: r.assigned_to_display_name,
+            department: r.department,
+            _supportGroup: supportGroupOf(r),
+            _procuredBy: procuredByOf(r),
+        }));
+    }, [filtered]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<AssetDetailRow>[] = useMemo(() => [
+        {
+            key: 'serial_number',
+            label: t('tables.serialNumber'),
+            width: '160px',
+            render: (r) => <span className="font-mono text-xs">{r.serial_number}</span>,
+        },
+        { key: 'model_category', label: t('tables.modelCategory'), width: '120px' },
+        {
+            key: 'model_name',
+            label: t('tables.model'),
+            width: '200px',
+            render: (r) => r.model_name ?? '—',
+        },
+        { key: 'asset_status', label: t('tables.state'), width: '120px', render: (r) => r.asset_status ?? '—' },
+        { key: 'substatus', label: t('tables.substate'), width: '160px', render: (r) => r.substatus ?? '—' },
+        { key: 'stock_room', label: t('filters.stockroom'), width: '140px', render: (r) => r.stock_room ?? '—' },
+        {
+            key: 'assigned_to_display_name',
+            label: t('tables.assignedTo'),
+            width: '160px',
+            render: (r) => r.assigned_to_display_name ?? '—',
+        },
+        { key: 'department', label: t('tables.department'), width: '140px', render: (r) => r.department ?? '—' },
+        { key: '_supportGroup', label: t('tables.supportGroup'), width: '150px' },
+        { key: '_procuredBy', label: t('filters.procuredBy'), width: '120px' },
+    ], [t]);
+
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
             {/* Header */}
@@ -296,13 +377,16 @@ export function AssetHubDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:assets:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -333,14 +417,8 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: Big-number KPI tiles — all sit on top so the
-                    at-a-glance health signal (Total / Active / InStock
-                    Rate + the operational sub-counts) is above the fold.
-                    Conditional colour rules:
-                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red
-                    - Unconfirmed / PendingRepair / PendingReturn:
-                      0 green, >0 yellow, >10 red
-                    Row is 8 cols wide — 3 headline tiles + 5 sub-tiles. */}
+                {/* Row 1: headline counts.
+                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red */}
                 <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalAssets')}
@@ -354,20 +432,28 @@ export function AssetHubDashboard() {
                         tooltip={t('kpis.activeHardwareInfo')}
                     />
                     <KpiCard
-                        label={t('kpis.inStockRate')}
-                        value={kpis.total > 0 ? `${inStockPct}%` : '—'}
-                        tooltip={t('kpis.inStockRateInfo')}
-                        valueColor={inStockRateColor}
-                    />
-                    <KpiCard
                         label={t('kpis.inStock')}
                         value={kpis.inStock}
                         icon={PackageCheck}
                         linkHref="/operation-teams/ops-dashboard/in-stock-assets"
                         linkLabel={t('links.openInStockAssets')}
                     />
+                    <KpiCard
+                        label={t('kpis.inStockRate')}
+                        value={kpis.total > 0 ? `${inStockPct}%` : '—'}
+                        tooltip={t('kpis.inStockRateInfo')}
+                        valueColor={inStockRateColor}
+                    />
                 </div>
-                <div className="grid grid-cols-4 gap-3 mb-3">
+
+                {/* Row 2: Pending Return / Pending Repair / Pending Image
+                    / Unconfirmed / Zero Residual. Pending* sub-counts
+                    share the 0-green / 1-10-yellow / >10-red rule.
+                    Pending Image clicking applies a substatus filter so
+                    the donuts + sub-status counts narrow to the imaging
+                    queue. Zero Residual sits on the right as the
+                    operational tail. */}
+                <div className="grid grid-cols-5 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.pendingReturn')}
                         value={kpis.pendingReturn}
@@ -383,6 +469,16 @@ export function AssetHubDashboard() {
                         linkHref="/operation-teams/ops-dashboard/pending-assets"
                         linkLabel={t('links.openPendingAssets')}
                         valueColor={pendingRuleColor(kpis.pendingRepair)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingImage')}
+                        value={pendingImageCount}
+                        icon={ImageIcon}
+                        tooltip={t('kpis.pendingImageInfo')}
+                        valueColor={pendingRuleColor(pendingImageCount)}
+                        onClick={() =>
+                            setFilters((f) => ({ ...f, substatus: ['Pending Image'] }))
+                        }
                     />
                     <KpiCard
                         label={t('kpis.unconfirmed')}
@@ -500,6 +596,35 @@ export function AssetHubDashboard() {
                             </BarChart>
                         </ResponsiveContainer>
                     )}
+                </div>
+
+                {/* Detail table — collapsible. Mirrors the filtered
+                    HardwareRow set with search, sort, pagination, and
+                    CSV export. */}
+                <div className="mt-3 mb-3">
+                    <CollapsibleDetailTable<AssetDetailRow>
+                        storageKey="ops-dashboard:assets:detail-open"
+                        title={t('tables.assetDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['serial_number', 'model_name', 'assigned_to_display_name', '_supportGroup', 'stock_room'] as (keyof AssetDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="assets_detail"
+                    />
                 </div>
             </div>
         </div>

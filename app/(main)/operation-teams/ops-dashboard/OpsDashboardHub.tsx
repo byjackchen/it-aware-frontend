@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { BarChart3, RefreshCw } from 'lucide-react';
+import { BarChart3, ChevronDown, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
@@ -30,6 +30,7 @@ import {
     isInScopeGroup,
     momActiveSnapshot,
     monthsFromRange,
+    openedAt,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
@@ -44,7 +45,9 @@ import {
     normalizeRegion,
 } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TicketsPanel, type TicketKpiDeltas, type TicketKpis } from './TicketsPanel';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || 'Unknown';
@@ -193,6 +196,14 @@ export function OpsDashboardHub() {
 
     // Stable clock so aging math doesn't flip during re-renders.
     const [now] = useState<number>(() => Date.now());
+
+    // Detail-table state (client-side pagination on the already-loaded
+    // activeTickets slice). Collapsed by default to keep the Hub light
+    // on first render; the table materialises on first expansion.
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
 
     const allTickets: TicketRow[] = useMemo(() => {
         const a = incidentQuery.data?.items ?? [];
@@ -357,6 +368,138 @@ export function OpsDashboardHub() {
         [activeTickets],
     );
 
+    // Detail table rows — enrich each active ticket with the derived
+    // fields the table surfaces (type label, days-without-update,
+    // location / region / opened date). Computed lazily: only when the
+    // user expands the collapsible. Reset pagination to page 1 whenever
+    // the filter set changes (activeTickets identity shifts).
+    //
+    // DataTable's generic wants T extends Record<string, unknown> so the
+    // shape is spelled out explicitly rather than intersected with
+    // TicketRow (intersecting with a non-record type breaks the
+    // constraint).
+    interface DetailRow extends Record<string, unknown> {
+        oid: string;
+        stable_id: string;
+        object_type: 'incident' | 'request';
+        title: string | null;
+        state: string;
+        priority: string;
+        assigned_group: string | null;
+        assigned_to_name: string | null;
+        _type: 'incident' | 'request';
+        _typeLabel: string;
+        _daysNoUpdate: number;
+        _location: string;
+        _region: Region;
+        _openedAt: string;
+        _openedBy: string;
+    }
+    const detailRows: DetailRow[] = useMemo(() => {
+        if (!detailOpen) return [];
+        return activeTickets.map((r) => {
+            const typeKey: 'incident' | 'request' = r.object_type === 'incident' ? 'incident' : 'request';
+            let typeLabel: string;
+            if (typeKey === 'incident') typeLabel = t('tables.incident');
+            else {
+                const rt = classifyRequestType(r);
+                typeLabel =
+                    rt === 'asset_task' ? t('tables.assetTask')
+                        : rt === 'catalog_task' ? t('tables.catalogTask')
+                            : t('tables.request');
+            }
+            const opened = openedAt(r);
+            return {
+                oid: r.oid,
+                stable_id: r.stable_id,
+                object_type: typeKey,
+                title: r.title,
+                state: r.state,
+                priority: r.priority,
+                assigned_group: r.assigned_group,
+                assigned_to_name: r.assigned_to_name,
+                _type: typeKey,
+                _typeLabel: typeLabel,
+                _daysNoUpdate: daysSinceUpdated(r, now),
+                _location: locationOf(r),
+                _region: regionOf(r),
+                _openedAt: opened,
+                _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
+            };
+        });
+    }, [detailOpen, activeTickets, now, t]);
+
+    // Compute effective skip so filter changes that shrink the row set
+    // below the current page offset don't leave the table blank.
+    // We clamp at read time rather than via a useEffect to keep the
+    // hook tree shallow.
+    const detailTotal = activeTickets.length;
+    const effectiveSkip = detailPage.skip >= detailTotal ? 0 : detailPage.skip;
+
+    const detailPageRows = useMemo(
+        () => detailRows.slice(effectiveSkip, effectiveSkip + detailPage.limit),
+        [detailRows, effectiveSkip, detailPage.limit],
+    );
+
+    const detailCols: ColDef<DetailRow>[] = useMemo(() => {
+        const badgeCls = (type: 'incident' | 'request') =>
+            type === 'incident'
+                ? isLight ? 'bg-red-50 text-red-700' : 'bg-red-500/15 text-red-300'
+                : isLight ? 'bg-blue-50 text-blue-700' : 'bg-blue-500/15 text-blue-300';
+        return [
+            {
+                key: 'stable_id',
+                label: t('tables.number'),
+                width: '120px',
+                render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+            },
+            {
+                key: '_typeLabel',
+                label: t('tables.type'),
+                width: '110px',
+                render: (r) => (
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${badgeCls(r._type)}`}>
+                        {r._typeLabel}
+                    </span>
+                ),
+            },
+            { key: 'state', label: t('tables.state'), width: '130px' },
+            { key: 'priority', label: t('tables.priority'), width: '90px' },
+            {
+                key: '_daysNoUpdate',
+                label: t('tables.daysNoUpdate'),
+                width: '110px',
+                render: (r) => {
+                    const cls = r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
+                        : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                    return <span className={cls}>{r._daysNoUpdate}d</span>;
+                },
+                sortValue: (r) => r._daysNoUpdate,
+                csvValue: (r) => r._daysNoUpdate,
+            },
+            { key: 'assigned_group', label: t('tables.assignmentGroup'), width: '170px', render: (r) => r.assigned_group ?? '—' },
+            { key: 'assigned_to_name', label: t('tables.assignedTo'), width: '140px', render: (r) => r.assigned_to_name ?? '—' },
+            { key: '_openedBy', label: t('tables.openedBy'), width: '140px' },
+            { key: '_region', label: t('tables.region'), width: '90px' },
+            { key: '_location', label: t('tables.location'), width: '150px' },
+            {
+                key: '_openedAt',
+                label: t('tables.openedAt'),
+                width: '110px',
+                render: (r) => r._openedAt ? new Date(r._openedAt).toLocaleDateString() : '—',
+                sortValue: (r) => r._openedAt,
+                csvValue: (r) => r._openedAt,
+            },
+            {
+                key: 'title',
+                label: t('tables.title'),
+                width: '360px',
+                render: (r) => <span className="truncate block" title={r.title ?? ''}>{r.title ?? ''}</span>,
+            },
+        ];
+    }, [isLight, t]);
+
+
     const trendMonths = useMemo(
         () => monthsFromRange(ticketDateRange.from, ticketDateRange.to, now),
         [ticketDateRange.from, ticketDateRange.to, now],
@@ -442,13 +585,16 @@ export function OpsDashboardHub() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetchAll()} storageKey="ops-dashboard:hub:auto-refresh" />
+                    <button
                     onClick={() => void refetchAll()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filter panel — Region/Country in headerSlot applies to
@@ -534,6 +680,58 @@ export function OpsDashboardHub() {
                     selectedGroups={selectedAssignedGroups}
                     onGroupLegendToggle={onGroupLegendToggle}
                 />
+
+                {/*
+                 * Collapsible detail table — shows every active ticket that
+                 * passed the Hub's filter chain (region/country/location +
+                 * OIT scope + active state). Collapsed by default so the
+                 * Hub stays light on first render; we also skip the rows
+                 * enrichment useMemo until ``detailOpen`` flips true.
+                 *
+                 * Uses a native <details>/<summary> pair rather than a
+                 * headless-UI disclosure because (a) zero dep, (b) keyboard
+                 * / a11y come free, (c) matches the lean primitive style
+                 * the rest of this dashboard uses.
+                 *
+                 * DataTable provides sort + CSV export out of the box;
+                 * we pass the full enriched row set as ``csvRows`` so
+                 * Export CSV downloads every filtered ticket, not just
+                 * the current page.
+                 */}
+                <details
+                    className={`mt-3 rounded-xl border ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
+                    open={detailOpen}
+                    onToggle={(e) => setDetailOpen((e.currentTarget as HTMLDetailsElement).open)}
+                >
+                    <summary
+                        className={`list-none cursor-pointer select-none px-4 py-3 flex items-center justify-between ${textMain}`}
+                    >
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                            <ChevronDown
+                                className={`w-4 h-4 transition-transform ${detailOpen ? 'rotate-0' : '-rotate-90'}`}
+                            />
+                            {t('tables.detailTitle')}
+                        </span>
+                        <span className={`text-xs ${textMuted}`}>
+                            {t('pages.unassignedRecords', { count: detailTotal.toLocaleString() })}
+                        </span>
+                    </summary>
+                    {detailOpen && (
+                        <div className="px-4 pb-4">
+                            <DataTable<DetailRow>
+                                rows={detailPageRows}
+                                cols={detailCols}
+                                searchKeys={['stable_id', 'title', 'assigned_to_name', 'assigned_group', '_openedBy'] as (keyof DetailRow)[]}
+                                total={detailTotal}
+                                skip={effectiveSkip}
+                                limit={detailPage.limit}
+                                onPageChange={(next) => setDetailPage(next)}
+                                csvRows={detailRows}
+                                csvFilename="active_monitoring_tickets"
+                            />
+                        </div>
+                    )}
+                </details>
             </div>
         </div>
     );

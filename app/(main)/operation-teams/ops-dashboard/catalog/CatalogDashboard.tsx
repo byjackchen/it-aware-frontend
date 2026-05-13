@@ -33,6 +33,7 @@ import {
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    openedAt,
     sumOf,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
@@ -50,6 +51,9 @@ import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCo
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 /** Catalog tasks use the prototype's blue-family palette to distinguish them from incidents. */
 const CATALOG_PALETTE = [
@@ -73,7 +77,9 @@ function departmentOf(row: TicketRow): string {
 }
 
 function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
+    // Use upstream SN open date (source_created_at) per the ops-team
+    // contract; fall back to local created_at when missing.
+    return openedAt(row).slice(0, 10);
 }
 
 /** Trim a long department/group label to fit the horizontal bar chart. */
@@ -176,7 +182,7 @@ export function CatalogDashboard() {
 
     // Month-over-month delta for the volume + active KPIs.
     const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
         [filtered, now],
     );
     const activeMoM = useMemo(
@@ -209,7 +215,7 @@ export function CatalogDashboard() {
                 (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null);
             if (!closedIso) continue;
             resolvedRows.push(r);
-            const opened = Date.parse(r.source_opened_at ?? r.created_at);
+            const opened = Date.parse(openedAt(r));
             const closed = Date.parse(closedIso);
             if (
                 Number.isFinite(opened) &&
@@ -367,6 +373,97 @@ export function CatalogDashboard() {
         resetAllParentFilters();
     }
 
+    // ── Detail table at the bottom — collapsible. Renders the
+    //   `filtered` Catalog row set with search, sort, pagination, and
+    //   CSV export.
+    interface CatDetailRow extends Record<string, unknown> {
+        oid: string;
+        stable_id: string;
+        title: string | null;
+        state: string;
+        priority: string;
+        assigned_group: string | null;
+        assigned_to_name: string | null;
+        _daysNoUpdate: number;
+        _location: string;
+        _openedAt: string;
+        _openedBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: CatDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            stable_id: r.stable_id,
+            title: r.title,
+            state: r.state,
+            priority: r.priority,
+            assigned_group: r.assigned_group,
+            assigned_to_name: r.assigned_to_name,
+            _daysNoUpdate: daysSinceUpdated(r, now),
+            _location: locationForFilter(r) ?? '—',
+            _openedAt: openedAt(r),
+            _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
+        }));
+    }, [filtered, now]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<CatDetailRow>[] = useMemo(() => [
+        {
+            key: 'stable_id',
+            label: t('tables.number'),
+            width: '120px',
+            render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+        },
+        { key: 'state', label: t('tables.state'), width: '130px' },
+        { key: 'priority', label: t('tables.priority'), width: '90px' },
+        {
+            key: '_daysNoUpdate',
+            label: t('tables.daysNoUpdate'),
+            width: '110px',
+            render: (r) => {
+                const cls =
+                    r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
+                    : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                return <span className={cls}>{r._daysNoUpdate}d</span>;
+            },
+            sortValue: (r) => r._daysNoUpdate,
+            csvValue: (r) => r._daysNoUpdate,
+        },
+        {
+            key: 'assigned_group',
+            label: t('tables.assignmentGroup'),
+            width: '170px',
+            render: (r) => r.assigned_group ?? '—',
+        },
+        {
+            key: 'assigned_to_name',
+            label: t('tables.assignedTo'),
+            width: '140px',
+            render: (r) => r.assigned_to_name ?? '—',
+        },
+        { key: '_openedBy', label: t('tables.openedBy'), width: '140px' },
+        { key: '_location', label: t('tables.location'), width: '150px' },
+        {
+            key: '_openedAt',
+            label: t('tables.openedAt'),
+            width: '110px',
+            render: (r) => (r._openedAt ? new Date(r._openedAt).toLocaleDateString() : '—'),
+            sortValue: (r) => r._openedAt,
+            csvValue: (r) => r._openedAt,
+        },
+        {
+            key: 'title',
+            label: t('tables.title'),
+            width: '360px',
+            render: (r) => <span className="truncate block" title={r.title ?? ''}>{r.title ?? ''}</span>,
+        },
+    ], [t]);
+
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
             {/* Header */}
@@ -389,13 +486,16 @@ export function CatalogDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:catalog:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -572,6 +672,33 @@ export function CatalogDashboard() {
                         height={220}
                         color="#0ea5e9"
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Detail table — collapsible. */}
+                <div className="mb-3">
+                    <CollapsibleDetailTable<CatDetailRow>
+                        storageKey="ops-dashboard:catalog:detail-open"
+                        title={t('tables.catalogDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['stable_id', 'title', 'assigned_group', 'assigned_to_name', '_openedBy'] as (keyof CatDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="catalog_detail"
                     />
                 </div>
             </div>
