@@ -801,7 +801,8 @@
         "incident": "Incident",
         "request": "Request",
         "daysNoUpdate": "Days No Update",
-        "shortDescription": "Short Description"
+        "shortDescription": "Short Description",
+        "assetsTable": "Assets Detail"
       },
       "tabs": {
         "pendingReturn": "Pending Return",
@@ -2241,7 +2242,8 @@
       "shortDescription": "Short Description",
       "detailTitle": "Ticket Detail",
       "assetTask": "Asset Task",
-      "catalogTask": "Catalog Task"
+      "catalogTask": "Catalog Task",
+      "assetsTable": "Assets Detail"
     },
     "tabs": {
       "pendingReturn": "Pending Return",

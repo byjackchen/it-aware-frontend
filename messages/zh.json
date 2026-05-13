@@ -481,7 +481,8 @@
         "incident": "事件",
         "request": "请求",
         "daysNoUpdate": "未更新天数",
-        "shortDescription": "简要描述"
+        "shortDescription": "简要描述",
+        "assetsTable": "资产明细"
       },
       "tabs": {
         "pendingReturn": "待归还",
@@ -1919,7 +1920,8 @@
       "shortDescription": "简要描述",
       "detailTitle": "工单明细",
       "assetTask": "Asset Task",
-      "catalogTask": "Catalog Task"
+      "catalogTask": "Catalog Task",
+      "assetsTable": "资产明细"
     },
     "tabs": {
       "pendingReturn": "待归还",

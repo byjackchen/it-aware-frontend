@@ -116,6 +116,19 @@ export function ZeroResidualAssetsDashboard() {
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const [now] = useState<number>(() => Date.now());
 
+    // Base set: dashboard model categories applied. Computed early so
+    // the cascading-filter callback below can reach into it.
+    const base = useMemo(
+        () => rows.filter(isInScopeAsset),
+        [rows],
+    );
+
+    // Pre-narrow to zero-residual rows so the State / Substate option
+    // pools only surface values that actually exist within the page's
+    // dataset — picking, say, "Available - New" from the substate
+    // slicer never returns 0 rows surprisingly.
+    const zeroBase = useMemo(() => base.filter(isZeroResidual), [base]);
+
     // Support Group / Procured By / Department — shared across every
     // asset-oriented dashboard via useOpsAssetFilter.
     const {
@@ -152,28 +165,55 @@ export function ZeroResidualAssetsDashboard() {
             delete localOnly.support_group;
             delete localOnly.procured_by;
             delete localOnly.department;
+
+            // Cascade State -> Substate: if the new State selection no
+            // longer contains some of the currently-selected substates,
+            // drop them so the user doesn't have a "ghost" filter active
+            // that no UI option points at any more. Empty State = keep
+            // all substate selections (no narrowing).
+            const newStateSel = (localOnly.asset_status as string[]) ?? [];
+            const curSubstateSel = (localOnly.substatus as string[]) ?? [];
+            if (newStateSel.length > 0 && curSubstateSel.length > 0) {
+                const allowedSubstates = new Set(
+                    base
+                        .filter(
+                            (r) =>
+                                isZeroResidual(r) &&
+                                newStateSel.includes(r.asset_status ?? 'Unknown'),
+                        )
+                        .map((r) => r.substatus ?? 'Unknown'),
+                );
+                const pruned = curSubstateSel.filter((s) => allowedSubstates.has(s));
+                if (pruned.length !== curSubstateSel.length) {
+                    localOnly.substatus = pruned;
+                }
+            }
+
             setFilters(localOnly);
         },
-        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
+        [assetFilter, base, setSupportGroups, setProcuredBy, setDepartments],
     );
-
-    const base = useMemo(
-        () => rows.filter(isInScopeAsset),
-        [rows],
-    );
-
-    // Pre-narrow to zero-residual rows so the State / Substate option
-    // pools only surface values that actually exist within the page's
-    // dataset — picking, say, "Available - New" from the substate
-    // slicer never returns 0 rows surprisingly.
-    const zeroBase = useMemo(() => base.filter(isZeroResidual), [base]);
 
     const slicers: SlicerConfig[] = useMemo(() => {
         const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
         const procured = groupBy(base, procuredByOf).map((g) => g.key);
         const departments = groupBy(base, (r) => r.department ?? 'Unknown').map((g) => g.key);
         const states = groupBy(zeroBase, (r) => r.asset_status ?? 'Unknown').map((g) => g.key);
-        const substates = groupBy(zeroBase, (r) => r.substatus ?? 'Unknown').map((g) => g.key);
+
+        // Substate options cascade from the State selection: if the user
+        // has picked one or more states, only show substates that
+        // actually exist within those states. With no state picked we
+        // fall back to every substate in the zero-residual cohort so
+        // the slicer is still useful on its own.
+        const stateSel = (filters.asset_status as string[]) ?? [];
+        const substateSource =
+            stateSel.length > 0
+                ? zeroBase.filter((r) => stateSel.includes(r.asset_status ?? 'Unknown'))
+                : zeroBase;
+        const substates = groupBy(substateSource, (r) => r.substatus ?? 'Unknown').map(
+            (g) => g.key,
+        );
+
         return [
             {
                 type: 'multi',
@@ -211,7 +251,7 @@ export function ZeroResidualAssetsDashboard() {
                 clientSide: true,
             },
         ];
-    }, [base, zeroBase, t]);
+    }, [base, zeroBase, filters.asset_status, t]);
 
     const filtered = useMemo(() => {
         const supportSel = assetFilter.supportGroups;
