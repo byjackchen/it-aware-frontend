@@ -282,17 +282,28 @@ export function OnOffBoardingDashboard() {
             { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
         ];
         if (flow === 'offboarding') {
-            // LWD filter is offboarding-only — extracted from the
+            // LWD slicer is offboarding-only — extracted from the
             // "Offboarding: ... on YYYY-MM-DD for <user>" SN title.
+            // Render as a multi-select of distinct LWD values that
+            // actually appear in the fetched flow rows so the user
+            // can only ever pick a date that has data behind it.
+            const lwdValues = Array.from(
+                new Set(
+                    flowRows
+                        .map((r) => extractLwdIso(r.title))
+                        .filter((d): d is string => !!d),
+                ),
+            ).sort((a, b) => b.localeCompare(a)); // most-recent first
             base.push({
-                type: 'date-range',
-                param: ['lwd_from', 'lwd_to'],
+                type: 'multi',
+                param: 'lwd',
                 label: t('filters.lastWorkingDay'),
+                options: lwdValues,
                 clientSide: true,
             });
         }
         return base;
-    }, [t, flow]);
+    }, [t, flow, flowRows]);
 
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
@@ -301,10 +312,7 @@ export function OnOffBoardingDashboard() {
             from: null,
             to: null,
         };
-        const lwdRange = (filters.lwd_from as { from: string | null; to: string | null }) ?? {
-            from: null,
-            to: null,
-        };
+        const lwdSel = (filters.lwd as string[]) ?? [];
         return flowRows.filter((r) => {
             // Region/Country/Location filter only meaningful for the
             // Onboarding tab — the offboarding ticket caller is the
@@ -330,15 +338,13 @@ export function OnOffBoardingDashboard() {
                 if (range.from && opened && opened < range.from) return false;
                 if (range.to && opened && opened > range.to) return false;
             }
-            // LWD range — offboarding-only. Rows whose title doesn't
-            // carry an SN-template "on YYYY-MM-DD" date are dropped
-            // when a range is active so the user only sees rows whose
-            // date actually falls in their window.
-            if (flow === 'offboarding' && (lwdRange.from || lwdRange.to)) {
+            // LWD filter — offboarding-only. When the user has picked
+            // one or more LWD dates, drop rows whose title-extracted
+            // LWD is not in that set (rows that don't carry an LWD at
+            // all are also dropped while the filter is active).
+            if (flow === 'offboarding' && lwdSel.length > 0) {
                 const lwd = extractLwdIso(r.title);
-                if (!lwd) return false;
-                if (lwdRange.from && lwd < lwdRange.from) return false;
-                if (lwdRange.to && lwd > lwdRange.to) return false;
+                if (!lwd || !lwdSel.includes(lwd)) return false;
             }
             return true;
         });
