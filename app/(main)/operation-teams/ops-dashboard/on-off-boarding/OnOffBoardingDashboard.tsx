@@ -177,12 +177,6 @@ function departmentOf(row: TicketRow): string {
     return 'Unknown';
 }
 
-function openedDateStr(row: TicketRow): string {
-    // Use upstream SN open date (source_created_at) per the ops-team
-    // contract; fall back to local created_at when missing.
-    return openedAt(row).slice(0, 10);
-}
-
 function trimLabel(label: string, max = 22): string {
     return label.length > max ? `${label.slice(0, max)}…` : label;
 }
@@ -278,19 +272,16 @@ export function OnOffBoardingDashboard() {
     const offboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'offboarding')).length, [allRows]);
 
     const slicers: SlicerConfig[] = useMemo(() => {
-        const base: SlicerConfig[] = [
-            { type: 'date-range', param: ['created_at_from', 'created_at_to'], label: t('filters.opened') },
-        ];
+        const base: SlicerConfig[] = [];
         if (flow === 'offboarding') {
             // LWD slicer is offboarding-only — extracted from the
             // "Offboarding: ... on YYYY-MM-DD for <user>" SN title.
-            // Single-date "before" picker so users can sweep up the
-            // backlog of LWDs at or before a chosen cutoff with one
-            // calendar tap.
+            // Date-range with two pickers so users can scope to an
+            // LWD window (e.g. "this week", "next month").
             base.push({
-                type: 'date-before',
-                param: 'lwd_before',
-                label: t('filters.lastWorkingDayBefore'),
+                type: 'date-range',
+                param: ['lwd_from', 'lwd_to'],
+                label: t('filters.lastWorkingDayBetween'),
                 clientSide: true,
             });
         }
@@ -300,12 +291,12 @@ export function OnOffBoardingDashboard() {
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? {
+        // LWD range — offboarding-only. Stored under the leading
+        // param key (`lwd_from`) as a DateRangeValue { from, to }.
+        const lwdRange = (filters.lwd_from as { from: string | null; to: string | null } | undefined) ?? {
             from: null,
             to: null,
         };
-        // LWD-before stored as DateRangeValue with `to = picked date`.
-        const lwdBefore = (filters.lwd_before as { from: string | null; to: string | null } | undefined)?.to ?? null;
         return flowRows.filter((r) => {
             // Region/Country/Location filter only meaningful for the
             // Onboarding tab — the offboarding ticket caller is the
@@ -326,17 +317,15 @@ export function OnOffBoardingDashboard() {
             }
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
-            // LWD before — offboarding-only. Keep rows whose parsed
-            // LWD is on or before the cutoff. Rows without an LWD in
-            // the title are dropped while the filter is active.
-            if (flow === 'offboarding' && lwdBefore) {
+            // LWD between — offboarding-only. Keep rows whose parsed
+            // LWD falls within [from, to] (inclusive). Rows without
+            // a parseable LWD in the title are dropped while either
+            // bound is active.
+            if (flow === 'offboarding' && (lwdRange.from || lwdRange.to)) {
                 const lwd = extractLwdIso(r.title);
-                if (!lwd || lwd > lwdBefore) return false;
+                if (!lwd) return false;
+                if (lwdRange.from && lwd < lwdRange.from) return false;
+                if (lwdRange.to && lwd > lwdRange.to) return false;
             }
             return true;
         });

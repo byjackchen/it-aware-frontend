@@ -54,16 +54,6 @@ export type SlicerConfig =
           param: [string, string];
           label: string;
           clientSide?: boolean;
-      }
-    | {
-          // Single calendar input — semantically "on or before this date".
-          // Stored under `param` as a `DateRangeValue` with `from = null`
-          // and `to = picked date` so it slots into the same FilterState
-          // shape as date-range.
-          type: 'date-before';
-          param: string;
-          label: string;
-          clientSide?: boolean;
       };
 
 /**
@@ -162,11 +152,6 @@ function countActive(slicers: SlicerConfig[], value: FilterState): number {
             const v = value[slicer.param];
             return acc + (Array.isArray(v) ? v.length : 0);
         }
-        if (slicer.type === 'date-before') {
-            const v = value[slicer.param];
-            if (v && !Array.isArray(v) && (v.from || v.to)) return acc + 1;
-            return acc;
-        }
         const [fromParam] = slicer.param;
         const v = value[fromParam];
         if (v && !Array.isArray(v) && (v.from || v.to)) return acc + 1;
@@ -178,9 +163,7 @@ function clearSlicers(slicers: SlicerConfig[]): FilterState {
     const cleared: FilterState = {};
     for (const slicer of slicers) {
         if (slicer.type === 'multi') cleared[slicer.param] = [];
-        else if (slicer.type === 'date-before') {
-            cleared[slicer.param] = { from: null, to: null };
-        } else {
+        else {
             cleared[slicer.param[0]] = { from: null, to: null };
             cleared[slicer.param[1]] = { from: null, to: null };
         }
@@ -193,33 +176,6 @@ interface SectionGridProps {
     value: FilterState;
     onChange: (next: FilterState) => void;
     clientSideTooltip: string;
-}
-
-interface DateBeforePickerProps {
-    label?: string;
-    value: string;
-    onChange: (next: string) => void;
-    tooltip?: string;
-}
-
-function DateBeforePicker({ label, value, onChange, tooltip }: DateBeforePickerProps) {
-    const { theme } = useTheme();
-    const isLight = theme === 'light';
-    const inputCls = isLight
-        ? 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
-        : 'bg-white/5 border-white/10 text-white placeholder-gray-500';
-    const labelCls = isLight ? 'text-slate-500' : 'text-gray-400';
-    return (
-        <div className="flex flex-col gap-1" title={tooltip}>
-            {label && <span className={`text-[11px] uppercase tracking-wide ${labelCls}`}>{label}</span>}
-            <input
-                type="date"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className={`text-xs rounded-lg border px-2 py-1 ${inputCls}`}
-            />
-        </div>
-    );
 }
 
 function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGridProps) {
@@ -235,12 +191,6 @@ function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGri
         return { from: null, to: null };
     }
 
-    function getDateBefore(param: string): string {
-        const v = value[param];
-        if (v && !Array.isArray(v)) return v.to ?? '';
-        return '';
-    }
-
     const setMulti = (param: string, next: string[]) => {
         onChange({ ...value, [param]: next });
     };
@@ -251,13 +201,6 @@ function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGri
             ...value,
             [fromParam]: { from: next.from, to: next.to },
             [toParam]: { from: next.from, to: next.to },
-        });
-    };
-
-    const setDateBefore = (param: string, next: string) => {
-        onChange({
-            ...value,
-            [param]: { from: null, to: next || null },
         });
     };
 
@@ -280,25 +223,18 @@ function SectionGrid({ slicers, value, onChange, clientSideTooltip }: SectionGri
                         </div>
                     );
                 }
-                if (slicer.type === 'date-before') {
-                    const label = slicer.clientSide ? `${slicer.label} ⓘ` : slicer.label;
-                    return (
-                        <DateBeforePicker
-                            key={slicer.param}
-                            label={label}
-                            value={getDateBefore(slicer.param)}
-                            onChange={(next) => setDateBefore(slicer.param, next)}
-                            tooltip={slicer.clientSide ? clientSideTooltip : undefined}
-                        />
-                    );
-                }
+                const drLabel = slicer.clientSide ? `${slicer.label} ⓘ` : slicer.label;
                 return (
-                    <DateRangePicker
+                    <div
                         key={slicer.param.join(':')}
-                        label={slicer.label}
-                        value={getRange(slicer.param)}
-                        onChange={(next) => setDateRange(slicer.param, next)}
-                    />
+                        title={slicer.clientSide ? clientSideTooltip : undefined}
+                    >
+                        <DateRangePicker
+                            label={drLabel}
+                            value={getRange(slicer.param)}
+                            onChange={(next) => setDateRange(slicer.param, next)}
+                        />
+                    </div>
                 );
             })}
         </div>

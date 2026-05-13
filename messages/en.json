@@ -763,7 +763,7 @@
         "scopeInItems": "in {items}",
         "scopeInItemsPlus": "in {items} +{count}",
         "substate": "Substate",
-        "lastWorkingDayBefore": "Last Working Day Before"
+        "lastWorkingDayBetween": "Last Working Day Between"
       },
       "tables": {
         "number": "Number",
@@ -2204,7 +2204,7 @@
       "scopeInItems": "in {items}",
       "scopeInItemsPlus": "in {items} +{count}",
       "substate": "Substate",
-      "lastWorkingDayBefore": "Last Working Day Before"
+      "lastWorkingDayBetween": "Last Working Day Between"
     },
     "tables": {
       "number": "Number",
