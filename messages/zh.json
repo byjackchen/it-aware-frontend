@@ -405,7 +405,10 @@
         "supportGroup": "支持组",
         "supportGroupSubtitle": "按支持组统计的资产",
         "cumulativeOpenedClosed": "累计开单 vs 关闭",
-        "filterLegend": "图表筛选图例"
+        "filterLegend": "图表筛选图例",
+        "pendingImageTitle": "待装机设备 (Pending Image)",
+        "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
+        "pendingImageCta": "点击查看详情"
       },
       "filters": {
         "title": "筛选器",
@@ -1833,7 +1836,10 @@
       "filterLegend": "图表筛选图例",
       "byAssignee": "按处理人",
       "byAssigneeSubtitle": "按活跃工单数排名前 10 的处理人",
-      "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）"
+      "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）",
+      "pendingImageTitle": "待装机设备 (Pending Image)",
+      "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
+      "pendingImageCta": "点击查看详情"
     },
     "filters": {
       "title": "筛选器",

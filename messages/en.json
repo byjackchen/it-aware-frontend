@@ -725,7 +725,10 @@
         "supportGroup": "Support Group",
         "supportGroupSubtitle": "Assets by support group",
         "cumulativeOpenedClosed": "Cumulative opened vs. closed",
-        "filterLegend": "Chart filter legend"
+        "filterLegend": "Chart filter legend",
+        "pendingImageTitle": "Pending Image devices",
+        "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
+        "pendingImageCta": "Click to filter"
       },
       "filters": {
         "title": "Filters",
@@ -2155,7 +2158,10 @@
       "filterLegend": "Chart filter legend",
       "byAssignee": "By Assignee",
       "byAssigneeSubtitle": "Top 10 assignees by active ticket count",
-      "byAssigneeInfo": "Active tickets grouped by assignee (top 10)"
+      "byAssigneeInfo": "Active tickets grouped by assignee (top 10)",
+      "pendingImageTitle": "Pending Image devices",
+      "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
+      "pendingImageCta": "Click to filter"
     },
     "filters": {
       "title": "Filters",
