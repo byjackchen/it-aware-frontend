@@ -443,7 +443,7 @@
         "scopeInItems": "{items}",
         "scopeInItemsPlus": "{items} +{count}",
         "substate": "子状态",
-        "lastWorkingDay": "最后工作日 (LWD)"
+        "lastWorkingDayBefore": "最后工作日早于"
       },
       "tables": {
         "number": "编号",
@@ -1882,7 +1882,7 @@
       "scopeInItems": "{items}",
       "scopeInItemsPlus": "{items} +{count}",
       "substate": "子状态",
-      "lastWorkingDay": "最后工作日 (LWD)"
+      "lastWorkingDayBefore": "最后工作日早于"
     },
     "tables": {
       "number": "编号",

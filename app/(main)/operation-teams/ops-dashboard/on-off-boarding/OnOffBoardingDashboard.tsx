@@ -284,26 +284,18 @@ export function OnOffBoardingDashboard() {
         if (flow === 'offboarding') {
             // LWD slicer is offboarding-only — extracted from the
             // "Offboarding: ... on YYYY-MM-DD for <user>" SN title.
-            // Render as a multi-select of distinct LWD values that
-            // actually appear in the fetched flow rows so the user
-            // can only ever pick a date that has data behind it.
-            const lwdValues = Array.from(
-                new Set(
-                    flowRows
-                        .map((r) => extractLwdIso(r.title))
-                        .filter((d): d is string => !!d),
-                ),
-            ).sort((a, b) => b.localeCompare(a)); // most-recent first
+            // Single-date "before" picker so users can sweep up the
+            // backlog of LWDs at or before a chosen cutoff with one
+            // calendar tap.
             base.push({
-                type: 'multi',
-                param: 'lwd',
-                label: t('filters.lastWorkingDay'),
-                options: lwdValues,
+                type: 'date-before',
+                param: 'lwd_before',
+                label: t('filters.lastWorkingDayBefore'),
                 clientSide: true,
             });
         }
         return base;
-    }, [t, flow, flowRows]);
+    }, [t, flow]);
 
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
@@ -312,7 +304,8 @@ export function OnOffBoardingDashboard() {
             from: null,
             to: null,
         };
-        const lwdSel = (filters.lwd as string[]) ?? [];
+        // LWD-before stored as DateRangeValue with `to = picked date`.
+        const lwdBefore = (filters.lwd_before as { from: string | null; to: string | null } | undefined)?.to ?? null;
         return flowRows.filter((r) => {
             // Region/Country/Location filter only meaningful for the
             // Onboarding tab — the offboarding ticket caller is the
@@ -338,13 +331,12 @@ export function OnOffBoardingDashboard() {
                 if (range.from && opened && opened < range.from) return false;
                 if (range.to && opened && opened > range.to) return false;
             }
-            // LWD filter — offboarding-only. When the user has picked
-            // one or more LWD dates, drop rows whose title-extracted
-            // LWD is not in that set (rows that don't carry an LWD at
-            // all are also dropped while the filter is active).
-            if (flow === 'offboarding' && lwdSel.length > 0) {
+            // LWD before — offboarding-only. Keep rows whose parsed
+            // LWD is on or before the cutoff. Rows without an LWD in
+            // the title are dropped while the filter is active.
+            if (flow === 'offboarding' && lwdBefore) {
                 const lwd = extractLwdIso(r.title);
-                if (!lwd || !lwdSel.includes(lwd)) return false;
+                if (!lwd || lwd > lwdBefore) return false;
             }
             return true;
         });
