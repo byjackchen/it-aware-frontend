@@ -33,6 +33,7 @@ import { RangeSliderFilter } from '@/components/ohla/RangeSliderFilter'
 import { useOhlaDateRange } from '@/lib/hooks/useOhlaDateRange'
 import { maskWecomId } from '@/lib/ohla/mask'
 import { ExpandableText } from '@/components/ohla/ExpandableText'
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 function fmtNum(n: number): string {
     return n.toLocaleString()
@@ -173,13 +174,16 @@ export function SurveyDetailsDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:ohla-survey-details:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${chipBtn}`}
                     title={t('common.refresh')}
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
+                </div>
             </div>
 
             {/* Filter row (horizontal) */}

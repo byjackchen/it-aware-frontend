@@ -533,6 +533,21 @@
         "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
         "loadFailed": "加载数据失败",
         "retry": "重试"
+      },
+      "autoRefresh": {
+        "label": "自动刷新",
+        "off": "关闭",
+        "offShort": "关",
+        "m5": "5 分钟",
+        "m5Short": "5分",
+        "m10": "10 分钟",
+        "m10Short": "10分",
+        "m15": "15 分钟",
+        "m15Short": "15分",
+        "m30": "30 分钟",
+        "m30Short": "30分",
+        "h1": "1 小时",
+        "h1Short": "1时"
       }
     },
     "SurveyAnalytics": {
@@ -1963,6 +1978,21 @@
       "partialResult": "仍在加载——服务器响应时间超出预期，请稍后重试。",
       "loadFailed": "加载数据失败",
       "retry": "重试"
+    },
+    "autoRefresh": {
+      "label": "自动刷新",
+      "off": "关闭",
+      "offShort": "关",
+      "m5": "5 分钟",
+      "m5Short": "5分",
+      "m10": "10 分钟",
+      "m10Short": "10分",
+      "m15": "15 分钟",
+      "m15Short": "15分",
+      "m30": "30 分钟",
+      "m30Short": "30分",
+      "h1": "1 小时",
+      "h1Short": "1时"
     }
   },
   "SSCDashboard": {

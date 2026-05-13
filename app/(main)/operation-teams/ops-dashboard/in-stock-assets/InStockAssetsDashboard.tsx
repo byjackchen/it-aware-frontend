@@ -22,6 +22,7 @@ import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
 import { countryToRegion, extractCountry, normalizeRegion } from '@/lib/ops_dashboard/region';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 /**
  * Support-group classifier — same region-fallback chain Asset Hub
@@ -374,13 +375,16 @@ export function InStockAssetsDashboard() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.inStockSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:in-stock-assets:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filters */}

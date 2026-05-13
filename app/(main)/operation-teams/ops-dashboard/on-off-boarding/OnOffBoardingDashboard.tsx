@@ -52,6 +52,7 @@ import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCo
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 /**
  * Two flow kinds exposed as tabs. Values serve as both the tab key and
@@ -520,7 +521,9 @@ export function OnOffBoardingDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:on-off-boarding:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${
                             isLight
@@ -531,6 +534,7 @@ export function OnOffBoardingDashboard() {
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 

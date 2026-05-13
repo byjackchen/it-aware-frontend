@@ -47,6 +47,7 @@ import {
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import { TicketsPanel, type TicketKpiDeltas, type TicketKpis } from './TicketsPanel';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || 'Unknown';
@@ -584,13 +585,16 @@ export function OpsDashboardHub() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.hubSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetchAll()} storageKey="ops-dashboard:hub:auto-refresh" />
+                    <button
                     onClick={() => void refetchAll()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filter panel — Region/Country in headerSlot applies to

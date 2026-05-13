@@ -853,6 +853,21 @@
         "partialResult": "Still loading — the server is taking longer than expected. Please retry.",
         "loadFailed": "Failed to load data",
         "retry": "Retry"
+      },
+      "autoRefresh": {
+        "label": "Auto refresh",
+        "off": "Off",
+        "offShort": "Off",
+        "m5": "5 min",
+        "m5Short": "5m",
+        "m10": "10 min",
+        "m10Short": "10m",
+        "m15": "15 min",
+        "m15Short": "15m",
+        "m30": "30 min",
+        "m30Short": "30m",
+        "h1": "1 hour",
+        "h1Short": "1h"
       }
     },
     "SurveyAnalytics": {
@@ -2285,6 +2300,21 @@
       "partialResult": "Still loading — the server is taking longer than expected. Please retry.",
       "loadFailed": "Failed to load data",
       "retry": "Retry"
+    },
+    "autoRefresh": {
+      "label": "Auto refresh",
+      "off": "Off",
+      "offShort": "Off",
+      "m5": "5 min",
+      "m5Short": "5m",
+      "m10": "10 min",
+      "m10Short": "10m",
+      "m15": "15 min",
+      "m15Short": "15m",
+      "m30": "30 min",
+      "m30Short": "30m",
+      "h1": "1 hour",
+      "h1Short": "1h"
     }
   },
   "SSCDashboard": {

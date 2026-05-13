@@ -47,6 +47,7 @@ import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCo
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const STATE_PALETTE = [
     '#3b82f6',
@@ -550,13 +551,16 @@ export function IncidentAnalysisDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:incidents:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
