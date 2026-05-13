@@ -208,13 +208,23 @@ export interface ReportRangeParams {
     date_from: string;
     /** YYYY-MM-DD inclusive UTC end day */
     date_to: string;
+    /**
+     * Optional view-specific extra query params (e.g. survey filters
+     * vip/bg/country/rate_min/rate_max). The proxy forwards them through.
+     */
+    extra?: Record<string, string>;
 }
 
 async function fetchReport<V extends OhlaChatbotView>(
     view: V,
-    { date_from, date_to }: ReportRangeParams,
+    { date_from, date_to, extra }: ReportRangeParams,
 ): Promise<OhlaChatbotReportByView[V]> {
     const params = new URLSearchParams({ date_from, date_to });
+    if (extra) {
+        for (const [k, v] of Object.entries(extra)) {
+            if (v !== undefined && v !== null && v !== '') params.append(k, v);
+        }
+    }
     // Routed through the dedicated proxy at app/api/ohla-chatbot/report/[view]/route.ts.
     // The default /api/objects/[resource] proxy can't accept multi-segment paths.
     const url = `/api/ohla-chatbot/report/${view}?${params.toString()}`;

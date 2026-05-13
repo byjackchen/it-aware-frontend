@@ -3,15 +3,18 @@
 /**
  * Ohla Survey Details — Power BI "Survey Details" page port.
  *
- * Performance: KPIs (Survey#, AVG Rate) and dropdown options come from the
- * server-aggregated /report/ohla-chatbot-survey endpoint. The detail table
- * loads small filtered survey rows from /interactions?survey_received=true.
+ * Performance: KPIs (Survey#, AVG Rate) + dropdown options come from the
+ * server-aggregated /report/ohla-chatbot-survey endpoint. The 4 ad-hoc
+ * filters (VIP / BG / Country / Rate range) are sent as query params to
+ * the same endpoint so the BE recomputes KPIs filtered — same UX as the
+ * original FE.
  *
- * v1 trade-off: the 4 ad-hoc filters (VIP / BG / Country / Rate range) apply
- * to the detail TABLE only; KPIs stay at the period totals. The original
- * page recomputed KPIs per filter selection — restoring that needs either
- * server-side filter params on the report endpoint OR client-side worker
- * enrichment of the survey rows. Both are out of scope for this perf PR.
+ * The detail table loads small filtered survey rows from
+ * /interactions?survey_received=true. The rate-range filter applies to
+ * the table client-side; vip/bg/country can't filter the table without
+ * worker enrichment of detail rows (separate follow-up — FE workaround
+ * is to use the dropdowns to drive the KPI cards while the table shows
+ * the unenriched survey rows for the period).
  *
  * PBIX "Survey Received? = Yes" is detected on the BE side via regex on
  * content_text matching `(?:rateticket|ticket_rating)-naive-...-{rate}|...`.
@@ -88,21 +91,30 @@ export function SurveyDetailsDashboard() {
 
     const { range: { from, to }, setRange } = useOhlaDateRange()
 
-    // Filter UI state — applies to the table only in v1 (see file header note).
     const [vipFilter, setVipFilter] = useState<VipFilter>('all')
     const [bgFilter, setBgFilter] = useState<string>('all')
     const [countryFilter, setCountryFilter] = useState<string>('all')
     const [rateRange, setRateRange] = useState<[number, number]>([1, 5])
-    void vipFilter // v1: reserved (filter not yet wired to table — needs worker enrichment)
-    void bgFilter
-    void countryFilter
+
+    // Translate filter UI state into BE query params.
+    const reportExtra = useMemo<Record<string, string>>(() => {
+        const out: Record<string, string> = {}
+        if (vipFilter === 'vip') out.vip = 'true'
+        else if (vipFilter === 'non-vip') out.vip = 'false'
+        if (bgFilter !== 'all') out.bg = bgFilter
+        if (countryFilter !== 'all') out.country = countryFilter
+        // Send rate bounds only if user moved them off the defaults.
+        if (rateRange[0] !== 1) out.rate_min = String(rateRange[0])
+        if (rateRange[1] !== 5) out.rate_max = String(rateRange[1])
+        return out
+    }, [vipFilter, bgFilter, countryFilter, rateRange])
 
     const {
         data: report,
         loading: reportLoading,
         error: reportError,
         refetch: refetchReport,
-    } = useOhlaChatbotReport('survey', { from, to })
+    } = useOhlaChatbotReport('survey', { from, to, extraParams: reportExtra })
 
     const block = report?.current
     const kpis = block?.kpis ?? ZERO_KPIS
@@ -150,8 +162,8 @@ export function SurveyDetailsDashboard() {
         await Promise.all([refetchReport(), loadDetails()])
     }, [refetchReport, loadDetails])
 
-    // Apply only the rate-range filter to the table for v1 (the only filter
-    // that doesn't require worker enrichment).
+    // Apply rate-range to the table (the only filter we can apply without
+    // worker-context enrichment of detail rows).
     const detailRowsMapped = useMemo(() => {
         return detailRows.map(toDetailRow).filter((r) => {
             if (typeof r.surveyRate === 'number') {

@@ -24,6 +24,12 @@ interface Options {
     /** YYYY-MM-DD inclusive UTC end day */
     to?: string | null;
     enabled?: boolean;
+    /**
+     * Optional view-specific extra query params (e.g. survey filter values).
+     * Keys with `undefined` / `null` / empty-string values are skipped.
+     * Each unique combination caches independently.
+     */
+    extraParams?: Record<string, string | number | boolean | null | undefined>;
 }
 
 interface State<V extends OhlaChatbotView> {
@@ -35,13 +41,32 @@ interface State<V extends OhlaChatbotView> {
 
 const reportCache = new Map<string, unknown>();
 
-function cacheKey(view: OhlaChatbotView, from: string | null | undefined, to: string | null | undefined) {
-    return `${view}::${from ?? ''}::${to ?? ''}`;
+function normalizeExtra(extra?: Options['extraParams']): Record<string, string> {
+    if (!extra) return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(extra)) {
+        if (v === undefined || v === null || v === '') continue;
+        out[k] = String(v);
+    }
+    return out;
+}
+
+function cacheKey(
+    view: OhlaChatbotView,
+    from: string | null | undefined,
+    to: string | null | undefined,
+    extra: Record<string, string>,
+) {
+    const extraStr = Object.keys(extra)
+        .sort()
+        .map((k) => `${k}=${extra[k]}`)
+        .join('&');
+    return `${view}::${from ?? ''}::${to ?? ''}::${extraStr}`;
 }
 
 export function useOhlaChatbotReport<V extends OhlaChatbotView>(
     view: V,
-    { from, to, enabled = true }: Options = {},
+    { from, to, enabled = true, extraParams }: Options = {},
 ): State<V> {
     const [state, setState] = useState<{
         data: OhlaChatbotReportByView[V] | null;
@@ -49,7 +74,8 @@ export function useOhlaChatbotReport<V extends OhlaChatbotView>(
         error: string | null;
     }>({ data: null, loading: enabled, error: null });
 
-    const key = cacheKey(view, from, to);
+    const extra = normalizeExtra(extraParams);
+    const key = cacheKey(view, from, to, extra);
 
     const load = useCallback(async () => {
         if (!from || !to) {
@@ -63,13 +89,18 @@ export function useOhlaChatbotReport<V extends OhlaChatbotView>(
                 setState({ data: cached, loading: false, error: null });
                 return;
             }
-            const data = await fetchOhlaChatbotReport(view, { date_from: from, date_to: to });
+            const data = await fetchOhlaChatbotReport(view, {
+                date_from: from,
+                date_to: to,
+                extra,
+            });
             reportCache.set(key, data);
             setState({ data, loading: false, error: null });
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             setState({ data: null, loading: false, error: msg });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [view, key, from, to]);
 
     useEffect(() => {
