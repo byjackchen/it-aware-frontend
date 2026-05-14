@@ -46,9 +46,10 @@ const CODE_COLORS: Record<string, string> = {
     NEW: '#8b5cf6',
     CUST: '#06b6d4',
     OOS: '#ec4899',
+    HES: '#f97316',
 };
 
-const CODE_DEF_KEYS = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS', 'NA'] as const;
+const CODE_DEF_KEYS = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS', 'NA', 'HES'] as const;
 
 function pct(value: number): string {
     return `${value.toFixed(1)}%`;
