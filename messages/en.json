@@ -770,7 +770,8 @@
         "scopeInItems": "in {items}",
         "scopeInItemsPlus": "in {items} +{count}",
         "substate": "Substate",
-        "lastWorkingDayBetween": "Last Working Day Between"
+        "lastWorkingDayBetween": "Last Working Day Between",
+        "onboardingDateBetween": "Onboarding Date Between"
       },
       "tables": {
         "number": "Number",
@@ -2154,6 +2155,7 @@
       "colAssignedGroup": "Assigned Group",
       "colAssignee": "Assignee",
       "colOpened": "Opened",
+      "colOnboardingDate": "Onboarding Date",
       "offboardedAssets": "Offboarded User Assets",
       "offboardedAssetsInfo": "Hardware still on the books for users in the current offboarding view, joined by SN username. Users with no asset hits are listed too — coverage is best-effort because vendor accounts and short user IDs sometimes don't match the hardware roster.",
       "offboardedAssetsSubtitle": "{users} users · {withAsset} matched · {assets} assets",
@@ -2230,7 +2232,8 @@
       "scopeInItems": "in {items}",
       "scopeInItemsPlus": "in {items} +{count}",
       "substate": "Substate",
-      "lastWorkingDayBetween": "Last Working Day Between"
+      "lastWorkingDayBetween": "Last Working Day Between",
+      "onboardingDateBetween": "Onboarding Date Between"
     },
     "tables": {
       "number": "Number",
