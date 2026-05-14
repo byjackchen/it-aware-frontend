@@ -603,6 +603,13 @@ export function OnOffBoardingDashboard() {
             {
                 key: 'item',
                 label: t('charts.colItem'),
+                // Wide-fixed width + nowrap so the SN short description
+                // (e.g. "Offboarding: Retrieve IT Equipment on
+                // 2025-09-30 for v_anavya") renders on a single line.
+                // Long titles are truncated with a tooltip showing the
+                // full text — much easier to scan than the previous
+                // wrapped-into-3-lines layout.
+                width: 'min-w-[28rem] max-w-[36rem]',
                 // Prefer SN's short description (`title`) when present —
                 // that's where "Offboarding: Retrieve IT Equipment on
                 // 2025-09-30 for v_anavya"-style copy lives. Fall back
@@ -610,7 +617,17 @@ export function OnOffBoardingDashboard() {
                 // "Offboarding IT Request Form", …) only when title is
                 // empty so the column always carries the most specific
                 // signal available.
-                render: (r) => r.title || r.item || r.request_item || '—',
+                render: (r) => {
+                    const text = r.title || r.item || r.request_item || '—';
+                    return (
+                        <span
+                            className="block whitespace-nowrap overflow-hidden text-ellipsis"
+                            title={text}
+                        >
+                            {text}
+                        </span>
+                    );
+                },
             },
             {
                 key: 'caller_name',
