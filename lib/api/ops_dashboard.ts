@@ -160,8 +160,11 @@ export interface HardwareRow {
     /** Procurement-side ownership (e.g. "OIT", "Studio") — surfaced in the Procured By donut. */
     asset_owner: string | null;
     residual_value: string | number | null;
+    /** Date the residual_value was last computed/snapshotted (ISO timestamp). */
+    residual_date: string | null;
     cost: string | number | null;
     assigned_to_display_name: string | null;
+    assigned_to_username: string | null;
     worker_oid: string | null;
     is_active: boolean;
     assigned_date: string | null;

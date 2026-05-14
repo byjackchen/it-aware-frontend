@@ -24,8 +24,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { UserPlus, UserMinus, RefreshCw, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { useRequests } from '@/lib/hooks/useOpsDashboard';
-import type { TicketRow } from '@/lib/api/ops_dashboard';
+import { useRequests, useHardwares } from '@/lib/hooks/useOpsDashboard';
+import type { TicketRow, HardwareRow } from '@/lib/api/ops_dashboard';
 import {
     cumulativeTrendByMonth,
     daysSinceUpdated,
@@ -153,6 +153,24 @@ function extractLwdIso(title: string | null | undefined): string | null {
     return m ? m[1] : null;
 }
 
+/**
+ * Extract the offboarded user's SN username from an offboarding ticket
+ * title — the trailing token after "for". SN renders this as the SN
+ * username (e.g. `v_skhoso`, `croegner`) for the standard two
+ * "Offboarding: Retrieve IT Equipment / Revoke Software" templates.
+ *
+ * Returns null when the title doesn't match the offboarding shape.
+ * Result is lowercased to make the downstream `assigned_to_username`
+ * join case-insensitive.
+ */
+function extractOffboardingUser(title: string | null | undefined): string | null {
+    if (!title) return null;
+    // "... for <username>" with optional trailing whitespace.
+    const m = title.match(/\bfor\s+([A-Za-z_][A-Za-z0-9_.\-]+)\s*$/);
+    if (!m) return null;
+    return m[1].trim().toLowerCase();
+}
+
 function locationForFilter(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
@@ -182,6 +200,24 @@ function departmentOf(row: TicketRow): string {
 
 function trimLabel(label: string, max = 22): string {
     return label.length > max ? `${label.slice(0, max)}…` : label;
+}
+
+/** Flattened (user × asset) row for the "Offboarded User Assets" table. */
+interface OffboardedAssetRow {
+    userId: string;
+    lwd: string | null;
+    assetTag: string | null;
+    serialNumber: string | null;
+    modelDisplayName: string | null;
+    assetStatus: string | null;
+    substatus: string | null;
+    assignedDate: string | null;
+    stockRoom: string | null;
+    location: string | null;
+    /** Residual book value at last snapshot — string|number from backend. */
+    residualValue: string | number | null;
+    /** ISO timestamp the residual_value snapshot was taken. */
+    residualDate: string | null;
 }
 
 export function OnOffBoardingDashboard() {
@@ -263,6 +299,17 @@ export function OnOffBoardingDashboard() {
         { fetchAll: true },
     );
     const partial = data?.partial === true;
+
+    // Hardware fetch — offboarding-only. Drives the "Offboarded User
+    // Assets" detail table at the bottom of the page; we join the
+    // SN ticket usernames against `assigned_to_username` to surface
+    // every asset still on the books for someone whose offboarding
+    // ticket is in the current view.
+    const { data: hwData, loading: hwLoading } = useHardwares(
+        { limit: 1000 },
+        { enabled: flow === 'offboarding', fetchAll: true },
+    );
+    const hardwareRows: HardwareRow[] = hwData?.items ?? [];
 
     // Narrow to the active flow using client-side keyword classification.
     // Also apply OIT scope (matches Incidents / Catalog / Aging / Hub
@@ -350,6 +397,116 @@ export function OnOffBoardingDashboard() {
     }, [flowRows, filters, flow, selectedRegions, selectedCountries, selectedLocations]);
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
+
+    /**
+     * Offboarded user × asset join — offboarding-only. We:
+     *   1. Walk `filtered` (the in-view offboarding tickets), pulling
+     *      the (username, lwd) pair off each title via the SN regex.
+     *   2. Bucket them by lowercased username, keeping the *latest*
+     *      LWD when the same user appears in multiple tickets
+     *      (Retrieve-IT + Revoke-Software fire as a pair).
+     *   3. For each (user, lwd), look up matching `hardwareRows`
+     *      using a case-insensitive `assigned_to_username` equality.
+     *      Users with zero hardware matches are still listed (with
+     *      empty asset cells) so ops sees who they couldn't trace —
+     *      mirrors the audit need: "everyone leaving + what they
+     *      still hold".
+     *   4. Flat-emit one row per (user, asset). If a user has zero
+     *      hardware hits, we emit a single placeholder row.
+     */
+    const offboardedAssets = useMemo<OffboardedAssetRow[]>(() => {
+        if (flow !== 'offboarding') return [];
+        // (1)+(2): collect (user, lwd) pairs.
+        const userToLwd = new Map<string, string | null>();
+        for (const r of filtered) {
+            const user = extractOffboardingUser(r.title);
+            if (!user) continue;
+            const lwd = extractLwdIso(r.title);
+            const prior = userToLwd.get(user);
+            // Keep the latest LWD if both are present; otherwise keep
+            // whichever we have.
+            if (prior === undefined || (lwd && (!prior || lwd > prior))) {
+                userToLwd.set(user, lwd ?? prior ?? null);
+            }
+        }
+        if (userToLwd.size === 0) return [];
+
+        // (3)+(4): join against hardware. Build a username → rows map
+        // first so we don't do an O(n*m) scan per user.
+        const hwByUser = new Map<string, HardwareRow[]>();
+        for (const hw of hardwareRows) {
+            const u = (hw.assigned_to_username ?? '').toLowerCase().trim();
+            if (!u) continue;
+            const arr = hwByUser.get(u);
+            if (arr) arr.push(hw);
+            else hwByUser.set(u, [hw]);
+        }
+
+        const out: OffboardedAssetRow[] = [];
+        for (const [user, lwd] of userToLwd) {
+            const matches = hwByUser.get(user) ?? [];
+            if (matches.length === 0) {
+                out.push({
+                    userId: user,
+                    lwd,
+                    assetTag: null,
+                    serialNumber: null,
+                    modelDisplayName: null,
+                    assetStatus: null,
+                    substatus: null,
+                    assignedDate: null,
+                    stockRoom: null,
+                    location: null,
+                    residualValue: null,
+                    residualDate: null,
+                });
+                continue;
+            }
+            for (const hw of matches) {
+                out.push({
+                    userId: user,
+                    lwd,
+                    assetTag: hw.asset_tag,
+                    serialNumber: hw.serial_number,
+                    modelDisplayName: hw.model_display_name,
+                    assetStatus: hw.asset_status,
+                    substatus: hw.substatus,
+                    assignedDate: hw.assigned_date,
+                    stockRoom: hw.stock_room,
+                    location: hw.location,
+                    residualValue: hw.residual_value,
+                    residualDate: hw.residual_date,
+                });
+            }
+        }
+        // Order: users with assets first (most actionable), then by
+        // LWD ascending (soonest leaving first), then by user id.
+        out.sort((a, b) => {
+            const aHas = a.assetTag || a.serialNumber ? 0 : 1;
+            const bHas = b.assetTag || b.serialNumber ? 0 : 1;
+            if (aHas !== bHas) return aHas - bHas;
+            const aLwd = a.lwd ?? '\uffff';
+            const bLwd = b.lwd ?? '\uffff';
+            if (aLwd !== bLwd) return aLwd.localeCompare(bLwd);
+            return a.userId.localeCompare(b.userId);
+        });
+        return out;
+    }, [flow, filtered, hardwareRows]);
+
+    /** Distinct user count + matched count for the table subtitle. */
+    const offboardedAssetsStats = useMemo(() => {
+        const users = new Set<string>();
+        const usersWithAsset = new Set<string>();
+        let assetCount = 0;
+        for (const r of offboardedAssets) {
+            users.add(r.userId);
+            if (r.assetTag || r.serialNumber) {
+                usersWithAsset.add(r.userId);
+                assetCount += 1;
+            }
+        }
+        return { users: users.size, usersWithAsset: usersWithAsset.size, assetCount };
+    }, [offboardedAssets]);
 
     const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => openedAt(r), now)), [filtered, now]);
     const activeMoM = useMemo(() => formatMoM(momActiveSnapshot(filtered, now)), [filtered, now]);
@@ -496,6 +653,95 @@ export function OnOffBoardingDashboard() {
                 // Sort on parsed timestamp so newer/older ordering
                 // doesn't depend on the truncated YYYY-MM-DD string.
                 sortValue: (r) => Date.parse(openedAt(r)) || 0,
+            },
+        ],
+        [t],
+    );
+
+    // "Offboarded User Assets" table columns — only rendered for the
+    // Offboarding tab. Order is User → LWD → asset basics, matching
+    // the audit narrative "who is leaving, when, and what they hold".
+    const offboardedAssetColumns: Column<OffboardedAssetRow>[] = useMemo(
+        () => [
+            {
+                key: 'userId',
+                label: t('charts.colUserId'),
+                width: 'w-32',
+                render: (r) => r.userId || '—',
+            },
+            {
+                key: 'lwd',
+                label: t('charts.colLastWorkingDay'),
+                width: 'w-32',
+                render: (r) => r.lwd ?? '—',
+                sortValue: (r) => (r.lwd ? Date.parse(r.lwd) : 0),
+            },
+            {
+                key: 'assetTag',
+                label: t('charts.colAssetTag'),
+                width: 'w-32',
+                render: (r) => r.assetTag ?? '—',
+            },
+            {
+                key: 'serialNumber',
+                label: t('charts.colSerial'),
+                width: 'w-40',
+                render: (r) => r.serialNumber ?? '—',
+            },
+            {
+                key: 'modelDisplayName',
+                label: t('charts.colModel'),
+                width: 'w-48',
+                render: (r) => r.modelDisplayName ?? '—',
+            },
+            {
+                key: 'assetStatus',
+                label: t('charts.colAssetStatus'),
+                width: 'w-32',
+                render: (r) => {
+                    const status = r.assetStatus ?? '';
+                    const sub = r.substatus ? ` / ${r.substatus}` : '';
+                    return status ? `${status}${sub}` : '—';
+                },
+            },
+            {
+                key: 'stockRoom',
+                label: t('charts.colStockRoom'),
+                width: 'w-40',
+                render: (r) => r.stockRoom ?? r.location ?? '—',
+            },
+            {
+                key: 'residualValue',
+                // Combined cell: book value + the date that snapshot was
+                // taken. Both columns are 100% / 81% populated on the
+                // dev hardware roster, so this is reliable signal for
+                // ops to gauge how much equipment value is still in the
+                // wild for each leaver.
+                label: t('charts.colResidualValue'),
+                width: 'w-40',
+                render: (r) => {
+                    if (r.residualValue === null || r.residualValue === undefined) return '—';
+                    const num = typeof r.residualValue === 'string' ? Number(r.residualValue) : r.residualValue;
+                    if (!Number.isFinite(num)) return '—';
+                    const formatted = `$${num.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}`;
+                    const dateLabel = r.residualDate ? r.residualDate.slice(0, 10) : null;
+                    return dateLabel ? `${formatted} (${dateLabel})` : formatted;
+                },
+                sortValue: (r) => {
+                    if (r.residualValue === null || r.residualValue === undefined) return -Infinity;
+                    const num = typeof r.residualValue === 'string' ? Number(r.residualValue) : r.residualValue;
+                    return Number.isFinite(num) ? num : -Infinity;
+                },
+            },
+            {
+                key: 'assignedDate',
+                label: t('charts.colAssignedDate'),
+                width: 'w-32',
+                render: (r) => (r.assignedDate ? r.assignedDate.slice(0, 10) : '—'),
+                sortValue: (r) => (r.assignedDate ? Date.parse(r.assignedDate) : 0),
             },
         ],
         [t],
@@ -873,24 +1119,51 @@ export function OnOffBoardingDashboard() {
                     emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     storageKey={`ops-dashboard:on-off-boarding:${flow}:detail-open`}
                 />
+
+                {/* Row 5: Offboarded User Assets — offboarding-only.
+                    Joins SN ticket usernames against `assigned_to_username`
+                    on the hardware roster. Coverage is best-effort: vendor
+                    accounts (v_*) and shortened user IDs (e.g. `antonio`
+                    vs `antoniobjr`) often miss; we still list the user
+                    with empty asset cells so ops sees who they couldn't
+                    trace. */}
+                {flow === 'offboarding' && (
+                    <OnOffBoardingDetailSection<OffboardedAssetRow>
+                        isLight={isLight}
+                        title={t('charts.offboardedAssets')}
+                        subtitle={t('charts.offboardedAssetsSubtitle', {
+                            users: offboardedAssetsStats.users.toLocaleString(),
+                            withAsset: offboardedAssetsStats.usersWithAsset.toLocaleString(),
+                            assets: offboardedAssetsStats.assetCount.toLocaleString(),
+                        })}
+                        info={t('charts.offboardedAssetsInfo')}
+                        rows={offboardedAssets}
+                        columns={offboardedAssetColumns}
+                        csvFilename="offboarded_user_assets"
+                        emptyText={
+                            hwLoading || loading ? t('empty.loading') : t('empty.noData')
+                        }
+                        storageKey="ops-dashboard:on-off-boarding:offboarded-assets:detail-open"
+                    />
+                )}
             </div>
         </div>
     );
 }
 
-interface OnOffBoardingDetailSectionProps {
+interface OnOffBoardingDetailSectionProps<R> {
     isLight: boolean;
     title: string;
     subtitle: string;
     info: string;
-    rows: TicketRow[];
-    columns: Column<TicketRow>[];
+    rows: R[];
+    columns: Column<R>[];
     csvFilename: string;
     emptyText: string;
     storageKey: string;
 }
 
-function OnOffBoardingDetailSection({
+function OnOffBoardingDetailSection<R>({
     isLight,
     title,
     subtitle,
@@ -900,7 +1173,7 @@ function OnOffBoardingDetailSection({
     csvFilename,
     emptyText,
     storageKey,
-}: OnOffBoardingDetailSectionProps) {
+}: OnOffBoardingDetailSectionProps<R>) {
     const [open, setOpen] = useState<boolean>(() => {
         if (typeof window === 'undefined') return false;
         try {
