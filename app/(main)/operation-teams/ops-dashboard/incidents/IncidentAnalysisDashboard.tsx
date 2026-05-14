@@ -109,12 +109,6 @@ function locationOf(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
 
-function openedDateStr(row: TicketRow): string {
-    // Use upstream SN open date (source_created_at) per the ops-team
-    // contract; fall back to local created_at when missing.
-    return openedAt(row).slice(0, 10);
-}
-
 export function IncidentAnalysisDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -227,7 +221,6 @@ export function IncidentAnalysisDashboard() {
         const prioSel = (filters.priority as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
         const groupSel = (filters.assigned_group as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return rows.filter((r) => {
             // Scope to OIT assignment groups so the dashboard reflects
             // OIT's own queue (matches Active Monitoring Hub +
@@ -245,11 +238,14 @@ export function IncidentAnalysisDashboard() {
             // when the filter is active — same convention as the other
             // chart-driven filters.
             if (groupSel.length && (!r.assigned_group || !groupSel.includes(r.assigned_group))) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
+            // NOTE: no client-side date predicate. The user-picked
+            // date range is already applied server-side via
+            // `created_at_from` / `created_at_to` (anchored in
+            // SN's Asia/Shanghai timezone via snDayStartIso/EndIso).
+            // Re-filtering here with a UTC YYYY-MM-DD string compare
+            // would shift the boundary back by 8 hours and double-
+            // count / drop tickets that SN displays on the boundary
+            // day's morning (00:00–07:59 SN-time).
             return true;
         });
     }, [rows, filters, selectedRegions, selectedCountries, selectedLocations]);

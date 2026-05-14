@@ -79,12 +79,6 @@ function departmentOf(row: TicketRow): string {
     return row.actor?.organization?.descriptor?.trim() || 'Unknown';
 }
 
-function openedDateStr(row: TicketRow): string {
-    // Use upstream SN open date (source_created_at) per the ops-team
-    // contract; fall back to local created_at when missing.
-    return openedAt(row).slice(0, 10);
-}
-
 /** Trim a long department/group label to fit the horizontal bar chart. */
 function trimLabel(label: string, max = 22): string {
     return label.length > max ? `${label.slice(0, max)}…` : label;
@@ -170,7 +164,6 @@ export function CatalogDashboard() {
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return catalogRows.filter((r) => {
             // Scope to OIT assignment groups so the dashboard reflects
             // OIT's own queue (matches Active Monitoring Hub + Incident
@@ -181,11 +174,14 @@ export function CatalogDashboard() {
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
+            // NOTE: no client-side date predicate. The user-picked
+            // date range is already applied server-side via
+            // `created_at_from` / `created_at_to` (anchored in
+            // SN's Asia/Shanghai timezone via snDayStartIso/EndIso).
+            // Re-filtering here with a UTC YYYY-MM-DD string compare
+            // would shift the boundary back by 8 hours and double-
+            // count / drop tickets that SN displays on the boundary
+            // day's morning (00:00–07:59 SN-time).
             return true;
         });
     }, [catalogRows, filters, selectedRegions, selectedCountries, selectedLocations]);
