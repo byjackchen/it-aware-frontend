@@ -267,6 +267,14 @@ export function OnOffBoardingDashboard() {
         state: [],
         created_at_from: { from: defaultFromIso, to: null },
         created_at_to: { from: defaultFromIso, to: null },
+        // LWD-between (offboarding) and Onboarding-Date-between
+        // (onboarding) both default to "MTD → no upper bound", same
+        // convention as the Open-date filter above. Stored under the
+        // leading param key per TopFilterBar's date-range contract.
+        lwd_from: { from: defaultFromIso, to: null },
+        lwd_to: { from: defaultFromIso, to: null },
+        hire_date_from: { from: defaultFromIso, to: null },
+        hire_date_to: { from: defaultFromIso, to: null },
     });
 
     // Region / Country / Location are SHARED across every MONITORING
@@ -842,6 +850,12 @@ export function OnOffBoardingDashboard() {
         if (Array.isArray(st)) n += st.length;
         const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
         if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
+        // LWD-between and Onboarding-Date-between also count when the
+        // user moves them off their MTD default so Clear All lights up.
+        const lwd = filters.lwd_from as { from: string | null; to: string | null } | undefined;
+        if (lwd && (lwd.from !== defaultFromIso || lwd.to !== null)) n += 1;
+        const hire = filters.hire_date_from as { from: string | null; to: string | null } | undefined;
+        if (hire && (hire.from !== defaultFromIso || hire.to !== null)) n += 1;
         return n;
     }, [filters, defaultFromIso]);
 
@@ -851,6 +865,10 @@ export function OnOffBoardingDashboard() {
             state: [],
             created_at_from: { from: defaultFromIso, to: null },
             created_at_to: { from: defaultFromIso, to: null },
+            lwd_from: { from: defaultFromIso, to: null },
+            lwd_to: { from: defaultFromIso, to: null },
+            hire_date_from: { from: defaultFromIso, to: null },
+            hire_date_to: { from: defaultFromIso, to: null },
         });
     }
 
