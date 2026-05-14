@@ -154,13 +154,19 @@ function compareCodes(current: IncidentMonthStats, previous: IncidentMonthStats)
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function Tooltip({ text }: { text: string }) {
+const CATEGORY_DEF_KEYS = [
+    'KB_GAP', 'USER_HABIT', 'AGENT_ERR', 'MANUAL_SSC',
+    'ONSITE', 'SECURITY', 'MONITORING', 'OUT_OF_SCOPE', 'UNCLASSIFIED',
+] as const;
+
+function Tooltip({ text, position = 'below' }: { text: string; position?: 'below' | 'right' }) {
+    const popoverCls = position === 'right'
+        ? 'pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden w-64 -translate-y-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block'
+        : 'pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block';
     return (
         <span className="group relative inline-flex items-center">
             <HelpCircle className="h-3.5 w-3.5 text-gray-400 transition-colors group-hover:text-white" />
-            <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block">
-                {text}
-            </span>
+            <span className={popoverCls}>{text}</span>
         </span>
     );
 }
@@ -263,6 +269,7 @@ function BreakdownComparisonTable({
         deltaPts: string;
     };
 }) {
+    const t = useTranslations('SSCIncidentReport');
     const rows = compareCodes(current, previous);
     const headerCls = `px-3 py-2.5 text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-400'}`;
 
@@ -293,6 +300,9 @@ function BreakdownComparisonTable({
                                         style={{ backgroundColor: CATEGORY_COLORS[row.code] || '#cbd5e1' }}
                                     />
                                     <span className={`text-sm font-medium ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.display}</span>
+                                    {(CATEGORY_DEF_KEYS as readonly string[]).includes(row.code) && (
+                                        <Tooltip text={t(`catDef.${row.code as typeof CATEGORY_DEF_KEYS[number]}`)} position="right" />
+                                    )}
                                 </div>
                             </td>
                             <td className={`px-3 py-2.5 text-right font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{row.currentCount.toLocaleString()}</td>

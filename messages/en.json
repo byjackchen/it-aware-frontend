@@ -2830,6 +2830,17 @@
       "deltaCount": "Δ Count",
       "deltaPts": "Δ %pts"
     },
+    "catDef": {
+      "KB_GAP": "Knowledge base gap — The chatbot had no accurate answer because KB/FAQ content is missing or outdated for this topic.",
+      "USER_HABIT": "User habit — User bypassed self-service and contacted human support directly by habit, even though an FAQ answer exists.",
+      "AGENT_ERR": "Agent error — The SSC chatbot gave an incorrect or misleading answer, causing the user to escalate.",
+      "MANUAL_SSC": "Manual SSC handling — Issue requires case-specific human judgment (account actions, approvals, login issues, edge cases).",
+      "ONSITE": "Onsite required — Requires physical onsite support (hardware swap, cabling, desk setup, physical access).",
+      "SECURITY": "Security escalation — Security-related ticket (phishing tests, policy violations, threat reports, suspicious activity).",
+      "MONITORING": "Monitoring alert — Auto-generated ticket from monitoring systems (Grafana alerts, automated triggers, system health checks).",
+      "OUT_OF_SCOPE": "Out of scope — Issue falls entirely outside OIT support scope; belongs to another team or vendor.",
+      "UNCLASSIFIED": "Unclassified — Incident has not yet been assigned an AI category."
+    },
     "chatbot": {
       "title": "Chatbot Escalation Metrics",
       "subtitle": "'{label}' — '{count}' meaningful sessions",
