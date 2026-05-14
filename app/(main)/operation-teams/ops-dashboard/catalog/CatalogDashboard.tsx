@@ -29,11 +29,14 @@ import {
     formatMoM,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     meanOf,
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
     openedAt,
+    snDayEndIso,
+    snDayStartIso,
     sumOf,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
@@ -139,8 +142,11 @@ export function CatalogDashboard() {
     const { data, loading, error, refetch } = useRequests(
         {
             limit: 1000,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            // SN reports timestamps in Asia/Shanghai (+08:00); anchor
+            // the user-picked YYYY-MM-DD in that timezone so the API
+            // boundaries align with what SN itself shows.
+            created_at_from: snDayStartIso(dateRange.from),
+            created_at_to: snDayEndIso(dateRange.to),
         },
         { fetchAll: true },
     );
@@ -166,6 +172,12 @@ export function CatalogDashboard() {
         const stateSel = (filters.state as string[]) ?? [];
         const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return catalogRows.filter((r) => {
+            // Scope to OIT assignment groups so the dashboard reflects
+            // OIT's own queue (matches Active Monitoring Hub + Incident
+            // Analysis + Unassigned Tab). Non-OIT groups like IT
+            // Automation / OA Account Creation / Amazon Ordering / etc.
+            // are filtered out.
+            if (!isInScopeGroup(r.assigned_group)) return false;
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;

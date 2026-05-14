@@ -31,6 +31,8 @@ import {
     momActiveSnapshot,
     monthsFromRange,
     openedAt,
+    snDayEndIso,
+    snDayStartIso,
     trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
@@ -117,6 +119,11 @@ export function OpsDashboardHub() {
     const ticketDateRange =
         (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
         { from: null, to: null };
+    // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
+    // user-picked YYYY-MM-DD in that timezone so the API boundaries
+    // align with what SN itself shows.
+    const ticketDateFromIso = snDayStartIso(ticketDateRange.from);
+    const ticketDateToIso = snDayEndIso(ticketDateRange.to);
 
     // ── Two concurrent fetches ─────────────────────────────────
     // fetchAll: true pages through skip/limit so we don't hit the 1000-row
@@ -126,8 +133,8 @@ export function OpsDashboardHub() {
         {
             limit: 1000,
             view: 'slim',
-            created_at_from: ticketDateRange.from ?? undefined,
-            created_at_to: ticketDateRange.to ?? undefined,
+            created_at_from: ticketDateFromIso,
+            created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -135,8 +142,8 @@ export function OpsDashboardHub() {
         {
             limit: 1000,
             view: 'slim',
-            created_at_from: ticketDateRange.from ?? undefined,
-            created_at_to: ticketDateRange.to ?? undefined,
+            created_at_from: ticketDateFromIso,
+            created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -153,8 +160,8 @@ export function OpsDashboardHub() {
             view: 'slim',
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: ticketDateRange.from ?? undefined,
-            created_at_to: ticketDateRange.to ?? undefined,
+            created_at_from: ticketDateFromIso,
+            created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -164,8 +171,8 @@ export function OpsDashboardHub() {
             view: 'slim',
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: ticketDateRange.from ?? undefined,
-            created_at_to: ticketDateRange.to ?? undefined,
+            created_at_from: ticketDateFromIso,
+            created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -280,21 +287,24 @@ export function OpsDashboardHub() {
         }
         // VIP count comes from a dedicated `is_vip=true` server-side
         // query — `is_vip` is a workers-table column, not a ticket-row
-        // field, so we can't sniff it on the slim view rows. The same
-        // Region/Country slicer applies to the VIP rows so the KPI
-        // tracks any geographic narrowing the user sets.
+        // field, so we can't sniff it on the slim view rows. Apply the
+        // same OIT scope + Region/Country filter as the VIP Tickets
+        // drill-in page so the Hub's VIP Active KPI always reconciles
+        // with the count users see on /vip-tickets.
         const vipRows = [
             ...(vipIncidentQuery.data?.items ?? []),
             ...(vipRequestQuery.data?.items ?? []),
         ];
-        const vipActive = vipRows.filter((r) =>
-            matchesRegionCountry(
-                r,
-                selectedRegions,
-                selectedCountries,
-                selectedLocations,
-                locationForFilter,
-            ),
+        const vipActive = vipRows.filter(
+            (r) =>
+                isInScopeGroup(r.assigned_group) &&
+                matchesRegionCountry(
+                    r,
+                    selectedRegions,
+                    selectedCountries,
+                    selectedLocations,
+                    locationForFilter,
+                ),
         ).length;
         return {
             totalActive: activeTickets.length,
