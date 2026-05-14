@@ -64,7 +64,11 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
     const t = useTranslations('Data');
     const isLight = theme === 'light';
 
-    const receiver = workers.find((w) => w.oid === survey.receiver_oid);
+    // receiver_oid is null for externally-sourced surveys; skip the lookup
+    // and let downstream rendering fall back to receiver_stable_id.
+    const receiver = survey.receiver_oid
+        ? workers.find((w) => w.oid === survey.receiver_oid)
+        : undefined;
     const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.not_started;
 
     return (

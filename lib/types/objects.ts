@@ -1402,7 +1402,18 @@ export interface Survey {
     oid: string;
     survey_batch_oid: string;
     receiver_stable_id: string;
-    receiver_oid: string;
+    /**
+     * `null` when `external_source` is non-null — externally-sourced surveys
+     * may carry a respondent who is not a known Worker. For native surveys
+     * (external_source === null) this is always a valid Worker OID.
+     */
+    receiver_oid: string | null;
+    /** Provenance marker for surveys imported from outside it-aware (e.g. "feishu-forms"). */
+    external_source: string | null;
+    /** Typed pointer label, paired with context_oid (e.g. "incident", "request"). */
+    context_type: string | null;
+    /** 22-char ULID of the linked object, paired with context_type. */
+    context_oid: string | null;
     survey_questions: SurveyQuestions;
     survey_answer: SurveyAnswerPayload | null;
     status: SurveyStatus;
@@ -1414,12 +1425,17 @@ export interface Survey {
 export interface SurveyCreate {
     receiver_stable_id: string;
     receiver_oid?: string | null;
+    external_source?: string | null;
+    context_type?: string | null;
+    context_oid?: string | null;
     survey_questions: SurveyQuestions;
 }
 
 export interface SurveyUpdate {
     receiver_oid?: string | null;
     survey_questions?: SurveyQuestions;
+    context_type?: string | null;
+    context_oid?: string | null;
 }
 
 export interface SurveySubmitActionRequest {
@@ -1436,6 +1452,9 @@ export type SurveyActionRequest = SurveySubmitActionRequest | SurveyRevokeAction
 export interface SurveyListParams {
     status?: SurveyStatus;
     receiver_stable_id?: string;
+    external_source?: string;
+    context_type?: string;
+    context_oid?: string;
     submitted_at_from?: string;
     submitted_at_to?: string;
     skip?: number;
@@ -1454,6 +1473,9 @@ export interface CrossBatchSurveyListParams {
     survey_status?: SurveyStatus;
     survey_batch_status?: SurveyBatchStatus;
     survey_batch_oid?: string;
+    external_source?: string;
+    context_type?: string;
+    context_oid?: string;
     skip?: number;
     limit?: number;
 }
