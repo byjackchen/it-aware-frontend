@@ -138,9 +138,13 @@ export function CatalogDashboard() {
             limit: 1000,
             // SN reports timestamps in Asia/Shanghai (+08:00); anchor
             // the user-picked YYYY-MM-DD in that timezone so the API
-            // boundaries align with what SN itself shows.
-            created_at_from: snDayStartIso(dateRange.from),
-            created_at_to: snDayEndIso(dateRange.to),
+            // boundaries align with what SN itself shows. Filter against
+            // the upstream SN create timestamp (`source_created_at`),
+            // not the local DB ingest timestamp (`created_at`): sync
+            // backfills land recent `created_at` on historical tickets
+            // and would otherwise explode MTD counts on bulk re-sync.
+            source_created_at_from: snDayStartIso(dateRange.from),
+            source_created_at_to: snDayEndIso(dateRange.to),
         },
         { fetchAll: true },
     );
