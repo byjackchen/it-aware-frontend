@@ -109,12 +109,6 @@ function locationOf(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
 
-function openedDateStr(row: TicketRow): string {
-    // Use upstream SN open date (source_created_at) per the ops-team
-    // contract; fall back to local created_at when missing.
-    return openedAt(row).slice(0, 10);
-}
-
 export function IncidentAnalysisDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -227,7 +221,7 @@ export function IncidentAnalysisDashboard() {
         const prioSel = (filters.priority as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
         const groupSel = (filters.assigned_group as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
+        const categorySel = (filters.category as string[]) ?? [];
         return rows.filter((r) => {
             // Scope to OIT assignment groups so the dashboard reflects
             // OIT's own queue (matches Active Monitoring Hub +
@@ -245,11 +239,19 @@ export function IncidentAnalysisDashboard() {
             // when the filter is active — same convention as the other
             // chart-driven filters.
             if (groupSel.length && (!r.assigned_group || !groupSel.includes(r.assigned_group))) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
+            // Category filter — driven by the By-Category donut click
+            // / legend toggle. Missing categories surface as the
+            // "Unknown" bucket in the donut (see categoryDonut), so
+            // we keep that label as a selectable value.
+            if (categorySel.length && !categorySel.includes(r.category ?? 'Unknown')) return false;
+            // NOTE: no client-side date predicate. The user-picked
+            // date range is already applied server-side via
+            // `created_at_from` / `created_at_to` (anchored in
+            // SN's Asia/Shanghai timezone via snDayStartIso/EndIso).
+            // Re-filtering here with a UTC YYYY-MM-DD string compare
+            // would shift the boundary back by 8 hours and double-
+            // count / drop tickets that SN displays on the boundary
+            // day's morning (00:00–07:59 SN-time).
             return true;
         });
     }, [rows, filters, selectedRegions, selectedCountries, selectedLocations]);
@@ -460,6 +462,14 @@ export function IncidentAnalysisDashboard() {
     const onStateSliceClick = (slice: { name: string }) => toggleState(slice.name);
     const selectedStates = (filters.state as string[]) ?? [];
 
+    const toggleCategory = (name: string) => {
+        const cur = (filters.category as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, category: next });
+    };
+    const onCategorySliceClick = (slice: { name: string }) => toggleCategory(slice.name);
+    const selectedCategories = (filters.category as string[]) ?? [];
+
     const toggleAssignedGroup = (name: string) => {
         // The "Other" rollup in the donut isn't a real assigned_group
         // value — clicking it would set a filter that matches nothing.
@@ -487,6 +497,7 @@ export function IncidentAnalysisDashboard() {
      * to drive the consolidated Clear All button. Counts:
      *   - Priority (Active by Priority donut)
      *   - State (By State donut)
+     *   - Category (By Category donut)
      *   - Assigned Group (By Group donut)
      *   - Open Date range (when not at the page default)
      */
@@ -496,6 +507,8 @@ export function IncidentAnalysisDashboard() {
         if (Array.isArray(prio)) n += prio.length;
         const st = filters.state;
         if (Array.isArray(st)) n += st.length;
+        const cat = filters.category;
+        if (Array.isArray(cat)) n += cat.length;
         const grp = filters.assigned_group;
         if (Array.isArray(grp)) n += grp.length;
         const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
@@ -516,6 +529,7 @@ export function IncidentAnalysisDashboard() {
             assigned_group: [],
             priority: [],
             state: [],
+            category: [],
             department: [],
             created_at_from: { from: defaultFromIso, to: null },
             created_at_to: { from: defaultFromIso, to: null },
@@ -777,6 +791,12 @@ export function IncidentAnalysisDashboard() {
                         info={t('charts.activeByCategoryIncidentsInfo')}
                         data={categoryDonut}
                         height={220}
+                        // Slice click + legend toggle drive the
+                        // category client-filter, mirroring how the
+                        // priority / state donuts work above.
+                        onSliceClick={onCategorySliceClick}
+                        selectedSlices={selectedCategories}
+                        onLegendToggle={toggleCategory}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <DonutCard

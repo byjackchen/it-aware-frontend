@@ -25,6 +25,7 @@ import { UserPlus, UserMinus, RefreshCw, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useRequests, useHardwares } from '@/lib/hooks/useOpsDashboard';
+import { useAllActiveWorkers } from '@/lib/hooks/useAllActiveWorkers';
 import type { TicketRow, HardwareRow } from '@/lib/api/ops_dashboard';
 import {
     cumulativeTrendByMonth,
@@ -266,6 +267,14 @@ export function OnOffBoardingDashboard() {
         state: [],
         created_at_from: { from: defaultFromIso, to: null },
         created_at_to: { from: defaultFromIso, to: null },
+        // LWD-between (offboarding) and Onboarding-Date-between
+        // (onboarding) both default to "MTD → no upper bound", same
+        // convention as the Open-date filter above. Stored under the
+        // leading param key per TopFilterBar's date-range contract.
+        lwd_from: { from: defaultFromIso, to: null },
+        lwd_to: { from: defaultFromIso, to: null },
+        hire_date_from: { from: defaultFromIso, to: null },
+        hire_date_to: { from: defaultFromIso, to: null },
     });
 
     // Region / Country / Location are SHARED across every MONITORING
@@ -309,6 +318,22 @@ export function OnOffBoardingDashboard() {
     );
     const hardwareRows: HardwareRow[] = hwData?.items ?? [];
 
+    // Worker fetch — onboarding-only. SN-side onboarding tickets don't
+    // carry a usable `expected_start_date` (every onboarding row has
+    // it null in dev), so we resolve the new hire's onboarding date
+    // by joining `ticket.actor_oid` -> `worker.hire_date` from the
+    // ABAC-aware `/api/objects/workers` endpoint. ~3k active workers
+    // total, fetched once when the user first visits the Onboarding
+    // tab, cached client-side via the hook's seen-set dedup.
+    const { workers: activeWorkers, loading: workersLoading } = useAllActiveWorkers({
+        enabled: flow === 'onboarding',
+    });
+    const hireDateByOid = useMemo(() => {
+        const m = new Map<string, string | null>();
+        for (const w of activeWorkers) m.set(w.oid, w.hire_date);
+        return m;
+    }, [activeWorkers]);
+
     // Narrow to the active flow using client-side keyword classification.
     // Also apply OIT scope (matches Incidents / Catalog / Aging / Hub
     // / VIP / Unassigned). In practice the flow-keyword filter already
@@ -348,6 +373,18 @@ export function OnOffBoardingDashboard() {
                 clientSide: true,
             });
         }
+        if (flow === 'onboarding') {
+            // Onboarding-date slicer — pulled off worker.hire_date via
+            // the actor_oid join (see hireDateByOid above). Same
+            // semantics as the offboarding LWD-between filter: rows
+            // whose new-hire has a hire_date inside [from, to] are kept.
+            base.push({
+                type: 'date-range',
+                param: ['hire_date_from', 'hire_date_to'],
+                label: t('filters.onboardingDateBetween'),
+                clientSide: true,
+            });
+        }
         return base;
     }, [t, flow]);
 
@@ -360,24 +397,25 @@ export function OnOffBoardingDashboard() {
             from: null,
             to: null,
         };
+        // Onboarding-date range — onboarding-only. Stored under the
+        // leading param key (`hire_date_from`) for the same reason.
+        const hireRange = (filters.hire_date_from as { from: string | null; to: string | null } | undefined) ?? {
+            from: null,
+            to: null,
+        };
         return flowRows.filter((r) => {
-            // Region/Country/Location filter only meaningful for the
-            // Onboarding tab — the offboarding ticket caller is the
-            // Workday automation account, so r.actor.location ends up
-            // null/non-physical and the filter strips every row. Skip
-            // the predicate entirely when we're on Offboarding.
-            if (flow === 'onboarding') {
-                if (
-                    !matchesRegionCountry(
-                        r,
-                        selectedRegions,
-                        selectedCountries,
-                        selectedLocations,
-                        locationForFilter,
-                    )
-                )
-                    return false;
-            }
+            // Region/Country/Location filter is now hidden on both
+            // tabs — neither flow has reliable geo signal:
+            //   - offboarding caller is the Workday automation account
+            //     (no real location), and the offboarded user's worker
+            //     row has been HR-cleared by the time the ticket fires.
+            //   - onboarding actor is the new hire, but their worker
+            //     row sometimes pre-dates location assignment, so the
+            //     filter strips half the cohort.
+            // Skip the predicate entirely on both flows — the new
+            // date-range slicers (LWD-between for offboarding,
+            // Onboarding-date-between for onboarding) carry the
+            // user-intent better.
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;
             // LWD between — offboarding-only. Keep rows whose parsed
@@ -390,9 +428,23 @@ export function OnOffBoardingDashboard() {
                 if (lwdRange.from && lwd < lwdRange.from) return false;
                 if (lwdRange.to && lwd > lwdRange.to) return false;
             }
+            // Onboarding date between — onboarding-only. Keep rows
+            // whose actor's hire_date falls within [from, to]
+            // (inclusive). Rows whose actor isn't in the workers
+            // map (e.g. the worker fetch hasn't returned yet, or
+            // the worker is inactive) are dropped while either bound
+            // is active.
+            if (flow === 'onboarding' && (hireRange.from || hireRange.to)) {
+                const oid = r.actor_oid;
+                const iso = oid ? hireDateByOid.get(oid) : null;
+                if (!iso) return false;
+                const hireDay = iso.slice(0, 10); // YYYY-MM-DD prefix is enough for date compare
+                if (hireRange.from && hireDay < hireRange.from) return false;
+                if (hireRange.to && hireDay > hireRange.to) return false;
+            }
             return true;
         });
-    }, [flowRows, filters, flow, selectedRegions, selectedCountries, selectedLocations]);
+    }, [flowRows, filters, flow, hireDateByOid]);
 
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
 
@@ -603,6 +655,13 @@ export function OnOffBoardingDashboard() {
             {
                 key: 'item',
                 label: t('charts.colItem'),
+                // Wide-fixed width + nowrap so the SN short description
+                // (e.g. "Offboarding: Retrieve IT Equipment on
+                // 2025-09-30 for v_anavya") renders on a single line.
+                // Long titles are truncated with a tooltip showing the
+                // full text — much easier to scan than the previous
+                // wrapped-into-3-lines layout.
+                width: 'min-w-[28rem] max-w-[36rem]',
                 // Prefer SN's short description (`title`) when present —
                 // that's where "Offboarding: Retrieve IT Equipment on
                 // 2025-09-30 for v_anavya"-style copy lives. Fall back
@@ -610,7 +669,17 @@ export function OnOffBoardingDashboard() {
                 // "Offboarding IT Request Form", …) only when title is
                 // empty so the column always carries the most specific
                 // signal available.
-                render: (r) => r.title || r.item || r.request_item || '—',
+                render: (r) => {
+                    const text = r.title || r.item || r.request_item || '—';
+                    return (
+                        <span
+                            className="block whitespace-nowrap overflow-hidden text-ellipsis"
+                            title={text}
+                        >
+                            {text}
+                        </span>
+                    );
+                },
             },
             {
                 key: 'caller_name',
@@ -652,8 +721,27 @@ export function OnOffBoardingDashboard() {
                 // doesn't depend on the truncated YYYY-MM-DD string.
                 sortValue: (r) => Date.parse(openedAt(r)) || 0,
             },
+            {
+                key: 'onboarding_date',
+                label: t('charts.colOnboardingDate'),
+                width: 'w-32',
+                // Onboarding tab only — shows the new hire's worker
+                // hire_date (joined via actor_oid). Offboarding rows
+                // render "—" since hire_date isn't meaningful for the
+                // separation cohort.
+                render: (r) => {
+                    if (flow !== 'onboarding') return '—';
+                    const iso = r.actor_oid ? hireDateByOid.get(r.actor_oid) : null;
+                    return iso ? iso.slice(0, 10) : '—';
+                },
+                sortValue: (r) => {
+                    if (flow !== 'onboarding') return 0;
+                    const iso = r.actor_oid ? hireDateByOid.get(r.actor_oid) : null;
+                    return iso ? Date.parse(iso) : 0;
+                },
+            },
         ],
-        [t],
+        [t, flow, hireDateByOid],
     );
 
     // "Offboarded User Assets" table columns — only rendered for the
@@ -762,6 +850,12 @@ export function OnOffBoardingDashboard() {
         if (Array.isArray(st)) n += st.length;
         const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
         if (r && (r.from !== defaultFromIso || r.to !== null)) n += 1;
+        // LWD-between and Onboarding-Date-between also count when the
+        // user moves them off their MTD default so Clear All lights up.
+        const lwd = filters.lwd_from as { from: string | null; to: string | null } | undefined;
+        if (lwd && (lwd.from !== defaultFromIso || lwd.to !== null)) n += 1;
+        const hire = filters.hire_date_from as { from: string | null; to: string | null } | undefined;
+        if (hire && (hire.from !== defaultFromIso || hire.to !== null)) n += 1;
         return n;
     }, [filters, defaultFromIso]);
 
@@ -771,6 +865,10 @@ export function OnOffBoardingDashboard() {
             state: [],
             created_at_from: { from: defaultFromIso, to: null },
             created_at_to: { from: defaultFromIso, to: null },
+            lwd_from: { from: defaultFromIso, to: null },
+            lwd_to: { from: defaultFromIso, to: null },
+            hire_date_from: { from: defaultFromIso, to: null },
+            hire_date_to: { from: defaultFromIso, to: null },
         });
     }
 
@@ -917,29 +1015,17 @@ export function OnOffBoardingDashboard() {
                     </button>
                 }
                 headerSlot={
-                    flow === 'offboarding' ? (
-                        // Offboarding tickets are filed by the Workday
-                        // automation account, so r.actor carries no
-                        // physical region/country/location for the
-                        // offboarded user. Hide the geographic filter
-                        // here — the LWD slicer in the row below covers
-                        // the offboarding-specific date dimension.
-                        null
-                    ) : (
-                        <RegionCountryFilter
-                            rows={flowRows}
-                            getLocation={locationForFilter}
-                            selectedRegions={selectedRegions}
-                            selectedCountries={selectedCountries}
-                            selectedLocations={selectedLocations}
-                            onRegionsChange={setSelectedRegions}
-                            onCountriesChange={setSelectedCountries}
-                            onLocationsChange={setSelectedLocations}
-                            extraActiveCount={extraActiveFilterCount}
-                            onClearAll={resetAllParentFilters}
-                            showClearButton={false}
-                        />
-                    )
+                    // Region/Country/Location is hidden on both flows.
+                    // - Offboarding: caller is the Workday automation
+                    //   account, so r.actor carries no physical
+                    //   region/country/location for the offboarded user.
+                    // - Onboarding: actor is the new hire, but their
+                    //   worker row sometimes pre-dates location
+                    //   assignment, so the geo filter strips half the
+                    //   cohort. The Onboarding-Date-Between slicer in
+                    //   the row below covers the meaningful date
+                    //   dimension instead.
+                    null
                 }
             />
 

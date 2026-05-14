@@ -450,7 +450,8 @@
         "scopeInItems": "{items}",
         "scopeInItemsPlus": "{items} +{count}",
         "substate": "子状态",
-        "lastWorkingDayBetween": "最后工作日介于"
+        "lastWorkingDayBetween": "最后工作日介于",
+        "onboardingDateBetween": "入职日期介于"
       },
       "tables": {
         "number": "编号",
@@ -1832,6 +1833,7 @@
       "colAssignedGroup": "分配组",
       "colAssignee": "处理人",
       "colOpened": "开单日期",
+      "colOnboardingDate": "入职日期",
       "offboardedAssets": "离职用户资产",
       "offboardedAssetsInfo": "在当前视图下离职用户名下仍记录的硬件资产，通过 SN 用户名与硬件清单关联。匹配不到资产的用户也会列出——由于供应商账号和缩略 user ID 可能与硬件名册对不上，匹配是尽力而为。",
       "offboardedAssetsSubtitle": "{users} 用户 · {withAsset} 已匹配 · {assets} 资产",
@@ -1908,7 +1910,8 @@
       "scopeInItems": "{items}",
       "scopeInItemsPlus": "{items} +{count}",
       "substate": "子状态",
-      "lastWorkingDayBetween": "最后工作日介于"
+      "lastWorkingDayBetween": "最后工作日介于",
+      "onboardingDateBetween": "入职日期介于"
     },
     "tables": {
       "number": "编号",
