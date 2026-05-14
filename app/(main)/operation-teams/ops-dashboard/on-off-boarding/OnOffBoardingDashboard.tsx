@@ -32,6 +32,7 @@ import {
     formatMoM,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
@@ -264,17 +265,29 @@ export function OnOffBoardingDashboard() {
     const partial = data?.partial === true;
 
     // Narrow to the active flow using client-side keyword classification.
+    // Also apply OIT scope (matches Incidents / Catalog / Aging / Hub
+    // / VIP / Unassigned). In practice the flow-keyword filter already
+    // catches the OIT queue because "new hire equipment" and the two
+    // offboarding templates are OIT-run, but being explicit keeps
+    // every ticket dashboard on the same rule.
     const flowRows: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
-        return rows.filter((r) => matchesFlow(r, flow));
+        return rows.filter((r) => matchesFlow(r, flow) && isInScopeGroup(r.assigned_group));
     }, [data, flow]);
 
     // Row counts for the tab badges — derived from the ENTIRE fetched
     // window, not the filtered subset, so switching filters doesn't
-    // nudge the tab counts and confuse users.
+    // nudge the tab counts and confuse users. Same OIT-scope clamp
+    // applied here so the badge never over-counts.
     const allRows = data?.items ?? [];
-    const onboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'onboarding')).length, [allRows]);
-    const offboardingCount = useMemo(() => allRows.filter((r) => matchesFlow(r, 'offboarding')).length, [allRows]);
+    const onboardingCount = useMemo(
+        () => allRows.filter((r) => matchesFlow(r, 'onboarding') && isInScopeGroup(r.assigned_group)).length,
+        [allRows],
+    );
+    const offboardingCount = useMemo(
+        () => allRows.filter((r) => matchesFlow(r, 'offboarding') && isInScopeGroup(r.assigned_group)).length,
+        [allRows],
+    );
 
     const slicers: SlicerConfig[] = useMemo(() => {
         const base: SlicerConfig[] = [];

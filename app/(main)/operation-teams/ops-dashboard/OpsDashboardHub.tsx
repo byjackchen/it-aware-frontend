@@ -287,21 +287,24 @@ export function OpsDashboardHub() {
         }
         // VIP count comes from a dedicated `is_vip=true` server-side
         // query — `is_vip` is a workers-table column, not a ticket-row
-        // field, so we can't sniff it on the slim view rows. The same
-        // Region/Country slicer applies to the VIP rows so the KPI
-        // tracks any geographic narrowing the user sets.
+        // field, so we can't sniff it on the slim view rows. Apply the
+        // same OIT scope + Region/Country filter as the VIP Tickets
+        // drill-in page so the Hub's VIP Active KPI always reconciles
+        // with the count users see on /vip-tickets.
         const vipRows = [
             ...(vipIncidentQuery.data?.items ?? []),
             ...(vipRequestQuery.data?.items ?? []),
         ];
-        const vipActive = vipRows.filter((r) =>
-            matchesRegionCountry(
-                r,
-                selectedRegions,
-                selectedCountries,
-                selectedLocations,
-                locationForFilter,
-            ),
+        const vipActive = vipRows.filter(
+            (r) =>
+                isInScopeGroup(r.assigned_group) &&
+                matchesRegionCountry(
+                    r,
+                    selectedRegions,
+                    selectedCountries,
+                    selectedLocations,
+                    locationForFilter,
+                ),
         ).length;
         return {
             totalActive: activeTickets.length,
