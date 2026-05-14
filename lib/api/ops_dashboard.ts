@@ -164,6 +164,7 @@ export interface HardwareRow {
     residual_date: string | null;
     cost: string | number | null;
     assigned_to_display_name: string | null;
+    /** SN login / AD username for the currently-assigned worker (e.g. `v_zzzhangzz`). */
     assigned_to_username: string | null;
     worker_oid: string | null;
     is_active: boolean;

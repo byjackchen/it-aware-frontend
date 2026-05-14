@@ -730,7 +730,14 @@
         "filterLegend": "Chart filter legend",
         "pendingImageTitle": "Pending Image devices",
         "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
-        "pendingImageCta": "Click to filter"
+        "pendingImageCta": "Click to filter",
+        "offboardAssets": "Offboarded User Assets",
+        "offboardAssetsSubtitle": "{users} offboarded users · {assets} assets",
+        "offboardAssetsInfo": "Usernames are parsed from currently-filtered offboarding SCTASK titles, then matched exactly against the active hardware inventory on assigned_to_username. Coverage depends on how SN-ticket titles spell the user.",
+        "offboardAssetsEmpty": "No assets found for the currently-filtered offboarding users",
+        "colAssignedTo": "Offboarded User",
+        "colOffboardTicket": "Offboard Ticket",
+        "colAssignedDate": "Assigned Date"
       },
       "filters": {
         "title": "Filters",
@@ -2183,7 +2190,14 @@
       "byAssigneeInfo": "Active tickets grouped by assignee (top 10)",
       "pendingImageTitle": "Pending Image devices",
       "pendingImageSubtitle": "Assets waiting for OS imaging. 0 = green, 1-10 = yellow, >10 = red.",
-      "pendingImageCta": "Click to filter"
+      "pendingImageCta": "Click to filter",
+      "offboardAssets": "Offboarded User Assets",
+      "offboardAssetsSubtitle": "{users} offboarded users · {assets} assets",
+      "offboardAssetsInfo": "Usernames are parsed from currently-filtered offboarding SCTASK titles, then matched exactly against the active hardware inventory on assigned_to_username. Coverage depends on how SN-ticket titles spell the user.",
+      "offboardAssetsEmpty": "No assets found for the currently-filtered offboarding users",
+      "colAssignedTo": "Offboarded User",
+      "colOffboardTicket": "Offboard Ticket",
+      "colAssignedDate": "Assigned Date"
     },
     "filters": {
       "title": "Filters",

@@ -410,7 +410,14 @@
         "filterLegend": "图表筛选图例",
         "pendingImageTitle": "待装机设备 (Pending Image)",
         "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
-        "pendingImageCta": "点击查看详情"
+        "pendingImageCta": "点击查看详情",
+        "offboardAssets": "离职员工资产",
+        "offboardAssetsSubtitle": "{users} 位离职员工 · {assets} 台设备",
+        "offboardAssetsInfo": "从当前已筛选的离职工单（SCTASK）标题中解析用户名，再与资产清单中 assigned_to_username 精确匹配。覆盖率取决于 SCTASK 标题中的用户名书写规范。",
+        "offboardAssetsEmpty": "当前筛选的离职用户在资产清单中未找到匹配设备",
+        "colAssignedTo": "离职用户",
+        "colOffboardTicket": "工单号",
+        "colAssignedDate": "领取日期"
       },
       "filters": {
         "title": "筛选器",
@@ -1861,7 +1868,14 @@
       "byAssigneeInfo": "活跃工单按处理人分组（前 10 名）",
       "pendingImageTitle": "待装机设备 (Pending Image)",
       "pendingImageSubtitle": "等待系统镜像安装的设备数量。0 = 绿色；1-10 = 黄色；>10 = 红色。",
-      "pendingImageCta": "点击查看详情"
+      "pendingImageCta": "点击查看详情",
+      "offboardAssets": "离职员工资产",
+      "offboardAssetsSubtitle": "{users} 位离职员工 · {assets} 台设备",
+      "offboardAssetsInfo": "从当前已筛选的离职工单（SCTASK）标题中解析用户名，再与资产清单中 assigned_to_username 精确匹配。覆盖率取决于 SCTASK 标题中的用户名书写规范。",
+      "offboardAssetsEmpty": "当前筛选的离职用户在资产清单中未找到匹配设备",
+      "colAssignedTo": "离职用户",
+      "colOffboardTicket": "工单号",
+      "colAssignedDate": "领取日期"
     },
     "filters": {
       "title": "筛选器",

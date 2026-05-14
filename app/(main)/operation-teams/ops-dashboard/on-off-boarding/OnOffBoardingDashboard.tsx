@@ -229,13 +229,11 @@ export function OnOffBoardingDashboard() {
             ? t('kpis.momFlat')
             : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
-    // Default 12-month lookback. On/Offboarding is lower-volume than
-    // Catalog (and Offboarding tails off especially) — MTD renders
-    // Offboarding basically empty even when historical data exists.
-    // 12 months keeps the page informative without exploding fetch size.
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so on/offboarding matches every other Ops
+    // dashboard's MTD convention.
     const [defaultFromIso] = useState<string>(() => {
         const d = new Date();
-        d.setMonth(d.getMonth() - 11);
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         return `${yyyy}-${mm}-01`;
