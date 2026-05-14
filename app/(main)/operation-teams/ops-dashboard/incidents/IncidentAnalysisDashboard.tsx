@@ -31,6 +31,8 @@ import {
     momByDate,
     momActiveSnapshot,
     openedAt,
+    snDayEndIso,
+    snDayStartIso,
     sumOf,
     formatMoM,
     type DeltaInfo,
@@ -173,11 +175,16 @@ export function IncidentAnalysisDashboard() {
     // picker and the payload stay in sync. fetchAll: true pages through
     // skip/limit to avoid the 1000-row silent cutoff.
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
+    // user-picked YYYY-MM-DD in that timezone so the API boundaries
+    // align with what SN itself shows.
+    const dateFromIso = snDayStartIso(dateRange.from);
+    const dateToIso = snDayEndIso(dateRange.to);
     const { data, loading, error, refetch } = useIncidents(
         {
             limit: 1000,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            created_at_from: dateFromIso,
+            created_at_to: dateToIso,
         },
         { fetchAll: true },
     );
@@ -194,8 +201,8 @@ export function IncidentAnalysisDashboard() {
             limit: 200,
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            created_at_from: dateFromIso,
+            created_at_to: dateToIso,
         },
         { fetchAll: true },
     );
