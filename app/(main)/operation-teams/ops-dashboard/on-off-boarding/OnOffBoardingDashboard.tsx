@@ -36,6 +36,8 @@ import {
     momByDate,
     monthsFromRange,
     openedAt,
+    snDayEndIso,
+    snDayStartIso,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -251,8 +253,11 @@ export function OnOffBoardingDashboard() {
     const { data, loading, error, refetch } = useRequests(
         {
             limit: 1000,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            // SN reports timestamps in Asia/Shanghai (+08:00); anchor
+            // the user-picked YYYY-MM-DD in that timezone so the API
+            // boundaries align with what SN itself shows.
+            created_at_from: snDayStartIso(dateRange.from),
+            created_at_to: snDayEndIso(dateRange.to),
         },
         { fetchAll: true },
     );

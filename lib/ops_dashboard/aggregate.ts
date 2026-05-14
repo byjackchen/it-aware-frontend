@@ -120,6 +120,54 @@ export function isInScopeGroup(
 }
 
 // =============================================================================
+// SN timezone date boundary helpers
+// =============================================================================
+
+/**
+ * The Tencent ServiceNow instance reports every timestamp in
+ * **Asia/Shanghai (UTC+8, no DST)**. When an ops user picks a date
+ * like "2026-05-01" intending the SN-side day, that day starts at
+ * `2026-05-01 00:00 +08` = `2026-04-30 16:00 UTC`.
+ *
+ * Without this offset, picking 2026-05-01 in LA shipped 2026-05-01
+ * 00:00 UTC to the backend, which excluded every SN row whose UTC
+ * timestamp landed in the 16:00–23:59 of 2026-04-30 (= SN 2026-05-01
+ * 00:00–07:59) and silently bumped them to "the previous day" relative
+ * to what SN's own UI shows. The fix is to anchor the user's date in
+ * SN's clock, not in the browser's clock.
+ *
+ * If SN ever moves off Asia/Shanghai (or starts honoring DST per
+ * region), update {@link SN_TIMEZONE_OFFSET} only — every dashboard
+ * picks the new boundary up automatically.
+ */
+export const SN_TIMEZONE_OFFSET = '+08:00';
+
+/**
+ * Convert a `YYYY-MM-DD` string the user picked in the date picker
+ * into the **SN-day-start** ISO timestamp the backend should compare
+ * against (i.e. `YYYY-MM-DDT00:00:00+08:00`).
+ *
+ * Returns `undefined` when `date` is null / empty so the caller can
+ * spread it into a query params object without sending an explicit
+ * `from=undefined`.
+ */
+export function snDayStartIso(date: string | null | undefined): string | undefined {
+    if (!date) return undefined;
+    return `${date}T00:00:00${SN_TIMEZONE_OFFSET}`;
+}
+
+/**
+ * Convert a `YYYY-MM-DD` string into the **SN-day-end** ISO timestamp
+ * (i.e. `YYYY-MM-DDT23:59:59.999+08:00`). Use this for the upper
+ * bound of a `created_at <= :to` filter so the user's picked day is
+ * fully included.
+ */
+export function snDayEndIso(date: string | null | undefined): string | undefined {
+    if (!date) return undefined;
+    return `${date}T23:59:59.999${SN_TIMEZONE_OFFSET}`;
+}
+
+// =============================================================================
 // Request-type classifier (Phase 1 client-side)
 // =============================================================================
 
