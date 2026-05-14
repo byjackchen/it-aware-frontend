@@ -57,6 +57,31 @@ export interface TrendLineCardProps {
 }
 
 function defaultXFormat(bucket: string): string {
+    // Detect bucket granularity from the input string shape:
+    //   `YYYY-MM`        → monthly bucket  →  "May"
+    //   `YYYY-MM-DD`     → daily   bucket  →  "Thu 05/14"
+    //   `YYYY-MM-DDT…`   → daily   bucket  →  same
+    // We deliberately don't try to parse week/quarter shapes here —
+    // callers using those should pass an explicit `formatXTick`.
+    const dailyMatch = bucket.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dailyMatch) {
+        // Construct the Date as a *local* date matching the bucket
+        // string's calendar day. We do this with the (year, monthIndex,
+        // day) constructor instead of `Date.parse(bucket)` because the
+        // latter treats `YYYY-MM-DD` as UTC midnight, which then renders
+        // as the previous day in any browser west of UTC.
+        const [, y, mo, da] = dailyMatch;
+        const local = new Date(Number(y), Number(mo) - 1, Number(da));
+        const wd = local.toLocaleDateString(undefined, { weekday: 'short' });
+        return `${wd} ${mo}/${da}`;
+    }
+    const monthMatch = bucket.match(/^(\d{4})-(\d{2})$/);
+    if (monthMatch) {
+        const [, y, mo] = monthMatch;
+        const local = new Date(Number(y), Number(mo) - 1, 1);
+        return local.toLocaleDateString(undefined, { month: 'short' });
+    }
+    // Fallback for anything else parseable as a timestamp.
     const t = Date.parse(bucket);
     if (!Number.isFinite(t)) return bucket;
     return new Date(t).toLocaleDateString(undefined, { month: 'short' });
