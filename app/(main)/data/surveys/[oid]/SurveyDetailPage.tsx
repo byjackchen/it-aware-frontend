@@ -11,8 +11,6 @@ import {
     ArrowLeft,
     ExternalLink,
     FileSearch,
-    Link as LinkIcon,
-    Tag,
     User,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -100,11 +98,11 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
     const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.not_started;
 
     // External-source provenance + linked-incident wiring.
+    // viewInstanceUrl is parsed from survey_questions.intro because the URL
+    // isn't a structured Survey field — the SN Assessments DAG stamps it
+    // into the intro text along with the rest of the provenance metadata.
     const viewInstanceUrl = extractViewInstanceUrl(survey.survey_questions.intro);
     const linkedIncidentNumber = extractLinkedIncidentNumber(survey.survey_questions.intro);
-    const hasProvenance = Boolean(
-        survey.external_source || survey.external_id || (survey.context_type === 'incident' && survey.context_oid)
-    );
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
@@ -143,20 +141,87 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
                         </div>
                     </div>
 
-                    {/* Receiver */}
+                    {/* Receiver — Worker link or "—" if not matched to a Worker. */}
                     <div>
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('surveys.receiver')}</label>
                         <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                             <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                             {receiver ? (
                                 <Link href={`/data/workers/${receiver.stable_id}`} className="underline underline-offset-4">
-                                    {receiver.fullname} ({survey.receiver_stable_id})
+                                    {receiver.fullname}
                                 </Link>
                             ) : (
-                                <span>{survey.receiver_stable_id}</span>
+                                <span className="opacity-60">—</span>
                             )}
                         </div>
                     </div>
+
+                    {/* Receiver Stable ID — always shown, including for external rows. */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Receiver Stable ID</label>
+                        <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            {survey.receiver_stable_id}
+                        </div>
+                    </div>
+
+                    {/* External Source / External ID / Linked Incident — always rendered;
+                        native rows show "—" placeholders. */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">External Source</span>
+                            {survey.external_source === 'servicenow' ? (
+                                <span className="inline-flex items-center gap-2">
+                                    <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500">SN</span>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>ServiceNow</span>
+                                </span>
+                            ) : survey.external_source ? (
+                                <span className={`text-sm capitalize ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {survey.external_source}
+                                </span>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">External ID</span>
+                            {survey.external_id ? (
+                                <span className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {survey.external_id}
+                                </span>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Linked Incident</span>
+                            {survey.context_type === 'incident' && survey.context_oid ? (
+                                <Link
+                                    href={`/data/incidents/${survey.context_oid}`}
+                                    className={`text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
+                                >
+                                    {linkedIncidentNumber ?? `incident:${survey.context_oid.slice(0, 8)}…`}
+                                </Link>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* View in ServiceNow — only when the URL is parseable from intro.
+                        Action link (not a value), so we omit it instead of showing a "—". */}
+                    {viewInstanceUrl && (
+                        <div>
+                            <a
+                                href={viewInstanceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-2 text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                                View in ServiceNow
+                            </a>
+                        </div>
+                    )}
 
                     {/* Timestamps */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
@@ -176,65 +241,6 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
                         </div>
                     </div>
                 </div>
-
-                {/* Provenance Card — only rendered for surveys that carry external metadata */}
-                {hasProvenance && (
-                    <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                        <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Source & Linkage</h2>
-
-                        {survey.external_source && (
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>External Source</label>
-                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                                    <Tag className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                    {survey.external_source === 'servicenow' ? (
-                                        <>
-                                            <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500">SN</span>
-                                            <span className="text-sm">ServiceNow</span>
-                                        </>
-                                    ) : (
-                                        <span className="text-sm capitalize">{survey.external_source}</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {survey.external_id && (
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>External ID</label>
-                                <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                    {survey.external_id}
-                                </div>
-                            </div>
-                        )}
-
-                        {survey.context_type === 'incident' && survey.context_oid && (
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Linked Incident</label>
-                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                                    <LinkIcon className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                                    <Link href={`/data/incidents/${survey.context_oid}`} className="underline underline-offset-4 hover:text-blue-500">
-                                        {linkedIncidentNumber ?? `incident:${survey.context_oid.slice(0, 8)}…`}
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
-
-                        {viewInstanceUrl && (
-                            <div className="pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
-                                <a
-                                    href={viewInstanceUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-2 text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                    View in ServiceNow
-                                </a>
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* Questions & Answers */}
                 <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
