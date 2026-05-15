@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
     ArrowLeft,
+    ExternalLink,
     FileSearch,
     User,
 } from 'lucide-react';
@@ -29,6 +30,31 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     revoked: { bg: 'bg-orange-500/20', text: 'text-orange-500' },
     expired: { bg: 'bg-red-500/20', text: 'text-red-500' },
 };
+
+/**
+ * Best-effort extract the SN deep-link URL embedded in the multi-line
+ * `intro` text the SN Assessments DAG stamps. Returns `null` if the line
+ * isn't present (e.g. native surveys or external rows from sources that
+ * use a different intro convention).
+ */
+function extractViewInstanceUrl(intro: string | null | undefined): string | null {
+    if (!intro) return null;
+    const m = intro.match(/View in ServiceNow:\s*(https?:\/\/\S+)/i);
+    return m ? m[1] : null;
+}
+
+/**
+ * Extract the linked incident number (`INC...`) from the intro text. This
+ * is a display-only optimization — the structured linkage is via
+ * `survey.context_oid`. If the intro doesn't carry it, we fall back to a
+ * shortened OID in the UI.
+ */
+function extractLinkedIncidentNumber(intro: string | null | undefined): string | null {
+    if (!intro) return null;
+    const m = intro.match(/Linked Incident:\s*(INC\d+)/i);
+    return m ? m[1] : null;
+}
+
 
 function renderAnswer(answer: SurveyAnswer, questions: Survey['survey_questions']): string {
     const question = questions.questions.find(q => q.question_id === answer.question_id);
@@ -71,6 +97,13 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
         : undefined;
     const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.not_started;
 
+    // External-source provenance + linked-incident wiring.
+    // viewInstanceUrl is parsed from survey_questions.intro because the URL
+    // isn't a structured Survey field — the SN Assessments DAG stamps it
+    // into the intro text along with the rest of the provenance metadata.
+    const viewInstanceUrl = extractViewInstanceUrl(survey.survey_questions.intro);
+    const linkedIncidentNumber = extractLinkedIncidentNumber(survey.survey_questions.intro);
+
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
             <div className="max-w-5xl mx-auto space-y-6">
@@ -108,20 +141,87 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
                         </div>
                     </div>
 
-                    {/* Receiver */}
+                    {/* Receiver — Worker link or "—" if not matched to a Worker. */}
                     <div>
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('surveys.receiver')}</label>
                         <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                             <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                             {receiver ? (
                                 <Link href={`/data/workers/${receiver.stable_id}`} className="underline underline-offset-4">
-                                    {receiver.fullname} ({survey.receiver_stable_id})
+                                    {receiver.fullname}
                                 </Link>
                             ) : (
-                                <span>{survey.receiver_stable_id}</span>
+                                <span className="opacity-60">—</span>
                             )}
                         </div>
                     </div>
+
+                    {/* Receiver Stable ID — always shown, including for external rows. */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Receiver Stable ID</label>
+                        <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            {survey.receiver_stable_id}
+                        </div>
+                    </div>
+
+                    {/* External Source / External ID / Linked Incident — always rendered;
+                        native rows show "—" placeholders. */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">External Source</span>
+                            {survey.external_source === 'servicenow' ? (
+                                <span className="inline-flex items-center gap-2">
+                                    <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500">SN</span>
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>ServiceNow</span>
+                                </span>
+                            ) : survey.external_source ? (
+                                <span className={`text-sm capitalize ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {survey.external_source}
+                                </span>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">External ID</span>
+                            {survey.external_id ? (
+                                <span className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {survey.external_id}
+                                </span>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                        <div>
+                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Linked Incident</span>
+                            {survey.context_type === 'incident' && survey.context_oid ? (
+                                <Link
+                                    href={`/data/incidents/${survey.context_oid}`}
+                                    className={`text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
+                                >
+                                    {linkedIncidentNumber ?? `incident:${survey.context_oid.slice(0, 8)}…`}
+                                </Link>
+                            ) : (
+                                <span className="text-sm opacity-60">—</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* View in ServiceNow — only when the URL is parseable from intro.
+                        Action link (not a value), so we omit it instead of showing a "—". */}
+                    {viewInstanceUrl && (
+                        <div>
+                            <a
+                                href={viewInstanceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-2 text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                                View in ServiceNow
+                            </a>
+                        </div>
+                    )}
 
                     {/* Timestamps */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">

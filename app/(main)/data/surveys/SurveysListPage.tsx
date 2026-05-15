@@ -341,11 +341,32 @@ export function SurveysListPage() {
                                             </div>
                                             <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {submittedLabel} · {locationLabel}
+                                                {survey.external_id && (
+                                                    <> · <span className="font-mono">{survey.external_id}</span></>
+                                                )}
                                             </div>
                                         </div>
-                                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                                            {survey.status}
-                                        </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {survey.external_source === 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500"
+                                                    title="Imported from ServiceNow"
+                                                >
+                                                    SN
+                                                </span>
+                                            )}
+                                            {survey.external_source && survey.external_source !== 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-slate-500/20 text-slate-500"
+                                                    title={`External source: ${survey.external_source}`}
+                                                >
+                                                    {survey.external_source}
+                                                </span>
+                                            )}
+                                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
+                                                {survey.status}
+                                            </span>
+                                        </div>
                                     </button>
                                 );
                             })}

@@ -226,6 +226,7 @@ export async function getSurveys(
     setOptionalQueryParam(query, 'external_source', params.external_source);
     setOptionalQueryParam(query, 'context_type', params.context_type);
     setOptionalQueryParam(query, 'context_oid', params.context_oid);
+    setOptionalQueryParam(query, 'external_id', params.external_id);
     setOptionalQueryParam(query, 'submitted_at_from', params.submitted_at_from);
     setOptionalQueryParam(query, 'submitted_at_to', params.submitted_at_to);
     if (params.skip !== undefined) query.set('skip', String(params.skip));
@@ -309,6 +310,7 @@ export async function getCampaignSurveys(params: CrossBatchSurveyListParams): Pr
     setOptionalQueryParam(query, 'external_source', params.external_source);
     setOptionalQueryParam(query, 'context_type', params.context_type);
     setOptionalQueryParam(query, 'context_oid', params.context_oid);
+    setOptionalQueryParam(query, 'external_id', params.external_id);
     if (params.skip !== undefined) query.set('skip', String(params.skip));
     if (params.limit !== undefined) query.set('limit', String(params.limit));
 
