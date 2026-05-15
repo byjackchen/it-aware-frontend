@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 const BACKEND = process.env.BACKEND_DOMAIN ?? 'http://localhost:8000';
 
@@ -9,9 +8,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Missing incident number' }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('it_aware_access')?.value;
-
+    const accessToken = req.cookies.get('it_aware_access')?.value;
     const backendUrl = `${BACKEND}/services/servicenow/survey?number=${encodeURIComponent(number)}`;
 
     let res: Response;
