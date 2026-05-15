@@ -121,20 +121,24 @@ export function OpsDashboardHub() {
         { from: null, to: null };
     // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
     // user-picked YYYY-MM-DD in that timezone so the API boundaries
-    // align with what SN itself shows.
+    // align with what SN itself shows. Filter against the upstream SN
+    // create timestamp (`source_created_at`), not the local DB ingest
+    // timestamp (`created_at`): sync backfills land recent `created_at`
+    // on historical tickets and would otherwise explode MTD counts on
+    // bulk re-sync.
     const ticketDateFromIso = snDayStartIso(ticketDateRange.from);
     const ticketDateToIso = snDayEndIso(ticketDateRange.to);
 
     // ── Two concurrent fetches ─────────────────────────────────
     // fetchAll: true pages through skip/limit so we don't hit the 1000-row
-    // silent cutoff. created_at_from/to are read off ticketFilters so the
-    // picker and the payload stay in sync.
+    // silent cutoff. source_created_at_from/to are read off ticketFilters
+    // so the picker and the payload stay in sync.
     const incidentQuery = useIncidents(
         {
             limit: 1000,
             view: 'slim',
-            created_at_from: ticketDateFromIso,
-            created_at_to: ticketDateToIso,
+            source_created_at_from: ticketDateFromIso,
+            source_created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -142,8 +146,8 @@ export function OpsDashboardHub() {
         {
             limit: 1000,
             view: 'slim',
-            created_at_from: ticketDateFromIso,
-            created_at_to: ticketDateToIso,
+            source_created_at_from: ticketDateFromIso,
+            source_created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -160,8 +164,8 @@ export function OpsDashboardHub() {
             view: 'slim',
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: ticketDateFromIso,
-            created_at_to: ticketDateToIso,
+            source_created_at_from: ticketDateFromIso,
+            source_created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );
@@ -171,8 +175,8 @@ export function OpsDashboardHub() {
             view: 'slim',
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: ticketDateFromIso,
-            created_at_to: ticketDateToIso,
+            source_created_at_from: ticketDateFromIso,
+            source_created_at_to: ticketDateToIso,
         },
         { fetchAll: true },
     );

@@ -209,8 +209,27 @@ export interface ActivityListParams extends BaseListParams {
     actor_location_oid?: string[];
     /** Base64 OID strings — backs the "Department/Organization" sidebar slicer. */
     actor_org_oid?: string[];
+    /**
+     * Filters on `i.created_at` / `r.created_at` — the local DB ingest
+     * timestamp. Almost never the right knob for "ticket opened in May":
+     * sync pipeline backfills land here as `NOW()` regardless of when the
+     * ticket was actually opened in SN, so MTD math on this field
+     * inflates dramatically when sync ingests historical batches.
+     * Prefer `source_created_at_from / to` (SN's upstream create
+     * timestamp) for any "opened" filter on the ticket dashboards.
+     */
     created_at_from?: string;
     created_at_to?: string;
+    /**
+     * SN's upstream create timestamp (Asia/Shanghai +08:00). This is
+     * the canonical "opened-at" the Ops Dashboards bucket and display
+     * by, and the field the user-picked Open Date range should anchor
+     * server-side. Use the `snDayStartIso / snDayEndIso` helpers from
+     * `lib/ops_dashboard/aggregate.ts` so the boundary aligns with
+     * what SN itself displays.
+     */
+    source_created_at_from?: string;
+    source_created_at_to?: string;
     updated_at_from?: string;
     updated_at_to?: string;
     effective_at_from?: string;
@@ -290,6 +309,8 @@ function buildActivityQuery(params: ActivityListParams): string {
     appendParam(q, 'actor_org_oid', params.actor_org_oid);
     appendParam(q, 'created_at_from', params.created_at_from);
     appendParam(q, 'created_at_to', params.created_at_to);
+    appendParam(q, 'source_created_at_from', params.source_created_at_from);
+    appendParam(q, 'source_created_at_to', params.source_created_at_to);
     appendParam(q, 'updated_at_from', params.updated_at_from);
     appendParam(q, 'updated_at_to', params.updated_at_to);
     appendParam(q, 'effective_at_from', params.effective_at_from);

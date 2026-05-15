@@ -171,14 +171,18 @@ export function IncidentAnalysisDashboard() {
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
     // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
     // user-picked YYYY-MM-DD in that timezone so the API boundaries
-    // align with what SN itself shows.
+    // align with what SN itself shows. Filter against the *upstream*
+    // SN create timestamp (`source_created_at`), not the local DB
+    // ingest timestamp (`created_at`) — sync pipeline backfills land
+    // recent `created_at` on historical tickets and would otherwise
+    // explode MTD counts when SN does a bulk re-sync.
     const dateFromIso = snDayStartIso(dateRange.from);
     const dateToIso = snDayEndIso(dateRange.to);
     const { data, loading, error, refetch } = useIncidents(
         {
             limit: 1000,
-            created_at_from: dateFromIso,
-            created_at_to: dateToIso,
+            source_created_at_from: dateFromIso,
+            source_created_at_to: dateToIso,
         },
         { fetchAll: true },
     );
@@ -195,8 +199,8 @@ export function IncidentAnalysisDashboard() {
             limit: 200,
             is_vip: true,
             states_list: ACTIVE_STATES,
-            created_at_from: dateFromIso,
-            created_at_to: dateToIso,
+            source_created_at_from: dateFromIso,
+            source_created_at_to: dateToIso,
         },
         { fetchAll: true },
     );
