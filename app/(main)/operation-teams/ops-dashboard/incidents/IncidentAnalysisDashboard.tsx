@@ -37,6 +37,7 @@ import {
     formatMoM,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
@@ -636,9 +637,9 @@ export function IncidentAnalysisDashboard() {
             key: '_openedAt',
             label: t('tables.openedAt'),
             width: '110px',
-            render: (r) => (r._openedAt ? new Date(r._openedAt).toLocaleDateString() : '—'),
+            render: (r) => laDateLabel(r._openedAt),
             sortValue: (r) => r._openedAt,
-            csvValue: (r) => r._openedAt,
+            csvValue: (r) => laDateLabel(r._openedAt),
         },
         {
             key: 'title',
