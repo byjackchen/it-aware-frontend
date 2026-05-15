@@ -293,20 +293,33 @@ export function IncidentAnalysisDashboard() {
             if (days > 7) aging7d += 1;
         }
 
-        // Resolved-on-day-1: incidents with both an open and resolve
-        // timestamp where resolve happened within 24h of opening.
-        // Falls back to created_at when source_opened_at is null.
+        // Resolved-on-day-1: matches the ServiceNow saved-condition the
+        // ops admin uses ("business_duration is not empty AND less than
+        // 24 hours"). When SN populates `business_duration_sec` we use
+        // that directly so the dashboard count agrees with SN's own
+        // filter. When `business_duration_sec` is null (incidents SN
+        // hasn't yet computed business duration for, or rows from the
+        // dev dump which omits the field) we fall back to a wall-clock
+        // window (resolve - open <= 24h) so the count isn't silently
+        // truncated to zero in non-prod environments.
         let resolvedDay1 = 0;
         const resolvedRows: TicketRow[] = [];
+        const DAY_SEC = 24 * 60 * 60;
         for (const r of filtered) {
             if (!r.source_resolved_at) continue;
             resolvedRows.push(r);
+            const bizSec = r.business_duration_sec;
+            if (bizSec != null) {
+                if (bizSec < DAY_SEC) resolvedDay1 += 1;
+                continue;
+            }
+            // Fallback: wall-clock when business_duration_sec is null.
             const opened = Date.parse(openedAt(r));
             const resolved = Date.parse(r.source_resolved_at);
             if (
                 Number.isFinite(opened) &&
                 Number.isFinite(resolved) &&
-                resolved - opened <= 24 * 60 * 60 * 1000 &&
+                resolved - opened <= DAY_SEC * 1000 &&
                 resolved >= opened
             ) {
                 resolvedDay1 += 1;

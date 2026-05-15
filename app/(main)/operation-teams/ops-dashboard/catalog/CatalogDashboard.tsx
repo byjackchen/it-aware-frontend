@@ -217,23 +217,36 @@ export function CatalogDashboard() {
         }
 
         // Resolved-on-day-1 and time metrics — mirror the
-        // IncidentAnalysisDashboard treatment but use SN's
-        // `source_closed_at` for closure (requests don't carry
-        // `source_resolved_at`).
+        // IncidentAnalysisDashboard treatment: prefer SN's
+        // `business_duration_sec` (the ops admin's SN filter is
+        // "business_duration is not empty AND less than 24 hours"),
+        // and fall back to a wall-clock window when SN hasn't computed
+        // business_duration yet. Closure timestamp uses
+        // `source_closed_at` (requests don't carry
+        // `source_resolved_at`); falls back to `source_updated_at`/
+        // `updated_at` when the row is non-active but SN didn't fill
+        // closed_at — same heuristic the cumulative-trend chart uses.
         let resolvedDay1 = 0;
         const resolvedRows: TicketRow[] = [];
+        const DAY_SEC = 24 * 60 * 60;
         for (const r of filtered) {
             const closedIso =
                 r.source_closed_at ??
                 (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null);
             if (!closedIso) continue;
             resolvedRows.push(r);
+            const bizSec = r.business_duration_sec;
+            if (bizSec != null) {
+                if (bizSec < DAY_SEC) resolvedDay1 += 1;
+                continue;
+            }
+            // Fallback: wall-clock when business_duration_sec is null.
             const opened = Date.parse(openedAt(r));
             const closed = Date.parse(closedIso);
             if (
                 Number.isFinite(opened) &&
                 Number.isFinite(closed) &&
-                closed - opened <= 24 * 60 * 60 * 1000 &&
+                closed - opened <= DAY_SEC * 1000 &&
                 closed >= opened
             ) {
                 resolvedDay1 += 1;
