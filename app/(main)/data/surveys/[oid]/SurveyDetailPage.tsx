@@ -9,7 +9,10 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
     ArrowLeft,
+    ExternalLink,
     FileSearch,
+    Link as LinkIcon,
+    Tag,
     User,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -29,6 +32,31 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     revoked: { bg: 'bg-orange-500/20', text: 'text-orange-500' },
     expired: { bg: 'bg-red-500/20', text: 'text-red-500' },
 };
+
+/**
+ * Best-effort extract the SN deep-link URL embedded in the multi-line
+ * `intro` text the SN Assessments DAG stamps. Returns `null` if the line
+ * isn't present (e.g. native surveys or external rows from sources that
+ * use a different intro convention).
+ */
+function extractViewInstanceUrl(intro: string | null | undefined): string | null {
+    if (!intro) return null;
+    const m = intro.match(/View in ServiceNow:\s*(https?:\/\/\S+)/i);
+    return m ? m[1] : null;
+}
+
+/**
+ * Extract the linked incident number (`INC...`) from the intro text. This
+ * is a display-only optimization — the structured linkage is via
+ * `survey.context_oid`. If the intro doesn't carry it, we fall back to a
+ * shortened OID in the UI.
+ */
+function extractLinkedIncidentNumber(intro: string | null | undefined): string | null {
+    if (!intro) return null;
+    const m = intro.match(/Linked Incident:\s*(INC\d+)/i);
+    return m ? m[1] : null;
+}
+
 
 function renderAnswer(answer: SurveyAnswer, questions: Survey['survey_questions']): string {
     const question = questions.questions.find(q => q.question_id === answer.question_id);
@@ -70,6 +98,13 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
         ? workers.find((w) => w.oid === survey.receiver_oid)
         : undefined;
     const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.not_started;
+
+    // External-source provenance + linked-incident wiring.
+    const viewInstanceUrl = extractViewInstanceUrl(survey.survey_questions.intro);
+    const linkedIncidentNumber = extractLinkedIncidentNumber(survey.survey_questions.intro);
+    const hasProvenance = Boolean(
+        survey.external_source || survey.external_id || (survey.context_type === 'incident' && survey.context_oid)
+    );
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
@@ -141,6 +176,65 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
                         </div>
                     </div>
                 </div>
+
+                {/* Provenance Card — only rendered for surveys that carry external metadata */}
+                {hasProvenance && (
+                    <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                        <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Source & Linkage</h2>
+
+                        {survey.external_source && (
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>External Source</label>
+                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                    <Tag className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    {survey.external_source === 'servicenow' ? (
+                                        <>
+                                            <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500">SN</span>
+                                            <span className="text-sm">ServiceNow</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm capitalize">{survey.external_source}</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {survey.external_id && (
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>External ID</label>
+                                <div className={`text-sm font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                    {survey.external_id}
+                                </div>
+                            </div>
+                        )}
+
+                        {survey.context_type === 'incident' && survey.context_oid && (
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Linked Incident</label>
+                                <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
+                                    <LinkIcon className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <Link href={`/data/incidents/${survey.context_oid}`} className="underline underline-offset-4 hover:text-blue-500">
+                                        {linkedIncidentNumber ?? `incident:${survey.context_oid.slice(0, 8)}…`}
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
+
+                        {viewInstanceUrl && (
+                            <div className="pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
+                                <a
+                                    href={viewInstanceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-2 text-sm underline underline-offset-4 ${isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'}`}
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    View in ServiceNow
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Questions & Answers */}
                 <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>

@@ -25,6 +25,9 @@ export function SurveysListPage() {
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
+    // SN-feed filters — empty string means "no filter".
+    const [externalSourceFilter, setExternalSourceFilter] = useState('');
+    const [externalIdFilter, setExternalIdFilter] = useState('');
 
     const [batches, setBatches] = useState<SurveyBatch[]>([]);
     const [selectedBatchOid, setSelectedBatchOid] = useState<string>('');
@@ -136,10 +139,17 @@ export function SurveysListPage() {
     }, [selectedBatchOid, fetchAllSurveys]);
 
     const filteredSurveys = useMemo(() => {
-        if (searchQuery === '') return surveys;
-        const q = searchQuery.toLowerCase();
-        return surveys.filter((s) => s.receiver_stable_id.toLowerCase().includes(q));
-    }, [surveys, searchQuery]);
+        const q = searchQuery.trim().toLowerCase();
+        const src = externalSourceFilter.trim().toLowerCase();
+        const eid = externalIdFilter.trim().toLowerCase();
+        if (!q && !src && !eid) return surveys;
+        return surveys.filter((s) => {
+            if (q && !s.receiver_stable_id.toLowerCase().includes(q)) return false;
+            if (src && (s.external_source ?? '').toLowerCase() !== src) return false;
+            if (eid && !(s.external_id ?? '').toLowerCase().includes(eid)) return false;
+            return true;
+        });
+    }, [surveys, searchQuery, externalSourceFilter, externalIdFilter]);
 
     // Map location_oid → Location.name. Built from the full Locations list so we
     // can resolve the leaf office/site that Worker.location_oid points at. The
@@ -288,6 +298,38 @@ export function SurveysListPage() {
                     </div>
                 </div>
 
+                {/* External-source / external-id filters (for SN Assessments feed). */}
+                <div className="flex items-center gap-3 mb-4">
+                    <select
+                        value={externalSourceFilter}
+                        onChange={(e) => setExternalSourceFilter(e.target.value)}
+                        className={`px-3 py-2 rounded-lg text-sm min-w-[180px] ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
+                        title="Filter by external source (e.g. ServiceNow)"
+                    >
+                        <option value="">All sources (native + external)</option>
+                        <option value="servicenow">ServiceNow</option>
+                    </select>
+                    <input
+                        type="text"
+                        value={externalIdFilter}
+                        onChange={(e) => setExternalIdFilter(e.target.value)}
+                        placeholder="Filter by external_id (e.g. AINST0137544)"
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
+                    />
+                    {(externalSourceFilter || externalIdFilter) && (
+                        <button
+                            onClick={() => {
+                                setExternalSourceFilter('');
+                                setExternalIdFilter('');
+                            }}
+                            className={`text-xs px-3 py-2 rounded-lg ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}
+                            title="Clear external filters"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
+
                 {/* Worker/location geo data failure banner — export still works, but affected cells will be empty */}
                 {(workersError || locationsError) && (
                     <div className={`mb-4 px-3 py-2 rounded-lg text-xs ${isLight ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
@@ -341,11 +383,32 @@ export function SurveysListPage() {
                                             </div>
                                             <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {submittedLabel} · {locationLabel}
+                                                {survey.external_id && (
+                                                    <> · <span className="font-mono">{survey.external_id}</span></>
+                                                )}
                                             </div>
                                         </div>
-                                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                                            {survey.status}
-                                        </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {survey.external_source === 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500"
+                                                    title="Imported from ServiceNow"
+                                                >
+                                                    SN
+                                                </span>
+                                            )}
+                                            {survey.external_source && survey.external_source !== 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-slate-500/20 text-slate-500"
+                                                    title={`External source: ${survey.external_source}`}
+                                                >
+                                                    {survey.external_source}
+                                                </span>
+                                            )}
+                                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
+                                                {survey.status}
+                                            </span>
+                                        </div>
                                     </button>
                                 );
                             })}
