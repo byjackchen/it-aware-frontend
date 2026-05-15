@@ -1408,8 +1408,10 @@ export interface Survey {
      * (external_source === null) this is always a valid Worker OID.
      */
     receiver_oid: string | null;
-    /** Provenance marker for surveys imported from outside it-aware (e.g. "feishu-forms"). */
+    /** Provenance marker for surveys imported from outside it-aware (e.g. "feishu-forms", "servicenow"). */
     external_source: string | null;
+    /** Upstream record id when external_source is set (e.g. "AINST0137544" for a ServiceNow ASMT instance). */
+    external_id: string | null;
     /** Typed pointer label, paired with context_oid (e.g. "incident", "request"). */
     context_type: string | null;
     /** 22-char ULID of the linked object, paired with context_type. */
@@ -1426,6 +1428,7 @@ export interface SurveyCreate {
     receiver_stable_id: string;
     receiver_oid?: string | null;
     external_source?: string | null;
+    external_id?: string | null;
     context_type?: string | null;
     context_oid?: string | null;
     survey_questions: SurveyQuestions;
@@ -1455,6 +1458,7 @@ export interface SurveyListParams {
     external_source?: string;
     context_type?: string;
     context_oid?: string;
+    external_id?: string;
     submitted_at_from?: string;
     submitted_at_to?: string;
     skip?: number;
@@ -1476,6 +1480,7 @@ export interface CrossBatchSurveyListParams {
     external_source?: string;
     context_type?: string;
     context_oid?: string;
+    external_id?: string;
     skip?: number;
     limit?: number;
 }
