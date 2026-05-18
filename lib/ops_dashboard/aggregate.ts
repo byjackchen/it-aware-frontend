@@ -120,52 +120,103 @@ export function isInScopeGroup(
 }
 
 // =============================================================================
-// SN timezone date boundary helpers
+// Ticket-dashboard timezone date boundary helpers
 // =============================================================================
 
 /**
- * The Tencent ServiceNow instance reports every timestamp in
- * **Asia/Shanghai (UTC+8, no DST)**. When an ops user picks a date
- * like "2026-05-01" intending the SN-side day, that day starts at
- * `2026-05-01 00:00 +08` = `2026-04-30 16:00 UTC`.
+ * Every ticket-facing dashboard (Incidents, Catalog, On/Offboarding,
+ * Hub, Aging, Unassigned, VIP) anchors its "Open Date" — both for
+ * server filtering and for table / chart rendering — in
+ * **America/Los_Angeles**.
  *
- * Without this offset, picking 2026-05-01 in LA shipped 2026-05-01
- * 00:00 UTC to the backend, which excluded every SN row whose UTC
- * timestamp landed in the 16:00–23:59 of 2026-04-30 (= SN 2026-05-01
- * 00:00–07:59) and silently bumped them to "the previous day" relative
- * to what SN's own UI shows. The fix is to anchor the user's date in
- * SN's clock, not in the browser's clock.
+ * Why LA, not Asia/Shanghai (the ServiceNow instance's nominal tz)?
+ * The ops team reads SN UI in LA local time, so "Opened on 2026-05-01"
+ * means "what SN shows as 5/1 in the LA office", and that's the
+ * day the dashboard's user-picked date should align with.
  *
- * If SN ever moves off Asia/Shanghai (or starts honoring DST per
- * region), update {@link SN_TIMEZONE_OFFSET} only — every dashboard
- * picks the new boundary up automatically.
+ * LA observes daylight saving time (PDT = UTC-7 between mid-March and
+ * early November, PST = UTC-8 the rest of the year), so we cannot
+ * hard-code the offset. Every helper below derives the correct offset
+ * for the date it's converting via `Intl.DateTimeFormat`.
+ *
+ * If the team ever moves to a different anchor timezone, update
+ * {@link TICKET_TIMEZONE} only — every dashboard picks up the new
+ * boundary automatically.
  */
-export const SN_TIMEZONE_OFFSET = '+08:00';
+export const TICKET_TIMEZONE = 'America/Los_Angeles';
+
+/**
+ * @deprecated Kept as an alias of {@link TICKET_TIMEZONE} so existing
+ * imports keep working. New code should reference {@link TICKET_TIMEZONE}.
+ */
+export const SN_TIMEZONE = TICKET_TIMEZONE;
+
+/**
+ * Compute the offset (e.g. `'-07:00'` for PDT, `'-08:00'` for PST)
+ * the LA timezone is on for the given UTC instant. Used internally so
+ * `snDayStartIso(YYYY-MM-DD)` produces the correct ISO across the DST
+ * boundary.
+ */
+function laOffsetForDate(yyyyMmDd: string): string {
+    // Probe with noon UTC of the picked date — far enough from any DST
+    // transition (which happens at 02:00 LA time = 09:00 / 10:00 UTC)
+    // that the offset is stable for that calendar date.
+    const probe = new Date(`${yyyyMmDd}T12:00:00Z`);
+    if (Number.isNaN(probe.getTime())) return '-08:00';
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TICKET_TIMEZONE,
+        timeZoneName: 'shortOffset',
+    });
+    const parts = formatter.formatToParts(probe);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT-8';
+    // shortOffset returns strings like "GMT-7" / "GMT-8" / "GMT-5:30".
+    const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(tzPart);
+    if (!match) return '-08:00';
+    const sign = match[1];
+    const hh = match[2].padStart(2, '0');
+    const mm = match[3] ?? '00';
+    return `${sign}${hh}:${mm}`;
+}
 
 /**
  * Convert a `YYYY-MM-DD` string the user picked in the date picker
- * into the **SN-day-start** ISO timestamp the backend should compare
- * against (i.e. `YYYY-MM-DDT00:00:00+08:00`).
+ * into the **LA-day-start** ISO timestamp the backend should compare
+ * against (e.g. `2026-05-01T00:00:00-07:00`).
  *
  * Returns `undefined` when `date` is null / empty so the caller can
  * spread it into a query params object without sending an explicit
  * `from=undefined`.
+ *
+ * Name kept (`snDayStartIso`) for backward compatibility with all
+ * existing call sites; semantics changed from Asia/Shanghai to LA.
  */
 export function snDayStartIso(date: string | null | undefined): string | undefined {
     if (!date) return undefined;
-    return `${date}T00:00:00${SN_TIMEZONE_OFFSET}`;
+    return `${date}T00:00:00${laOffsetForDate(date)}`;
 }
 
 /**
- * Convert a `YYYY-MM-DD` string into the **SN-day-end** ISO timestamp
- * (i.e. `YYYY-MM-DDT23:59:59.999+08:00`). Use this for the upper
+ * Convert a `YYYY-MM-DD` string into the **LA-day-end** ISO timestamp
+ * (e.g. `2026-05-01T23:59:59.999-07:00`). Use this for the upper
  * bound of a `created_at <= :to` filter so the user's picked day is
  * fully included.
+ *
+ * Name kept (`snDayEndIso`) for backward compatibility; semantics
+ * changed from Asia/Shanghai to LA.
  */
 export function snDayEndIso(date: string | null | undefined): string | undefined {
     if (!date) return undefined;
-    return `${date}T23:59:59.999${SN_TIMEZONE_OFFSET}`;
+    return `${date}T23:59:59.999${laOffsetForDate(date)}`;
 }
+
+/**
+ * @deprecated Kept as an alias of {@link snDayStartIso}. The historic
+ * `SN_TIMEZONE_OFFSET` constant referenced Asia/Shanghai's fixed +08;
+ * the ticket dashboards now anchor in LA, which has DST so a single
+ * offset constant is no longer accurate. Read the offset for a
+ * specific date via {@link snDayStartIso} / {@link snDayEndIso}.
+ */
+export const SN_TIMEZONE_OFFSET = '-08:00';
 
 // =============================================================================
 // Request-type classifier (Phase 1 client-side)
@@ -338,11 +389,21 @@ export interface TrendPoint {
 }
 
 function monthStart(iso: string): string | null {
+    // Bucket month boundaries in the ticket-dashboard timezone (LA),
+    // not UTC, so a row whose UTC timestamp lands in (e.g.) "April"
+    // but is "May 1 in LA" is bucketed under May the way the ops
+    // team and SN UI both read it.
     const t = Date.parse(iso);
     if (!Number.isFinite(t)) return null;
-    const d = new Date(t);
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: TICKET_TIMEZONE,
+        year: 'numeric',
+        month: '2-digit',
+    });
+    const parts = fmt.formatToParts(new Date(t));
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const m = parts.find((p) => p.type === 'month')?.value;
+    if (!y || !m) return null;
     return `${y}-${m}-01`;
 }
 

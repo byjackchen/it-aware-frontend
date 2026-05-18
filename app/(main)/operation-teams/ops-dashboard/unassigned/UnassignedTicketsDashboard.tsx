@@ -19,6 +19,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup, openedAt } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
 import {
     TopFilterBar,
@@ -64,9 +65,7 @@ function openedByOf(row: TicketRow): string {
 }
 
 function formatShortDate(iso: string): string {
-    const t = Date.parse(iso);
-    if (!Number.isFinite(t)) return '—';
-    return new Date(t).toLocaleDateString();
+    return laDateLabel(iso);
 }
 
 /**

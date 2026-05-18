@@ -42,6 +42,7 @@ import {
     snDayStartIso,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDayKey } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
@@ -720,7 +721,9 @@ export function OnOffBoardingDashboard() {
                 width: 'w-32',
                 // Show upstream SN open date (source_created_at) per ops-team
                 // contract; falls back to local created_at when missing.
-                render: (r) => openedAt(r).slice(0, 10) || '—',
+                // Anchored in LA tz so the day matches what the ops team
+                // reads in SN UI / ServiceNow lists.
+                render: (r) => laDayKey(openedAt(r)) ?? '—',
                 // Sort on parsed timestamp so newer/older ordering
                 // doesn't depend on the truncated YYYY-MM-DD string.
                 sortValue: (r) => Date.parse(openedAt(r)) || 0,

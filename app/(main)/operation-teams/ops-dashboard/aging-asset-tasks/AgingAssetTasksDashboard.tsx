@@ -22,6 +22,7 @@ import {
     isInScopeGroup,
     openedAt,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -61,9 +62,7 @@ function openedByOf(row: TicketRow): string {
 }
 
 function formatShortDate(iso: string): string {
-    const t = Date.parse(iso);
-    if (!Number.isFinite(t)) return '—';
-    return new Date(t).toLocaleDateString();
+    return laDateLabel(iso);
 }
 
 export function AgingAssetTasksDashboard() {
