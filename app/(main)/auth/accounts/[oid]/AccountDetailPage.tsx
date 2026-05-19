@@ -21,7 +21,20 @@ import {
     UserCircle,
     Check,
     X,
+    Sparkles,
+    Copy,
+    Eye,
+    EyeOff,
 } from 'lucide-react';
+
+// Same generator as AccountCreatePage. Kept inline (4 lines) rather than
+// extracting a util — the two callsites are stable and this avoids a new file.
+function generateRandomPassword(length = 16): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*-_=+';
+    const arr = new Uint32Array(length);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, (n) => chars[n % chars.length]).join('');
+}
 import {
     AssignmentManager,
     WorkerSearchDialog,
@@ -81,6 +94,22 @@ export function AccountDetailPage({
     const [isLinkingSystem, setIsLinkingSystem] = useState(false);
     const [isActive, setIsActive] = useState(account.is_active);
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const handleGenerate = () => {
+        const pw = generateRandomPassword(16);
+        setPassword(pw);
+        setShowPassword(true);
+        setCopied(false);
+    };
+
+    const handleCopy = async () => {
+        if (!password) return;
+        await navigator.clipboard.writeText(password);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     const handleSave = () => {
         const formData = new FormData();
@@ -269,28 +298,57 @@ export function AccountDetailPage({
                             </div>
                         </div>
 
-                        {/* Password (edit mode)
-                            All account types can have password reset here.
-                            Blank = no change (user stays SSO-only if they were). */}
+                        {/* Password reset (edit mode)
+                            Optional here: blank = no change. Generate button
+                            available for the same convenience as create. */}
                         {isEditing && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">
                                     {t('accounts.newPassword')}
                                 </label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder={t('accounts.passwordPlaceholderOptional')}
-                                    className="w-full px-3 py-2 rounded-lg theme-input"
-                                    minLength={8}
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            setCopied(false);
+                                        }}
+                                        placeholder={t('accounts.passwordPlaceholderOptional')}
+                                        className="flex-1 px-3 py-2 rounded-lg theme-input font-mono"
+                                        minLength={8}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerate}
+                                        title={t('accounts.passwordGenerate')}
+                                        className="px-3 py-2 rounded-lg theme-btn-neutral flex items-center gap-1"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        <span className="text-sm">{t('accounts.passwordGenerate')}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((s) => !s)}
+                                        title={showPassword ? t('accounts.passwordHide') : t('accounts.passwordShow')}
+                                        className="px-3 py-2 rounded-lg theme-btn-neutral"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopy}
+                                        disabled={!password}
+                                        title={t('accounts.passwordCopy')}
+                                        className="px-3 py-2 rounded-lg theme-btn-neutral disabled:opacity-50"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    {t(
-                                        account.account_type === 'user'
-                                            ? 'accounts.passwordHintUserOptional'
-                                            : 'accounts.passwordHint'
-                                    )}
+                                    {copied
+                                        ? `✓ ${t('accounts.passwordCopied')}`
+                                        : t('accounts.passwordHint')}
                                 </p>
                             </div>
                         )}
