@@ -38,6 +38,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const [isPending, setIsPending] = useState(false);
 
     const [name, setName] = useState(agent.name);
+    const [agentId, setAgentId] = useState(agent.agent_id);
     const [agentKey, setAgentKey] = useState(agent.agent_key || '');
     const [agentAdminKey, setAgentAdminKey] = useState(agent.agent_admin_key || '');
     const [workspaceId, setWorkspaceId] = useState(agent.agent_workspace_id || '');
@@ -60,6 +61,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
         try {
             const formData = new FormData();
             if (name) formData.set('name', name);
+            if (agentId && agentId.trim()) formData.set('agent_id', agentId.trim());
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
             if (agentAdminKey.trim()) formData.set('agent_admin_key', agentAdminKey.trim());
             if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
@@ -95,6 +97,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
 
     const handleCancel = () => {
         setName(agent.name);
+        setAgentId(agent.agent_id);
         setAgentKey(agent.agent_key || '');
         setAgentAdminKey(agent.agent_admin_key || '');
         setWorkspaceId(agent.agent_workspace_id || '');
@@ -191,10 +194,24 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                             )}
                         </div>
                         <div>
-                            <label className={labelClass}>Agent ID (readonly)</label>
-                            <div className={`px-3 py-2 rounded-lg font-mono text-sm ${isLight ? 'bg-slate-50 text-slate-700 border border-slate-200' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
-                                {agent.agent_id}
-                            </div>
+                            <label className={labelClass}>Agent ID</label>
+                            {isEditing ? (
+                                <>
+                                    <input
+                                        type="text"
+                                        value={agentId}
+                                        onChange={(e) => setAgentId(e.target.value)}
+                                        className={`${inputClass} font-mono`}
+                                    />
+                                    <p className={`text-xs mt-1 ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+                                        ⚠ Changing agent_id breaks external references (Knot, tickets) and seed.py upserts. Only edit if you understand the impact.
+                                    </p>
+                                </>
+                            ) : (
+                                <div className={`px-3 py-2 rounded-lg font-mono text-sm ${isLight ? 'bg-slate-50 text-slate-700 border border-slate-200' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
+                                    {agent.agent_id}
+                                </div>
+                            )}
                         </div>
                     </div>
 
