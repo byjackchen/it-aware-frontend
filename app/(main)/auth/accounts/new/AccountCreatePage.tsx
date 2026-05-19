@@ -85,24 +85,34 @@ export function AccountCreatePage() {
                         </select>
                     </div>
 
-                    {/* Password (Non-user accounts only) */}
-                    {accountType !== 'user' && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
-                                {t('accounts.password')} *
-                            </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder={t('accounts.passwordPlaceholder')}
-                                className="w-full px-3 py-2 rounded-lg theme-input"
-                                required
-                                minLength={8}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">{t('accounts.passwordHint')}</p>
-                        </div>
-                    )}
+                    {/* Password
+                        - user:          optional, blank = SSO-only login
+                        - system/agent:  required, min 8 chars (API key) */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                            {t('accounts.password')}{accountType !== 'user' && ' *'}
+                        </label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder={t(
+                                accountType === 'user'
+                                    ? 'accounts.passwordPlaceholderUserOptional'
+                                    : 'accounts.passwordPlaceholder'
+                            )}
+                            className="w-full px-3 py-2 rounded-lg theme-input"
+                            required={accountType !== 'user'}
+                            minLength={8}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            {t(
+                                accountType === 'user'
+                                    ? 'accounts.passwordHintUserOptional'
+                                    : 'accounts.passwordHint'
+                            )}
+                        </p>
+                    </div>
 
                     {/* Actions */}
                     <div className="flex gap-3 pt-4">

@@ -269,8 +269,10 @@ export function AccountDetailPage({
                             </div>
                         </div>
 
-                        {/* Password (Non-user accounts only, edit mode) */}
-                        {isEditing && account.account_type !== 'user' && (
+                        {/* Password (edit mode)
+                            All account types can have password reset here.
+                            Blank = no change (user stays SSO-only if they were). */}
+                        {isEditing && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">
                                     {t('accounts.newPassword')}
@@ -283,7 +285,13 @@ export function AccountDetailPage({
                                     className="w-full px-3 py-2 rounded-lg theme-input"
                                     minLength={8}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">{t('accounts.passwordHint')}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {t(
+                                        account.account_type === 'user'
+                                            ? 'accounts.passwordHintUserOptional'
+                                            : 'accounts.passwordHint'
+                                    )}
+                                </p>
                             </div>
                         )}
                     </div>
