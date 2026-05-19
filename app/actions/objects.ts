@@ -1319,10 +1319,13 @@ export async function updateAgentAction(oid: string, formData: FormData) {
     try {
         const agent = await updateAgent(oid, {
             name: formData.get('name') as string || undefined,
+            agent_id: formData.get('agent_id') as string || undefined,
             agent_key: formData.get('agent_key') as string || undefined,
+            agent_admin_key: formData.get('agent_admin_key') as string || undefined,
             agent_platform: formData.get('agent_platform') as string || undefined,
             contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
             description: formData.get('description') as string || undefined,
+            agent_workspace_id: formData.get('agent_workspace_id') as string || undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
         revalidatePath('/agentops/agents');

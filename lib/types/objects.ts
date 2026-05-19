@@ -1711,6 +1711,7 @@ export interface AgentCreate {
 
 export interface AgentUpdate {
     name?: string;
+    agent_id?: string;
     agent_key?: string;
     agent_admin_key?: string;
     agent_platform?: string;
