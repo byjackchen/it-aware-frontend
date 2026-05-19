@@ -149,8 +149,9 @@ export function InteractionsPanel({
             ...(dateFrom ? { created_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
             ...(dateTo ? { created_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
             ...(workerFilter ? { actor_stable_id: workerFilter } : {}),
+            ...(selectedAiCodes.size > 0 ? { ai_code: [...selectedAiCodes].join(',') } : {}),
         }),
-        [dateFrom, dateTo, workerFilter, timezone],
+        [dateFrom, dateTo, workerFilter, timezone, selectedAiCodes],
     );
 
     const {
@@ -181,7 +182,7 @@ export function InteractionsPanel({
         }
         if (selectedAiCodes.size > 0) {
             items = items.filter(i => {
-                const code = i.ai_code ?? 'NA';
+                const code = i.review_code ?? i.ai_code ?? 'NA';
                 return selectedAiCodes.has(code as ReviewCode | 'NA');
             });
         }
@@ -249,6 +250,7 @@ export function InteractionsPanel({
             if (dateFrom) params.set('created_at_from', localDateTimeToIso(dateFrom, timezone));
             if (dateTo) params.set('created_at_to', localDateTimeToIso(dateTo, timezone));
             if (workerFilter) params.set('actor_stable_id', workerFilter);
+            if (selectedAiCodes.size > 0) params.set('ai_code', [...selectedAiCodes].join(','));
 
             fetch(`/api/objects/interactions?${params.toString()}`, {
                 cache: 'no-store',
@@ -266,7 +268,7 @@ export function InteractionsPanel({
                     setIsPageLoading(false);
                 });
         },
-        [pageSize, dateFrom, dateTo, workerFilter],
+        [pageSize, dateFrom, dateTo, workerFilter, selectedAiCodes],
     );
 
     useEffect(() => {
@@ -344,11 +346,10 @@ export function InteractionsPanel({
             await downloadDashboardXlsx(
                 'interactions',
                 {
-                    // Interactions xlsx accepts `datetime` — send ISO-with-offset
-                    // so the backend's ensure_utc converts to UTC precisely.
                     created_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
                     created_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,
+                    ...(selectedAiCodes.size > 0 ? { ai_code: [...selectedAiCodes].join(',') } : {}),
                 },
                 `ssc_faq_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );

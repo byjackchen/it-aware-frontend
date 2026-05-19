@@ -69,6 +69,7 @@ export interface ExportFilters {
   actor_stable_id?: string;
   needs_optimization?: boolean;
   completed?: boolean;
+  ai_code?: string;
 }
 
 /**

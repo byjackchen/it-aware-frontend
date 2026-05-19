@@ -5,6 +5,8 @@ import { AlertCircle, Loader2, Download, Filter, X, ChevronDown, ArrowUp, ArrowD
 import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { localDateTimeToIso } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { IncidentRow, INCIDENT_GRID_COLS } from '@/components/ssc/IncidentRow';
@@ -44,6 +46,7 @@ export function IncidentsPanel({
     const isLight = theme === 'light';
     const t = useTranslations('SSCDashboard');
     const locale = useLocale();
+    const { timezone } = useTimezone();
     const [isDownloading, setIsDownloading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
@@ -72,9 +75,9 @@ export function IncidentsPanel({
     }, [showCategoryDropdown]);
 
     const query = useMemo(() => ({
-        ...(dateFrom ? { effective_at_from: dateFrom } : {}),
-        ...(dateTo ? { effective_at_to: dateTo } : {}),
-    }), [dateFrom, dateTo]);
+        ...(dateFrom ? { effective_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
+        ...(dateTo ? { effective_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
+    }), [dateFrom, dateTo, timezone]);
 
     const {
         items: incidents,
@@ -148,8 +151,8 @@ export function IncidentsPanel({
 
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
-        if (dateFrom) params.set('effective_at_from', dateFrom);
-        if (dateTo) params.set('effective_at_to', dateTo);
+        if (dateFrom) params.set('effective_at_from', localDateTimeToIso(dateFrom, timezone));
+        if (dateTo) params.set('effective_at_to', localDateTimeToIso(dateTo, timezone));
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -166,7 +169,7 @@ export function IncidentsPanel({
                 if (e instanceof DOMException && e.name === 'AbortError') return;
                 setIsPageLoading(false);
             });
-    }, [pageSize, dateFrom, dateTo]);
+    }, [pageSize, dateFrom, dateTo, timezone]);
 
     useEffect(() => {
         if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
@@ -193,8 +196,8 @@ export function IncidentsPanel({
             await downloadDashboardXlsx(
                 'incidents',
                 {
-                    effective_at_from: dateFrom,
-                    effective_at_to: dateTo,
+                    effective_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
+                    effective_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
                 },
                 `ssc_ticket_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
             );
