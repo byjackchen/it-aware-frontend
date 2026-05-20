@@ -606,6 +606,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
+            {
+                href: '/agent-ops/channels',
+                labelKey: 'channels',
+                icon: MessageSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
         ],
     },
     // Note: /persona is intentionally excluded - it uses the full page width for the profile view
