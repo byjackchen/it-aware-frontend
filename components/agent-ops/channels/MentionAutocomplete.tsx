@@ -70,10 +70,39 @@ export function MentionAutocomplete({ query, members, onPick }: Props) {
         ).slice(0, 8);
     }, [fleet, q, memberAgentOids]);
 
-    if (matches.length === 0) return null;
+    const broadcastMatches = useMemo(() => {
+        const candidates: Array<{ keyword: 'channel' | 'here'; label: string }> = [
+            { keyword: 'channel', label: 'Notify everyone in this channel' },
+            { keyword: 'here', label: 'Notify active members only' },
+        ];
+        if (!q) return candidates;
+        return candidates.filter((c) => c.keyword.startsWith(q));
+    }, [q]);
+
+    if (matches.length === 0 && broadcastMatches.length === 0) return null;
 
     return (
         <ul className="bg-card border rounded shadow max-h-48 overflow-y-auto">
+            {broadcastMatches.map((b) => (
+                <li
+                    key={b.keyword}
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        onPick(b.keyword);
+                    }}
+                    className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center justify-between"
+                >
+                    <div>
+                        <div className="text-sm font-medium">@{b.keyword}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {b.label}
+                        </div>
+                    </div>
+                    <span className="text-xs text-amber-600 dark:text-amber-300">
+                        broadcast
+                    </span>
+                </li>
+            ))}
             {matches.map((a) => {
                 const inChannel = memberAgentOids.has(a.agent_oid);
                 return (

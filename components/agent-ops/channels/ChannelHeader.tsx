@@ -8,9 +8,11 @@ import type { Channel } from '@/lib/api/channels';
 export function ChannelHeader({
     channel,
     isConnected,
+    onEdit,
 }: {
     channel?: Channel;
     isConnected: boolean;
+    onEdit?: () => void;
 }) {
     const router = useRouter();
     const [archiving, setArchiving] = useState(false);
@@ -54,11 +56,19 @@ export function ChannelHeader({
                         #{t}
                     </span>
                 ))}
+                {channel?.is_active && onEdit && (
+                    <button
+                        onClick={onEdit}
+                        className="text-sm text-blue-600 dark:text-blue-300 hover:underline"
+                    >
+                        Edit
+                    </button>
+                )}
                 {channel?.is_active && (
                     <button
                         onClick={onArchive}
                         disabled={archiving}
-                        className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                        className="text-sm text-red-600 dark:text-red-300 hover:underline disabled:opacity-50"
                     >
                         {archiving ? 'Archiving…' : 'Archive'}
                     </button>

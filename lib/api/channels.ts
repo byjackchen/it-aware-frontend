@@ -19,11 +19,14 @@ export interface Channel {
     description?: string | null;
     created_by_account_oid: string;
     is_active: boolean;
+    is_dm?: boolean;
     archived_at?: string | null;
     tags: string[];
     created_at: string;
     updated_at: string;
     member_count?: number | null;
+    unread_count?: number | null;
+    last_message_at?: string | null;
 }
 
 export interface ChannelListResponse {
@@ -60,6 +63,13 @@ export interface ChannelMemberListResponse {
 
 export type ChannelMessageKind = 'human_post' | 'agent_reply' | 'system_note';
 
+export interface ChannelMessageReaction {
+    emoji: string;
+    count: number;
+    accounts: string[];
+    mine: boolean;
+}
+
 export interface ChannelMessage {
     oid: string;
     channel_oid: string;
@@ -70,6 +80,12 @@ export interface ChannelMessage {
     mentioned_agent_oids: string[];
     reply_to_message_oid?: string | null;
     created_at: string;
+    edited_at?: string | null;
+    deleted_at?: string | null;
+    pinned_at?: string | null;
+    pinned_by_account_oid?: string | null;
+    reactions: ChannelMessageReaction[];
+    reply_count: number;
 }
 
 export interface ChannelMessageListResponse {
@@ -196,4 +212,102 @@ export async function postMessage(
         `${BASE}/${channelOid}/messages`,
         { method: 'POST', body: JSON.stringify(data) },
     );
+}
+
+export async function editMessage(
+    channelOid: string,
+    messageOid: string,
+    body: string,
+): Promise<ChannelMessage> {
+    return clientFetch<ChannelMessage>(
+        `${BASE}/${channelOid}/messages/${messageOid}`,
+        { method: 'PUT', body: JSON.stringify({ body }) },
+    );
+}
+
+export async function deleteMessage(
+    channelOid: string,
+    messageOid: string,
+): Promise<void> {
+    await clientFetch<void>(`${BASE}/${channelOid}/messages/${messageOid}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function toggleReaction(
+    channelOid: string,
+    messageOid: string,
+    emoji: string,
+): Promise<ChannelMessage> {
+    return clientFetch<ChannelMessage>(
+        `${BASE}/${channelOid}/messages/${messageOid}/reactions`,
+        { method: 'POST', body: JSON.stringify({ emoji }) },
+    );
+}
+
+export async function pinMessage(
+    channelOid: string,
+    messageOid: string,
+    pin: boolean,
+): Promise<ChannelMessage> {
+    return clientFetch<ChannelMessage>(
+        `${BASE}/${channelOid}/messages/${messageOid}/pin`,
+        { method: pin ? 'POST' : 'DELETE' },
+    );
+}
+
+export async function markChannelRead(channelOid: string): Promise<void> {
+    await clientFetch<void>(`${BASE}/${channelOid}/read`, { method: 'POST' });
+}
+
+export async function getOrCreateDm(agentOid: string): Promise<Channel> {
+    return clientFetch<Channel>(`${BASE}/dm`, {
+        method: 'POST',
+        body: JSON.stringify({ agent_oid: agentOid }),
+    });
+}
+
+export interface GlobalSearchResponse {
+    channels: Channel[];
+    messages: ChannelMessage[];
+    total: number;
+}
+
+export async function globalSearch(
+    query: string,
+    limit = 20,
+): Promise<GlobalSearchResponse> {
+    const q = new URLSearchParams({ q: query, limit: String(limit) });
+    return clientFetch<GlobalSearchResponse>(`${BASE}/search?${q.toString()}`);
+}
+
+export async function searchChannelMessages(
+    channelOid: string,
+    query: string,
+    limit = 50,
+): Promise<{ items: ChannelMessage[]; total: number }> {
+    const q = new URLSearchParams({ q: query, limit: String(limit) });
+    return clientFetch<{ items: ChannelMessage[]; total: number }>(
+        `${BASE}/${channelOid}/messages/search?${q.toString()}`,
+    );
+}
+
+export async function listThreadReplies(
+    channelOid: string,
+    parentMessageOid: string,
+    limit = 200,
+): Promise<ChannelMessageListResponse> {
+    const q = new URLSearchParams({
+        parent: parentMessageOid,
+        limit: String(limit),
+    });
+    return clientFetch<ChannelMessageListResponse>(
+        `${BASE}/${channelOid}/messages?${q.toString()}`,
+    );
+}
+
+export async function cancelRun(runOid: string): Promise<void> {
+    await clientFetch<void>(`/api/agentops/runs/${runOid}/cancel`, {
+        method: 'POST',
+    });
 }
