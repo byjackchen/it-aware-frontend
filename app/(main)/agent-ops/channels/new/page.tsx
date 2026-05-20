@@ -60,7 +60,9 @@ export default function NewChannelPage() {
                     onChange={(e) => setTags(e.target.value)}
                 />
             </label>
-            {error && <p className="text-red-600 text-sm">{error}</p>}
+            {error && (
+                <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
+            )}
             <button
                 type="submit"
                 disabled={submitting || !name.trim()}

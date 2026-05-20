@@ -3,9 +3,12 @@
 import type { ChannelMessage } from '@/lib/api/channels';
 
 const KIND_STYLES: Record<string, string> = {
-    human_post: 'bg-blue-50 border-blue-200',
-    agent_reply: 'bg-green-50 border-green-200',
-    system_note: 'bg-muted border-muted-foreground/20 text-muted-foreground text-sm italic',
+    human_post:
+        'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900/60',
+    agent_reply:
+        'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900/60',
+    system_note:
+        'bg-muted border-muted-foreground/20 text-muted-foreground text-sm italic',
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -35,7 +38,7 @@ function renderBodyWithMentions(body: string) {
         p.startsWith('@') ? (
             <span
                 key={i}
-                className="bg-blue-100 text-blue-700 px-1 rounded font-mono text-sm"
+                className="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 px-1 rounded font-mono text-sm"
             >
                 {p}
             </span>

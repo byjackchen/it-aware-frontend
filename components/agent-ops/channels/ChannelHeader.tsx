@@ -41,7 +41,7 @@ export function ChannelHeader({
             </div>
             <div className="flex items-center gap-3 shrink-0">
                 <span
-                    className={`text-xs ${isConnected ? 'text-green-600' : 'text-amber-600'}`}
+                    className={`text-xs ${isConnected ? 'text-green-600 dark:text-green-300' : 'text-amber-600 dark:text-amber-300'}`}
                     title={isConnected ? 'WebSocket live' : 'Polling fallback'}
                 >
                     {isConnected ? '● live' : '○ polling'}

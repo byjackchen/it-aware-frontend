@@ -44,12 +44,12 @@ export function ChannelView({ channelOid }: { channelOid: string }) {
                     <MessageList messages={messages} />
                     <TypingIndicator runOids={thinking} members={members} />
                     {sendError && (
-                        <p className="text-red-600 text-sm px-3 py-1 bg-red-50">
+                        <p className="text-red-600 dark:text-red-300 text-sm px-3 py-1 bg-red-50 dark:bg-red-950/30">
                             {sendError}
                         </p>
                     )}
                     {unresolved.length > 0 && (
-                        <p className="text-amber-700 text-sm px-3 py-1 bg-amber-50 border-t border-amber-200">
+                        <p className="text-amber-700 dark:text-amber-300 text-sm px-3 py-1 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200 dark:border-amber-900/60">
                             Unknown @mentions (ignored):{' '}
                             {unresolved.map((u) => `@${u}`).join(', ')}
                         </p>

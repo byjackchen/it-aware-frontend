@@ -32,7 +32,7 @@ export function ChannelListSidebar() {
 
     if (error) {
         return (
-            <p className="text-red-600 text-sm p-3">
+            <p className="text-red-600 dark:text-red-300 text-sm p-3">
                 Failed to load channels: {error}
             </p>
         );
@@ -47,7 +47,7 @@ export function ChannelListSidebar() {
                 <h2 className="text-lg font-semibold">Channels</h2>
                 <Link
                     href="/agent-ops/channels/new"
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-blue-600 dark:text-blue-300 hover:underline"
                 >
                     + New
                 </Link>

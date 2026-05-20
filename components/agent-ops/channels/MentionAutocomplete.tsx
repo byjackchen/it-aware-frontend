@@ -96,7 +96,7 @@ export function MentionAutocomplete({ query, members, onPick }: Props) {
                             </div>
                         </div>
                         <span
-                            className={`text-xs ${inChannel ? 'text-green-600' : 'text-amber-600'}`}
+                            className={`text-xs ${inChannel ? 'text-green-600 dark:text-green-300' : 'text-amber-600 dark:text-amber-300'}`}
                             title={
                                 inChannel
                                     ? 'Already in channel'

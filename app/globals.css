@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Tailwind v4 — bind the `dark:` variant to the `.dark` / `.theme-dark`
+   classes the app puts on <html>/<body>, instead of the default
+   prefers-color-scheme media query. The toggle in the topbar flips that
+   class, and we want `dark:bg-...` utilities to follow the same switch. */
+@custom-variant dark (&:where(.dark, .dark *, .theme-dark, .theme-dark *));
+
 /* ========================================
    CSS Variables - Theme System
    ======================================== */
