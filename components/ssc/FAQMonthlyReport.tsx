@@ -28,6 +28,7 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
+import { OperationalAdvicePanel } from '@/components/ssc/OperationalAdvicePanel';
 import type { FAQEnquiryItem, InteractionFAQReport, MonthStats } from '@/lib/types/objects';
 import { formatTzBadge } from '@/lib/utils/datetime';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -600,29 +601,13 @@ export function FAQMonthlyReport({ report, error }: Props) {
                 </div>
             </div>
 
-            {/* Operational Guidance */}
+            {/* Operational Guidance — LLM-generated */}
             <div className={`p-4 ${sectionBg}`}>
                 <SectionHeading title={tFaq('sections.operationalGuidance')} isLight={isLight} />
-                <div className={`mt-3 space-y-3 text-xs ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
-                    <div className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500 mt-0.5" />
-                        <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.outcomeQuality')}</strong> {tFaq('guidance.outcomeQualityDetail')}
-                        </p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                        <PhoneCall className="h-4 w-4 flex-shrink-0 text-amber-500 mt-0.5" />
-                        <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.focusAreas')}</strong> {tFaq('guidance.focusAreasDetail')}
-                        </p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                        <HelpCircle className="h-4 w-4 flex-shrink-0 text-blue-500 mt-0.5" />
-                        <p>
-                            <strong className={isLight ? 'text-slate-700' : 'text-white'}>{tFaq('guidance.naShare')}</strong> {tFaq('guidance.naShareDetail')}
-                        </p>
-                    </div>
-                </div>
+                <OperationalAdvicePanel
+                    startDate={report.current.start_date}
+                    endDate={report.current.end_date}
+                />
             </div>
         </div>
     );

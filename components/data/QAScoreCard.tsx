@@ -85,7 +85,15 @@ export function QAScoreCard({ score, detail, scoredAt }: QAScoreCardProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const isLight = theme === 'light';
-    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+    function toggleCategory(key: string) {
+        setExpandedCategories(prev => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
+    }
 
     // No score yet
     if (score == null && detail == null) {
@@ -136,14 +144,14 @@ export function QAScoreCard({ score, detail, scoredAt }: QAScoreCardProps) {
                     const catScore = (catData && typeof catData === 'object' && 'score' in catData)
                         ? (catData as { score: number }).score
                         : 0;
-                    const isExpanded = expandedCategory === key;
+                    const isExpanded = expandedCategories.has(key);
                     const pct = max > 0 ? (catScore / max) * 100 : 0;
 
                     return (
                         <div key={key}>
                             {/* Category row */}
                             <button
-                                onClick={() => setExpandedCategory(isExpanded ? null : key)}
+                                onClick={() => toggleCategory(key)}
                                 className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
                                     isLight
                                         ? 'hover:bg-slate-50'
