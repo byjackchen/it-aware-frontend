@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { NewDmDialog } from './NewDmDialog';
 import { globalSearch, listChannels } from '@/lib/api/channels';
 import type {
     Channel,
@@ -15,6 +16,7 @@ export function ChannelListSidebar() {
     const [error, setError] = useState<string | null>(null);
     const [q, setQ] = useState('');
     const [search, setSearch] = useState<GlobalSearchResponse | null>(null);
+    const [dmOpen, setDmOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -99,9 +101,22 @@ export function ChannelListSidebar() {
             ) : (
                 <>
                     <Section title="Channels" rows={groups} />
-                    <Section title="Direct Messages" rows={dms} emptyHint="Open an agent profile to start a DM." />
+                    <Section
+                        title="Direct Messages"
+                        rows={dms}
+                        emptyHint="No DMs yet. Click + DM to start one."
+                        action={
+                            <button
+                                onClick={() => setDmOpen(true)}
+                                className="text-xs text-blue-600 dark:text-blue-300 hover:underline"
+                            >
+                                + DM
+                            </button>
+                        }
+                    />
                 </>
             )}
+            {dmOpen && <NewDmDialog onClose={() => setDmOpen(false)} />}
         </nav>
     );
 }
@@ -110,15 +125,18 @@ function Section({
     title,
     rows,
     emptyHint,
+    action,
 }: {
     title: string;
     rows: Channel[];
     emptyHint?: string;
+    action?: React.ReactNode;
 }) {
     return (
         <div className="border-b">
-            <div className="px-3 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                {title}
+            <div className="px-3 pt-3 pb-1 flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
+                <span>{title}</span>
+                {action}
             </div>
             <ul className="divide-y">
                 {rows.length === 0 && (

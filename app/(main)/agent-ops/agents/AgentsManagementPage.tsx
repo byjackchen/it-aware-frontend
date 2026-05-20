@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Bot, ChevronDown, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Bot, ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
+import { getOrCreateDm } from '@/lib/api/channels';
 import type { Agent, AgentListResponse } from '@/lib/types/objects';
 
 interface AgentHistoryState {
@@ -33,6 +35,21 @@ export function AgentsManagementPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const isLight = theme === 'light';
+    const router = useRouter();
+    const [dmBusy, setDmBusy] = useState<string | null>(null);
+
+    async function openDm(agentOid: string) {
+        if (dmBusy) return;
+        setDmBusy(agentOid);
+        try {
+            const ch = await getOrCreateDm(agentOid);
+            router.push(`/agent-ops/channels/${ch.oid}`);
+        } catch (e: unknown) {
+            alert(`Failed to open DM: ${(e as Error).message}`);
+        } finally {
+            setDmBusy(null);
+        }
+    }
 
     const { items: agents, isInitialLoading } = useInfiniteResource<Agent, AgentListResponse>(
         'agents',
@@ -113,9 +130,17 @@ export function AgentsManagementPage() {
                     return (
                         <div key={agent.oid} className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                             {/* Agent header row */}
-                            <button
+                            <div
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => toggleHistory(agent.oid)}
-                                className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        toggleHistory(agent.oid);
+                                    }
+                                }}
+                                className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors cursor-pointer ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
                             >
                                 {state.showHistory ? <ChevronDown className="w-4 h-4 shrink-0 text-[var(--text-secondary)]" /> : <ChevronRight className="w-4 h-4 shrink-0 text-[var(--text-secondary)]" />}
                                 <div className="flex-1 min-w-0">
@@ -128,8 +153,20 @@ export function AgentsManagementPage() {
                                         ID: {agent.agent_id} &middot; Workspace: {agent.agent_workspace_id || '—'}
                                     </div>
                                 </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDm(agent.oid);
+                                    }}
+                                    disabled={dmBusy === agent.oid || !agent.is_active}
+                                    className={`text-xs px-2 py-1 rounded border flex items-center gap-1 disabled:opacity-50 ${isLight ? 'border-slate-300 hover:bg-slate-100' : 'border-white/20 hover:bg-white/10'}`}
+                                    title="Open DM with this agent"
+                                >
+                                    <MessageSquare className="w-3 h-3" />
+                                    {dmBusy === agent.oid ? 'Opening…' : 'DM'}
+                                </button>
                                 <span className="text-xs text-[var(--text-secondary)]">Conversation Histories</span>
-                            </button>
+                            </div>
 
                             {/* Expandable conversation history section */}
                             {state.showHistory && (
