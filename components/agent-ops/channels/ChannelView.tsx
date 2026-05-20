@@ -11,6 +11,8 @@ import { ThreadDialog } from './ThreadDialog';
 import { EditChannelDialog } from './EditChannelDialog';
 import { getChannel } from '@/lib/api/channels';
 import type { Channel, ChannelMessage } from '@/lib/api/channels';
+import { listTicketsForChannel } from '@/lib/api/tickets-channel';
+import type { Ticket } from '@/lib/api/tickets-channel';
 
 export function ChannelView({
     channelOid,
@@ -46,6 +48,35 @@ export function ChannelView({
     );
     const [sendError, setSendError] = useState<string | null>(null);
     const [unresolved, setUnresolved] = useState<string[]>([]);
+
+    // Tickets index — map message_oid → Ticket so MessageItem can render
+    // a 🎫 badge inline. Refreshes on every message change so the badge
+    // reflects newly-created / claimed / done state without a WS event.
+    const [ticketsByMsg, setTicketsByMsg] = useState<Map<string, Ticket>>(
+        () => new Map(),
+    );
+    useEffect(() => {
+        let cancelled = false;
+        async function refresh() {
+            try {
+                const r = await listTicketsForChannel(channelOid);
+                if (cancelled) return;
+                const m = new Map<string, Ticket>();
+                for (const t of r.items) {
+                    if (t.channel_message_oid) m.set(t.channel_message_oid, t);
+                }
+                setTicketsByMsg(m);
+            } catch {
+                /* ignore */
+            }
+        }
+        refresh();
+        const id = setInterval(refresh, 6000);
+        return () => {
+            cancelled = true;
+            clearInterval(id);
+        };
+    }, [channelOid, messages.length]);
 
     async function onSend(body: string) {
         setSendError(null);
@@ -95,6 +126,7 @@ export function ChannelView({
                         messages={messages}
                         currentAccountOid={currentAccountOid}
                         onOpenThread={onOpenThread}
+                        ticketsByMsg={ticketsByMsg}
                     />
                     {sendError && (
                         <p className="text-red-600 dark:text-red-300 text-sm px-3 py-1 bg-red-50 dark:bg-red-950/30">

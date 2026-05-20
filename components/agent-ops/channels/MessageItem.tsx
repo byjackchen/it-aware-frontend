@@ -8,6 +8,12 @@ import {
     toggleReaction,
 } from '@/lib/api/channels';
 import type { ChannelMessage } from '@/lib/api/channels';
+import {
+    claimTicket,
+    createTicketFromMessage,
+    markTicketDone,
+} from '@/lib/api/tickets-channel';
+import type { Ticket, TicketStatus } from '@/lib/api/tickets-channel';
 import { renderMarkdown } from '@/lib/markdown';
 import { formatRelative } from '@/lib/relative-time';
 
@@ -32,12 +38,22 @@ interface Props {
     message: ChannelMessage;
     currentAccountOid?: string;
     onOpenThread?: (parentOid: string) => void;
+    ticket?: Ticket;
 }
+
+const TICKET_BADGE_STYLE: Record<TicketStatus, string> = {
+    open: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-blue-300 dark:border-blue-700',
+    in_progress: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+    blocked: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200 border-red-300 dark:border-red-700',
+    done: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-200 border-green-300 dark:border-green-700',
+    cancelled: 'bg-muted text-muted-foreground border-muted-foreground/30',
+};
 
 export function MessageItem({
     message: m,
     currentAccountOid,
     onOpenThread,
+    ticket,
 }: Props) {
     const cls = KIND_STYLES[m.kind] ?? 'bg-card border';
     const isMine = !!currentAccountOid && m.author_account_oid === currentAccountOid;
@@ -86,6 +102,45 @@ export function MessageItem({
             setBusy(false);
         }
     }
+    async function onCreateTicket() {
+        const titleDefault = m.body.split('\n')[0].slice(0, 200);
+        const title = prompt('Open task with title:', titleDefault);
+        if (!title || !title.trim()) return;
+        setBusy(true);
+        try {
+            await createTicketFromMessage({
+                channel_message_oid: m.oid,
+                title: title.trim(),
+                body: m.body,
+            });
+        } catch (e: unknown) {
+            alert(`Failed: ${(e as Error).message}`);
+        } finally {
+            setBusy(false);
+        }
+    }
+    async function onClaimTicket() {
+        if (!ticket) return;
+        setBusy(true);
+        try {
+            await claimTicket(ticket.oid);
+        } catch (e: unknown) {
+            alert(`Failed: ${(e as Error).message}`);
+        } finally {
+            setBusy(false);
+        }
+    }
+    async function onMarkDone() {
+        if (!ticket) return;
+        setBusy(true);
+        try {
+            await markTicketDone(ticket.oid);
+        } catch (e: unknown) {
+            alert(`Failed: ${(e as Error).message}`);
+        } finally {
+            setBusy(false);
+        }
+    }
 
     return (
         <div className={`group relative border rounded p-3 mb-2 ${cls}`}>
@@ -124,6 +179,17 @@ export function MessageItem({
                                 title="Reply in thread"
                             >
                                 💬
+                            </button>
+                        )}
+                        {!ticket && m.kind === 'human_post' && (
+                            <button
+                                type="button"
+                                disabled={busy}
+                                onClick={onCreateTicket}
+                                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                                title="Open as task"
+                            >
+                                🎫
                             </button>
                         )}
                         <button
@@ -238,6 +304,38 @@ export function MessageItem({
                 >
                     💬 {m.reply_count} {m.reply_count === 1 ? 'reply' : 'replies'}
                 </button>
+            )}
+            {ticket && (
+                <div className="mt-2 flex items-center gap-2 flex-wrap text-xs">
+                    <span
+                        className={`rounded-full border px-2 py-0.5 ${TICKET_BADGE_STYLE[ticket.status]}`}
+                    >
+                        🎫 #{ticket.oid.slice(0, 8)} — {ticket.status}
+                    </span>
+                    <span className="text-muted-foreground truncate max-w-xs">
+                        {ticket.title}
+                    </span>
+                    {ticket.status === 'open' || ticket.status === 'blocked' ? (
+                        <button
+                            type="button"
+                            onClick={onClaimTicket}
+                            disabled={busy}
+                            className="text-blue-600 dark:text-blue-300 hover:underline disabled:opacity-50"
+                        >
+                            Claim
+                        </button>
+                    ) : null}
+                    {ticket.status === 'in_progress' && (
+                        <button
+                            type="button"
+                            onClick={onMarkDone}
+                            disabled={busy}
+                            className="text-green-600 dark:text-green-300 hover:underline disabled:opacity-50"
+                        >
+                            Mark done
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

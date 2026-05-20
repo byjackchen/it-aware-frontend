@@ -205,6 +205,22 @@ export default function ActivityEventsPage() {
                                                         · ws {e.workspace_id}
                                                     </span>
                                                 )}
+                                                {typeof e.details?.channel_oid === 'string' && (
+                                                    <a
+                                                        href={`/agent-ops/channels/${String(e.details.channel_oid)}`}
+                                                        className="text-xs text-blue-600 dark:text-blue-300 hover:underline"
+                                                    >
+                                                        ↗ open channel
+                                                    </a>
+                                                )}
+                                                {typeof e.details?.ticket_oid === 'string' && (
+                                                    <a
+                                                        href={`/agent-ops/ticket-list?focus=${String(e.details.ticket_oid)}`}
+                                                        className="text-xs text-blue-600 dark:text-blue-300 hover:underline"
+                                                    >
+                                                        ↗ open ticket
+                                                    </a>
+                                                )}
                                             </div>
                                             {e.details &&
                                                 Object.keys(e.details).length > 0 && (

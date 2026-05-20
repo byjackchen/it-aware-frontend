@@ -3,17 +3,20 @@
 import { useEffect, useRef } from 'react';
 import { MessageItem } from './MessageItem';
 import type { ChannelMessage } from '@/lib/api/channels';
+import type { Ticket } from '@/lib/api/tickets-channel';
 
 interface Props {
     messages: ChannelMessage[];
     currentAccountOid?: string;
     onOpenThread?: (parentOid: string) => void;
+    ticketsByMsg?: Map<string, Ticket>;
 }
 
 export function MessageList({
     messages,
     currentAccountOid,
     onOpenThread,
+    ticketsByMsg,
 }: Props) {
     const ref = useRef<HTMLDivElement>(null);
 
@@ -39,6 +42,7 @@ export function MessageList({
                         message={m}
                         currentAccountOid={currentAccountOid}
                         onOpenThread={onOpenThread}
+                        ticket={ticketsByMsg?.get(m.oid)}
                     />
                 ))
             )}
