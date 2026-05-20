@@ -42,6 +42,7 @@ import {
     Bot as Chatbot,
     LineChart,
     MessageSquare,
+    Activity,
     HelpCircle,
     Headphones,
     ClipboardSignature,
@@ -610,6 +611,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 href: '/agent-ops/channels',
                 labelKey: 'channels',
                 icon: MessageSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
+            {
+                href: '/agent-ops/activity',
+                labelKey: 'activity',
+                icon: Activity,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
                 ]),
