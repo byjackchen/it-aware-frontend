@@ -130,11 +130,12 @@ function ToggleButton({
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_140px_140px_60px_70px_70px_60px_140px_60px]';
 
 interface InteractionRowProps {
     interaction: Interaction;
     worker?: WorkerContext;
+    catalogMap?: Record<string, string>;
     isAligned: boolean;
     inWindow: boolean;
     isFocused: boolean;
@@ -145,6 +146,7 @@ interface InteractionRowProps {
 export function InteractionRow({
     interaction,
     worker,
+    catalogMap,
     isAligned,
     inWindow,
     isFocused,
@@ -276,15 +278,45 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 10. Helpful */}
+            {/* 10. Service Catalog (AI) — read-only leaf name */}
+            <div
+                className={cellClass}
+                title={
+                    interaction.ai_service_catalog_oid
+                        ? catalogMap?.[interaction.ai_service_catalog_oid] ??
+                          interaction.ai_service_catalog_oid
+                        : ''
+                }
+            >
+                {interaction.ai_service_catalog_oid
+                    ? catalogMap?.[interaction.ai_service_catalog_oid] ?? '…'
+                    : '—'}
+            </div>
+
+            {/* 11. Service Catalog (Review) — read-only leaf name (override editing is a follow-up) */}
+            <div
+                className={cellClass}
+                title={
+                    interaction.review_service_catalog_oid
+                        ? catalogMap?.[interaction.review_service_catalog_oid] ??
+                          interaction.review_service_catalog_oid
+                        : ''
+                }
+            >
+                {interaction.review_service_catalog_oid
+                    ? catalogMap?.[interaction.review_service_catalog_oid] ?? '…'
+                    : '—'}
+            </div>
+
+            {/* 12. Helpful */}
             <div className={`text-xs text-center ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {renderHelpfulScore(interaction.helpful_score)}
             </div>
 
-            {/* 11. Code (AI) — read-only */}
+            {/* 13. Code (AI) — read-only */}
             <div className={cellClass}>{interaction.ai_code ?? '—'}</div>
 
-            {/* 12. Code (Review) — editable inline select */}
+            {/* 14. Code (Review) — editable inline select */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineSelect<ReviewCode>
                     value={draft.review_code}
@@ -298,7 +330,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 13. 优化? — editable toggle */}
+            {/* 15. 优化? — editable toggle */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <ToggleButton
                     value={draft.review_needs_optimization}
@@ -310,7 +342,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 14. 优化备注 — editable inline text */}
+            {/* 16. 优化备注 — editable inline text */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineText
                     value={draft.review_optimization_notes}
@@ -324,7 +356,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 15. 完成 — toggle mark_completed */}
+            {/* 17. 完成 — toggle mark_completed */}
             <div className="text-xs text-center">
                 <button
                     type="button"
@@ -343,7 +375,7 @@ export function InteractionRow({
 
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-15 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-17 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}

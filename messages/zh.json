@@ -2068,6 +2068,8 @@
       "faqReply": "回复",
       "ciAi": "CI(Ohla)",
       "ciReview": "CI(人工审核)",
+      "catalogAi": "服务目录(Ohla)",
+      "catalogReview": "服务目录(人工审核)",
       "helpful": "Helpful (原始数据)",
       "codeAi": "Code(Ohla)",
       "codeReview": "Code(人工审核)",
