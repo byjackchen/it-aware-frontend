@@ -7,8 +7,8 @@ import type { Interaction, Incident, ReviewCode } from '@/lib/types/objects';
 // ============================================================================
 
 export interface InteractionReviewPayload {
-    review_ci?: string | null;
     review_code?: ReviewCode | null;
+    review_service_catalog_oid?: string | null;
     review_needs_optimization?: boolean | null;
     review_optimization_notes?: string | null;
     mark_completed?: boolean | null;
