@@ -3,15 +3,20 @@
 /**
  * Active Monitoring Hub (Page 1.3.10) — active-ticket monitoring page.
  *
- * Data sources (two concurrent fetches):
- *   - useIncidents({ limit: 1000 })
- *   - useRequests({ limit: 1000 })
+ * Data sources:
+ *   - useOpsHubReport(...) — single backend aggregate that returns
+ *     precomputed KPIs, chart series, and filter options. Replaces the
+ *     legacy 4× fetchAll incidents+requests loop that paginated up to 20k
+ *     rows per fetch and aggregated everything in the browser.
+ *   - useIncidents + useRequests — used ONLY by the collapsible Detail
+ *     table, gated on `detailOpen` so the fetch fires the first time the
+ *     user expands and never on page load.
  *
- * Incidents + requests are merged into one "tickets" array for
- * aggregation. The page exposes ticket sidebar filter groups plus
- * chart cross-filters — clicking an assignment-group donut slice
- * toggles that group in the sidebar. TicketsPanel handles all the
- * KPI and chart rendering.
+ * Predicate contract for every KPI/chart/region count lives in
+ * `specs/backend/ops_dashboard_predicates.md`. The frontend's local
+ * helpers in `lib/ops_dashboard/aggregate.ts` survive only because the
+ * Detail table renders per-row enrichments (request type label, days
+ * without update) that the report endpoint doesn't return.
  */
 
 import { useMemo, useState } from 'react';
@@ -19,24 +24,19 @@ import { BarChart3, ChevronDown, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
+import { useOpsHubReport } from '@/lib/hooks/useOpsHubReport';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
-    ACTIVE_STATES,
     classifyRequestType,
     daysSinceUpdated,
-    formatMoM,
-    groupBy,
     isActiveState,
     isInScopeGroup,
-    momActiveSnapshot,
-    monthsFromRange,
     openedAt,
     snDayEndIso,
     snDayStartIso,
-    trendByMonth,
 } from '@/lib/ops_dashboard/aggregate';
 import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
-import { type Region, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
+import { type Region } from '@/components/ops_dashboard/RegionMap';
 import {
     TopFilterBar,
     type FilterState,
@@ -56,29 +56,42 @@ function locationOf(row: TicketRow): string {
     return row.actor?.location?.descriptor?.trim() || 'Unknown';
 }
 
+function regionOf(row: TicketRow): Region {
+    // Mirrors `regionOf` in spec §7 — used only for Detail table rows.
+    const fromActor = normalizeRegion(row.actor?.location?.region);
+    if (fromActor) return fromActor;
+    const fromLocation = countryToRegion(row.actor?.location?.descriptor);
+    if (fromLocation) return fromLocation;
+    const fromGroup = normalizeRegion(row.assigned_group);
+    if (fromGroup) return fromGroup;
+    return 'OTHER';
+}
+
 function locationForFilter(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
 
-function regionOf(row: TicketRow): Region {
-    // 1. Trust the backend-resolved region when it normalises cleanly.
-    //    Backend stores values like "Americas" / "APAC" / "EMEA" / "Unknown"
-    //    — `normalizeRegion` handles every variant we've seen.
-    const fromActor = normalizeRegion(row.actor?.location?.region);
-    if (fromActor) return fromActor;
-
-    // 2. Try to resolve a region from the location descriptor
-    //    (e.g. "US-California-Palo Alto" → AMER) using the curated
-    //    country→region map shared with RegionCountryFilter.
-    const fromLocation = countryToRegion(row.actor?.location?.descriptor);
-    if (fromLocation) return fromLocation;
-
-    // 3. Last resort: sniff the assigned_group prefix
-    //    ("AMER OIT Support" / "EMEA HelpDesk" / "Asia Service").
-    const fromGroup = normalizeRegion(row.assigned_group);
-    if (fromGroup) return fromGroup;
-
-    return 'OTHER';
+/**
+ * Pct-delta string for the 4 MoM-eligible KPI tiles.
+ *
+ * `previous` of 0 yields `null` (no meaningful baseline — caller renders no
+ * delta). Otherwise we shape the result like the legacy `formatMoM`
+ * helper so TicketsPanel's render code keeps working unchanged.
+ */
+function makeDelta(
+    current: number,
+    previous: number,
+): { pct: number; trend: 'up' | 'down' | 'flat'; formatted: string } | null {
+    if (previous === 0) return null;
+    const pctRaw = ((current - previous) / previous) * 100;
+    const pct = Math.round(pctRaw);
+    if (pct === 0) return { pct: 0, trend: 'flat', formatted: '0%' };
+    const arrow = pct > 0 ? '▲' : '▼';
+    return {
+        pct,
+        trend: pct > 0 ? 'up' : 'down',
+        formatted: `${arrow} ${Math.abs(pct)}%`,
+    };
 }
 
 export function OpsDashboardHub() {
@@ -87,26 +100,12 @@ export function OpsDashboardHub() {
     const isLight = theme === 'light';
 
     // ── Filter state ────────────────────────────────────────────
-    // assigned_group / priority / location are all donut-driven now.
-    //
-    // Active Monitoring Hub is the "right now" view of every open
-    // ticket — applying the month-to-date Open-date filter would
-    // truncate older active tickets that were opened in prior months
-    // but are still unresolved (the page would suddenly drop ~80% of
-    // its volume the moment the calendar rolled over). Drill-in
-    // dashboards (Catalog / Incidents / OnOffBoarding) keep the MTD
-    // default since they're analytical / volume-trend oriented.
     const [ticketFilters, setTicketFilters] = useState<FilterState>({
         assigned_group: [],
         location: [],
         priority: [],
     });
 
-    // Two-level Region/Country slicer state — geographic. Region AND
-    // Country apply to tickets. Region / Country / Location are
-    // SHARED across every MONITORING dashboard via useOpsGlobalFilter
-    // — picking AMER on one page carries the selection to the others
-    // so users don't repeat it.
     const {
         filter: globalFilter,
         setRegions: setSelectedRegions,
@@ -120,20 +119,56 @@ export function OpsDashboardHub() {
     const ticketDateRange =
         (ticketFilters.created_at_from as { from: string | null; to: string | null } | undefined) ??
         { from: null, to: null };
-    // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
-    // user-picked YYYY-MM-DD in that timezone so the API boundaries
-    // align with what SN itself shows. Filter against the upstream SN
-    // create timestamp (`source_created_at`), not the local DB ingest
-    // timestamp (`created_at`): sync backfills land recent `created_at`
-    // on historical tickets and would otherwise explode MTD counts on
-    // bulk re-sync.
     const ticketDateFromIso = snDayStartIso(ticketDateRange.from);
     const ticketDateToIso = snDayEndIso(ticketDateRange.to);
 
-    // ── Two concurrent fetches ─────────────────────────────────
-    // fetchAll: true pages through skip/limit so we don't hit the 1000-row
-    // silent cutoff. source_created_at_from/to are read off ticketFilters
-    // so the picker and the payload stay in sync.
+    // Donut-driven chart filters surfaced to the user via TopFilterBar.
+    // Wrapped in their own useMemos because they're read as deps by both
+    // the report fetch AND the Detail-table filter pass — re-creating the
+    // array each render would invalidate downstream memoization.
+    const groupSel = useMemo<string[]>(
+        () => (ticketFilters.assigned_group as string[]) ?? [],
+        [ticketFilters.assigned_group],
+    );
+    const locSel = useMemo<string[]>(
+        () => (ticketFilters.location as string[]) ?? [],
+        [ticketFilters.location],
+    );
+    const prioSel = useMemo<string[]>(
+        () => (ticketFilters.priority as string[]) ?? [],
+        [ticketFilters.priority],
+    );
+
+    // Union the explicit Location dropdown selections with any locations
+    // toggled from the chart-side filter — both narrow the same dimension
+    // server-side. Same union shape was implicit in the legacy AND-chain.
+    const allLocationFilters = useMemo(
+        () => Array.from(new Set([...selectedLocations, ...locSel])),
+        [selectedLocations, locSel],
+    );
+
+    // ── Main report fetch ──────────────────────────────────────
+    const reportQuery = useOpsHubReport({
+        source_created_at_from: ticketDateFromIso,
+        source_created_at_to: ticketDateToIso,
+        region_in: selectedRegions.length ? selectedRegions : undefined,
+        country_in: selectedCountries.length ? selectedCountries : undefined,
+        location_in: allLocationFilters.length ? allLocationFilters : undefined,
+        assigned_group_in: groupSel.length ? groupSel : undefined,
+        priority_in: prioSel.length ? prioSel : undefined,
+    });
+    const report = reportQuery.data;
+
+    const loading = reportQuery.loading;
+    const partial = report?.meta.partial === true;
+    const error = reportQuery.error;
+
+    // ── Detail table (lazy: only fetches when expanded) ────────
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+
     const incidentQuery = useIncidents(
         {
             limit: 1000,
@@ -141,7 +176,7 @@ export function OpsDashboardHub() {
             source_created_at_from: ticketDateFromIso,
             source_created_at_to: ticketDateToIso,
         },
-        { fetchAll: true },
+        { fetchAll: true, enabled: detailOpen },
     );
     const requestQuery = useRequests(
         {
@@ -150,249 +185,129 @@ export function OpsDashboardHub() {
             source_created_at_from: ticketDateFromIso,
             source_created_at_to: ticketDateToIso,
         },
-        { fetchAll: true },
+        { fetchAll: true, enabled: detailOpen },
     );
 
-    // Dedicated VIP fetches — `is_vip` is a workers-table column, not a
-    // ticket-row field, so the slim view doesn't expose it. Mirroring
-    // the VipTicketsDashboard approach: ask the backend to filter by
-    // is_vip + active states + the same date window, then count the
-    // returned rows. Lightweight (single-digit volume in dev) and
-    // keeps the Hub's VIP KPI consistent with the dedicated VIP page.
-    const vipIncidentQuery = useIncidents(
-        {
-            limit: 200,
-            view: 'slim',
-            is_vip: true,
-            states_list: ACTIVE_STATES,
-            source_created_at_from: ticketDateFromIso,
-            source_created_at_to: ticketDateToIso,
-        },
-        { fetchAll: true },
-    );
-    const vipRequestQuery = useRequests(
-        {
-            limit: 200,
-            view: 'slim',
-            is_vip: true,
-            states_list: ACTIVE_STATES,
-            source_created_at_from: ticketDateFromIso,
-            source_created_at_to: ticketDateToIso,
-        },
-        { fetchAll: true },
-    );
-
-    const loading =
-        incidentQuery.loading ||
-        requestQuery.loading ||
-        vipIncidentQuery.loading ||
-        vipRequestQuery.loading;
-    const partial =
-        incidentQuery.data?.partial === true ||
-        requestQuery.data?.partial === true ||
-        vipIncidentQuery.data?.partial === true ||
-        vipRequestQuery.data?.partial === true;
-    const error =
-        incidentQuery.error ??
-        requestQuery.error ??
-        vipIncidentQuery.error ??
-        vipRequestQuery.error;
     const refetchAll = async () => {
-        await Promise.all([
-            incidentQuery.refetch(),
-            requestQuery.refetch(),
-            vipIncidentQuery.refetch(),
-            vipRequestQuery.refetch(),
-        ]);
+        const tasks: Array<Promise<unknown>> = [reportQuery.refetch()];
+        if (detailOpen) {
+            tasks.push(incidentQuery.refetch());
+            tasks.push(requestQuery.refetch());
+        }
+        await Promise.all(tasks);
     };
 
-    // Stable clock so aging math doesn't flip during re-renders.
+    // Stable clock for the Detail table's aging math.
     const [now] = useState<number>(() => Date.now());
 
-    // Detail-table state (client-side pagination on the already-loaded
-    // activeTickets slice). Collapsed by default to keep the Hub light
-    // on first render; the table materialises on first expansion.
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
-        { skip: 0, limit: 50 },
-    );
-
+    // ── Derived: per-row Detail rows (only computed when expanded) ──
     const allTickets: TicketRow[] = useMemo(() => {
+        if (!detailOpen) return [];
         const a = incidentQuery.data?.items ?? [];
         const b = requestQuery.data?.items ?? [];
         return [...a, ...b];
-    }, [incidentQuery.data, requestQuery.data]);
+    }, [detailOpen, incidentQuery.data, requestQuery.data]);
 
-    // Ticket rows fed to RegionCountryFilter so Country + Location
-    // dropdowns surface every place that exists in the ticket data.
-    // Each entry exposes a single `location` field — the filter's
-    // `getLocation` extractor reads it directly.
-    const regionCountryRows = useMemo(() => {
-        return allTickets.map((t) => ({ location: locationForFilter(t) }));
-    }, [allTickets]);
-
-    // ── Filtered tickets (Region/Country + donut filters) ─
-    const filteredTickets = useMemo(() => {
-        const groupSel = (ticketFilters.assigned_group as string[]) ?? [];
-        const locSel = (ticketFilters.location as string[]) ?? [];
-        const prioSel = (ticketFilters.priority as string[]) ?? [];
+    const filteredDetailTickets = useMemo(() => {
+        if (!detailOpen) return [];
         return allTickets.filter((r) => {
-            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
+            if (!matchesRegionCountry(r, selectedRegions, selectedCountries, allLocationFilters, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
-            if (locSel.length && !locSel.includes(locationOf(r))) return false;
             if (prioSel.length && !prioSel.includes(r.priority)) return false;
             return true;
         });
-    }, [allTickets, ticketFilters, selectedRegions, selectedCountries, selectedLocations]);
+    }, [detailOpen, allTickets, selectedRegions, selectedCountries, allLocationFilters, groupSel, prioSel]);
 
-    const activeTickets = useMemo(
-        // Narrow to OIT-scope assignment groups so KPIs / aging / unassigned
-        // reflect "tickets in OIT's queue" rather than the full firehose of
-        // every ServiceNow group (HR / Amazon Ordering / Workday / etc.).
-        // See isInScopeGroup for the keyword list.
+    const activeDetailTickets = useMemo(
         () =>
-            filteredTickets.filter(
+            filteredDetailTickets.filter(
                 (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
             ),
-        [filteredTickets],
+        [filteredDetailTickets],
     );
 
-    // ── Ticket KPIs ─────────────────────────────────────────────
-    const ticketKpis: TicketKpis = useMemo(() => {
-        let activeIncident = 0;
-        let activeIncidentHigh = 0;
-        let activeCatalog = 0;
-        let activeAsset = 0;
-        let unassigned = 0;
-        let agingIncidentGt2d = 0;
-        let agingCatalogGt30d = 0;
-        let agingAssetGt30d = 0;
-        for (const r of activeTickets) {
-            if (r.object_type === 'incident') {
-                activeIncident += 1;
-                if (r.priority === 'High') activeIncidentHigh += 1;
-            } else if (r.object_type === 'request') {
-                const rt = classifyRequestType(r);
-                if (rt === 'asset_task') activeAsset += 1;
-                else if (rt === 'catalog_task') activeCatalog += 1;
-            }
-            // Use `assigned_to_oid` (sys_id) as the source of truth for
-            // unassigned. The upstream sync drops `assigned_to_name` for
-            // many rows whose sys_id is populated, so filtering on the
-            // name field over-counts unassigned by ~5x. See
-            // UnassignedTicketsDashboard.tsx for the longer note.
-            if (!r.assigned_to_oid || (typeof r.assigned_to_oid === 'string' && r.assigned_to_oid.trim() === '')) unassigned += 1;
-            const days = daysSinceUpdated(r, now);
-            if (r.object_type === 'incident' && days > 2) agingIncidentGt2d += 1;
-            if (r.object_type === 'request' && days > 30) {
-                const rt = classifyRequestType(r);
-                if (rt === 'asset_task') agingAssetGt30d += 1;
-                else if (rt === 'catalog_task') agingCatalogGt30d += 1;
-            }
-        }
-        // VIP count comes from a dedicated `is_vip=true` server-side
-        // query — `is_vip` is a workers-table column, not a ticket-row
-        // field, so we can't sniff it on the slim view rows. Apply the
-        // same OIT scope + Region/Country filter as the VIP Tickets
-        // drill-in page so the Hub's VIP Active KPI always reconciles
-        // with the count users see on /vip-tickets.
-        const vipRows = [
-            ...(vipIncidentQuery.data?.items ?? []),
-            ...(vipRequestQuery.data?.items ?? []),
-        ];
-        const vipActive = vipRows.filter(
-            (r) =>
-                isInScopeGroup(r.assigned_group) &&
-                matchesRegionCountry(
-                    r,
-                    selectedRegions,
-                    selectedCountries,
-                    selectedLocations,
-                    locationForFilter,
-                ),
-        ).length;
-        return {
-            totalActive: activeTickets.length,
-            activeIncident,
-            activeIncidentHigh,
-            activeCatalog,
-            activeAsset,
-            vipActive,
-            unassigned,
-            agingIncidentGt2d,
-            agingCatalogGt30d,
-            agingAssetGt30d,
-        };
-    }, [
-        activeTickets,
-        now,
-        vipIncidentQuery.data,
-        vipRequestQuery.data,
-        selectedRegions,
-        selectedCountries,
-        selectedLocations,
-    ]);
+    // ── KPI extraction — direct read from the report block ────
+    // Narrow nested-property deps in the useMemos below — the React
+    // Compiler infers the deepest path used and skips memoization when
+    // the declared dep array is coarser. Pulling these out keeps the
+    // compiler happy without changing semantics.
+    const reportKpis = report?.current.kpis;
+    const reportPrevKpis = report?.previous.kpis;
+    const reportGroupDonut = report?.current.charts.group_donut;
+    const reportAssigneeBar = report?.current.charts.assignee_bar;
+    const reportRegion = report?.current.charts.region;
+    const reportLocations = report?.current.filter_options.locations;
 
-    // Month-over-month deltas — snapshot replays based on created_at +
-    // closure timestamps. Skipped for the four aging KPIs since their
-    // "snapshot at past time" depends on `source_updated_at`, which is
-    // a moving target (no per-row history available).
+    const ticketKpis: TicketKpis = useMemo(() => {
+        if (!reportKpis) {
+            return {
+                totalActive: 0,
+                activeIncident: 0,
+                activeIncidentHigh: 0,
+                activeCatalog: 0,
+                activeAsset: 0,
+                vipActive: 0,
+                unassigned: 0,
+                agingIncidentGt2d: 0,
+                agingCatalogGt30d: 0,
+                agingAssetGt30d: 0,
+            };
+        }
+        return { ...reportKpis };
+    }, [reportKpis]);
+
     const ticketKpiDeltas: TicketKpiDeltas = useMemo(() => {
-        const isCatalog = (r: TicketRow) =>
-            r.object_type === 'request' && classifyRequestType(r) === 'catalog_task';
-        const isAssetTask = (r: TicketRow) =>
-            r.object_type === 'request' && classifyRequestType(r) === 'asset_task';
-        // VIP MoM delta is intentionally null — vipIncidentQuery /
-        // vipRequestQuery only fetch *currently-active* VIP rows
-        // (states_list=ACTIVE_STATES filter on the server), so we
-        // don't have the historical resolution events needed to
-        // compute "VIP active a month ago". Surfacing a number here
-        // would either require a second un-filtered VIP fetch or a
-        // backend `is_vip` field on the ticket row. Defer either to
-        // Phase 2 — for now the tile shows the live VIP count with
-        // no MoM annotation.
+        if (!reportKpis || !reportPrevKpis) {
+            return {
+                totalActive: null,
+                activeIncident: null,
+                activeCatalog: null,
+                activeAsset: null,
+                vipActive: null,
+            };
+        }
         return {
-            totalActive: formatMoM(momActiveSnapshot(filteredTickets, now)),
-            activeIncident: formatMoM(
-                momActiveSnapshot(filteredTickets, now, (r) => r.object_type === 'incident'),
-            ),
-            activeCatalog: formatMoM(momActiveSnapshot(filteredTickets, now, isCatalog)),
-            activeAsset: formatMoM(momActiveSnapshot(filteredTickets, now, isAssetTask)),
+            totalActive: makeDelta(reportKpis.totalActive, reportPrevKpis.totalActive),
+            activeIncident: makeDelta(reportKpis.activeIncident, reportPrevKpis.activeIncident),
+            activeCatalog: makeDelta(reportKpis.activeCatalog, reportPrevKpis.activeCatalog),
+            activeAsset: makeDelta(reportKpis.activeAsset, reportPrevKpis.activeAsset),
+            // VIP MoM intentionally null — spec §8: backend doesn't replay
+            // VIP membership history yet. Adding it is a non-breaking
+            // schema extension when the backend ships it.
             vipActive: null,
         };
-    }, [filteredTickets, now]);
+    }, [reportKpis, reportPrevKpis]);
 
-    // ── Chart data ──────────────────────────────────────────────
+    // ── Chart data — direct read ──────────────────────────────
     const groupDonut = useMemo(
-        () =>
-            groupBy(activeTickets, (r) => r.assigned_group)
-                .slice(0, 8)
-                .map((g) => ({ name: g.key, value: g.count })),
-        [activeTickets],
+        () => reportGroupDonut ?? [],
+        [reportGroupDonut],
     );
-
-    // By-Assignee bar — top 10 by active ticket count. Bar chart over
-    // donut because assignee names are long (user IDs / full names)
-    // and a donut with > 8 slices becomes unreadable at chart size.
-    // Unassigned rows fall into the "Unassigned" bucket so the chart
-    // surfaces the backlog-without-an-owner signal.
     const assigneeBar = useMemo(
         () =>
-            groupBy(activeTickets, (r) => r.assigned_to_name?.trim() || 'Unassigned')
-                .slice(0, 10),
-        [activeTickets],
+            (reportAssigneeBar ?? []).map((row) => ({
+                key: row.key,
+                count: row.count,
+            })),
+        [reportAssigneeBar],
+    );
+    const regionData = useMemo(
+        () =>
+            (reportRegion ?? []).map((row) => ({
+                region: row.region as Region,
+                count: row.count,
+            })),
+        [reportRegion],
     );
 
-    // Detail table rows — enrich each active ticket with the derived
-    // fields the table surfaces (type label, days-without-update,
-    // location / region / opened date). Computed lazily: only when the
-    // user expands the collapsible. Reset pagination to page 1 whenever
-    // the filter set changes (activeTickets identity shifts).
-    //
-    // DataTable's generic wants T extends Record<string, unknown> so the
-    // shape is spelled out explicitly rather than intersected with
-    // TicketRow (intersecting with a non-record type breaks the
-    // constraint).
+    // ── RegionCountryFilter feed — distinct locations the backend saw
+    //   on the current active+in-scope set. Saves us materialising
+    //   `regionCountryRows` from a 20k-row in-browser allTickets array. ──
+    const regionCountryRows = useMemo(() => {
+        return (reportLocations ?? []).map((loc) => ({ location: loc }));
+    }, [reportLocations]);
+
+    // ── Detail table rows ─────────────────────────────────────
     interface DetailRow extends Record<string, unknown> {
         oid: string;
         stable_id: string;
@@ -412,7 +327,7 @@ export function OpsDashboardHub() {
     }
     const detailRows: DetailRow[] = useMemo(() => {
         if (!detailOpen) return [];
-        return activeTickets.map((r) => {
+        return activeDetailTickets.map((r) => {
             const typeKey: 'incident' | 'request' = r.object_type === 'incident' ? 'incident' : 'request';
             let typeLabel: string;
             if (typeKey === 'incident') typeLabel = t('tables.incident');
@@ -442,15 +357,10 @@ export function OpsDashboardHub() {
                 _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
             };
         });
-    }, [detailOpen, activeTickets, now, t]);
+    }, [detailOpen, activeDetailTickets, now, t]);
 
-    // Compute effective skip so filter changes that shrink the row set
-    // below the current page offset don't leave the table blank.
-    // We clamp at read time rather than via a useEffect to keep the
-    // hook tree shallow.
-    const detailTotal = activeTickets.length;
+    const detailTotal = activeDetailTickets.length;
     const effectiveSkip = detailPage.skip >= detailTotal ? 0 : detailPage.skip;
-
     const detailPageRows = useMemo(
         () => detailRows.slice(effectiveSkip, effectiveSkip + detailPage.limit),
         [detailRows, effectiveSkip, detailPage.limit],
@@ -514,22 +424,6 @@ export function OpsDashboardHub() {
         ];
     }, [isLight, t]);
 
-
-    const trendMonths = useMemo(
-        () => monthsFromRange(ticketDateRange.from, ticketDateRange.to, now),
-        [ticketDateRange.from, ticketDateRange.to, now],
-    );
-    const trend = useMemo(
-        () => trendByMonth(filteredTickets, trendMonths, now),
-        [filteredTickets, trendMonths, now],
-    );
-
-    const regionData: RegionBubble[] = useMemo(() => {
-        const counts: Record<Region, number> = { AMER: 0, EMEA: 0, APAC: 0, OTHER: 0 };
-        for (const r of activeTickets) counts[regionOf(r)] += 1;
-        return (Object.keys(counts) as Region[]).map((region) => ({ region, count: counts[region] }));
-    }, [activeTickets]);
-
     // ── Cross-filter handlers ───────────────────────────────────
     const toggleTicketFilter = (param: string, name: string) => {
         const cur = (ticketFilters[param] as string[]) ?? [];
@@ -544,19 +438,14 @@ export function OpsDashboardHub() {
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
-    const allTicketsActive = useMemo(
-        // Match the scoping applied in ``activeTickets`` so the
-        // "filtered / total" denominator in the filter bar also reflects
-        // the OIT queue size, not the full SN firehose.
-        () =>
-            allTickets.filter(
-                (r) => isActiveState(r.state) && isInScopeGroup(r.assigned_group),
-            ).length,
-        [allTickets],
-    );
+    // ── "filtered / total" denominator — the report endpoint always returns
+    //   the FILTERED current count in `totalActive`. For the unfiltered
+    //   total we issue NO second fetch — the header label drops the total
+    //   when no filters are applied (it just shows the filtered count),
+    //   which is the only state in which the comparison is meaningless.
+    const totalActiveCount = ticketKpis.totalActive;
 
-    // ── Consolidated Clear All: covers every dimension across tickets +
-    //   assets, including the donut-driven chart filters and Region/Country.
+    // ── Consolidated Clear All ─────────────────────────────────
     const extraActiveFilterCount = useMemo(() => {
         let n = 0;
         const arr = (s: FilterState, k: string) => (Array.isArray(s[k]) ? (s[k] as string[]).length : 0);
@@ -603,19 +492,15 @@ export function OpsDashboardHub() {
                 <div className="flex items-center gap-2">
                     <TranslatedAutoRefresh onRefresh={() => void refetchAll()} storageKey="ops-dashboard:hub:auto-refresh" />
                     <button
-                    onClick={() => void refetchAll()}
-                    className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
-                    title={t('empty.retry')}
-                >
-                    <RefreshCw className="w-4 h-4" />
-                </button>
+                        onClick={() => void refetchAll()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
-            {/* Filter panel — Region/Country in headerSlot applies to
-                tickets (full geographic match). Open Date applies to
-                tickets. Everything else is donut-driven (chart filters).
-                Single Clear All button at the top-right. */}
             <TopFilterBar
                 value={ticketFilters}
                 onChange={setTicketFilters}
@@ -644,11 +529,6 @@ export function OpsDashboardHub() {
                 }
                 headerSlot={
                     <RegionCountryFilter
-                        // Union of tickets + assets so the Country and
-                        // Location dropdowns surface every place that
-                        // exists in either data set. Each unified row
-                        // carries a single `location` field — exactly
-                        // what `getLocation` reads.
                         rows={regionCountryRows}
                         getLocation={(r) => r.location}
                         selectedRegions={selectedRegions}
@@ -664,9 +544,7 @@ export function OpsDashboardHub() {
                 }
             />
 
-            {/* Scrollable main content */}
             <div className="flex-1 min-h-0 overflow-auto">
-                {/* Partial / error banners */}
                 {partial && (
                     <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
                         <span>{t('empty.partialResult')}</span>
@@ -685,34 +563,20 @@ export function OpsDashboardHub() {
                     kpiDeltas={ticketKpiDeltas}
                     groupDonut={groupDonut}
                     assigneeBar={assigneeBar}
-                    trend={trend}
-                    trendMonths={trendMonths}
+                    trend={[]}
+                    trendMonths={0}
                     regionData={regionData}
                     loading={loading}
-                    filteredCount={activeTickets.length}
-                    totalActiveCount={allTicketsActive}
+                    filteredCount={ticketKpis.totalActive}
+                    totalActiveCount={totalActiveCount}
                     onGroupSliceClick={onGroupSliceClick}
                     selectedGroups={selectedAssignedGroups}
                     onGroupLegendToggle={onGroupLegendToggle}
                 />
 
-                {/*
-                 * Collapsible detail table — shows every active ticket that
-                 * passed the Hub's filter chain (region/country/location +
-                 * OIT scope + active state). Collapsed by default so the
-                 * Hub stays light on first render; we also skip the rows
-                 * enrichment useMemo until ``detailOpen`` flips true.
-                 *
-                 * Uses a native <details>/<summary> pair rather than a
-                 * headless-UI disclosure because (a) zero dep, (b) keyboard
-                 * / a11y come free, (c) matches the lean primitive style
-                 * the rest of this dashboard uses.
-                 *
-                 * DataTable provides sort + CSV export out of the box;
-                 * we pass the full enriched row set as ``csvRows`` so
-                 * Export CSV downloads every filtered ticket, not just
-                 * the current page.
-                 */}
+                {/* Collapsible Detail table — lazy: useIncidents+useRequests
+                    fire the first time the user opens it, gated via
+                    `enabled: detailOpen`. */}
                 <details
                     className={`mt-3 rounded-xl border ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
                     open={detailOpen}
