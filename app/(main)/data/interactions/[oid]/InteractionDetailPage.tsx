@@ -4,7 +4,7 @@
  * Interaction detail page client component (read-only v1).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
@@ -17,6 +17,23 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Interaction } from '@/lib/types/objects';
 import { deleteInteractionAction } from '@/app/actions/objects';
+
+// Resolve a service-catalog OID to its leaf name; falls back to the OID
+// (or "—" when null) so the cell never goes blank.
+function renderCatalog(oid: string | null | undefined, map: Record<string, string>): string {
+    if (!oid) return '—';
+    return map[oid] ?? oid;
+}
+
+function renderText(value: string | null | undefined): string {
+    return value && value.trim() ? value : '—';
+}
+
+function renderBool(value: boolean | null | undefined): string {
+    if (value === true) return 'Y';
+    if (value === false) return 'N';
+    return '—';
+}
 
 interface InteractionDetailPageProps {
     interaction: Interaction;
@@ -33,6 +50,39 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
+
+    // Resolve {ai,review}_service_catalog_oid to leaf names. Skip the fetch
+    // unless the interaction actually has at least one catalog OID set.
+    const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
+    const hasCatalog =
+        !!interaction.ai_service_catalog_oid || !!interaction.review_service_catalog_oid;
+    useEffect(() => {
+        if (!hasCatalog) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(
+                    '/api/objects/service-catalogs?limit=1000&is_active=true',
+                    { credentials: 'include' },
+                );
+                if (!res.ok) return;
+                const payload = (await res.json()) as {
+                    items?: Array<{ oid?: string; name?: string }>;
+                };
+                if (cancelled) return;
+                const next: Record<string, string> = {};
+                for (const e of payload.items ?? []) {
+                    if (e.oid && e.name) next[e.oid] = e.name;
+                }
+                setCatalogMap(next);
+            } catch {
+                // Non-fatal: cell shows raw OID instead of resolved name.
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [hasCatalog]);
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this interaction?')) return;
@@ -103,6 +153,94 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                         <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Response Text</span>
                         <div className={`p-3 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
                             {interaction.response_text || <span className="italic opacity-50">No response text</span>}
+                        </div>
+                    </div>
+
+                    {/* AI Classification — populated by the digest_interactions
+                        + classify_interactions_catalog DAGs. */}
+                    <div className="pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <h3 className={`text-sm font-semibold mb-3 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>AI Classification</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (AI)</span>
+                                <span className="text-sm">{renderText(interaction.ai_code)}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">CI (AI)</span>
+                                <span className="text-sm font-mono">{renderText(interaction.ai_ci)}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (AI)</span>
+                                <span
+                                    className="text-sm"
+                                    title={interaction.ai_service_catalog_oid ?? ''}
+                                >
+                                    {renderCatalog(interaction.ai_service_catalog_oid, catalogMap)}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Helpful Score</span>
+                                <span className="text-sm">
+                                    {interaction.helpful_score === null || interaction.helpful_score === undefined
+                                        ? '—'
+                                        : interaction.helpful_score}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Human Review — edited via PATCH /interactions/{oid}/review
+                        on the SSC dashboard. */}
+                    <div className="pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
+                        <h3 className={`text-sm font-semibold mb-3 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>Human Review</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (Review)</span>
+                                <span className="text-sm">{renderText(interaction.review_code)}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">CI (Review)</span>
+                                <span className="text-sm font-mono">{renderText(interaction.review_ci)}</span>
+                            </div>
+                            <div className="md:col-span-2">
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (Review)</span>
+                                <span
+                                    className="text-sm"
+                                    title={interaction.review_service_catalog_oid ?? ''}
+                                >
+                                    {renderCatalog(interaction.review_service_catalog_oid, catalogMap)}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Needs Optimization</span>
+                                <span className="text-sm">{renderBool(interaction.review_needs_optimization)}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Completed At</span>
+                                <span className="text-sm">
+                                    {interaction.review_completed_at
+                                        ? formatDateTime(interaction.review_completed_at, timezone)
+                                        : '—'}
+                                </span>
+                            </div>
+                            <div className="md:col-span-2">
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Notes</span>
+                                <div
+                                    className={`p-3 rounded-lg whitespace-pre-wrap text-sm ${
+                                        isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'
+                                    }`}
+                                >
+                                    {interaction.review_optimization_notes || (
+                                        <span className="italic opacity-50">—</span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="md:col-span-2">
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Completed By</span>
+                                <span className="text-sm font-mono break-all">
+                                    {renderText(interaction.review_completed_by_oid)}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
