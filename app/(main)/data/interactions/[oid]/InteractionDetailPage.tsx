@@ -4,7 +4,7 @@
  * Interaction detail page client component (read-only v1).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
@@ -15,8 +15,10 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { Interaction } from '@/lib/types/objects';
+import type { Interaction, ServiceCatalog } from '@/lib/types/objects';
 import { deleteInteractionAction } from '@/app/actions/objects';
+import { updateInteractionReview } from '@/lib/api/exports';
+import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
 
 // Resolve a service-catalog OID to its leaf name; falls back to the OID
 // (or "—" when null) so the cell never goes blank.
@@ -44,20 +46,28 @@ function formatJson(value: Record<string, unknown> | null): string {
     return JSON.stringify(value, null, 2);
 }
 
-export function InteractionDetailPage({ interaction }: InteractionDetailPageProps) {
+export function InteractionDetailPage({ interaction: initialInteraction }: InteractionDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [isPending, setIsPending] = useState(false);
+    const [interaction, setInteraction] = useState<Interaction>(initialInteraction);
 
-    // Resolve {ai,review}_service_catalog_oid to leaf names. Skip the fetch
-    // unless the interaction actually has at least one catalog OID set.
-    const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
-    const hasCatalog =
-        !!interaction.ai_service_catalog_oid || !!interaction.review_service_catalog_oid;
+    // Load the full active catalog once on mount. We need it both to resolve
+    // OIDs to leaf names AND to power the L1→L4 picker on the review cell.
+    const [catalogEntries, setCatalogEntries] = useState<ServiceCatalog[]>([]);
+    const catalogMap = useMemo<Record<string, string>>(() => {
+        const m: Record<string, string> = {};
+        for (const e of catalogEntries) if (e.oid && e.name) m[e.oid] = e.name;
+        return m;
+    }, [catalogEntries]);
+    const catalogByOid = useMemo<Record<string, ServiceCatalog | undefined>>(() => {
+        const m: Record<string, ServiceCatalog | undefined> = {};
+        for (const e of catalogEntries) if (e.oid) m[e.oid] = e;
+        return m;
+    }, [catalogEntries]);
     useEffect(() => {
-        if (!hasCatalog) return;
         let cancelled = false;
         (async () => {
             try {
@@ -66,23 +76,29 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                     { credentials: 'include' },
                 );
                 if (!res.ok) return;
-                const payload = (await res.json()) as {
-                    items?: Array<{ oid?: string; name?: string }>;
-                };
+                const payload = (await res.json()) as { items?: ServiceCatalog[] };
                 if (cancelled) return;
-                const next: Record<string, string> = {};
-                for (const e of payload.items ?? []) {
-                    if (e.oid && e.name) next[e.oid] = e.name;
-                }
-                setCatalogMap(next);
+                setCatalogEntries(payload.items ?? []);
             } catch {
-                // Non-fatal: cell shows raw OID instead of resolved name.
+                // Non-fatal: review picker disabled, AI cell shows raw OID.
             }
         })();
         return () => {
             cancelled = true;
         };
-    }, [hasCatalog]);
+    }, []);
+
+    const handleCatalogReviewCommit = async (oid: string | null) => {
+        try {
+            const updated = await updateInteractionReview(interaction.oid, {
+                review_service_catalog_oid: oid,
+            });
+            setInteraction(updated);
+        } catch (error) {
+            console.error('Failed to update review catalog:', error);
+            alert(error instanceof Error ? error.message : 'Failed to save');
+        }
+    };
 
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this interaction?')) return;
@@ -165,10 +181,6 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (AI)</span>
                                 <span className="text-sm">{renderText(interaction.ai_code)}</span>
                             </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">CI (AI)</span>
-                                <span className="text-sm font-mono">{renderText(interaction.ai_ci)}</span>
-                            </div>
                             <div className="md:col-span-2">
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (AI)</span>
                                 <span
@@ -198,18 +210,17 @@ export function InteractionDetailPage({ interaction }: InteractionDetailPageProp
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (Review)</span>
                                 <span className="text-sm">{renderText(interaction.review_code)}</span>
                             </div>
-                            <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">CI (Review)</span>
-                                <span className="text-sm font-mono">{renderText(interaction.review_ci)}</span>
-                            </div>
                             <div className="md:col-span-2">
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (Review)</span>
-                                <span
-                                    className="text-sm"
-                                    title={interaction.review_service_catalog_oid ?? ''}
-                                >
-                                    {renderCatalog(interaction.review_service_catalog_oid, catalogMap)}
-                                </span>
+                                <div className="text-sm max-w-md">
+                                    <CatalogReviewPicker
+                                        currentOid={interaction.review_service_catalog_oid}
+                                        catalogEntries={catalogEntries}
+                                        catalogByOid={catalogByOid}
+                                        disabled={catalogEntries.length === 0}
+                                        onCommit={handleCatalogReviewCommit}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Needs Optimization</span>
