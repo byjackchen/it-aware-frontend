@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { ServiceCatalog } from '@/lib/types/objects';
 
 const SERVICE_CATALOG_ROOT_STABLE_ID = 'ITSC0000';
@@ -126,21 +127,27 @@ export function CatalogReviewPicker({
     const l3Options = picked.l2 ? childrenByParent[picked.l2] ?? [] : [];
     const l4Options = picked.l3 ? childrenByParent[picked.l3] ?? [] : [];
 
-    const currentLabel = currentOid
+    const resolvedLabel = currentOid
         ? catalogByOid[currentOid]?.name ?? currentOid
-        : '—';
+        : null;
+    const buttonLabel = resolvedLabel ?? 'Set review override…';
 
-    // Trigger renders inline as a clickable cell; popover anchors below.
+    // Trigger renders inline as a clickable dropdown-style cell.
     return (
         <div className="relative w-full">
             <button
                 type="button"
                 disabled={disabled}
                 onClick={handleOpen}
-                className="w-full text-left text-xs px-1 py-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 truncate disabled:opacity-50"
-                title={currentLabel}
+                className={`w-full flex items-center justify-between gap-1 text-xs px-2 py-1 rounded border bg-white dark:bg-slate-800/40 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${
+                    resolvedLabel
+                        ? 'border-slate-300 dark:border-white/20 text-slate-700 dark:text-gray-200'
+                        : 'border-dashed border-slate-300 dark:border-white/15 text-slate-400 dark:text-gray-500 italic'
+                }`}
+                title={resolvedLabel ?? 'Click to choose a 4th-level service catalog override'}
             >
-                {currentLabel}
+                <span className="truncate">{buttonLabel}</span>
+                <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
             </button>
             {open && (
                 <>
