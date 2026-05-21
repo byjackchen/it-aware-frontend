@@ -4,7 +4,6 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
-import { getServiceCatalogs } from '@/lib/api/objects';
 import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -144,21 +143,32 @@ export function InteractionsPanel({
     // One-shot fetch of all service-catalog leaves so we can resolve
     // {ai,review}_service_catalog_oid to a human-readable leaf name. The
     // catalog is small (~460 active entries) so this loads once on mount.
+    // Uses the Next.js /api proxy directly (this file is a Client Component
+    // so importing the server-side @/lib/api/objects helper would pull
+    // next/headers into the client bundle and break the build).
     const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
     useEffect(() => {
         let cancelled = false;
-        getServiceCatalogs()
-            .then(entries => {
+        (async () => {
+            try {
+                const res = await fetch(
+                    '/api/objects/service-catalogs?limit=1000&is_active=true',
+                    { credentials: 'include' },
+                );
+                if (!res.ok) return;
+                const payload = (await res.json()) as {
+                    items?: Array<{ oid?: string; name?: string }>;
+                };
                 if (cancelled) return;
                 const next: Record<string, string> = {};
-                for (const e of entries) {
+                for (const e of payload.items ?? []) {
                     if (e.oid && e.name) next[e.oid] = e.name;
                 }
                 setCatalogMap(next);
-            })
-            .catch(() => {
+            } catch {
                 // Non-fatal: rows just show the OID instead of the name.
-            });
+            }
+        })();
         return () => {
             cancelled = true;
         };
