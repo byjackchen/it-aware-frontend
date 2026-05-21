@@ -2388,8 +2388,6 @@
       "department": "Dept",
       "question": "Question",
       "faqReply": "Reply",
-      "ciAi": "CI (AI)",
-      "ciReview": "CI (Review)",
       "catalogAi": "Catalog (AI)",
       "catalogReview": "Catalog (Review)",
       "helpful": "Helpful",

@@ -5,10 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { updateInteractionReview } from '@/lib/api/exports';
+import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
 import {
     REVIEW_CODES,
     type Interaction,
     type ReviewCode,
+    type ServiceCatalog,
     type WorkerContext,
 } from '@/lib/types/objects';
 
@@ -130,12 +132,14 @@ function ToggleButton({
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_140px_140px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_60px_70px_70px_60px_140px_60px]';
 
 interface InteractionRowProps {
     interaction: Interaction;
     worker?: WorkerContext;
     catalogMap?: Record<string, string>;
+    catalogEntries?: ServiceCatalog[];
+    catalogByOid?: Record<string, ServiceCatalog | undefined>;
     isAligned: boolean;
     inWindow: boolean;
     isFocused: boolean;
@@ -147,6 +151,8 @@ export function InteractionRow({
     interaction,
     worker,
     catalogMap,
+    catalogEntries,
+    catalogByOid,
     isAligned,
     inWindow,
     isFocused,
@@ -159,7 +165,6 @@ export function InteractionRow({
     const t = useTranslations('SSCDashboard');
 
     const [draft, setDraft] = useState({
-        review_ci: interaction.review_ci ?? '',
         review_code: (interaction.review_code ?? null) as ReviewCode | null,
         review_needs_optimization: (interaction.review_needs_optimization ?? null) as boolean | null,
         review_optimization_notes: interaction.review_optimization_notes ?? '',
@@ -171,14 +176,12 @@ export function InteractionRow({
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- controlled sync of external prop
         setDraft({
-            review_ci: interaction.review_ci ?? '',
             review_code: interaction.review_code ?? null,
             review_needs_optimization: interaction.review_needs_optimization ?? null,
             review_optimization_notes: interaction.review_optimization_notes ?? '',
         });
     }, [
         interaction.oid,
-        interaction.review_ci,
         interaction.review_code,
         interaction.review_needs_optimization,
         interaction.review_optimization_notes,
@@ -186,8 +189,8 @@ export function InteractionRow({
 
     const persist = (
         patch: Partial<{
-            review_ci: string | null;
             review_code: ReviewCode | null;
+            review_service_catalog_oid: string | null;
             review_needs_optimization: boolean | null;
             review_optimization_notes: string | null;
             mark_completed: boolean | null;
@@ -261,24 +264,7 @@ export function InteractionRow({
                 {interaction.response_text ?? '—'}
             </div>
 
-            {/* 8. CI (AI) — read-only */}
-            <div className={cellClass}>{interaction.ai_ci ?? '—'}</div>
-
-            {/* 9. CI (Review) — editable inline text */}
-            <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                <InlineText
-                    value={draft.review_ci}
-                    onCommit={v => {
-                        const val = v.trim() || null;
-                        setDraft(d => ({ ...d, review_ci: val ?? '' }));
-                        persist({ review_ci: val });
-                    }}
-                    disabled={isPending}
-                    placeholder={t('headers.ciReview')}
-                />
-            </div>
-
-            {/* 10. Service Catalog (AI) — read-only leaf name */}
+            {/* 8. Service Catalog (AI) — read-only leaf name */}
             <div
                 className={cellClass}
                 title={
@@ -293,30 +279,26 @@ export function InteractionRow({
                     : '—'}
             </div>
 
-            {/* 11. Service Catalog (Review) — read-only leaf name (override editing is a follow-up) */}
-            <div
-                className={cellClass}
-                title={
-                    interaction.review_service_catalog_oid
-                        ? catalogMap?.[interaction.review_service_catalog_oid] ??
-                          interaction.review_service_catalog_oid
-                        : ''
-                }
-            >
-                {interaction.review_service_catalog_oid
-                    ? catalogMap?.[interaction.review_service_catalog_oid] ?? '…'
-                    : '—'}
+            {/* 9. Service Catalog (Review) — cascading L1→L2→L3→L4 picker */}
+            <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                <CatalogReviewPicker
+                    currentOid={interaction.review_service_catalog_oid}
+                    catalogEntries={catalogEntries ?? []}
+                    catalogByOid={catalogByOid ?? {}}
+                    disabled={isPending || !catalogEntries?.length}
+                    onCommit={oid => persist({ review_service_catalog_oid: oid })}
+                />
             </div>
 
-            {/* 12. Helpful */}
+            {/* 10. Helpful */}
             <div className={`text-xs text-center ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {renderHelpfulScore(interaction.helpful_score)}
             </div>
 
-            {/* 13. Code (AI) — read-only */}
+            {/* 11. Code (AI) — read-only */}
             <div className={cellClass}>{interaction.ai_code ?? '—'}</div>
 
-            {/* 14. Code (Review) — editable inline select */}
+            {/* 12. Code (Review) — editable inline select */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineSelect<ReviewCode>
                     value={draft.review_code}
@@ -330,7 +312,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 15. 优化? — editable toggle */}
+            {/* 13. 优化? — editable toggle */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <ToggleButton
                     value={draft.review_needs_optimization}
@@ -342,7 +324,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 16. 优化备注 — editable inline text */}
+            {/* 14. 优化备注 — editable inline text */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineText
                     value={draft.review_optimization_notes}
@@ -356,7 +338,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 17. 完成 — toggle mark_completed */}
+            {/* 15. 完成 — toggle mark_completed */}
             <div className="text-xs text-center">
                 <button
                     type="button"
@@ -375,7 +357,7 @@ export function InteractionRow({
 
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-17 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-15 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}

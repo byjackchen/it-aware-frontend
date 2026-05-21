@@ -16,6 +16,7 @@ import {
     type Interaction,
     type InteractionListResponse,
     type ReviewCode,
+    type ServiceCatalog,
     type WorkerContext,
 } from '@/lib/types/objects';
 
@@ -24,7 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_140px_140px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_60px_70px_70px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -147,6 +148,12 @@ export function InteractionsPanel({
     // so importing the server-side @/lib/api/objects helper would pull
     // next/headers into the client bundle and break the build).
     const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
+    const [catalogEntries, setCatalogEntries] = useState<ServiceCatalog[]>([]);
+    const catalogByOid = useMemo<Record<string, ServiceCatalog | undefined>>(() => {
+        const idx: Record<string, ServiceCatalog | undefined> = {};
+        for (const e of catalogEntries) if (e.oid) idx[e.oid] = e;
+        return idx;
+    }, [catalogEntries]);
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -157,11 +164,13 @@ export function InteractionsPanel({
                 );
                 if (!res.ok) return;
                 const payload = (await res.json()) as {
-                    items?: Array<{ oid?: string; name?: string }>;
+                    items?: ServiceCatalog[];
                 };
                 if (cancelled) return;
+                const items = payload.items ?? [];
+                setCatalogEntries(items);
                 const next: Record<string, string> = {};
-                for (const e of payload.items ?? []) {
+                for (const e of items) {
                     if (e.oid && e.name) next[e.oid] = e.name;
                 }
                 setCatalogMap(next);
@@ -791,8 +800,6 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.department')}</div>
                 <div className={columnHeaderClass}>{t('headers.question')}</div>
                 <div className={columnHeaderClass}>{t('headers.faqReply')}</div>
-                <div className={columnHeaderClass}>{t('headers.ciAi')}</div>
-                <div className={columnHeaderClass}>{t('headers.ciReview')}</div>
                 <div className={columnHeaderClass}>{t('headers.catalogAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.catalogReview')}</div>
                 <div className={columnHeaderClass}>{t('headers.helpful')}</div>
@@ -862,6 +869,8 @@ export function InteractionsPanel({
                                     interaction={effective}
                                     worker={worker}
                                     catalogMap={catalogMap}
+                                    catalogEntries={catalogEntries}
+                                    catalogByOid={catalogByOid}
                                     isAligned={isAligned}
                                     inWindow={inWindow}
                                     isFocused={isFocused}
