@@ -4,6 +4,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
+import { getServiceCatalogs } from '@/lib/api/objects';
 import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -24,7 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_140px_140px_60px_70px_70px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -139,6 +140,29 @@ export function InteractionsPanel({
         }
         return map;
     }, [workerMap]);
+
+    // One-shot fetch of all service-catalog leaves so we can resolve
+    // {ai,review}_service_catalog_oid to a human-readable leaf name. The
+    // catalog is small (~460 active entries) so this loads once on mount.
+    const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
+    useEffect(() => {
+        let cancelled = false;
+        getServiceCatalogs()
+            .then(entries => {
+                if (cancelled) return;
+                const next: Record<string, string> = {};
+                for (const e of entries) {
+                    if (e.oid && e.name) next[e.oid] = e.name;
+                }
+                setCatalogMap(next);
+            })
+            .catch(() => {
+                // Non-fatal: rows just show the OID instead of the name.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Data loading — initial batch (first 500); later pages fetched on demand.
     // TZ-aware 2026-05-11 — see Appendix A rule #11 in merge-review SOP.
@@ -759,6 +783,8 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.faqReply')}</div>
                 <div className={columnHeaderClass}>{t('headers.ciAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.ciReview')}</div>
+                <div className={columnHeaderClass}>{t('headers.catalogAi')}</div>
+                <div className={columnHeaderClass}>{t('headers.catalogReview')}</div>
                 <div className={columnHeaderClass}>{t('headers.helpful')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeReview')}</div>
@@ -825,6 +851,7 @@ export function InteractionsPanel({
                                     key={effective.oid}
                                     interaction={effective}
                                     worker={worker}
+                                    catalogMap={catalogMap}
                                     isAligned={isAligned}
                                     inWindow={inWindow}
                                     isFocused={isFocused}

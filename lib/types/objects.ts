@@ -1115,11 +1115,13 @@ export interface Interaction {
     // SSC dashboard — AI-derived (populated by digest_interactions DAG; nullable until then)
     ai_ci?: string | null;
     ai_code?: ReviewCode | null;
+    ai_service_catalog_oid?: string | null;
     helpful_score?: number | null;
 
     // SSC dashboard — human review (edited via PATCH /review)
     review_ci?: string | null;
     review_code?: ReviewCode | null;
+    review_service_catalog_oid?: string | null;
     review_needs_optimization?: boolean | null;
     review_optimization_notes?: string | null;
     review_completed_at?: string | null;
