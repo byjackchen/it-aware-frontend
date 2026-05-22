@@ -690,6 +690,9 @@ export interface Incident {
     fact_embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     assigned_group: string | null;
     chat_transcripts: Record<string, unknown> | null;
@@ -820,6 +823,9 @@ export interface Request {
     fact_embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     assigned_group: string | null;
     chat_transcripts: Record<string, unknown> | null;
@@ -942,6 +948,9 @@ export interface IncidentCreate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -975,6 +984,9 @@ export interface RequestCreate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -1048,6 +1060,9 @@ export interface IncidentUpdate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -1082,6 +1097,9 @@ export interface RequestUpdate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -1112,14 +1130,20 @@ export interface Interaction {
     ingested_at: string;
     updated_at: string;
 
-    // SSC dashboard — AI-derived (populated by digest_interactions DAG; nullable until then)
+    // SSC dashboard — AI-derived defaults (populated by digest_interactions DAG; nullable until then).
+    // Service catalog / type follow the project's default+_override naming:
+    //   service_catalog_oid       — L3 leaf under IT Services (ITSC0000)
+    //   service_type_oid          — one of the ITST leaves (Enquiry/Faulty/Requirement)
+    // Effective value at render: COALESCE(<override>_oid, <default>_oid).
     ai_code?: ReviewCode | null;
-    ai_service_catalog_oid?: string | null;
+    service_catalog_oid?: string | null;
+    service_type_oid?: string | null;
     helpful_score?: number | null;
 
     // SSC dashboard — human review (edited via PATCH /review)
     review_code?: ReviewCode | null;
-    review_service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_override_oid?: string | null;
     review_needs_optimization?: boolean | null;
     review_optimization_notes?: string | null;
     review_completed_at?: string | null;
@@ -1507,6 +1531,9 @@ export interface Analysis {
     semantic: AnalysisSemantic;
     intent: AnalysisIntent;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     created_at: string;
     updated_at: string;
@@ -1525,6 +1552,9 @@ export interface AnalysisCreate {
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
 }
 
@@ -1534,6 +1564,9 @@ export interface AnalysisUpdate {
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
 }
 

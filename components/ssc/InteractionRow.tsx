@@ -7,6 +7,11 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import { updateInteractionReview } from '@/lib/api/exports';
 import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
 import {
+    SERVICE_CATALOG_LEAF_DEPTH,
+    SERVICE_TYPE_LEAF_DEPTH,
+    SERVICE_TYPE_ROOT_STABLE_ID,
+} from '@/lib/utils/serviceCatalog';
+import {
     REVIEW_CODES,
     type Interaction,
     type ReviewCode,
@@ -131,8 +136,11 @@ function ToggleButton({
 // Main row component
 // ---------------------------------------------------------------------------
 
+// Order: time, user, region, country, dept, question, reply, SC(AI),
+// SC(override), ST(AI), ST(override), helpful, code(AI), code(override),
+// optimize?, notes, done.
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px]';
 
 interface InteractionRowProps {
     interaction: Interaction;
@@ -190,7 +198,8 @@ export function InteractionRow({
     const persist = (
         patch: Partial<{
             review_code: ReviewCode | null;
-            review_service_catalog_oid: string | null;
+            service_catalog_override_oid: string | null;
+            service_type_override_oid: string | null;
             review_needs_optimization: boolean | null;
             review_optimization_notes: string | null;
             mark_completed: boolean | null;
@@ -268,37 +277,68 @@ export function InteractionRow({
             <div
                 className={cellClass}
                 title={
-                    interaction.ai_service_catalog_oid
-                        ? catalogMap?.[interaction.ai_service_catalog_oid] ??
-                          interaction.ai_service_catalog_oid
+                    interaction.service_catalog_oid
+                        ? catalogMap?.[interaction.service_catalog_oid] ??
+                          interaction.service_catalog_oid
                         : ''
                 }
             >
-                {interaction.ai_service_catalog_oid
-                    ? catalogMap?.[interaction.ai_service_catalog_oid] ?? '…'
+                {interaction.service_catalog_oid
+                    ? catalogMap?.[interaction.service_catalog_oid] ?? '…'
                     : '—'}
             </div>
 
-            {/* 9. Service Catalog (Review) — cascading L1→L2→L3→L4 picker */}
+            {/* 9. Service Catalog (Override) — cascading L1→L2→L3 picker */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <CatalogReviewPicker
-                    currentOid={interaction.review_service_catalog_oid}
+                    currentOid={interaction.service_catalog_override_oid}
                     catalogEntries={catalogEntries ?? []}
                     catalogByOid={catalogByOid ?? {}}
                     disabled={isPending || !catalogEntries?.length}
-                    onCommit={oid => persist({ review_service_catalog_oid: oid })}
+                    targetDepth={SERVICE_CATALOG_LEAF_DEPTH}
+                    onCommit={oid => persist({ service_catalog_override_oid: oid })}
                 />
             </div>
 
-            {/* 10. Helpful */}
+            {/* 10. Service Type (AI) — read-only */}
+            <div
+                className={cellClass}
+                title={
+                    interaction.service_type_oid
+                        ? catalogMap?.[interaction.service_type_oid] ??
+                          interaction.service_type_oid
+                        : ''
+                }
+            >
+                {interaction.service_type_oid
+                    ? catalogMap?.[interaction.service_type_oid] ?? '…'
+                    : '—'}
+            </div>
+
+            {/* 11. Service Type (Override) — single-level type picker */}
+            <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                <CatalogReviewPicker
+                    currentOid={interaction.service_type_override_oid}
+                    catalogEntries={catalogEntries ?? []}
+                    catalogByOid={catalogByOid ?? {}}
+                    disabled={isPending || !catalogEntries?.length}
+                    rootStableId={SERVICE_TYPE_ROOT_STABLE_ID}
+                    targetDepth={SERVICE_TYPE_LEAF_DEPTH}
+                    levelLabels={['Type']}
+                    placeholder="Set type…"
+                    onCommit={oid => persist({ service_type_override_oid: oid })}
+                />
+            </div>
+
+            {/* 12. Helpful */}
             <div className={`text-xs text-center ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {renderHelpfulScore(interaction.helpful_score)}
             </div>
 
-            {/* 11. Code (AI) — read-only */}
+            {/* 13. Code (AI) — read-only */}
             <div className={cellClass}>{interaction.ai_code ?? '—'}</div>
 
-            {/* 12. Code (Review) — editable inline select */}
+            {/* 14. Code (Override) — editable inline select */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineSelect<ReviewCode>
                     value={draft.review_code}
@@ -312,7 +352,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 13. 优化? — editable toggle */}
+            {/* 15. 优化? — editable toggle */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <ToggleButton
                     value={draft.review_needs_optimization}
@@ -324,7 +364,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 14. 优化备注 — editable inline text */}
+            {/* 16. 优化备注 — editable inline text */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 <InlineText
                     value={draft.review_optimization_notes}
@@ -338,7 +378,7 @@ export function InteractionRow({
                 />
             </div>
 
-            {/* 15. 完成 — toggle mark_completed */}
+            {/* 17. 完成 — toggle mark_completed */}
             <div className="text-xs text-center">
                 <button
                     type="button"
@@ -357,7 +397,7 @@ export function InteractionRow({
 
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-15 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-17 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}

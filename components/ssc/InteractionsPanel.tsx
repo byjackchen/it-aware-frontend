@@ -25,7 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -802,6 +802,8 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.faqReply')}</div>
                 <div className={columnHeaderClass}>{t('headers.catalogAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.catalogReview')}</div>
+                <div className={columnHeaderClass}>{t('headers.typeAi')}</div>
+                <div className={columnHeaderClass}>{t('headers.typeReview')}</div>
                 <div className={columnHeaderClass}>{t('headers.helpful')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeReview')}</div>

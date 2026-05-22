@@ -1,41 +1,48 @@
 'use client';
 
 /**
- * Cascading service-catalog picker for the SSC review override field.
+ * Cascading hierarchy picker for service-catalog / service-type override fields.
  *
- * Constraints:
- *   - Forces selection of a 4th-level (leaf) node — Save is disabled until
- *     all four cascading dropdowns are populated.
- *   - Trigger is an inline button showing the current resolved leaf name
- *     (or "—" when null); click opens a small popover with L1 → L2 → L3 → L4
- *     selects.
- *   - "Clear" sets the value to null. "Save" commits the L4 OID.
+ * Generalized form:
+ *   - `rootStableId` picks which tree to walk (defaults to ITSC0000 / IT Services).
+ *     Passing ITST0000 turns this into a single-level "service type" picker.
+ *   - `targetDepth` is the path length of a valid leaf (root + intermediate +
+ *     leaf). The UI renders `targetDepth - 1` cascading dropdowns; the last
+ *     one selects the leaf.
  *
- * Lives next to the SSC dashboard and the interaction detail page; both
- * surface review_service_catalog_oid edits via PATCH /interactions/{oid}/review.
+ * Common configurations:
+ *   - Service catalog (post 2026-05 restructure): rootStableId=ITSC0000,
+ *     targetDepth=4 → three dropdowns (L1, L2, L3).
+ *   - Service type:                                rootStableId=ITST0000,
+ *     targetDepth=2 → one dropdown (type leaf).
+ *
+ * Used by SSC dashboard rows and the detail pages for activities/analyses.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { ServiceCatalog } from '@/lib/types/objects';
 
-const SERVICE_CATALOG_ROOT_STABLE_ID = 'ITSC0000';
-const L4_PATH_LENGTH = 5;
-
 interface CatalogReviewPickerProps {
-    /** Currently-saved OID (null when no review override is set). */
+    /** Currently-saved OID (null when no override is set). */
     currentOid: string | null | undefined;
     /** All active service-catalog entries (the panel-level one-shot fetch result). */
     catalogEntries: ServiceCatalog[];
-    /**
-     * Map of all entries by OID — used to render the cell label when
-     * `currentOid` is set but the picker isn't open. Caller usually already
-     * has this map for the read-only ai_service_catalog_oid cell; reuse it.
-     */
+    /** Map of all entries by OID — used to render the trigger label when collapsed. */
     catalogByOid: Record<string, ServiceCatalog | undefined>;
     /** Persist the new OID. null = clear. */
     onCommit: (oid: string | null) => void;
     disabled?: boolean;
+    /** Which tree to walk. Default: ITSC0000 (IT Services catalog). */
+    rootStableId?: string;
+    /** Path length of a valid leaf. Default: 4 (L3 leaf under IT Services). */
+    targetDepth?: number;
+    /** Optional override for the level labels in dropdowns. Length should be `targetDepth - 1`. */
+    levelLabels?: string[];
+    /** Text shown on the trigger when no value is set. */
+    placeholder?: string;
+    /** Title attribute on the trigger button. */
+    titleHint?: string;
 }
 
 interface LevelEntry {
@@ -43,66 +50,79 @@ interface LevelEntry {
     name: string;
 }
 
+const DEFAULT_ROOT_STABLE_ID = 'ITSC0000';
+const DEFAULT_TARGET_DEPTH = 4;
+const DEFAULT_SC_LEVEL_LABELS = [
+    'L1 — Primary',
+    'L2 — Secondary',
+    'L3 — Leaf (required)',
+];
+
 export function CatalogReviewPicker({
     currentOid,
     catalogEntries,
     catalogByOid,
     onCommit,
     disabled,
+    rootStableId = DEFAULT_ROOT_STABLE_ID,
+    targetDepth = DEFAULT_TARGET_DEPTH,
+    levelLabels,
+    placeholder = 'Set override…',
+    titleHint,
 }: CatalogReviewPickerProps) {
     const [open, setOpen] = useState(false);
+    const dropdownCount = Math.max(1, targetDepth - 1);
 
     // ── derive tree structure (root OID, children-by-parent index) ──
     const { rootOid, childrenByParent } = useMemo(() => {
-        const root = catalogEntries.find(
-            e => e.stable_id === SERVICE_CATALOG_ROOT_STABLE_ID,
-        );
+        const root = catalogEntries.find(e => e.stable_id === rootStableId);
         const rootOidLocal = root?.oid ?? null;
         const idx: Record<string, LevelEntry[]> = {};
         for (const entry of catalogEntries) {
             if (!entry.oid || !entry.name) continue;
             const path = entry.path ?? [];
-            // Skip root itself; only index L1+
+            // Skip root itself; only index nodes that have a parent.
             if (path.length < 2) continue;
-            // Restrict to IT Services subtree (path[0] = root OID).
+            // Restrict to this tree (path[0] = root OID).
             if (rootOidLocal && path[0] !== rootOidLocal) continue;
             const parent = path[path.length - 2];
             if (!parent) continue;
             (idx[parent] ??= []).push({ oid: entry.oid, name: entry.name });
         }
-        // Sort each bucket by name for stable presentation
         for (const bucket of Object.values(idx)) {
             bucket.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'));
         }
         return { rootOid: rootOidLocal, childrenByParent: idx };
-    }, [catalogEntries]);
+    }, [catalogEntries, rootStableId]);
 
-    // ── pick-state: L1/L2/L3/L4 OIDs, pre-populated from currentOid on open ──
-    const [picked, setPicked] = useState<{
-        l1: string | null;
-        l2: string | null;
-        l3: string | null;
-        l4: string | null;
-    }>({ l1: null, l2: null, l3: null, l4: null });
+    // Pick-state is an array of length dropdownCount. Each slot is the OID
+    // picked at that level (index 0 = first cascade after root).
+    const [picked, setPicked] = useState<(string | null)[]>(() =>
+        Array(dropdownCount).fill(null),
+    );
 
     const prefillFromCurrent = useCallback(() => {
         if (!currentOid) {
-            setPicked({ l1: null, l2: null, l3: null, l4: null });
+            setPicked(Array(dropdownCount).fill(null));
             return;
         }
         const leaf = catalogByOid[currentOid];
-        if (!leaf || (leaf.path ?? []).length !== L4_PATH_LENGTH) {
-            setPicked({ l1: null, l2: null, l3: null, l4: null });
+        if (!leaf || (leaf.path ?? []).length !== targetDepth) {
+            setPicked(Array(dropdownCount).fill(null));
             return;
         }
         const p = leaf.path ?? [];
-        setPicked({
-            l1: p[1] ?? null,
-            l2: p[2] ?? null,
-            l3: p[3] ?? null,
-            l4: p[4] ?? null,
-        });
-    }, [currentOid, catalogByOid]);
+        // path[0] = root, path[1..] = level picks
+        setPicked(
+            Array.from({ length: dropdownCount }, (_, i) => p[i + 1] ?? null),
+        );
+    }, [currentOid, catalogByOid, dropdownCount, targetDepth]);
+
+    // Re-prefill whenever the current OID changes upstream (e.g. saved value
+    // updates after a successful commit but the picker stays mounted).
+    useEffect(() => {
+        if (!open) prefillFromCurrent();
+    }, [open, prefillFromCurrent]);
 
     const handleOpen = () => {
         if (disabled) return;
@@ -110,9 +130,11 @@ export function CatalogReviewPicker({
         setOpen(true);
     };
 
+    const leafPick = picked[dropdownCount - 1];
+
     const handleSave = () => {
-        if (picked.l4) {
-            onCommit(picked.l4);
+        if (leafPick) {
+            onCommit(leafPick);
             setOpen(false);
         }
     };
@@ -122,17 +144,32 @@ export function CatalogReviewPicker({
         setOpen(false);
     };
 
-    const l1Options = rootOid ? childrenByParent[rootOid] ?? [] : [];
-    const l2Options = picked.l1 ? childrenByParent[picked.l1] ?? [] : [];
-    const l3Options = picked.l2 ? childrenByParent[picked.l2] ?? [] : [];
-    const l4Options = picked.l3 ? childrenByParent[picked.l3] ?? [] : [];
+    // Compute the option list for each cascade slot. Slot 0's parent is the
+    // tree root; slot N's parent is the OID picked at slot N-1.
+    const optionsAtSlot = (slot: number): LevelEntry[] => {
+        if (slot === 0) return rootOid ? childrenByParent[rootOid] ?? [] : [];
+        const parent = picked[slot - 1];
+        return parent ? childrenByParent[parent] ?? [] : [];
+    };
+
+    const labels =
+        levelLabels && levelLabels.length === dropdownCount
+            ? levelLabels
+            : dropdownCount === DEFAULT_SC_LEVEL_LABELS.length
+            ? DEFAULT_SC_LEVEL_LABELS
+            : Array.from({ length: dropdownCount }, (_, i) =>
+                  i === dropdownCount - 1
+                      ? `Level ${i + 1} (required)`
+                      : `Level ${i + 1}`,
+              );
 
     const resolvedLabel = currentOid
         ? catalogByOid[currentOid]?.name ?? currentOid
         : null;
-    const buttonLabel = resolvedLabel ?? 'Set review override…';
+    const buttonLabel = resolvedLabel ?? placeholder;
+    const computedTitle =
+        titleHint ?? resolvedLabel ?? 'Click to choose an override';
 
-    // Trigger renders inline as a clickable dropdown-style cell.
     return (
         <div className="relative w-full">
             <button
@@ -144,7 +181,7 @@ export function CatalogReviewPicker({
                         ? 'border-slate-300 dark:border-white/20 text-slate-700 dark:text-gray-200'
                         : 'border-dashed border-slate-300 dark:border-white/15 text-slate-400 dark:text-gray-500 italic'
                 }`}
-                title={resolvedLabel ?? 'Click to choose a 4th-level service catalog override'}
+                title={computedTitle}
             >
                 <span className="truncate">{buttonLabel}</span>
                 <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
@@ -157,39 +194,31 @@ export function CatalogReviewPicker({
                         aria-hidden
                     />
                     <div className="absolute z-50 left-0 top-full mt-1 w-[420px] rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl p-3 space-y-2">
-                        <LevelSelect
-                            label="L1 — Primary"
-                            value={picked.l1}
-                            options={l1Options}
-                            onChange={v =>
-                                setPicked({ l1: v, l2: null, l3: null, l4: null })
-                            }
-                        />
-                        <LevelSelect
-                            label="L2 — Secondary"
-                            value={picked.l2}
-                            options={l2Options}
-                            disabled={!picked.l1}
-                            onChange={v =>
-                                setPicked(p => ({ ...p, l2: v, l3: null, l4: null }))
-                            }
-                        />
-                        <LevelSelect
-                            label="L3 — Category"
-                            value={picked.l3}
-                            options={l3Options}
-                            disabled={!picked.l2}
-                            onChange={v =>
-                                setPicked(p => ({ ...p, l3: v, l4: null }))
-                            }
-                        />
-                        <LevelSelect
-                            label="L4 — Leaf (required)"
-                            value={picked.l4}
-                            options={l4Options}
-                            disabled={!picked.l3}
-                            onChange={v => setPicked(p => ({ ...p, l4: v }))}
-                        />
+                        {Array.from({ length: dropdownCount }).map((_, slot) => {
+                            const opts = optionsAtSlot(slot);
+                            const value = picked[slot];
+                            const isDisabled = slot > 0 && !picked[slot - 1];
+                            return (
+                                <LevelSelect
+                                    key={slot}
+                                    label={labels[slot]}
+                                    value={value}
+                                    options={opts}
+                                    disabled={isDisabled}
+                                    onChange={v => {
+                                        setPicked(prev => {
+                                            const next = [...prev];
+                                            next[slot] = v;
+                                            // Clear deeper slots when an ancestor changes.
+                                            for (let i = slot + 1; i < dropdownCount; i++) {
+                                                next[i] = null;
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                />
+                            );
+                        })}
                         <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/10">
                             <button
                                 type="button"
@@ -210,10 +239,10 @@ export function CatalogReviewPicker({
                                 <button
                                     type="button"
                                     onClick={handleSave}
-                                    disabled={!picked.l4}
+                                    disabled={!leafPick}
                                     className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
-                                    Save L4
+                                    Save
                                 </button>
                             </div>
                         </div>
