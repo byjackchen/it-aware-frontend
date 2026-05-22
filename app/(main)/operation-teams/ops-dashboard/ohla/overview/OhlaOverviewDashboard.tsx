@@ -4,7 +4,7 @@
  * Ohla Overview — Power BI "Overview" page port.
  *
  * Performance: KPIs and charts come from the server-aggregated
- * /report/ohla-chatbot-overview endpoint by default (one small payload,
+ * /dashboards/chatbot/overview endpoint by default (one small payload,
  * 120s Redis-cached). The legacy 200k-row /interactions pull only
  * happens lazily when the user engages a cross-filter (donut click),
  * because the report endpoint doesn't support per-facet filters.

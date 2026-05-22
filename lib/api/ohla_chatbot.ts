@@ -231,7 +231,7 @@ async function fetchReport<V extends OhlaChatbotView>(
     if (!resp.ok) {
         if (resp.status === 401) throw new Error('Not authenticated');
         const body = await resp.text().catch(() => '');
-        throw new Error(`ohla-chatbot/${view} fetch failed: ${resp.status} ${body.slice(0, 200)}`);
+        throw new Error(`dashboards/chatbot/${view} fetch failed: ${resp.status} ${body.slice(0, 200)}`);
     }
     return (await resp.json()) as OhlaChatbotReportByView[V];
 }

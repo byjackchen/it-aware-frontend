@@ -3,7 +3,7 @@
 /**
  * Ohla Other Case Analysis — Power BI "Other Case Analysis" page port.
  *
- * Performance: KPI + 2 charts come from /report/ohla-chatbot-other-case
+ * Performance: KPI + 2 charts come from /dashboards/chatbot/other-case
  * (server-aggregated, 120s Redis cache). The detail table loads small
  * filtered rows from /interactions?ask_classification=other.
  *

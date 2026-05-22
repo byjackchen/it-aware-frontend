@@ -4,7 +4,7 @@
  * Ohla Survey Details — Power BI "Survey Details" page port.
  *
  * Performance: KPIs (Survey#, AVG Rate) + dropdown options come from the
- * server-aggregated /report/ohla-chatbot-survey endpoint. The 4 ad-hoc
+ * server-aggregated /dashboards/chatbot/survey endpoint. The 4 ad-hoc
  * filters (VIP / BG / Country / Rate range) are sent as query params to
  * the same endpoint so the BE recomputes KPIs filtered — same UX as the
  * original FE.
