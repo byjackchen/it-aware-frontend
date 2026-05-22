@@ -199,7 +199,7 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                                 <span className="text-sm">{renderText(interaction.ai_code)}</span>
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (AI)</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog</span>
                                 <span
                                     className="text-sm"
                                     title={interaction.service_catalog_oid ?? ''}
@@ -208,7 +208,7 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                                 </span>
                             </div>
                             <div>
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Type (AI)</span>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Type</span>
                                 <span
                                     className="text-sm"
                                     title={interaction.service_type_oid ?? ''}
