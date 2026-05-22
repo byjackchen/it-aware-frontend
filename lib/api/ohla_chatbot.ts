@@ -2,17 +2,17 @@
  * Typed wrappers for the 5 Ohla Chatbot dashboard report endpoints.
  *
  * All endpoints share:
- * - Path prefix /api/objects/activities/interactions/report/ohla-chatbot-<view>
+ * - Path prefix /api/dashboards/chatbot/<view>
  * - Query: date_from + date_to (YYYY-MM-DD UTC)
  * - Permission: INTERACTIONS_READ (same as the existing /interactions list)
  * - Response: { current: Block, previous: Block } per rule #10
  *
  * The Pydantic models on the backend live in
- * app/objects/activities/interaction/schemas.py (frozen + extra='forbid').
+ * app/dashboards/chatbot_dashboards/schemas.py (frozen + extra='forbid').
  *
- * Calls go through the Next.js `/api/objects/<resource>` proxy route, which
- * already forwards query params to the backend while injecting the
- * `it_aware_access` cookie server-side.
+ * Calls go through the Next.js proxy at
+ * `app/api/dashboards/chatbot/[view]/route.ts` which forwards query params
+ * to the backend while injecting the `it_aware_access` cookie server-side.
  */
 
 // ── Shared chart primitives ──────────────────────────────────────────────────
@@ -225,9 +225,8 @@ async function fetchReport<V extends OhlaChatbotView>(
             if (v !== undefined && v !== null && v !== '') params.append(k, v);
         }
     }
-    // Routed through the dedicated proxy at app/api/ohla-chatbot/report/[view]/route.ts.
-    // The default /api/objects/[resource] proxy can't accept multi-segment paths.
-    const url = `/api/ohla-chatbot/report/${view}?${params.toString()}`;
+    // Routed through the dedicated proxy at app/api/dashboards/chatbot/[view]/route.ts.
+    const url = `/api/dashboards/chatbot/${view}?${params.toString()}`;
     const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) {
         if (resp.status === 401) throw new Error('Not authenticated');

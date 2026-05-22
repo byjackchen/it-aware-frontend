@@ -1,21 +1,18 @@
 /**
  * Typed wrapper for the Ops Dashboard Hub report endpoint.
  *
- * Backed by `GET /objects/activities/ops-dashboard/report/hub` on the
- * backend (see `specs/backend/ops_dashboard_predicates.md`). Returns
- * precomputed KPIs + chart series + filter_options so the Active
- * Monitoring Hub page renders without doing any aggregation in the
- * browser.
+ * Backed by `GET /dashboards/ops/hub` on the backend (see
+ * `specs/backend/ops_dashboard_predicates.md`). Returns precomputed
+ * KPIs + chart series + filter_options so the Active Monitoring Hub
+ * page renders without doing any aggregation in the browser.
  *
  * Calls go through the Next.js proxy at
- * `app/api/ops-dashboard/report/hub/route.ts` which forwards query
- * params and injects the `it_aware_access` cookie server-side. (The
- * default `/api/objects/[resource]` proxy can't accept multi-segment
- * paths — same reason the Ohla Chatbot pattern got its own proxy.)
+ * `app/api/dashboards/ops/hub/route.ts` which forwards query params
+ * and injects the `it_aware_access` cookie server-side.
  */
 
 // ── Response shapes — kept structurally identical to the Pydantic
-//    schemas in `app/objects/activities/ops_dashboard/schemas.py`. ─────────
+//    schemas in `app/dashboards/ops_dashboards/schemas.py`. ─────────
 
 export interface NameValueRow {
     name: string;
@@ -155,13 +152,13 @@ export async function fetchOpsHubReport(
     params: OpsHubReportParams = {},
 ): Promise<OpsHubReport> {
     const qs = buildQuery(params);
-    const url = `/api/ops-dashboard/report/hub${qs ? `?${qs}` : ''}`;
+    const url = `/api/dashboards/ops/hub${qs ? `?${qs}` : ''}`;
     const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) {
         if (resp.status === 401) throw new Error('Not authenticated');
         const body = await resp.text().catch(() => '');
         throw new Error(
-            `ops-dashboard/report/hub fetch failed: ${resp.status} ${body.slice(0, 200)}`,
+            `dashboards/ops/hub fetch failed: ${resp.status} ${body.slice(0, 200)}`,
         );
     }
     return (await resp.json()) as OpsHubReport;

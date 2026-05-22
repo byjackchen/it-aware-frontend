@@ -5,7 +5,7 @@
  *
  * Replaces the legacy 4 ``useIncidents`` / ``useRequests`` fetches (each
  * paginating up to 20×1000 rows) with one small call to
- * ``/api/ops-dashboard/report/hub``. The backend returns precomputed KPIs
+ * ``/api/dashboards/ops/hub``. The backend returns precomputed KPIs
  * + chart series + filter options; the page reads them directly without
  * any client-side aggregation.
  *
