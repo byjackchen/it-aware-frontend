@@ -19,6 +19,11 @@ import type { Interaction, ServiceCatalog } from '@/lib/types/objects';
 import { deleteInteractionAction } from '@/app/actions/objects';
 import { updateInteractionReview } from '@/lib/api/exports';
 import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
+import {
+    SERVICE_CATALOG_LEAF_DEPTH,
+    SERVICE_TYPE_LEAF_DEPTH,
+    SERVICE_TYPE_ROOT_STABLE_ID,
+} from '@/lib/utils/serviceCatalog';
 
 // Resolve a service-catalog OID to its leaf name; falls back to the OID
 // (or "—" when null) so the cell never goes blank.
@@ -88,14 +93,26 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
         };
     }, []);
 
-    const handleCatalogReviewCommit = async (oid: string | null) => {
+    const handleCatalogOverrideCommit = async (oid: string | null) => {
         try {
             const updated = await updateInteractionReview(interaction.oid, {
-                review_service_catalog_oid: oid,
+                service_catalog_override_oid: oid,
             });
             setInteraction(updated);
         } catch (error) {
-            console.error('Failed to update review catalog:', error);
+            console.error('Failed to update service catalog override:', error);
+            alert(error instanceof Error ? error.message : 'Failed to save');
+        }
+    };
+
+    const handleTypeOverrideCommit = async (oid: string | null) => {
+        try {
+            const updated = await updateInteractionReview(interaction.oid, {
+                service_type_override_oid: oid,
+            });
+            setInteraction(updated);
+        } catch (error) {
+            console.error('Failed to update service type override:', error);
             alert(error instanceof Error ? error.message : 'Failed to save');
         }
     };
@@ -181,13 +198,22 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (AI)</span>
                                 <span className="text-sm">{renderText(interaction.ai_code)}</span>
                             </div>
-                            <div className="md:col-span-2">
+                            <div>
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (AI)</span>
                                 <span
                                     className="text-sm"
-                                    title={interaction.ai_service_catalog_oid ?? ''}
+                                    title={interaction.service_catalog_oid ?? ''}
                                 >
-                                    {renderCatalog(interaction.ai_service_catalog_oid, catalogMap)}
+                                    {renderCatalog(interaction.service_catalog_oid, catalogMap)}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Type (AI)</span>
+                                <span
+                                    className="text-sm"
+                                    title={interaction.service_type_oid ?? ''}
+                                >
+                                    {renderCatalog(interaction.service_type_oid, catalogMap)}
                                 </span>
                             </div>
                             <div>
@@ -210,15 +236,32 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                                 <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Code (Review)</span>
                                 <span className="text-sm">{renderText(interaction.review_code)}</span>
                             </div>
-                            <div className="md:col-span-2">
-                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (Review)</span>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Catalog (Override)</span>
                                 <div className="text-sm max-w-md">
                                     <CatalogReviewPicker
-                                        currentOid={interaction.review_service_catalog_oid}
+                                        currentOid={interaction.service_catalog_override_oid}
                                         catalogEntries={catalogEntries}
                                         catalogByOid={catalogByOid}
                                         disabled={catalogEntries.length === 0}
-                                        onCommit={handleCatalogReviewCommit}
+                                        targetDepth={SERVICE_CATALOG_LEAF_DEPTH}
+                                        onCommit={handleCatalogOverrideCommit}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Service Type (Override)</span>
+                                <div className="text-sm max-w-md">
+                                    <CatalogReviewPicker
+                                        currentOid={interaction.service_type_override_oid}
+                                        catalogEntries={catalogEntries}
+                                        catalogByOid={catalogByOid}
+                                        disabled={catalogEntries.length === 0}
+                                        rootStableId={SERVICE_TYPE_ROOT_STABLE_ID}
+                                        targetDepth={SERVICE_TYPE_LEAF_DEPTH}
+                                        levelLabels={['Type']}
+                                        placeholder="Set type…"
+                                        onCommit={handleTypeOverrideCommit}
                                     />
                                 </div>
                             </div>

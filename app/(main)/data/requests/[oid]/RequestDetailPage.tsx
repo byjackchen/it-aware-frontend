@@ -62,7 +62,15 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
     const [subcategory, setSubcategory] = useState(request.subcategory || '');
     const [impact, setImpact] = useState(request.impact || '');
     const [assignedToOid, setAssignedToOid] = useState(request.assigned_to_oid || '');
-    const [serviceCatalogOid, setServiceCatalogOid] = useState(request.service_catalog_oid || '');
+    // UI edits write to the *_override fields; ServiceNow sync continues to
+    // populate the no-suffix default. Effective value (override || default)
+    // is shown in the read-only badge below.
+    const [serviceCatalogOverrideOid, setServiceCatalogOverrideOid] = useState(
+        request.service_catalog_override_oid || '',
+    );
+    const [serviceTypeOverrideOid, setServiceTypeOverrideOid] = useState(
+        request.service_type_override_oid || '',
+    );
     const [assignedGroup, setAssignedGroup] = useState(request.assigned_group || '');
     const [configurationItemOid, setConfigurationItemOid] = useState(request.configuration_item_oid || '');
     const [chatTranscripts, setChatTranscripts] = useState(
@@ -121,7 +129,8 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
             if (subcategory) formData.set('subcategory', subcategory);
             if (impact) formData.set('impact', impact);
             if (assignedToOid) formData.set('assigned_to_oid', assignedToOid);
-            if (serviceCatalogOid) formData.set('service_catalog_oid', serviceCatalogOid);
+            formData.set('service_catalog_override_oid', serviceCatalogOverrideOid);
+            formData.set('service_type_override_oid', serviceTypeOverrideOid);
             formData.set('assigned_group', assignedGroup);
             if (configurationItemOid) formData.set('configuration_item_oid', configurationItemOid);
             if (chatTranscriptsTrimmed) formData.set('chat_transcripts', chatTranscriptsTrimmed);
@@ -173,7 +182,8 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
         setSubcategory(request.subcategory || '');
         setImpact(request.impact || '');
         setAssignedToOid(request.assigned_to_oid || '');
-        setServiceCatalogOid(request.service_catalog_oid || '');
+        setServiceCatalogOverrideOid(request.service_catalog_override_oid || '');
+        setServiceTypeOverrideOid(request.service_type_override_oid || '');
         setAssignedGroup(request.assigned_group || '');
         setConfigurationItemOid(request.configuration_item_oid || '');
         setChatTranscripts(request.chat_transcripts ? JSON.stringify(request.chat_transcripts, null, 2) : '');
@@ -484,11 +494,12 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Catalog</label>
                             {isEditing ? (
                                 <select
-                                    value={serviceCatalogOid}
-                                    onChange={(e) => setServiceCatalogOid(e.target.value)}
+                                    value={serviceCatalogOverrideOid}
+                                    onChange={(e) => setServiceCatalogOverrideOid(e.target.value)}
                                     className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the source-system value; clear to fall back to ServiceNow"
                                 >
-                                    <option value="">None</option>
+                                    <option value="">No override (use source value)</option>
                                     {serviceCatalogs.map(sc => (
                                         <option key={sc.oid} value={sc.oid}>{sc.name}</option>
                                     ))}
@@ -497,7 +508,39 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                                 <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                     <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                        {serviceCatalogs.find(sc => sc.oid === request.service_catalog_oid)?.name || 'None'}
+                                        {serviceCatalogs.find(sc => sc.oid === (request.service_catalog_override_oid ?? request.service_catalog_oid))?.name || 'None'}
+                                        {request.service_catalog_override_oid && request.service_catalog_override_oid !== request.service_catalog_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Type</label>
+                            {isEditing ? (
+                                <select
+                                    value={serviceTypeOverrideOid}
+                                    onChange={(e) => setServiceTypeOverrideOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the AI-derived type; clear to fall back"
+                                >
+                                    <option value="">No override (use source value)</option>
+                                    {serviceCatalogs
+                                        .filter(sc => (sc.stable_id ?? '').startsWith('ITST') && (sc.path?.length ?? 0) === 2)
+                                        .map(sc => (
+                                            <option key={sc.oid} value={sc.oid}>{sc.name}</option>
+                                        ))}
+                                </select>
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find(sc => sc.oid === (request.service_type_override_oid ?? request.service_type_oid))?.name || 'None'}
+                                        {request.service_type_override_oid && request.service_type_override_oid !== request.service_type_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
                                     </span>
                                 </div>
                             )}

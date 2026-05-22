@@ -70,7 +70,15 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
     const [assignedToName, setAssignedToName] = useState(incident.assigned_to_name || '');
     const [snId, setSnId] = useState(incident.sn_id || '');
     const [assignedToOid, setAssignedToOid] = useState(incident.assigned_to_oid || '');
-    const [serviceCatalogOid, setServiceCatalogOid] = useState(incident.service_catalog_oid || '');
+    // UI edits write to the *_override fields; ServiceNow sync continues to
+    // populate the no-suffix default. Effective value (override || default)
+    // is shown in the read-only badge below.
+    const [serviceCatalogOverrideOid, setServiceCatalogOverrideOid] = useState(
+        incident.service_catalog_override_oid || '',
+    );
+    const [serviceTypeOverrideOid, setServiceTypeOverrideOid] = useState(
+        incident.service_type_override_oid || '',
+    );
     const [assignedGroup, setAssignedGroup] = useState(incident.assigned_group || '');
     const [configurationItemOid, setConfigurationItemOid] = useState(incident.configuration_item_oid || '');
     const [chatTranscripts, setChatTranscripts] = useState(
@@ -127,7 +135,10 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
             if (assignedToName) formData.set('assigned_to_name', assignedToName);
             if (snId) formData.set('sn_id', snId);
             if (assignedToOid) formData.set('assigned_to_oid', assignedToOid);
-            if (serviceCatalogOid) formData.set('service_catalog_oid', serviceCatalogOid);
+            // Always send the override fields (including empty string = clear)
+            // so a user can both set and unset overrides in the same save.
+            formData.set('service_catalog_override_oid', serviceCatalogOverrideOid);
+            formData.set('service_type_override_oid', serviceTypeOverrideOid);
             formData.set('assigned_group', assignedGroup);
             if (configurationItemOid) formData.set('configuration_item_oid', configurationItemOid);
             if (chatTranscriptsTrimmed) formData.set('chat_transcripts', chatTranscriptsTrimmed);
@@ -177,7 +188,8 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
         setAssignedToName(incident.assigned_to_name || '');
         setSnId(incident.sn_id || '');
         setAssignedToOid(incident.assigned_to_oid || '');
-        setServiceCatalogOid(incident.service_catalog_oid || '');
+        setServiceCatalogOverrideOid(incident.service_catalog_override_oid || '');
+        setServiceTypeOverrideOid(incident.service_type_override_oid || '');
         setAssignedGroup(incident.assigned_group || '');
         setConfigurationItemOid(incident.configuration_item_oid || '');
         setChatTranscripts(incident.chat_transcripts ? JSON.stringify(incident.chat_transcripts, null, 2) : '');
@@ -504,16 +516,17 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Service Catalog */}
+                        {/* Service Catalog: read-only effective + editable override */}
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Catalog</label>
                             {isEditing ? (
                                 <select
-                                    value={serviceCatalogOid}
-                                    onChange={(e) => setServiceCatalogOid(e.target.value)}
+                                    value={serviceCatalogOverrideOid}
+                                    onChange={(e) => setServiceCatalogOverrideOid(e.target.value)}
                                     className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the source-system value; clear to fall back to ServiceNow"
                                 >
-                                    <option value="">None</option>
+                                    <option value="">No override (use source value)</option>
                                     {serviceCatalogs.map(sc => (
                                         <option key={sc.oid} value={sc.oid}>{sc.name}</option>
                                     ))}
@@ -522,7 +535,40 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                                 <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                     <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                        {serviceCatalogs.find(sc => sc.oid === incident.service_catalog_oid)?.name || 'None'}
+                                        {serviceCatalogs.find(sc => sc.oid === (incident.service_catalog_override_oid ?? incident.service_catalog_oid))?.name || 'None'}
+                                        {incident.service_catalog_override_oid && incident.service_catalog_override_oid !== incident.service_catalog_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Service Type: read-only effective + editable override */}
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Type</label>
+                            {isEditing ? (
+                                <select
+                                    value={serviceTypeOverrideOid}
+                                    onChange={(e) => setServiceTypeOverrideOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the AI-derived type; clear to fall back"
+                                >
+                                    <option value="">No override (use source value)</option>
+                                    {serviceCatalogs
+                                        .filter(sc => (sc.stable_id ?? '').startsWith('ITST') && (sc.path?.length ?? 0) === 2)
+                                        .map(sc => (
+                                            <option key={sc.oid} value={sc.oid}>{sc.name}</option>
+                                        ))}
+                                </select>
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find(sc => sc.oid === (incident.service_type_override_oid ?? incident.service_type_oid))?.name || 'None'}
+                                        {incident.service_type_override_oid && incident.service_type_override_oid !== incident.service_type_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
                                     </span>
                                 </div>
                             )}

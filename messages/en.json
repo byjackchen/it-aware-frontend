@@ -2390,6 +2390,8 @@
       "faqReply": "Reply",
       "catalogAi": "Catalog (AI)",
       "catalogReview": "Catalog (Review)",
+      "typeAi": "Type (AI)",
+      "typeReview": "Type (Review)",
       "helpful": "Helpful",
       "codeAi": "Code (AI)",
       "codeReview": "Code (Review)",
