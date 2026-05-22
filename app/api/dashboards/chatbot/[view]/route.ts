@@ -1,12 +1,8 @@
 /**
  * Proxy for the 5 Ohla Chatbot report endpoints.
  *
- * Maps   GET /api/ohla-chatbot/report/<view>?date_from=&date_to=
- * to     GET <BACKEND>/objects/activities/interactions/report/ohla-chatbot-<view>?date_from=&date_to=
- *
- * Why a separate proxy: /api/objects/[resource] expects a single segment
- * after /api/objects/, while our backend path has multiple. Rather than
- * refactor the resource proxy, this file owns the new URL pattern.
+ * Maps   GET /api/dashboards/chatbot/<view>?date_from=&date_to=
+ * to     GET <BACKEND>/dashboards/chatbot/<view>?date_from=&date_to=
  */
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -47,7 +43,7 @@ export async function GET(
     try {
         const incomingUrl = new URL(request.url);
         const upstreamUrl = new URL(
-            `${RUNTIME_CONFIG.backend.domain}/objects/activities/interactions/report/ohla-chatbot-${view}`,
+            `${RUNTIME_CONFIG.backend.domain}/dashboards/chatbot/${view}`,
         );
         incomingUrl.searchParams.forEach((value, key) => {
             upstreamUrl.searchParams.append(key, value);
@@ -68,7 +64,7 @@ export async function GET(
         if (!response.ok) {
             const body = await response.text().catch(() => '');
             return NextResponse.json(
-                { error: `ohla-chatbot/${view} upstream ${response.status}`, body: body.slice(0, 500) },
+                { error: `dashboards/chatbot/${view} upstream ${response.status}`, body: body.slice(0, 500) },
                 { status: response.status },
             );
         }
@@ -76,7 +72,7 @@ export async function GET(
         const data = await response.json();
         return NextResponse.json(data);
     } catch (error) {
-        console.error(`Failed to proxy /api/ohla-chatbot/report/${view}:`, error);
+        console.error(`Failed to proxy /api/dashboards/chatbot/${view}:`, error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

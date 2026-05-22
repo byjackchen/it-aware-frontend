@@ -67,6 +67,7 @@ import type { Role } from '@/lib/types/security';
 const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
 const EDGES_BASE = `${RUNTIME_CONFIG.backend.domain}/edges`;
 const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
+const DASHBOARDS_BASE = `${RUNTIME_CONFIG.backend.domain}/dashboards`;
 
 // ============================================================================
 // Core API Fetch Function
@@ -939,7 +940,7 @@ export async function getFAQMonthlyReport(
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
     const qs = params.toString();
-    return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
+    return fetchApi(`${DASHBOARDS_BASE}/ssc/faq-monthly${qs ? `?${qs}` : ''}`);
 }
 
 export async function getIncidentMonthlyReport(
@@ -950,5 +951,5 @@ export async function getIncidentMonthlyReport(
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
     const qs = params.toString();
-    return fetchApi(`${OBJECTS_BASE}/activities/incidents/report/incident-monthly${qs ? `?${qs}` : ''}`);
+    return fetchApi(`${DASHBOARDS_BASE}/ssc/incident-monthly${qs ? `?${qs}` : ''}`);
 }

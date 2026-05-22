@@ -1,13 +1,8 @@
 /**
  * Proxy for the Ops Dashboard Hub report endpoint.
  *
- * Maps   GET /api/ops-dashboard/report/hub?...
- * to     GET <BACKEND>/objects/activities/ops-dashboard/report/hub?...
- *
- * Why a separate proxy: /api/objects/[resource] only accepts single-segment
- * paths under /api/objects/, and this URL pattern is rooted at
- * /api/ops-dashboard/. Same precedent as the 5 ohla-chatbot report
- * endpoints at app/api/ohla-chatbot/report/[view]/route.ts.
+ * Maps   GET /api/dashboards/ops/hub?...
+ * to     GET <BACKEND>/dashboards/ops/hub?...
  *
  * Array params (region_in, country_in, location_in, assigned_group_in,
  * priority_in) are forwarded by repeating the key — `URLSearchParams`
@@ -36,7 +31,7 @@ export async function GET(request: Request) {
     try {
         const incomingUrl = new URL(request.url);
         const upstreamUrl = new URL(
-            `${RUNTIME_CONFIG.backend.domain}/objects/activities/ops-dashboard/report/hub`,
+            `${RUNTIME_CONFIG.backend.domain}/dashboards/ops/hub`,
         );
         incomingUrl.searchParams.forEach((value, key) => {
             upstreamUrl.searchParams.append(key, value);
@@ -58,7 +53,7 @@ export async function GET(request: Request) {
             const body = await response.text().catch(() => '');
             return NextResponse.json(
                 {
-                    error: `ops-dashboard/report/hub upstream ${response.status}`,
+                    error: `dashboards/ops/hub upstream ${response.status}`,
                     body: body.slice(0, 500),
                 },
                 { status: response.status },
@@ -68,7 +63,7 @@ export async function GET(request: Request) {
         const data = await response.json();
         return NextResponse.json(data);
     } catch (error) {
-        console.error('Failed to proxy /api/ops-dashboard/report/hub:', error);
+        console.error('Failed to proxy /api/dashboards/ops/hub:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

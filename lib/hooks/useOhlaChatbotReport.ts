@@ -5,7 +5,7 @@
  *
  * Replaces the legacy `useOhla` hook which paginated /api/objects/interactions
  * (up to 200k rows) and reduced everything in the browser. The new flow:
- *   - One small fetch to /report/ohla-chatbot-<view>
+ *   - One small fetch to /dashboards/chatbot/<view>
  *   - 120s server-side Redis cache means typical loads are <50ms
  *   - In-memory cache by (view, from, to) so flipping back and forth
  *     between sibling Ohla pages doesn't refetch

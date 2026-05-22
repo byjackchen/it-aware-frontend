@@ -9,7 +9,7 @@
  *  - Bottom: full-width details table
  *
  * Performance: KPI + daily trend come from the server-aggregated
- * /report/ohla-chatbot-agent-support endpoint. The details table calls
+ * /dashboards/chatbot/agent-support endpoint. The details table calls
  * the existing /interactions list with is_agent_support=true, which
  * typically returns a few hundred rows (vs the legacy 200k-row pull).
  */

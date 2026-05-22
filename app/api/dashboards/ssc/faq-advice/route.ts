@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const upstream = await fetch(
-        `${RUNTIME_CONFIG.backend.domain}/objects/activities/interactions/report/faq-advice`,
+        `${RUNTIME_CONFIG.backend.domain}/dashboards/ssc/faq-advice`,
         {
             method: 'POST',
             headers: {

@@ -67,7 +67,7 @@ export function OperationalAdvicePanel({ startDate, endDate }: Props) {
         setResults(prev => { const m = new Map(prev); m.delete(ck); return m; });
 
         try {
-            const res = await fetch('/api/objects/interactions/report/faq-advice', {
+            const res = await fetch('/api/dashboards/ssc/faq-advice', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ start_date: startDate, end_date: endDate, perspective: ep }),
