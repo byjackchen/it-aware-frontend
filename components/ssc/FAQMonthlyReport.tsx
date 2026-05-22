@@ -48,9 +48,10 @@ const CODE_COLORS: Record<string, string> = {
     CUST: '#06b6d4',
     OOS: '#ec4899',
     HES: '#f97316',
+    'NA-HES': '#f97316',
 };
 
-const CODE_DEF_KEYS = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS', 'NA', 'HES'] as const;
+const CODE_DEF_KEYS = ['ACCT', 'IMP', 'ERR', 'NEW', 'QNC', 'CUST', 'OOS', 'NA', 'HES', 'NA-HES'] as const;
 
 function pct(value: number): string {
     return `${value.toFixed(1)}%`;
@@ -474,14 +475,49 @@ export function FAQMonthlyReport({ report, error }: Props) {
                     value={pct(current.faq_resolution_rate)}
                     delta={formatRateDelta(current.faq_resolution_rate, previous.faq_resolution_rate, prevRange)}
                     icon={CheckCircle2}
-                    tooltip={tFaq('kpiTooltip.faqResolutionRate')}
+                    tooltip={(() => {
+                        const acctCount = current.breakdown.find(b => b.code === 'ACCT')?.count ?? 0;
+                        const naCount = current.breakdown.filter(b => b.code === 'NA' || b.code === 'HES' || b.code === 'NA-HES').reduce((s, b) => s + b.count, 0);
+                        const oosCount = current.breakdown.find(b => b.code === 'OOS')?.count ?? 0;
+                        const qncCount = current.breakdown.find(b => b.code === 'QNC')?.count ?? 0;
+                        const denom = current.grand_total - naCount - oosCount - qncCount;
+                        return (
+                            <span className="flex flex-col gap-1">
+                                <span className="font-medium">{tFaq('kpiTooltipDetail.faqFormula')}</span>
+                                <span className="border-t border-current opacity-20 my-0.5" />
+                                <span className="flex justify-between gap-3"><span>ACCT</span><span>{acctCount.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>{tFaq('kpiTooltipDetail.total')}</span><span>{current.grand_total.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>NA + HES</span><span>−{naCount.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>OOS</span><span>−{oosCount.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>QNC</span><span>−{qncCount.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>{tFaq('kpiTooltipDetail.denominator')}</span><span>{denom.toLocaleString()}</span></span>
+                                <span className="border-t border-current opacity-20 my-0.5" />
+                                <span className="flex justify-between gap-3 font-medium"><span>{tFaq('kpiTooltipDetail.rate')}</span><span>{pct(current.faq_resolution_rate)}</span></span>
+                            </span>
+                        );
+                    })()}
                 />
                 <KpiCard
                     label={tFaq('kpi.humanEscalationRate')}
                     value={pct(current.human_escalation_rate)}
                     delta={formatRateDelta(current.human_escalation_rate, previous.human_escalation_rate, prevRange, true)}
                     icon={PhoneCall}
-                    tooltip={tFaq('kpiTooltip.humanEscalationRate')}
+                    tooltip={(() => {
+                        const naCount = current.breakdown.filter(b => b.code === 'NA' || b.code === 'HES' || b.code === 'NA-HES').reduce((s, b) => s + b.count, 0);
+                        const denom = current.grand_total - naCount;
+                        return (
+                            <span className="flex flex-col gap-1">
+                                <span className="font-medium">{tFaq('kpiTooltipDetail.ohlaFormula')}</span>
+                                <span className="border-t border-current opacity-20 my-0.5" />
+                                <span className="flex justify-between gap-3"><span>{tFaq('kpiTooltipDetail.wecomIncidents')}</span><span>{current.wecom_incident_count.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>{tFaq('kpiTooltipDetail.total')}</span><span>{current.grand_total.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>NA + HES</span><span>−{naCount.toLocaleString()}</span></span>
+                                <span className="flex justify-between gap-3"><span>{tFaq('kpiTooltipDetail.denominator')}</span><span>{denom.toLocaleString()}</span></span>
+                                <span className="border-t border-current opacity-20 my-0.5" />
+                                <span className="flex justify-between gap-3 font-medium"><span>{tFaq('kpiTooltipDetail.rate')}</span><span>{pct(current.human_escalation_rate)}</span></span>
+                            </span>
+                        );
+                    })()}
                 />
             </div>
 

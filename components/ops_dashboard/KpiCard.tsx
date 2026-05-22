@@ -46,7 +46,7 @@ export interface KpiCardProps {
     /** Extra Tailwind classes for the root card div (e.g. `h-full` for grid stretch). */
     className?: string;
     /** Optional definition / formula shown on hover as a tooltip next to the label. */
-    tooltip?: string;
+    tooltip?: React.ReactNode;
     /**
      * Headline number size — defaults to `md` (text-2xl). Pass `lg`
      * (text-4xl) or `xl` (text-5xl) for big-number tiles that share a
@@ -119,7 +119,7 @@ export function KpiCard({
                     {tooltip && (
                         <span className="group relative inline-flex shrink-0 items-center">
                             <HelpCircle className={`h-3 w-3 transition-colors ${isLight ? 'text-slate-400 group-hover:text-slate-700' : 'text-gray-500 group-hover:text-white'}`} />
-                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-56 -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
+                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
                                 {tooltip}
                             </span>
                         </span>

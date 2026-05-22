@@ -2233,14 +2233,22 @@
     "kpi": {
       "totalInteractions": "总互动量",
       "uniqueVisitors": "独立访客",
-      "faqResolutionRate": "FAQ 解决率",
-      "humanEscalationRate": "人工升级率"
+      "faqResolutionRate": "FAQ 准确率",
+      "humanEscalationRate": "OHLA 转人工率"
     },
     "kpiTooltip": {
       "totalInteractions": "周期内所有会话总数（含所有编码，包括 NA）。",
       "uniqueVisitors": "按 actor_stable_id 去重的独立用户数。",
-      "faqResolutionRate": "(ACCT + IMP + QNC) ÷（总数 − NA）× 100%",
-      "humanEscalationRate": "WeCom 渠道开单数 ÷（总互动量 − NA）× 100%"
+      "faqResolutionRate": "ACCT ÷（总数 − NA − OOS − QNC）× 100%",
+      "humanEscalationRate": "ServiceNow 来源 WeCom 开单数 ÷（总互动量 − NA − HES）× 100%"
+    },
+    "kpiTooltipDetail": {
+      "total": "总数",
+      "denominator": "分母",
+      "rate": "= 比率",
+      "faqFormula": "ACCT ÷（总数 − NA − OOS − QNC）",
+      "ohlaFormula": "WeCom 开单 ÷（总数 − NA − HES）",
+      "wecomIncidents": "WeCom 开单"
     },
     "charts": {
       "reviewCodeCurrent": "审核编码分布",
@@ -2257,7 +2265,7 @@
     },
     "guidance": {
       "outcomeQuality": "结果质量：",
-      "outcomeQualityDetail": "ACCT、IMP 和 QNC 为正向结果，解决率高代表 FAQ 覆盖良好。",
+      "outcomeQualityDetail": "ACCT 为准确率分子，IMP 和 QNC 从分母中剔除、不计入准确数。准确率高表示 FAQ 内容精准。",
       "focusAreas": "重点关注：",
       "focusAreasDetail": "ERR、NEW、CUST 和 OOS 会推高升级率，建议排查对应知识库缺口。",
       "naShare": "NA 流量：",
@@ -2280,7 +2288,8 @@
       "CUST": "客制化问题 — 用户的问题过于个别化，无法用通用 FAQ 解决，需人工处理。",
       "OOS": "不在支援范围内 — 用户的问题超出支持范围，无法由现有资源处理。",
       "NA": "非 AI 生成回复 — 机械/固定回复，非 AI 模型生成，不纳入 FAQ 质量评估。",
-      "HES": "用户主动转人工 — 用户点击了转接人工客服按钮，不纳入 AI 质量评估。"
+      "HES": "用户主动转人工（旧标签）— 用户点击了转接人工客服按钮，归入 NA 类。",
+      "NA-HES": "OHLA 转人工 — 用户通过 OHLA 点击转接人工客服，归入 NA 类。"
     },
     "highlights": {
       "resolutionImproving": "解决率提升",
@@ -2288,7 +2297,7 @@
       "resolutionDetail": "本期 {rate}，较上期 {diff} 个百分点。",
       "handoffContained": "人工升级受控",
       "handoffPressureRising": "人工升级压力上升",
-      "handoffDetail": "{count} 个 WeCom 工单（占 FAQ 有效会话的 {rate}），较上期 {diff} 个百分点。",
+      "handoffDetail": "{count} 个 OHLA WeCom 工单（占 FAQ 有效会话的 {rate}），较上期 {diff} 个百分点。",
       "highNonFaq": "非 FAQ 流量较高",
       "mostTrafficFaq": "大部分流量属于 FAQ 范畴",
       "naDetail": "NA 占比为 {naShare}，ACCT 占所有流量的 {acctShare}。",
