@@ -41,7 +41,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const [agentId, setAgentId] = useState(agent.agent_id);
     const [agentKey, setAgentKey] = useState(agent.agent_key || '');
     const [agentAdminKey, setAgentAdminKey] = useState(agent.agent_admin_key || '');
-    const [workspaceId, setWorkspaceId] = useState(agent.agent_workspace_id || '');
     const [agentPlatform, setAgentPlatform] = useState(agent.agent_platform);
     const [contactWorkerOid, setContactWorkerOid] = useState(agent.contact_worker_oid);
     const [description, setDescription] = useState(agent.description || '');
@@ -64,7 +63,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             if (agentId && agentId.trim()) formData.set('agent_id', agentId.trim());
             if (agentKey.trim()) formData.set('agent_key', agentKey.trim());
             if (agentAdminKey.trim()) formData.set('agent_admin_key', agentAdminKey.trim());
-            if (workspaceId.trim()) formData.set('agent_workspace_id', workspaceId.trim());
             if (agentPlatform) formData.set('agent_platform', agentPlatform);
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
             if (description.trim()) formData.set('description', description.trim());
@@ -100,7 +98,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
         setAgentId(agent.agent_id);
         setAgentKey(agent.agent_key || '');
         setAgentAdminKey(agent.agent_admin_key || '');
-        setWorkspaceId(agent.agent_workspace_id || '');
         setAgentPlatform(agent.agent_platform);
         setContactWorkerOid(agent.contact_worker_oid);
         setDescription(agent.description || '');
@@ -304,18 +301,6 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                         ) : (
                             <div className={valueClass}>{agent.agent_admin_key || '—'}</div>
                         )}
-                    </div>
-
-                    {/* Workspace ID */}
-                    <div>
-                        <label className={labelClass}>Workspace ID</label>
-                        <input
-                            type="text"
-                            value={workspaceId}
-                            onChange={(e) => setWorkspaceId(e.target.value)}
-                            className={inputClass}
-                            disabled={!isEditing}
-                        />
                     </div>
 
                     {/* Description */}

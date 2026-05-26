@@ -1325,7 +1325,6 @@ export async function updateAgentAction(oid: string, formData: FormData) {
             agent_platform: formData.get('agent_platform') as string || undefined,
             contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
             description: formData.get('description') as string || undefined,
-            agent_workspace_id: formData.get('agent_workspace_id') as string || undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
         revalidatePath('/agentops/agents');
@@ -1447,6 +1446,7 @@ export async function createTicketAction(formData: FormData) {
             body: formData.get('body') as string || undefined,
             status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            parent_ticket_oid: formData.get('parent_ticket_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });
         revalidatePath('/agentops/tickets');
@@ -1473,6 +1473,7 @@ export async function updateTicketAction(oid: string, formData: FormData) {
             body: formData.get('body') as string || undefined,
             status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            parent_ticket_oid: formData.get('parent_ticket_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });
         revalidatePath('/agentops/tickets');

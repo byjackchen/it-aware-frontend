@@ -1725,7 +1725,6 @@ export interface Agent {
     agent_platform: string;
     contact_worker_oid: string;
     description: string | null;
-    agent_workspace_id: string | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -1739,7 +1738,6 @@ export interface AgentCreate {
     agent_platform: string;
     contact_worker_oid: string;
     description?: string;
-    agent_workspace_id?: string;
 }
 
 export interface AgentUpdate {
@@ -1750,7 +1748,6 @@ export interface AgentUpdate {
     agent_platform?: string;
     contact_worker_oid?: string;
     description?: string;
-    agent_workspace_id?: string;
     is_active?: boolean;
 }
 
@@ -1831,6 +1828,7 @@ export interface TicketCreate {
     body?: string;
     status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
     priority?: number;
 }
@@ -1840,6 +1838,7 @@ export interface TicketUpdate {
     body?: string;
     status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
     priority?: number;
 }

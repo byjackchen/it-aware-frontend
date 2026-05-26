@@ -200,11 +200,6 @@ export default function ActivityEventsPage() {
                                                         )}
                                                     </span>
                                                 )}
-                                                {e.workspace_id && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        · ws {e.workspace_id}
-                                                    </span>
-                                                )}
                                                 {typeof e.details?.channel_oid === 'string' && (
                                                     <a
                                                         href={`/agent-ops/channels/${String(e.details.channel_oid)}`}

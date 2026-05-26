@@ -4,7 +4,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
-import { getTicket } from '@/lib/api/objects';
+import { getTicket, getTicketsPage } from '@/lib/api/objects';
 import { getAccounts } from '@/lib/api/security';
 import { TicketDetailPage } from './TicketDetailPage';
 
@@ -14,9 +14,10 @@ interface PageProps {
 
 export default async function TicketPage({ params }: PageProps) {
     const { oid } = await params;
-    const [ticket, accounts] = await Promise.all([
+    const [ticket, accounts, ticketsResp] = await Promise.all([
         getTicket(oid),
         getAccounts(),
+        getTicketsPage({ limit: 1000 }), // for the parent-ticket picker
     ]).catch((error) => {
         if (error instanceof ApiError && error.status === 403) {
             redirect('/access-denied');
@@ -24,5 +25,5 @@ export default async function TicketPage({ params }: PageProps) {
         notFound();
     });
 
-    return <TicketDetailPage ticket={ticket} accounts={accounts} />;
+    return <TicketDetailPage ticket={ticket} accounts={accounts} allTickets={ticketsResp.items} />;
 }

@@ -19,6 +19,7 @@ import {
     Trash2,
     Loader2,
     Network,
+    Plus,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -29,11 +30,12 @@ import { CommentInput } from '@/components/agentops/CommentInput';
 import { TicketLineageMap } from '@/components/agentops/TicketLineageMap';
 import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
-import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
+import { createTicketAction, updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
 interface TicketDetailPageProps {
     ticket: Ticket;
     accounts: Account[];
+    allTickets: Ticket[];
 }
 
 const STATUS_OPTIONS: TicketStatus[] = ['open', 'in_progress', 'blocked', 'done', 'cancelled'];
@@ -46,7 +48,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     cancelled: { bg: 'bg-zinc-500/20', text: 'text-zinc-400' },
 };
 
-export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
+export function TicketDetailPage({ ticket, accounts, allTickets }: TicketDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useTransitionRouter();
@@ -58,7 +60,18 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     const [body, setBody] = useState(ticket.body || '');
     const [status, setStatus] = useState<TicketStatus>(ticket.status);
     const [assigneeOid, setAssigneeOid] = useState(ticket.assignee_account_oid || '');
+    const [parentOid, setParentOid] = useState(ticket.parent_ticket_oid || '');
     const [tags, setTags] = useState(ticket.tags?.join(', ') || '');
+
+    // Create-sub-ticket form
+    const [showSubForm, setShowSubForm] = useState(false);
+    const [subTitle, setSubTitle] = useState('');
+    const [subBody, setSubBody] = useState('');
+    const [subAssignee, setSubAssignee] = useState('');
+    const [subStatus, setSubStatus] = useState<TicketStatus>('open');
+    const [subPending, setSubPending] = useState(false);
+
+    const parentOptions = allTickets.filter((t) => t.oid !== ticket.oid);
 
     // Thread (conversation)
     const [messages, setMessages] = useState<ThreadMessage[]>([]);
@@ -115,6 +128,22 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
     }, [agentRunning, ticket.oid, loadThread, messages.length]);
 
     const handleSave = async () => {
+        // Client-side cycle pre-check (mirrors the backend guard) so the user
+        // gets a clear message instead of an opaque server-action error.
+        if (parentOid.trim()) {
+            const byOid = new Map(allTickets.map((t) => [t.oid, t]));
+            const seen = new Set<string>();
+            let cur: string | null | undefined = parentOid.trim();
+            while (cur) {
+                if (cur === ticket.oid) {
+                    alert('Cannot set parent: that would create a cycle (the selected ticket is a descendant of this one).');
+                    return;
+                }
+                if (seen.has(cur)) break;
+                seen.add(cur);
+                cur = byOid.get(cur)?.parent_ticket_oid;
+            }
+        }
         setIsPending(true);
         try {
             const formData = new FormData();
@@ -122,6 +151,7 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
             formData.set('body', body);
             formData.set('status', status);
             if (assigneeOid.trim()) formData.set('assignee_account_oid', assigneeOid.trim());
+            if (parentOid.trim()) formData.set('parent_ticket_oid', parentOid.trim());
             const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
             if (tagList.length > 0) formData.set('tags', JSON.stringify(tagList));
 
@@ -132,6 +162,27 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
             alert(error instanceof Error ? error.message : 'Failed to update ticket');
         } finally {
             setIsPending(false);
+        }
+    };
+
+    const handleCreateSubticket = async () => {
+        if (!subTitle.trim()) return;
+        setSubPending(true);
+        try {
+            const formData = new FormData();
+            formData.set('title', subTitle.trim());
+            if (subBody.trim()) formData.set('body', subBody.trim());
+            formData.set('status', subStatus);
+            if (subAssignee.trim()) formData.set('assignee_account_oid', subAssignee.trim());
+            formData.set('parent_ticket_oid', ticket.oid);
+            const res = await createTicketAction(formData);
+            // Navigate to the freshly created sub-ticket.
+            router.push(`/data/agentops/tickets/${res.ticket.oid}`);
+        } catch (error) {
+            console.error('Failed to create sub-ticket:', error);
+            alert(error instanceof Error ? error.message : 'Failed to create sub-ticket');
+        } finally {
+            setSubPending(false);
         }
     };
 
@@ -261,6 +312,23 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                     </div>
 
                     <div>
+                        <label className={labelClass}>Parent ticket</label>
+                        <select
+                            value={parentOid}
+                            onChange={(e) => setParentOid(e.target.value)}
+                            className={inputClass}
+                            data-testid="parent-select"
+                        >
+                            <option value="">— None —</option>
+                            {parentOptions.map((t) => (
+                                <option key={t.oid} value={t.oid}>
+                                    {t.title} ({t.oid.slice(0, 8)})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
                         <label className={labelClass}>Tags (comma-separated)</label>
                         <input
                             type="text"
@@ -289,6 +357,85 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                             <span>Delete</span>
                         </button>
                     </div>
+                </div>
+
+                {/* Create sub-ticket */}
+                <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <button
+                        onClick={() => setShowSubForm((v) => !v)}
+                        className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
+                    >
+                        <span className={`flex items-center gap-2 text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            <Plus className="w-4 h-4" /> Create sub-ticket
+                        </span>
+                        <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{showSubForm ? 'Hide' : 'Show'}</span>
+                    </button>
+                    {showSubForm && (
+                        <div className="p-4 border-t border-[var(--card-border)] space-y-4">
+                            <div>
+                                <label className={labelClass}>Title</label>
+                                <input
+                                    type="text"
+                                    value={subTitle}
+                                    onChange={(e) => setSubTitle(e.target.value)}
+                                    className={inputClass}
+                                    placeholder="Sub-ticket title"
+                                    data-testid="sub-title"
+                                />
+                            </div>
+                            <div>
+                                <label className={labelClass}>Body</label>
+                                <textarea
+                                    value={subBody}
+                                    onChange={(e) => setSubBody(e.target.value)}
+                                    rows={2}
+                                    className={inputClass}
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Status</label>
+                                    <select
+                                        value={subStatus}
+                                        onChange={(e) => setSubStatus(e.target.value as TicketStatus)}
+                                        className={inputClass}
+                                    >
+                                        {STATUS_OPTIONS.map((opt) => (
+                                            <option key={opt} value={opt}>{opt.replace('_', ' ')}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Assignee</label>
+                                    <select
+                                        value={subAssignee}
+                                        onChange={(e) => setSubAssignee(e.target.value)}
+                                        className={inputClass}
+                                        data-testid="sub-assignee"
+                                    >
+                                        <option value="">Unassigned</option>
+                                        {accounts.map((account) => (
+                                            <option key={account.oid} value={account.oid}>
+                                                {account.username} ({account.account_type})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => void handleCreateSubticket()}
+                                disabled={subPending || !subTitle.trim()}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50 transition-colors"
+                                data-testid="sub-create"
+                            >
+                                {subPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                <span>Create sub-ticket</span>
+                            </button>
+                            <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                Parent is set to this ticket. Assign to an agent + status in&nbsp;progress to dispatch with parent guidance.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Conversation section */}
