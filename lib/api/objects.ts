@@ -58,9 +58,9 @@ import type {
     TicketCreate,
     TicketUpdate,
     TicketListResponse,
-    TicketComment,
-    TicketCommentCreate,
-    TicketCommentListResponse,
+    ThreadMessage,
+    ThreadMessageCreate,
+    ThreadListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -865,12 +865,12 @@ export async function getTickets(): Promise<Ticket[]> {
     return fetchApi<Ticket[]>(`${OBJECTS_BASE}/agentops/tickets?limit=1000`);
 }
 
-export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; flagged?: boolean; assignee_account_oid?: string }): Promise<TicketListResponse> {
+export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; tag?: string; assignee_account_oid?: string }): Promise<TicketListResponse> {
     const searchParams = new URLSearchParams();
     if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
     if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
     if (params.status) searchParams.set('status', params.status);
-    if (params.flagged !== undefined) searchParams.set('flagged', String(params.flagged));
+    if (params.tag) searchParams.set('tag', params.tag);
     if (params.assignee_account_oid) searchParams.set('assignee_account_oid', params.assignee_account_oid);
     return fetchApi<TicketListResponse>(`${OBJECTS_BASE}/agentops/tickets?${searchParams}`);
 }
@@ -907,25 +907,21 @@ export async function deleteTicket(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, { method: 'DELETE' });
 }
 
-// ==================== Ticket Comments ====================
+// ==================== Ticket Thread (conversation) ====================
+// v2: the ticket thread is read via /tickets/{oid}/thread and appended to via
+// the top-level /thread-messages endpoint. There is no delete endpoint —
+// threads are append-only (history is preserved).
 
-export async function getTicketComments(ticketOid: string, params?: { skip?: number; limit?: number }): Promise<TicketCommentListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    return fetchApi<TicketCommentListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments?${searchParams}`);
+export async function getTicketThread(ticketOid: string): Promise<ThreadListResponse> {
+    return fetchApi<ThreadListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/thread`);
 }
 
-export async function createTicketComment(ticketOid: string, data: TicketCommentCreate): Promise<TicketComment> {
-    return fetchApi<TicketComment>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments`, {
+export async function createThreadMessage(data: ThreadMessageCreate): Promise<ThreadMessage> {
+    return fetchApi<ThreadMessage>(`${OBJECTS_BASE}/agentops/thread-messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
-}
-
-export async function deleteTicketComment(ticketOid: string, commentOid: string): Promise<void> {
-    await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
 }
 
 // SSC analyst reports. Backend interprets start_date / end_date as

@@ -50,7 +50,7 @@ import {
     updateScenario,
     deleteScenario,
 } from '@/lib/api/scenarios';
-import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
+import type { WorkerProfile, WorkerProfileUpsert, TicketStatus } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -1444,7 +1444,8 @@ export async function createTicketAction(formData: FormData) {
         const tagsRaw = formData.get('tags') as string | null;
         const ticket = await createTicket({
             title: formData.get('title') as string,
-            description: formData.get('description') as string || undefined,
+            body: formData.get('body') as string || undefined,
+            status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });
@@ -1469,9 +1470,8 @@ export async function updateTicketAction(oid: string, formData: FormData) {
         const tagsRaw = formData.get('tags') as string | null;
         const ticket = await updateTicket(oid, {
             title: formData.get('title') as string || undefined,
-            description: formData.get('description') as string || undefined,
-            status: formData.get('status') as string || undefined,
-            flagged: formData.get('flagged') !== null ? formData.get('flagged') === 'true' : undefined,
+            body: formData.get('body') as string || undefined,
+            status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });

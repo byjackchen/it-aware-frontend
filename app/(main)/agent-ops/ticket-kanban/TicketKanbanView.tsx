@@ -4,12 +4,11 @@ import { useState, useCallback, useMemo } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { KanbanBoard } from '@/components/agentops/KanbanBoard';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
-import { Flag, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import type { Ticket, TicketListResponse } from '@/lib/types/objects';
 
 export function TicketKanbanView() {
     const router = useTransitionRouter();
-    const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
@@ -26,11 +25,10 @@ export function TicketKanbanView() {
 
     const filteredTickets = useMemo(() => {
         let result = tickets;
-        if (flaggedOnly) result = result.filter(t => t.flagged);
         if (dateFrom) result = result.filter(t => new Date(t.created_at) >= new Date(dateFrom));
         if (dateTo) result = result.filter(t => new Date(t.created_at) <= new Date(dateTo + 'T23:59:59'));
         return result;
-    }, [tickets, flaggedOnly, dateFrom, dateTo]);
+    }, [tickets, dateFrom, dateTo]);
 
     const handleStatusChange = useCallback(async (oid: string, newStatus: string) => {
         await fetch(`/api/agentops/tickets/${oid}/status`, {
@@ -78,15 +76,6 @@ export function TicketKanbanView() {
                             </button>
                         )}
                     </div>
-                    <button
-                        onClick={() => setFlaggedOnly(!flaggedOnly)}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm border transition-colors
-                            ${flaggedOnly ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300' : 'border-[var(--card-border)]'}
-                        `}
-                    >
-                        <Flag className="w-3.5 h-3.5" />
-                        Flagged
-                    </button>
                     <button
                         onClick={() => router.push('/data/agentops/tickets/new')}
                         className="px-4 py-1.5 rounded text-sm bg-[var(--accent-color)] text-white hover:opacity-90"

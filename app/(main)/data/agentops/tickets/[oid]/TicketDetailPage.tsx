@@ -1,7 +1,13 @@
 'use client';
 
 /**
- * Ticket detail page client component.
+ * Ticket detail page client component (AgentOps v2).
+ *
+ * The comment box drives the "session" feature: posting a human_comment on an
+ * agent-assigned ticket dispatches the assigned agent, and the backend reuses
+ * the prior run's conversation_id so the conversation continues in the same
+ * Knot session. We surface the agent's reply by polling `has_active_run` and
+ * reloading the thread when the run finishes.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -19,7 +25,7 @@ import { formatDateTime } from '@/lib/utils/datetime';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
-import type { Ticket, TicketComment, TicketCommentListResponse } from '@/lib/types/objects';
+import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
 import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
@@ -28,13 +34,14 @@ interface TicketDetailPageProps {
     accounts: Account[];
 }
 
-const STATUS_OPTIONS = ['backlog', 'in_progress', 'blocked', 'done'] as const;
+const STATUS_OPTIONS: TicketStatus[] = ['open', 'in_progress', 'blocked', 'done', 'cancelled'];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-    backlog: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
+    open: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
     in_progress: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
     blocked: { bg: 'bg-red-500/20', text: 'text-red-400' },
     done: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    cancelled: { bg: 'bg-zinc-500/20', text: 'text-zinc-400' },
 };
 
 export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
@@ -46,56 +53,55 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
 
     // Editable fields
     const [title, setTitle] = useState(ticket.title);
-    const [description, setDescription] = useState(ticket.description || '');
-    const [status, setStatus] = useState(ticket.status);
-    const [flagged, setFlagged] = useState(ticket.flagged);
+    const [body, setBody] = useState(ticket.body || '');
+    const [status, setStatus] = useState<TicketStatus>(ticket.status);
     const [assigneeOid, setAssigneeOid] = useState(ticket.assignee_account_oid || '');
     const [tags, setTags] = useState(ticket.tags?.join(', ') || '');
 
-    // Comments
-    const [comments, setComments] = useState<TicketComment[]>([]);
-    const [commentsLoading, setCommentsLoading] = useState(true);
+    // Thread (conversation)
+    const [messages, setMessages] = useState<ThreadMessage[]>([]);
+    const [threadLoading, setThreadLoading] = useState(true);
     const [replyToOid, setReplyToOid] = useState<string | null>(null);
 
-    // Agent running state
-    const [agentRunning, setAgentRunning] = useState(ticket.agent_status === 'running');
-    const prevCommentCountRef = useRef(0);
+    // Agent running state — derived from the ticket's has_active_run flag.
+    const [agentRunning, setAgentRunning] = useState(Boolean(ticket.has_active_run));
+    const prevMessageCountRef = useRef(0);
 
-    const loadComments = useCallback(async () => {
+    const loadThread = useCallback(async () => {
         try {
-            const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments?limit=200`);
+            const res = await fetch(`/api/agentops/tickets/${ticket.oid}/thread`);
             if (res.ok) {
-                const data = (await res.json()) as TicketCommentListResponse;
-                setComments(data.items);
+                const data = (await res.json()) as ThreadListResponse;
+                setMessages(data.items);
             }
         } catch {
             // ignore
         } finally {
-            setCommentsLoading(false);
+            setThreadLoading(false);
         }
     }, [ticket.oid]);
 
     useEffect(() => {
-        void loadComments();
-    }, [loadComments]);
+        void loadThread();
+    }, [loadThread]);
 
-    // Poll ticket status while agent is running (every 3s)
-    // Works across multiple pods — no WebSocket needed
+    // Poll the ticket while a run is active (every 3s). When has_active_run
+    // flips false the agent finished (including any drained follow-up turns),
+    // so reload the thread to pick up the agent_reply. Works across pods —
+    // no WebSocket needed.
     useEffect(() => {
         if (!agentRunning) return;
 
-        prevCommentCountRef.current = comments.length;
+        prevMessageCountRef.current = messages.length;
 
         const interval = setInterval(async () => {
             try {
                 const ticketRes = await fetch(`/api/agentops/tickets/${ticket.oid}`);
                 if (!ticketRes.ok) return;
-                const ticketData = await ticketRes.json();
-                const newStatus = ticketData.agent_status;
-
-                if (newStatus === 'idle' || newStatus === 'error') {
+                const ticketData = (await ticketRes.json()) as Ticket;
+                if (!ticketData.has_active_run) {
                     setAgentRunning(false);
-                    void loadComments();
+                    void loadThread();
                 }
             } catch {
                 // ignore polling errors
@@ -103,16 +109,15 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [agentRunning, ticket.oid, loadComments, comments.length]);
+    }, [agentRunning, ticket.oid, loadThread, messages.length]);
 
     const handleSave = async () => {
         setIsPending(true);
         try {
             const formData = new FormData();
             formData.set('title', title);
-            formData.set('description', description);
+            formData.set('body', body);
             formData.set('status', status);
-            formData.set('flagged', String(flagged));
             if (assigneeOid.trim()) formData.set('assignee_account_oid', assigneeOid.trim());
             const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
             if (tagList.length > 0) formData.set('tags', JSON.stringify(tagList));
@@ -141,35 +146,32 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
         }
     };
 
-    const handleSubmitComment = async (content: string, repliedToOid?: string) => {
-        const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments`, {
+    const handleSubmitComment = async (content: string, replyToMessageOid?: string) => {
+        const res = await fetch(`/api/agentops/thread-messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, replied_to_comment_oid: repliedToOid }),
+            body: JSON.stringify({
+                ticket_oid: ticket.oid,
+                body: content,
+                reply_to_message_oid: replyToMessageOid,
+            }),
         });
         if (!res.ok) {
             throw new Error('Failed to post comment');
         }
-        const newComment = (await res.json()) as TicketComment;
-        setComments(prev => [...prev, newComment]);
+        const newMessage = (await res.json()) as ThreadMessage;
+        setMessages(prev => [...prev, newMessage]);
         setReplyToOid(null);
+        // If the assignee is an agent, the backend just dispatched a run.
+        // Begin polling so the reply shows up when it completes.
+        setAgentRunning(true);
     };
 
-    const handleDeleteComment = async (commentOid: string) => {
-        if (!confirm('Delete this comment?')) return;
-        const res = await fetch(`/api/agentops/tickets/${ticket.oid}/comments/${commentOid}`, {
-            method: 'DELETE',
-        });
-        if (res.ok) {
-            setComments(prev => prev.filter(c => c.oid !== commentOid));
-        }
-    };
-
-    const replyToComment = comments.find(c => c.oid === replyToOid);
+    const replyToMessage = messages.find(m => m.oid === replyToOid);
 
     const inputClass = `w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`;
     const labelClass = `block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`;
-    const statusStyle = STATUS_COLORS[status] || STATUS_COLORS.backlog;
+    const statusStyle = STATUS_COLORS[status] || STATUS_COLORS.open;
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
@@ -188,7 +190,7 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                                 <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Ticket Details</h1>
                                 <p className={`text-sm flex items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                     <span>{ticket.oid.slice(0, 12)}...</span>
-                                    <AgentStatusIndicator agentStatus={agentRunning ? 'running' : ticket.agent_status} size="sm" />
+                                    <AgentStatusIndicator agentStatus={agentRunning ? 'running' : 'idle'} size="sm" />
                                 </p>
                             </div>
                         </div>
@@ -217,38 +219,26 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                     </div>
 
                     <div>
-                        <label className={labelClass}>Description</label>
+                        <label className={labelClass}>Body</label>
                         <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            value={body}
+                            onChange={(e) => setBody(e.target.value)}
                             rows={4}
                             className={inputClass}
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className={labelClass}>Status</label>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value as typeof status)}
-                                className={inputClass}
-                            >
-                                {STATUS_OPTIONS.map((opt) => (
-                                    <option key={opt} value={opt}>{opt.replace('_', ' ')}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-3 pt-5">
-                            <input
-                                type="checkbox"
-                                id="flagged"
-                                checked={flagged}
-                                onChange={(e) => setFlagged(e.target.checked)}
-                                className="w-4 h-4"
-                            />
-                            <label htmlFor="flagged" className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>Flagged</label>
-                        </div>
+                    <div>
+                        <label className={labelClass}>Status</label>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value as TicketStatus)}
+                            className={inputClass}
+                        >
+                            {STATUS_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt.replace('_', ' ')}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>
@@ -298,23 +288,22 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                     </div>
                 </div>
 
-                {/* Comments section */}
+                {/* Conversation section */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
                         <h2 className={`text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                            Comments ({comments.length})
+                            Conversation ({messages.length})
                         </h2>
                     </div>
 
-                    {commentsLoading ? (
+                    {threadLoading ? (
                         <div className={`py-8 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading comments...</span>
+                            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading conversation...</span>
                         </div>
                     ) : (
                         <CommentThread
-                            comments={comments}
+                            messages={messages}
                             onReply={(oid) => setReplyToOid(oid)}
-                            onDelete={handleDeleteComment}
                             agentRunning={agentRunning}
                         />
                     )}
@@ -322,7 +311,7 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                     <CommentInput
                         onSubmit={handleSubmitComment}
                         replyToOid={replyToOid}
-                        replyToPreview={replyToComment?.content}
+                        replyToPreview={replyToMessage?.body}
                         onCancelReply={() => setReplyToOid(null)}
                     />
                 </div>

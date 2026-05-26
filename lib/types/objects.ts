@@ -1805,34 +1805,43 @@ export interface SystemListResponse {
 
 // ==================== Ticket ====================
 
+export type TicketStatus = 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled';
+
 export interface Ticket {
     oid: string;
     title: string;
-    description: string | null;
-    status: 'backlog' | 'in_progress' | 'blocked' | 'done';
-    flagged: boolean;
-    creator_account_oid: string;
+    body: string | null;
+    status: TicketStatus;
     assignee_account_oid: string | null;
-    agent_status: 'idle' | 'running' | 'error';
-    tags: string[] | null;
+    created_by_account_oid: string;
+    parent_ticket_oid: string | null;
+    channel_message_oid: string | null;
+    channel_oid: string | null;
+    tags: string[];
+    priority: number;
+    closed_at: string | null;
     created_at: string;
     updated_at: string;
+    // Populated on the detail GET; true while a run is queued/claimed/running.
+    has_active_run: boolean | null;
 }
 
 export interface TicketCreate {
     title: string;
-    description?: string;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketUpdate {
     title?: string;
-    description?: string;
-    status?: string;
-    flagged?: boolean;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketListResponse {
@@ -1842,28 +1851,35 @@ export interface TicketListResponse {
     limit: number;
 }
 
-// ==================== TicketComment ====================
+// ==================== ThreadMessage (ticket conversation) ====================
+// v2: replaces the old `TicketComment`. A ticket's thread interleaves human
+// comments, agent replies (linked to the Run that produced them), and system
+// notes. Posting a `human_comment` on an agent-assigned ticket dispatches the
+// assigned agent, reusing the prior run's conversation_id to continue the
+// same session.
 
-export interface TicketComment {
+export type ThreadMessageKind = 'human_comment' | 'agent_reply' | 'system_note';
+
+export interface ThreadMessage {
     oid: string;
     ticket_oid: string;
-    author_account_oid: string;
-    content: string;
-    replied_to_comment_oid: string | null;
-    agent_conversation_id: string | null;
+    kind: ThreadMessageKind;
+    body: string;
+    author_account_oid: string | null; // set for human_comment
+    run_oid: string | null;            // set for agent_reply
+    reply_to_message_oid: string | null;
     created_at: string;
 }
 
-export interface TicketCommentCreate {
-    content: string;
-    replied_to_comment_oid?: string;
+export interface ThreadMessageCreate {
+    ticket_oid: string;
+    body: string;
+    reply_to_message_oid?: string;
 }
 
-export interface TicketCommentListResponse {
-    items: TicketComment[];
-    total: number;
-    skip: number;
-    limit: number;
+// GET /tickets/{oid}/thread returns just { items } (no pagination envelope).
+export interface ThreadListResponse {
+    items: ThreadMessage[];
 }
 
 // ── FAQ Monthly Report ────────────────────────────────────────────────────────
