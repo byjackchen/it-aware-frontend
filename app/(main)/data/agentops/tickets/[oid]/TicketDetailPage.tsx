@@ -18,6 +18,7 @@ import {
     Save,
     Trash2,
     Loader2,
+    Network,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -25,6 +26,7 @@ import { formatDateTime } from '@/lib/utils/datetime';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
+import { TicketLineageMap } from '@/components/agentops/TicketLineageMap';
 import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
 import { updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
@@ -65,6 +67,7 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
 
     // Agent running state — derived from the ticket's has_active_run flag.
     const [agentRunning, setAgentRunning] = useState(Boolean(ticket.has_active_run));
+    const [showLineage, setShowLineage] = useState(false);
     const prevMessageCountRef = useRef(0);
 
     const loadThread = useCallback(async () => {
@@ -314,6 +317,24 @@ export function TicketDetailPage({ ticket, accounts }: TicketDetailPageProps) {
                         replyToPreview={replyToMessage?.body}
                         onCancelReply={() => setReplyToOid(null)}
                     />
+                </div>
+
+                {/* Lineage / mind-map + trace */}
+                <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <button
+                        onClick={() => setShowLineage((v) => !v)}
+                        className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
+                    >
+                        <span className={`flex items-center gap-2 text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                            <Network className="w-4 h-4" /> Lineage &amp; Trace
+                        </span>
+                        <span className={`text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{showLineage ? 'Hide' : 'Show'}</span>
+                    </button>
+                    {showLineage && (
+                        <div className="p-4 border-t border-[var(--card-border)]">
+                            <TicketLineageMap ticketOid={ticket.oid} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

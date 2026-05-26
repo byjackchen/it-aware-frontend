@@ -1882,6 +1882,58 @@ export interface ThreadListResponse {
     items: ThreadMessage[];
 }
 
+// ==================== Ticket lineage (handoff/traceability) ====================
+
+export interface TicketGraphAssignee {
+    type: 'agent' | 'human';
+    account_oid: string;
+    agent_oid?: string;
+    name: string | null;
+    is_agent: boolean;
+}
+
+export interface TicketGraphNode {
+    oid: string;
+    title: string;
+    status: TicketStatus;
+    depth: number;
+    assignee: TicketGraphAssignee | null;
+    has_active_run: boolean;
+    run_count: number;
+    handoff_count: number;
+}
+
+export interface TicketGraphEdge {
+    parent_oid: string;
+    child_oid: string;
+}
+
+export interface TicketGraph {
+    root_oid: string;
+    focus_oid: string;
+    nodes: TicketGraphNode[];
+    edges: TicketGraphEdge[];
+}
+
+export interface TicketTraceEvent {
+    ts: string;
+    kind: string;
+    actor_type?: string | null;
+    actor_oid?: string | null;
+    run_oid?: string | null;
+    agent_oid?: string | null;
+    session?: string | null;
+    author_account_oid?: string | null;
+    body?: string;
+    failure_reason?: string | null;
+    details?: Record<string, unknown> | null;
+}
+
+export interface TicketTrace {
+    ticket_oid: string;
+    events: TicketTraceEvent[];
+}
+
 // ── FAQ Monthly Report ────────────────────────────────────────────────────────
 
 export interface CodeBreakdownItem {
