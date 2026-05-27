@@ -28,7 +28,7 @@ import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
 import { TicketLineageMap } from '@/components/agentops/TicketLineageMap';
-import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus } from '@/lib/types/objects';
+import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus, Agent, RunListResponse } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
 import { createTicketAction, updateTicketAction, deleteTicketAction } from '@/app/actions/objects';
 
@@ -36,6 +36,7 @@ interface TicketDetailPageProps {
     ticket: Ticket;
     accounts: Account[];
     allTickets: Ticket[];
+    agents: Agent[];
 }
 
 const STATUS_OPTIONS: TicketStatus[] = ['open', 'in_progress', 'blocked', 'done', 'cancelled'];
@@ -48,7 +49,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     cancelled: { bg: 'bg-zinc-500/20', text: 'text-zinc-400' },
 };
 
-export function TicketDetailPage({ ticket, accounts, allTickets }: TicketDetailPageProps) {
+export function TicketDetailPage({ ticket, accounts, allTickets, agents }: TicketDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useTransitionRouter();
@@ -78,6 +79,10 @@ export function TicketDetailPage({ ticket, accounts, allTickets }: TicketDetailP
     const [threadLoading, setThreadLoading] = useState(true);
     const [replyToOid, setReplyToOid] = useState<string | null>(null);
 
+    // run_oid → agent name, so agent_reply bubbles can name the responding
+    // agent. Resolution: agent_reply.run_oid → run.agent_oid → agent.name.
+    const [agentByRun, setAgentByRun] = useState<Record<string, string>>({});
+
     // Agent running state — derived from the ticket's has_active_run flag.
     const [agentRunning, setAgentRunning] = useState(Boolean(ticket.has_active_run));
     const [showLineage, setShowLineage] = useState(false);
@@ -100,6 +105,30 @@ export function TicketDetailPage({ ticket, accounts, allTickets }: TicketDetailP
     useEffect(() => {
         void loadThread();
     }, [loadThread]);
+
+    // Build run_oid → agent name. Fetch the ticket's runs (run → agent_oid) and
+    // combine with the agents list (agent_oid → name) passed from the server.
+    useEffect(() => {
+        let cancelled = false;
+        const buildMap = async () => {
+            try {
+                const res = await fetch(`/api/agentops/runs?ticket_oid=${ticket.oid}&limit=200`);
+                if (!res.ok) return;
+                const data = (await res.json()) as RunListResponse;
+                const nameByAgent = new Map(agents.map((a) => [a.oid, a.name]));
+                const map: Record<string, string> = {};
+                for (const run of data.items) {
+                    const name = nameByAgent.get(run.agent_oid);
+                    if (name) map[run.oid] = name;
+                }
+                if (!cancelled) setAgentByRun(map);
+            } catch {
+                // best-effort; bubbles fall back to the generic "Agent" label
+            }
+        };
+        void buildMap();
+        return () => { cancelled = true; };
+    }, [ticket.oid, agents]);
 
     // Poll the ticket while a run is active (every 3s). When has_active_run
     // flips false the agent finished (including any drained follow-up turns),
@@ -455,6 +484,7 @@ export function TicketDetailPage({ ticket, accounts, allTickets }: TicketDetailP
                             messages={messages}
                             onReply={(oid) => setReplyToOid(oid)}
                             agentRunning={agentRunning}
+                            agentByRun={agentByRun}
                         />
                     )}
 

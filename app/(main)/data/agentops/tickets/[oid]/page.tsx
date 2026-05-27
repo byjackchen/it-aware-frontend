@@ -4,7 +4,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
-import { getTicket, getTicketsPage } from '@/lib/api/objects';
+import { getTicket, getTicketsPage, getAgents } from '@/lib/api/objects';
 import { getAccounts } from '@/lib/api/security';
 import { TicketDetailPage } from './TicketDetailPage';
 
@@ -14,10 +14,11 @@ interface PageProps {
 
 export default async function TicketPage({ params }: PageProps) {
     const { oid } = await params;
-    const [ticket, accounts, ticketsResp] = await Promise.all([
+    const [ticket, accounts, ticketsResp, agents] = await Promise.all([
         getTicket(oid),
         getAccounts(),
         getTicketsPage({ limit: 1000 }), // for the parent-ticket picker
+        getAgents().catch(() => []),     // agent_oid → name, for agent_reply attribution
     ]).catch((error) => {
         if (error instanceof ApiError && error.status === 403) {
             redirect('/access-denied');
@@ -25,5 +26,5 @@ export default async function TicketPage({ params }: PageProps) {
         notFound();
     });
 
-    return <TicketDetailPage ticket={ticket} accounts={accounts} allTickets={ticketsResp.items} />;
+    return <TicketDetailPage ticket={ticket} accounts={accounts} allTickets={ticketsResp.items} agents={agents} />;
 }

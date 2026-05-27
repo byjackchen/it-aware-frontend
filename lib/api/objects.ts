@@ -61,6 +61,8 @@ import type {
     ThreadMessage,
     ThreadMessageCreate,
     ThreadListResponse,
+    Run,
+    RunListResponse,
     Prompt,
     PromptCreate,
     PromptUpdate,
@@ -926,6 +928,30 @@ export async function createThreadMessage(data: ThreadMessageCreate): Promise<Th
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
+}
+
+// Read-only list of thread messages across tickets (envelope shape). The
+// ticket-scoped thread is fetched via getTicketThread; this is the flat,
+// filterable list used by the AgentOps → Threads page.
+export async function getThreadMessages(params?: { ticket_oid?: string; kind?: string; skip?: number; limit?: number }): Promise<ThreadListResponse & { total?: number; skip?: number; limit?: number }> {
+    const searchParams = new URLSearchParams();
+    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
+    if (params?.kind) searchParams.set('kind', params.kind);
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<ThreadListResponse & { total?: number; skip?: number; limit?: number }>(`${OBJECTS_BASE}/agentops/thread-messages?${searchParams}`);
+}
+
+// ==================== Runs (agent dispatch executions, read-only) ====================
+
+export async function getRuns(params?: { agent_oid?: string; ticket_oid?: string; status?: string; skip?: number; limit?: number }): Promise<RunListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.agent_oid) searchParams.set('agent_oid', params.agent_oid);
+    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<RunListResponse>(`${OBJECTS_BASE}/agentops/runs?${searchParams}`);
 }
 
 // ==================== Prompts (role/persona prompt bundles) ====================

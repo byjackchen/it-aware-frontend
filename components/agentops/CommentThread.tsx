@@ -9,6 +9,8 @@ interface CommentThreadProps {
     messages: ThreadMessage[];
     onReply: (messageOid: string) => void;
     agentRunning?: boolean;
+    /** run_oid → agent name, so agent_reply bubbles can name the responding agent. */
+    agentByRun?: Record<string, string>;
 }
 
 const KIND_LABEL: Record<ThreadMessageKind, string> = {
@@ -23,7 +25,7 @@ const KIND_ACCENT: Record<ThreadMessageKind, string> = {
     system_note: 'border-amber-500/20 bg-amber-500/5',
 };
 
-export function CommentThread({ messages, onReply, agentRunning }: CommentThreadProps) {
+export function CommentThread({ messages, onReply, agentRunning, agentByRun }: CommentThreadProps) {
     const { timezone } = useTimezone();
     const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,10 @@ export function CommentThread({ messages, onReply, agentRunning }: CommentThread
     const authorLabel = (m: ThreadMessage) => {
         if (m.kind === 'human_comment' && m.author_account_oid) {
             return `${m.author_account_oid.slice(0, 8)}...`;
+        }
+        if (m.kind === 'agent_reply' && m.run_oid) {
+            const agentName = agentByRun?.[m.run_oid];
+            if (agentName) return `🤖 ${agentName}`;
         }
         return KIND_LABEL[m.kind];
     };

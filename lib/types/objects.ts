@@ -1907,6 +1907,42 @@ export interface TicketListResponse {
     limit: number;
 }
 
+// ==================== Run (agentops dispatch execution) ====================
+// A Run is one execution of an agent against a ticket (or ad-hoc payload).
+// The dispatcher claims a queued run, executes it, and records status / result
+// / error. Runs are read-only in the UI.
+
+export type RunStatus = string;
+
+export interface Run {
+    oid: string;
+    agent_oid: string;
+    ticket_oid: string | null;
+    status: RunStatus;
+    priority: number;
+    claim_token: string | null;
+    claimed_at: string | null;
+    parent_run_oid: string | null;
+    attempt: number;
+    max_attempts: number;
+    failure_reason: string | null;
+    conversation_id: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    payload: Record<string, unknown> | null;
+    result: Record<string, unknown> | null;
+    error: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface RunListResponse {
+    items: Run[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
 // ==================== ThreadMessage (ticket conversation) ====================
 // v2: replaces the old `TicketComment`. A ticket's thread interleaves human
 // comments, agent replies (linked to the Run that produced them), and system

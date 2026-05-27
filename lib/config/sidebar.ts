@@ -49,6 +49,9 @@ import {
     Search,
     UserPlus,
     UserX,
+    PlayCircle,
+    MessagesSquare,
+    History,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -314,6 +317,30 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/data/agentops/prompts',
                         labelKey: 'prompts',
                         icon: Sparkles,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/runs',
+                        labelKey: 'runs',
+                        icon: PlayCircle,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/threads',
+                        labelKey: 'threads',
+                        icon: MessagesSquare,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/activity',
+                        labelKey: 'activity',
+                        icon: History,
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                         ]),
