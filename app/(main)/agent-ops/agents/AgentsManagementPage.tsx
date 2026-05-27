@@ -150,7 +150,7 @@ export function AgentsManagementPage() {
                                         <span className={`w-2 h-2 rounded-full ${agent.is_active ? 'bg-green-400' : 'bg-red-400'}`} />
                                     </div>
                                     <div className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
-                                        ID: {agent.agent_id} &middot; Workspace: {agent.agent_workspace_id || '—'}
+                                        ID: {agent.agent_id}
                                     </div>
                                 </div>
                                 <button

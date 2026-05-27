@@ -15,7 +15,6 @@ export interface ActivityEvent {
     actor_oid?: string | null;
     target_type?: string | null;
     target_oid?: string | null;
-    workspace_id?: string | null;
     details?: Record<string, unknown> | null;
     occurred_at: string;
 }
@@ -33,7 +32,6 @@ export interface ListActivityParams {
     actor_type?: string;       // "account" | "agent" | "system"
     target_type?: string;      // "run" | "channel" | "ticket" | ...
     target_oid?: string;
-    workspace_id?: string;
     skip?: number;
     limit?: number;
 }

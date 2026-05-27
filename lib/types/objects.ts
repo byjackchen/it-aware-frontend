@@ -1725,7 +1725,7 @@ export interface Agent {
     agent_platform: string;
     contact_worker_oid: string;
     description: string | null;
-    agent_workspace_id: string | null;
+    prompt_oids: string[];   // attached role/persona prompts (injected via the agent API)
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -1739,7 +1739,7 @@ export interface AgentCreate {
     agent_platform: string;
     contact_worker_oid: string;
     description?: string;
-    agent_workspace_id?: string;
+    prompt_oids?: string[];
 }
 
 export interface AgentUpdate {
@@ -1750,7 +1750,7 @@ export interface AgentUpdate {
     agent_platform?: string;
     contact_worker_oid?: string;
     description?: string;
-    agent_workspace_id?: string;
+    prompt_oids?: string[];
     is_active?: boolean;
 }
 
@@ -1759,6 +1759,60 @@ export interface AgentListResponse {
     total: number;
     skip: number;
     limit: number;
+}
+
+// ==================== Prompt ====================
+// A Prompt is a reusable role/persona instruction bundle. Agents are generic;
+// their behaviour comes from the prompts attached to them (agent.prompt_oids),
+// which the dispatcher injects as background_knowledge on the Knot call. A
+// "skill" is just one `kind` of prompt.
+
+export interface Prompt {
+    oid: string;
+    name: string;
+    display_name: string | null;
+    description: string | null;
+    kind: string;
+    content: string | null;
+    metadata: Record<string, unknown> | null;
+    version: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PromptListItem {
+    oid: string;
+    name: string;
+    display_name: string | null;
+    kind: string;
+    is_active: boolean;
+    version: number;
+}
+
+export interface PromptListResponse {
+    items: PromptListItem[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface PromptCreate {
+    name: string;
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PromptUpdate {
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content?: string;
+    metadata?: Record<string, unknown>;
+    is_active?: boolean;
 }
 
 // ==================== System ====================
@@ -1805,34 +1859,45 @@ export interface SystemListResponse {
 
 // ==================== Ticket ====================
 
+export type TicketStatus = 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled';
+
 export interface Ticket {
     oid: string;
     title: string;
-    description: string | null;
-    status: 'backlog' | 'in_progress' | 'blocked' | 'done';
-    flagged: boolean;
-    creator_account_oid: string;
+    body: string | null;
+    status: TicketStatus;
     assignee_account_oid: string | null;
-    agent_status: 'idle' | 'running' | 'error';
-    tags: string[] | null;
+    created_by_account_oid: string;
+    parent_ticket_oid: string | null;
+    channel_message_oid: string | null;
+    channel_oid: string | null;
+    tags: string[];
+    priority: number;
+    closed_at: string | null;
     created_at: string;
     updated_at: string;
+    // Populated on the detail GET; true while a run is queued/claimed/running.
+    has_active_run: boolean | null;
 }
 
 export interface TicketCreate {
     title: string;
-    description?: string;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketUpdate {
     title?: string;
-    description?: string;
-    status?: string;
-    flagged?: boolean;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketListResponse {
@@ -1842,28 +1907,123 @@ export interface TicketListResponse {
     limit: number;
 }
 
-// ==================== TicketComment ====================
+// ==================== Run (agentops dispatch execution) ====================
+// A Run is one execution of an agent against a ticket (or ad-hoc payload).
+// The dispatcher claims a queued run, executes it, and records status / result
+// / error. Runs are read-only in the UI.
 
-export interface TicketComment {
+export type RunStatus = string;
+
+export interface Run {
     oid: string;
-    ticket_oid: string;
-    author_account_oid: string;
-    content: string;
-    replied_to_comment_oid: string | null;
-    agent_conversation_id: string | null;
+    agent_oid: string;
+    ticket_oid: string | null;
+    status: RunStatus;
+    priority: number;
+    claim_token: string | null;
+    claimed_at: string | null;
+    parent_run_oid: string | null;
+    attempt: number;
+    max_attempts: number;
+    failure_reason: string | null;
+    conversation_id: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    payload: Record<string, unknown> | null;
+    result: Record<string, unknown> | null;
+    error: Record<string, unknown> | null;
     created_at: string;
+    updated_at: string;
 }
 
-export interface TicketCommentCreate {
-    content: string;
-    replied_to_comment_oid?: string;
-}
-
-export interface TicketCommentListResponse {
-    items: TicketComment[];
+export interface RunListResponse {
+    items: Run[];
     total: number;
     skip: number;
     limit: number;
+}
+
+// ==================== ThreadMessage (ticket conversation) ====================
+// v2: replaces the old `TicketComment`. A ticket's thread interleaves human
+// comments, agent replies (linked to the Run that produced them), and system
+// notes. Posting a `human_comment` on an agent-assigned ticket dispatches the
+// assigned agent, reusing the prior run's conversation_id to continue the
+// same session.
+
+export type ThreadMessageKind = 'human_comment' | 'agent_reply' | 'system_note';
+
+export interface ThreadMessage {
+    oid: string;
+    ticket_oid: string;
+    kind: ThreadMessageKind;
+    body: string;
+    author_account_oid: string | null; // set for human_comment
+    run_oid: string | null;            // set for agent_reply
+    reply_to_message_oid: string | null;
+    created_at: string;
+}
+
+export interface ThreadMessageCreate {
+    ticket_oid: string;
+    body: string;
+    reply_to_message_oid?: string;
+}
+
+// GET /tickets/{oid}/thread returns just { items } (no pagination envelope).
+export interface ThreadListResponse {
+    items: ThreadMessage[];
+}
+
+// ==================== Ticket lineage (handoff/traceability) ====================
+
+export interface TicketGraphAssignee {
+    type: 'agent' | 'human';
+    account_oid: string;
+    agent_oid?: string;
+    name: string | null;
+    is_agent: boolean;
+}
+
+export interface TicketGraphNode {
+    oid: string;
+    title: string;
+    status: TicketStatus;
+    depth: number;
+    assignee: TicketGraphAssignee | null;
+    has_active_run: boolean;
+    run_count: number;
+    handoff_count: number;
+}
+
+export interface TicketGraphEdge {
+    parent_oid: string;
+    child_oid: string;
+}
+
+export interface TicketGraph {
+    root_oid: string;
+    focus_oid: string;
+    nodes: TicketGraphNode[];
+    edges: TicketGraphEdge[];
+}
+
+export interface TicketTraceEvent {
+    ts: string;
+    kind: string;
+    actor_type?: string | null;
+    actor_oid?: string | null;
+    run_oid?: string | null;
+    agent_oid?: string | null;
+    session?: string | null;
+    author_account_oid?: string | null;
+    body?: string;
+    failure_reason?: string | null;
+    details?: Record<string, unknown> | null;
+}
+
+export interface TicketTrace {
+    ticket_oid: string;
+    events: TicketTraceEvent[];
 }
 
 // ── FAQ Monthly Report ────────────────────────────────────────────────────────

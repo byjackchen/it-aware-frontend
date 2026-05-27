@@ -13,10 +13,11 @@ import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator
 import type { Ticket, TicketListResponse } from '@/lib/types/objects';
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-    backlog: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
+    open: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
     in_progress: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
     blocked: { bg: 'bg-red-500/20', text: 'text-red-400' },
     done: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    cancelled: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
 };
 
 export function TicketsListPage() {
@@ -125,7 +126,7 @@ export function TicketsListPage() {
         if (!value.trim()) clearSearch();
     };
 
-    const getStatusStyle = (status: string) => STATUS_COLORS[status] || STATUS_COLORS.backlog;
+    const getStatusStyle = (status: string) => STATUS_COLORS[status] || STATUS_COLORS.open;
 
     const renderTicketRow = (ticket: Ticket, highlighted = false) => {
         const statusStyle = getStatusStyle(ticket.status);
@@ -148,15 +149,12 @@ export function TicketsListPage() {
                                 ? `Assignee: ${ticket.assignee_account_oid.slice(0, 8)}...`
                                 : 'Unassigned'
                             }
-                            {ticket.tags && ticket.tags.length > 0 && ` • ${ticket.tags.join(', ')}`}
+                            {ticket.tags.length > 0 && ` • ${ticket.tags.join(', ')}`}
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4 shrink-0">
-                    {ticket.flagged && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">Flagged</span>
-                    )}
-                    <AgentStatusIndicator agentStatus={ticket.agent_status} />
+                    <AgentStatusIndicator agentStatus={ticket.has_active_run ? 'running' : 'idle'} />
                     <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
                         {ticket.status.replace('_', ' ')}
                     </span>
