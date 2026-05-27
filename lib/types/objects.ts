@@ -1764,8 +1764,9 @@ export interface AgentListResponse {
 // ==================== Prompt ====================
 // A Prompt is a reusable role/persona instruction bundle. Agents are generic;
 // their behaviour comes from the prompts attached to them (agent.prompt_oids),
-// which the dispatcher injects as background_knowledge on the Knot call. A
-// "skill" is just one `kind` of prompt.
+// which the dispatcher prepends as a role preamble to the first message of each
+// agent conversation (background_knowledge is reserved for the handoff packet).
+// A "skill" is just one `kind` of prompt.
 
 export interface Prompt {
     oid: string;

@@ -336,7 +336,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
 
                     {/* Prompts (role injection) */}
                     <div>
-                        <label className={labelClass}>Prompts (injected as the agent&apos;s role/background)</label>
+                        <label className={labelClass}>Prompts (injected as the agent&apos;s role preamble)</label>
                         {isEditing ? (
                             <div className={`rounded-lg p-2 max-h-56 overflow-y-auto space-y-1 ${isLight ? 'bg-slate-50 border border-slate-200' : 'bg-white/5 border border-white/10'}`}>
                                 {promptOptions.length === 0 && (

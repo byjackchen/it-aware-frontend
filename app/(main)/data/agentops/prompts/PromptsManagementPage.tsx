@@ -136,7 +136,7 @@ export function PromptsManagementPage({ initialPrompts }: Props) {
                 </div>
                 <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     Reusable role/persona instruction bundles. Attach them to an agent (Agents → prompts)
-                    and they&apos;re injected as the agent&apos;s background on every run. A skill is one kind of prompt.
+                    and they&apos;re injected as the agent&apos;s role preamble at the start of each conversation. A skill is one kind of prompt.
                 </p>
 
                 <div className="flex flex-col lg:flex-row gap-4">
@@ -210,7 +210,7 @@ export function PromptsManagementPage({ initialPrompts }: Props) {
                         </div>
 
                         <div>
-                            <label className={labelClass}>Content (injected as the agent&apos;s background)</label>
+                            <label className={labelClass}>Content (prepended as the agent&apos;s role preamble)</label>
                             <textarea value={form.content}
                                 onChange={(e) => setForm({ ...form, content: e.target.value })}
                                 rows={14}
