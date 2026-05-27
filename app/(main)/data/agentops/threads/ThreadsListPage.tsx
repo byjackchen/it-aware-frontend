@@ -22,7 +22,8 @@ const KIND_COLORS: Record<ThreadMessageKind, { bg: string; text: string; label: 
     system_note: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'System note' },
 };
 
-const short = (v: string | null | undefined, n = 8) => (v ? `${v.slice(0, n)}…` : '—');
+// IDs shown in full (no truncation/masking) by request.
+const short = (v: string | null | undefined) => v || '—';
 
 export function ThreadsListPage({ initial, total }: Props) {
     const { theme } = useTheme();

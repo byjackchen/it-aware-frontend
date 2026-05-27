@@ -12,7 +12,8 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import { listActivityEvents, type ActivityEvent } from '@/lib/api/activity-events';
 
-const short = (v: string | null | undefined, n = 8) => (v ? `${v.slice(0, n)}…` : '—');
+// IDs shown in full (no truncation/masking) by request.
+const short = (v: string | null | undefined) => v || '—';
 
 function compactJson(details: Record<string, unknown> | null | undefined): string {
     if (!details || Object.keys(details).length === 0) return '—';

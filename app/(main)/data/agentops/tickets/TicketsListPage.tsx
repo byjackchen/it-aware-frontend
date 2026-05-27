@@ -146,7 +146,7 @@ export function TicketsListPage() {
                         </div>
                         <div className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                             {ticket.assignee_account_oid
-                                ? `Assignee: ${ticket.assignee_account_oid.slice(0, 8)}...`
+                                ? `Assignee: ${ticket.assignee_account_oid}`
                                 : 'Unassigned'
                             }
                             {ticket.tags.length > 0 && ` • ${ticket.tags.join(', ')}`}

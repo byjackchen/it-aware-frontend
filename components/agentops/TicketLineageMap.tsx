@@ -11,7 +11,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ExternalLink, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { TicketGraph, TicketGraphNode, TicketTrace } from '@/lib/types/objects';
@@ -197,11 +198,19 @@ export function TicketLineageMap({ ticketOid }: { ticketOid: string }) {
                         const isSelected = n.oid === selectedOid;
                         const isFocus = n.oid === graph.focus_oid;
                         return (
-                            <button
+                            <div
                                 key={n.oid}
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => setSelectedOid(n.oid)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setSelectedOid(n.oid);
+                                    }
+                                }}
                                 data-testid={`lineage-node-${n.oid}`}
-                                className={`absolute text-left rounded-lg border p-2 transition-colors ${
+                                className={`absolute cursor-pointer text-left rounded-lg border p-2 transition-colors ${
                                     STATUS_COLOR[n.status] ?? STATUS_COLOR.open
                                 } ${isSelected ? 'ring-2 ring-[var(--accent-color)]' : ''} ${
                                     n.has_active_run ? 'animate-pulse' : ''
@@ -211,6 +220,14 @@ export function TicketLineageMap({ ticketOid }: { ticketOid: string }) {
                                 <div className="flex items-center gap-1">
                                     <span className="text-xs font-medium truncate flex-1">{n.title}</span>
                                     {isFocus && <span className="text-[9px] px-1 rounded bg-[var(--accent-color)] text-white">focus</span>}
+                                    <Link
+                                        href={`/data/agentops/tickets/${n.oid}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="Open ticket"
+                                        className="shrink-0 opacity-60 hover:opacity-100"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                    </Link>
                                 </div>
                                 <div className="text-[10px] mt-1 flex items-center gap-1.5 opacity-90">
                                     <span>{n.assignee ? `${n.assignee.is_agent ? '🤖' : '👤'} ${n.assignee.name ?? '?'}` : 'unassigned'}</span>
@@ -220,7 +237,7 @@ export function TicketLineageMap({ ticketOid }: { ticketOid: string }) {
                                     <span>· {n.run_count} run{n.run_count === 1 ? '' : 's'}</span>
                                     {n.handoff_count > 0 && <span>· {n.handoff_count} handoff{n.handoff_count === 1 ? '' : 's'}</span>}
                                 </div>
-                            </button>
+                            </div>
                         );
                     })}
                 </div>
@@ -245,8 +262,8 @@ export function TicketLineageMap({ ticketOid }: { ticketOid: string }) {
                                 </div>
                                 {ev.body && <div className="text-[var(--text-secondary)] mt-0.5 line-clamp-2">{ev.body}</div>}
                                 {ev.session && (
-                                    <div className="text-[10px] text-[var(--text-secondary)] mt-0.5 font-mono">
-                                        session {ev.session.slice(0, 12)}…
+                                    <div className="text-[10px] text-[var(--text-secondary)] mt-0.5 font-mono break-all">
+                                        session {ev.session}
                                     </div>
                                 )}
                                 {ev.failure_reason && (
