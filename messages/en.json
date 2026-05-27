@@ -639,6 +639,7 @@
       "agents": "Agents",
       "systems": "Systems",
       "tickets": "Tickets",
+      "prompts": "Prompts",
       "ticketList": "Ticket List",
       "ticketKanban": "Ticket Kanban"
     },
@@ -1976,6 +1977,7 @@
     "agents": "Agents",
     "systems": "Systems",
     "tickets": "Tickets",
+    "prompts": "Prompts",
     "ticketList": "Ticket List",
     "ticketKanban": "Ticket Kanban",
     "channels": "Channels",

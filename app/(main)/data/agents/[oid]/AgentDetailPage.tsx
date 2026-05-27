@@ -4,7 +4,7 @@
  * Agent detail page client component.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import {
     ArrowLeft,
@@ -18,7 +18,7 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { Agent, Worker } from '@/lib/types/objects';
+import type { Agent, Worker, PromptListItem } from '@/lib/types/objects';
 import {
     updateAgentAction,
     deleteAgentAction,
@@ -45,6 +45,18 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
     const [contactWorkerOid, setContactWorkerOid] = useState(agent.contact_worker_oid);
     const [description, setDescription] = useState(agent.description || '');
     const [isActive, setIsActive] = useState(agent.is_active);
+    const [promptOids, setPromptOids] = useState<string[]>(agent.prompt_oids || []);
+    const [promptOptions, setPromptOptions] = useState<PromptListItem[]>([]);
+
+    useEffect(() => {
+        fetch('/api/agentops/prompts?limit=200&is_active=true')
+            .then((r) => (r.ok ? r.json() : { items: [] }))
+            .then((d) => setPromptOptions(d.items || []))
+            .catch(() => setPromptOptions([]));
+    }, []);
+
+    const togglePrompt = (oid: string) =>
+        setPromptOids((cur) => (cur.includes(oid) ? cur.filter((o) => o !== oid) : [...cur, oid]));
 
     const contactWorker = workers.find((w) => w.oid === agent.contact_worker_oid);
     const contactWorkerDisplay = contactWorker
@@ -67,6 +79,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
             if (contactWorkerOid) formData.set('contact_worker_oid', contactWorkerOid);
             if (description.trim()) formData.set('description', description.trim());
             formData.set('is_active', String(isActive));
+            formData.set('prompt_oids', JSON.stringify(promptOids));
 
             await updateAgentAction(agent.oid, formData);
             setIsEditing(false);
@@ -102,6 +115,7 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
         setContactWorkerOid(agent.contact_worker_oid);
         setDescription(agent.description || '');
         setIsActive(agent.is_active);
+        setPromptOids(agent.prompt_oids || []);
         setIsEditing(false);
     };
 
@@ -316,6 +330,45 @@ export function AgentDetailPage({ agent, workers }: AgentDetailPageProps) {
                         ) : (
                             <div className={`p-4 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
                                 {agent.description || <span className="italic opacity-50">No description provided</span>}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Prompts (role injection) */}
+                    <div>
+                        <label className={labelClass}>Prompts (injected as the agent&apos;s role/background)</label>
+                        {isEditing ? (
+                            <div className={`rounded-lg p-2 max-h-56 overflow-y-auto space-y-1 ${isLight ? 'bg-slate-50 border border-slate-200' : 'bg-white/5 border border-white/10'}`}>
+                                {promptOptions.length === 0 && (
+                                    <div className="text-xs text-[var(--text-secondary)] px-2 py-1">No active prompts. Create some under Data → Prompts.</div>
+                                )}
+                                {promptOptions.map((p) => (
+                                    <label key={p.oid} className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={promptOids.includes(p.oid)}
+                                            onChange={() => togglePrompt(p.oid)}
+                                            data-testid={`agent-prompt-${p.oid}`}
+                                        />
+                                        <span className="font-medium">{p.display_name || p.name}</span>
+                                        <span className="text-[11px] text-[var(--text-secondary)]">{p.kind} · v{p.version}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                                {(agent.prompt_oids || []).length === 0 ? (
+                                    <span className={`text-sm italic opacity-50 ${valueClass}`}>No prompts attached</span>
+                                ) : (
+                                    (agent.prompt_oids || []).map((oid) => {
+                                        const p = promptOptions.find((x) => x.oid === oid);
+                                        return (
+                                            <span key={oid} className="text-xs px-2 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/20">
+                                                {p ? (p.display_name || p.name) : `${oid.slice(0, 8)}…`}
+                                            </span>
+                                        );
+                                    })
+                                )}
                             </div>
                         )}
                     </div>

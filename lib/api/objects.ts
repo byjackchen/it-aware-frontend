@@ -61,6 +61,10 @@ import type {
     ThreadMessage,
     ThreadMessageCreate,
     ThreadListResponse,
+    Prompt,
+    PromptCreate,
+    PromptUpdate,
+    PromptListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -922,6 +926,41 @@ export async function createThreadMessage(data: ThreadMessageCreate): Promise<Th
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
+}
+
+// ==================== Prompts (role/persona prompt bundles) ====================
+
+export async function getPrompts(params?: { kind?: string; is_active?: boolean; skip?: number; limit?: number }): Promise<PromptListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.kind) searchParams.set('kind', params.kind);
+    if (params?.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<PromptListResponse>(`${OBJECTS_BASE}/agentops/prompts?${searchParams}`);
+}
+
+export async function getPrompt(oid: string): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`);
+}
+
+export async function createPrompt(data: PromptCreate): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updatePrompt(oid: string, data: PromptUpdate): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deletePrompt(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, { method: 'DELETE' });
 }
 
 // SSC analyst reports. Backend interprets start_date / end_date as

@@ -1725,6 +1725,7 @@ export interface Agent {
     agent_platform: string;
     contact_worker_oid: string;
     description: string | null;
+    prompt_oids: string[];   // attached role/persona prompts (injected via the agent API)
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -1738,6 +1739,7 @@ export interface AgentCreate {
     agent_platform: string;
     contact_worker_oid: string;
     description?: string;
+    prompt_oids?: string[];
 }
 
 export interface AgentUpdate {
@@ -1748,6 +1750,7 @@ export interface AgentUpdate {
     agent_platform?: string;
     contact_worker_oid?: string;
     description?: string;
+    prompt_oids?: string[];
     is_active?: boolean;
 }
 
@@ -1756,6 +1759,60 @@ export interface AgentListResponse {
     total: number;
     skip: number;
     limit: number;
+}
+
+// ==================== Prompt ====================
+// A Prompt is a reusable role/persona instruction bundle. Agents are generic;
+// their behaviour comes from the prompts attached to them (agent.prompt_oids),
+// which the dispatcher injects as background_knowledge on the Knot call. A
+// "skill" is just one `kind` of prompt.
+
+export interface Prompt {
+    oid: string;
+    name: string;
+    display_name: string | null;
+    description: string | null;
+    kind: string;
+    content: string | null;
+    metadata: Record<string, unknown> | null;
+    version: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PromptListItem {
+    oid: string;
+    name: string;
+    display_name: string | null;
+    kind: string;
+    is_active: boolean;
+    version: number;
+}
+
+export interface PromptListResponse {
+    items: PromptListItem[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface PromptCreate {
+    name: string;
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PromptUpdate {
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content?: string;
+    metadata?: Record<string, unknown>;
+    is_active?: boolean;
 }
 
 // ==================== System ====================

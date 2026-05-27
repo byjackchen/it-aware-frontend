@@ -319,6 +319,7 @@
       "agents": "Agents",
       "systems": "系统",
       "tickets": "工单",
+      "prompts": "提示词",
       "ticketList": "工单列表",
       "ticketKanban": "工单看板"
     },
@@ -1654,6 +1655,7 @@
     "agents": "Agents",
     "systems": "系统",
     "tickets": "工单",
+    "prompts": "提示词",
     "ticketList": "工单列表",
     "ticketKanban": "工单看板",
     "channels": "群聊",

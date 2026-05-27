@@ -310,6 +310,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.OBJECTS.TICKETS_READ,
                         ]),
                     },
+                    {
+                        href: '/data/agentops/prompts',
+                        labelKey: 'prompts',
+                        icon: Sparkles,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
                 ],
             },
         ],
