@@ -345,6 +345,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_DATA,
                         ]),
                     },
+                    {
+                        href: '/data/agentops/lineage',
+                        labelKey: 'lineage',
+                        icon: Network,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.TICKETS_READ,
+                        ]),
+                    },
                 ],
             },
         ],

@@ -323,6 +323,7 @@
       "runs": "运行",
       "threads": "对话消息",
       "activity": "活动事件",
+      "lineage": "工单脉络",
       "ticketList": "工单列表",
       "ticketKanban": "工单看板"
     },
@@ -1662,6 +1663,7 @@
     "runs": "运行",
     "threads": "对话消息",
     "activity": "活动事件",
+    "lineage": "工单脉络",
     "ticketList": "工单列表",
     "ticketKanban": "工单看板",
     "channels": "群聊",
