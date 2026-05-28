@@ -5,12 +5,24 @@ import { useTransitionRouter } from '@/components/navigation/useTransitionRouter
 import { KanbanBoard } from '@/components/agentops/KanbanBoard';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Calendar } from 'lucide-react';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatLocalDateTime, localDateTimeToIso, formatTzBadge } from '@/lib/utils/datetime';
 import type { Ticket, TicketListResponse } from '@/lib/types/objects';
+
+function defaultFrom(tz: string): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return `${formatLocalDateTime(d, tz).slice(0, 10)}T00:00:00`;
+}
+function defaultTo(tz: string): string {
+    return `${formatLocalDateTime(new Date(), tz).slice(0, 10)}T23:59:59`;
+}
 
 export function TicketKanbanView() {
     const router = useTransitionRouter();
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
+    const { timezone } = useTimezone();
+    const [dateFrom, setDateFrom] = useState(() => defaultFrom(timezone));
+    const [dateTo, setDateTo] = useState(() => defaultTo(timezone));
 
     const { items: tickets, isInitialLoading, reload } = useInfiniteResource<Ticket, TicketListResponse>(
         'tickets',
@@ -25,10 +37,10 @@ export function TicketKanbanView() {
 
     const filteredTickets = useMemo(() => {
         let result = tickets;
-        if (dateFrom) result = result.filter(t => new Date(t.created_at) >= new Date(dateFrom));
-        if (dateTo) result = result.filter(t => new Date(t.created_at) <= new Date(dateTo + 'T23:59:59'));
+        if (dateFrom) result = result.filter(t => new Date(t.created_at) >= new Date(localDateTimeToIso(dateFrom, timezone)));
+        if (dateTo) result = result.filter(t => new Date(t.created_at) <= new Date(localDateTimeToIso(dateTo, timezone)));
         return result;
-    }, [tickets, dateFrom, dateTo]);
+    }, [tickets, dateFrom, dateTo, timezone]);
 
     const handleStatusChange = useCallback(async (oid: string, newStatus: string) => {
         await fetch(`/api/agentops/tickets/${oid}/status`, {
@@ -55,18 +67,21 @@ export function TicketKanbanView() {
                     <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                         <Calendar className="w-3.5 h-3.5" />
                         <input
-                            type="date"
+                            type="datetime-local"
+                            step={1}
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
                             className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                         />
                         <span>to</span>
                         <input
-                            type="date"
+                            type="datetime-local"
+                            step={1}
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
                             className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                         />
+                        <span title="filter timezone">{formatTzBadge(timezone)}</span>
                         {(dateFrom || dateTo) && (
                             <button
                                 onClick={() => { setDateFrom(''); setDateTo(''); }}

@@ -345,15 +345,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_DATA,
                         ]),
                     },
-                    {
-                        href: '/data/agentops/lineage',
-                        labelKey: 'lineage',
-                        icon: Network,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.TICKETS_READ,
-                        ]),
-                    },
                 ],
             },
         ],
@@ -665,6 +656,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 icon: Activity,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
+            {
+                href: '/agent-ops/lineage',
+                labelKey: 'lineage',
+                icon: Network,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
         ],
