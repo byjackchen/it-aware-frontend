@@ -1064,6 +1064,14 @@
         "editObject": "Edit Batch",
         "addRow": "Add Notification",
         "cancelBatch": "Cancel Batch",
+        "deleteBatch": "Delete Batch",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete this notification batch?",
+        "description": "This permanently removes the batch and all of its notifications. Type {name} below to confirm.",
+        "typeToConfirm": "Type the batch name",
+        "confirm": "Delete Batch",
         "cancel": "Cancel"
       },
       "rowEditor": {
@@ -1248,6 +1256,14 @@
         "closeBatch": "Close Batch",
         "reopenBatch": "Reopen Batch",
         "cancelBatch": "Cancel Batch",
+        "deleteBatch": "Delete Batch",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete this survey batch?",
+        "description": "This permanently removes the batch and all of its survey rows. Type {name} below to confirm.",
+        "typeToConfirm": "Type the batch name",
+        "confirm": "Delete Batch",
         "cancel": "Cancel"
       },
       "rowEditor": {
