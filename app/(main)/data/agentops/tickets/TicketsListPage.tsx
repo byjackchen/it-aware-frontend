@@ -5,7 +5,7 @@ import { useTransitionRouter } from '@/components/navigation/useTransitionRouter
 import { Ticket as TicketIcon, Plus, RefreshCw, Search, Loader2, X } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { formatDateTime } from '@/lib/utils/datetime';
+import { formatDateTime, formatLocalDateTime, localDateTimeToIso, formatTzBadge } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { useServerSearch } from '@/lib/hooks/useServerSearch';
 import { Pagination } from '@/components/data/Pagination';
@@ -20,6 +20,17 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     cancelled: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
 };
 
+// Default date range: the past 1 week, in the user's timezone, as the
+// wall-clock string consumed by <input type="datetime-local">.
+function defaultFrom(tz: string): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return `${formatLocalDateTime(d, tz).slice(0, 10)}T00:00:00`;
+}
+function defaultTo(tz: string): string {
+    return `${formatLocalDateTime(new Date(), tz).slice(0, 10)}T23:59:59`;
+}
+
 export function TicketsListPage() {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
@@ -32,6 +43,19 @@ export function TicketsListPage() {
     const [isPageLoading, setIsPageLoading] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
 
+    // Date filter (seconds precision, tz-aware) — default to the past 1 week.
+    const [dateFrom, setDateFrom] = useState(() => defaultFrom(timezone));
+    const [dateTo, setDateTo] = useState(() => defaultTo(timezone));
+    const [appliedFrom, setAppliedFrom] = useState(dateFrom);
+    const [appliedTo, setAppliedTo] = useState(dateTo);
+    const ticketQuery = useMemo(
+        () => ({
+            created_at_from: appliedFrom ? localDateTimeToIso(appliedFrom, timezone) : undefined,
+            created_at_to: appliedTo ? localDateTimeToIso(appliedTo, timezone) : undefined,
+        }),
+        [appliedFrom, appliedTo, timezone],
+    );
+
     const {
         items: tickets,
         total: totalTickets,
@@ -41,6 +65,7 @@ export function TicketsListPage() {
     } = useInfiniteResource<Ticket, TicketListResponse>('tickets', {
         pageSize: 500,
         auto: true,
+        query: ticketQuery,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
         inferHasMore: () => false,
@@ -83,7 +108,10 @@ export function TicketsListPage() {
         abortRef.current = controller;
         setIsPageLoading(true);
         const skip = (page - 1) * pageSize;
-        fetch(`/api/objects/tickets?skip=${skip}&limit=${pageSize}`, {
+        const dq =
+            (appliedFrom ? `&created_at_from=${encodeURIComponent(localDateTimeToIso(appliedFrom, timezone))}` : '') +
+            (appliedTo ? `&created_at_to=${encodeURIComponent(localDateTimeToIso(appliedTo, timezone))}` : '');
+        fetch(`/api/objects/tickets?skip=${skip}&limit=${pageSize}${dq}`, {
             cache: 'no-store',
             signal: controller.signal,
         })
@@ -98,7 +126,7 @@ export function TicketsListPage() {
                 if (e instanceof DOMException && e.name === 'AbortError') return;
                 setIsPageLoading(false);
             });
-    }, [pageSize]);
+    }, [pageSize, appliedFrom, appliedTo, timezone]);
 
     useEffect(() => {
         if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
@@ -124,6 +152,13 @@ export function TicketsListPage() {
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
         if (!value.trim()) clearSearch();
+    };
+
+    const applyDateFilter = () => {
+        setAppliedFrom(dateFrom);
+        setAppliedTo(dateTo);
+        setCurrentPage(1);
+        setRemotePage(null);
     };
 
     const getStatusStyle = (status: string) => STATUS_COLORS[status] || STATUS_COLORS.open;
@@ -206,6 +241,25 @@ export function TicketsListPage() {
                             className={`w-full pl-10 pr-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
                         />
                     </div>
+                </div>
+
+                {/* Date filter — seconds precision, timezone-aware; default past 1 week */}
+                <div className="flex flex-wrap items-end gap-3 mb-4">
+                    <div>
+                        <label className={`block text-[11px] mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>From</label>
+                        <input type="datetime-local" step={1} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                            className={`px-3 py-1.5 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`} />
+                    </div>
+                    <div>
+                        <label className={`block text-[11px] mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>To</label>
+                        <input type="datetime-local" step={1} value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                            className={`px-3 py-1.5 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`} />
+                    </div>
+                    <span className={`text-[11px] pb-2 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{formatTzBadge(timezone)}</span>
+                    <button onClick={applyDateFilter}
+                        className="px-4 py-1.5 rounded-lg text-sm bg-purple-500 hover:bg-purple-600 text-white transition-colors">
+                        Apply
+                    </button>
                 </div>
 
                 {/* Server search results */}
