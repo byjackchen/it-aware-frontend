@@ -658,6 +658,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
                 ]),
             },
+            {
+                href: '/agent-ops/lineage',
+                labelKey: 'lineage',
+                icon: Network,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
+                ]),
+            },
         ],
     },
     // Note: /persona is intentionally excluded - it uses the full page width for the profile view

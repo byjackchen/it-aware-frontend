@@ -258,7 +258,7 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
-            <div className="max-w-5xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -271,8 +271,13 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                             </div>
                             <div>
                                 <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Ticket Details</h1>
-                                <p className={`text-sm flex items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                    <span>{ticket.oid.slice(0, 12)}...</span>
+                                <p className={`text-sm flex flex-wrap items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                    <span className="font-mono">{ticket.oid}</span>
+                                    {ticket.conversation_id && (
+                                        <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400" title="Latest run conversation_id">
+                                            conv {ticket.conversation_id}
+                                        </span>
+                                    )}
                                     <AgentStatusIndicator agentStatus={agentRunning ? 'running' : 'idle'} size="sm" />
                                 </p>
                             </div>
@@ -289,6 +294,10 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                     </div>
                 </div>
 
+                {/* Main grid: conversation (left, wide) + editing rail (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                {/* Editing rail — fields + create sub-ticket (sticky on lg) */}
+                <div className="lg:col-span-1 lg:order-2 space-y-6 lg:sticky lg:top-4 self-start">
                 {/* Fields section */}
                 <div className={`rounded-xl border p-6 space-y-5 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <div>
@@ -351,7 +360,7 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                             <option value="">— None —</option>
                             {parentOptions.map((t) => (
                                 <option key={t.oid} value={t.oid}>
-                                    {t.title} ({t.oid.slice(0, 8)})
+                                    {t.title} ({t.oid})
                                 </option>
                             ))}
                         </select>
@@ -466,7 +475,10 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                         </div>
                     )}
                 </div>
+                </div>{/* /editing rail */}
 
+                {/* Conversation (main column, wide) */}
+                <div className="lg:col-span-2 lg:order-1">
                 {/* Conversation section */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
@@ -495,6 +507,8 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                         onCancelReply={() => setReplyToOid(null)}
                     />
                 </div>
+                </div>{/* /conversation main column */}
+                </div>{/* /main grid */}
 
                 {/* Lineage / mind-map + trace */}
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>

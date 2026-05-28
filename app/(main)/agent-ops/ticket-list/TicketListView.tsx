@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { Plus, Calendar } from 'lucide-react';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { formatDateTime } from '@/lib/utils/datetime';
+import { formatDateTime, formatLocalDateTime, localDateTimeToIso, formatTzBadge } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
@@ -29,12 +29,21 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     cancelled: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
 };
 
+function defaultFrom(tz: string): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return `${formatLocalDateTime(d, tz).slice(0, 10)}T00:00:00`;
+}
+function defaultTo(tz: string): string {
+    return `${formatLocalDateTime(new Date(), tz).slice(0, 10)}T23:59:59`;
+}
+
 export function TicketListView() {
     const router = useTransitionRouter();
     const { timezone } = useTimezone();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
+    const [dateFrom, setDateFrom] = useState(() => defaultFrom(timezone));
+    const [dateTo, setDateTo] = useState(() => defaultTo(timezone));
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
 
@@ -55,13 +64,13 @@ export function TicketListView() {
             result = result.filter(t => t.status === statusFilter);
         }
         if (dateFrom) {
-            result = result.filter(t => new Date(t.created_at) >= new Date(dateFrom));
+            result = result.filter(t => new Date(t.created_at) >= new Date(localDateTimeToIso(dateFrom, timezone)));
         }
         if (dateTo) {
-            result = result.filter(t => new Date(t.created_at) <= new Date(dateTo + 'T23:59:59'));
+            result = result.filter(t => new Date(t.created_at) <= new Date(localDateTimeToIso(dateTo, timezone)));
         }
         return result;
-    }, [tickets, statusFilter, dateFrom, dateTo]);
+    }, [tickets, statusFilter, dateFrom, dateTo, timezone]);
 
     const totalPages = Math.ceil(filteredTickets.length / pageSize) || 1;
     const startIdx = (currentPage - 1) * pageSize;
@@ -115,18 +124,21 @@ export function TicketListView() {
                 <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                     <Calendar className="w-3.5 h-3.5" />
                     <input
-                        type="date"
+                        type="datetime-local"
+                        step={1}
                         value={dateFrom}
                         onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
                         className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                     />
                     <span>to</span>
                     <input
-                        type="date"
+                        type="datetime-local"
+                        step={1}
                         value={dateTo}
                         onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
                         className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                     />
+                    <span title="filter timezone">{formatTzBadge(timezone)}</span>
                     {(dateFrom || dateTo) && (
                         <button
                             onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}

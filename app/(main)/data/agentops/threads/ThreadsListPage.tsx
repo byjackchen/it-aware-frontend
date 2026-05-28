@@ -22,7 +22,8 @@ const KIND_COLORS: Record<ThreadMessageKind, { bg: string; text: string; label: 
     system_note: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'System note' },
 };
 
-const short = (v: string | null | undefined, n = 8) => (v ? `${v.slice(0, n)}…` : '—');
+// IDs shown in full (no truncation/masking) by request.
+const short = (v: string | null | undefined) => v || '—';
 
 export function ThreadsListPage({ initial, total }: Props) {
     const { theme } = useTheme();
@@ -56,6 +57,7 @@ export function ThreadsListPage({ initial, total }: Props) {
                                     <th className={thClass}>Body</th>
                                     <th className={thClass}>Ticket</th>
                                     <th className={thClass}>Author / Run</th>
+                                    <th className={thClass}>Conversation</th>
                                     <th className={thClass}>Created</th>
                                 </tr>
                             </thead>
@@ -80,13 +82,14 @@ export function ThreadsListPage({ initial, total }: Props) {
                                                     ? `run ${short(m.run_oid)}`
                                                     : short(m.author_account_oid)}
                                             </td>
+                                            <td className={`${tdClass} font-mono text-xs`}>{short(m.conversation_id)}</td>
                                             <td className={`${tdClass} text-xs text-[var(--text-secondary)] whitespace-nowrap`}>{formatDateTime(m.created_at, timezone)}</td>
                                         </tr>
                                     );
                                 })}
                                 {initial.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="px-3 py-10 text-center text-sm text-[var(--text-secondary)]">No thread messages yet.</td>
+                                        <td colSpan={6} className="px-3 py-10 text-center text-sm text-[var(--text-secondary)]">No thread messages yet.</td>
                                     </tr>
                                 )}
                             </tbody>

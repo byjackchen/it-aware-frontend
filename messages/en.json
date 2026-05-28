@@ -643,6 +643,7 @@
       "runs": "Runs",
       "threads": "Threads",
       "activity": "Activity Events",
+      "lineage": "Lineage",
       "ticketList": "Ticket List",
       "ticketKanban": "Ticket Kanban"
     },
@@ -1984,6 +1985,7 @@
     "runs": "Runs",
     "threads": "Threads",
     "activity": "Activity Events",
+    "lineage": "Lineage",
     "ticketList": "Ticket List",
     "ticketKanban": "Ticket Kanban",
     "channels": "Channels",

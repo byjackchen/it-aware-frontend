@@ -12,7 +12,8 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import { listActivityEvents, type ActivityEvent } from '@/lib/api/activity-events';
 
-const short = (v: string | null | undefined, n = 8) => (v ? `${v.slice(0, n)}…` : '—');
+// IDs shown in full (no truncation/masking) by request.
+const short = (v: string | null | undefined) => v || '—';
 
 function compactJson(details: Record<string, unknown> | null | undefined): string {
     if (!details || Object.keys(details).length === 0) return '—';
@@ -107,6 +108,11 @@ export function ActivityListPage() {
                                         </td>
                                         <td className={`${tdClass} text-xs text-[var(--text-secondary)] whitespace-nowrap`}>{formatDateTime(ev.occurred_at, timezone)}</td>
                                         <td className={`${tdClass} max-w-[360px]`}>
+                                            {ev.details?.conversation_id ? (
+                                                <span className="block font-mono text-[11px] text-purple-400 break-all">
+                                                    conv {String(ev.details.conversation_id)}
+                                                </span>
+                                            ) : null}
                                             <span className="block truncate font-mono text-[11px] text-[var(--text-secondary)]" title={compactJson(ev.details)}>
                                                 {compactJson(ev.details).slice(0, 120)}
                                             </span>

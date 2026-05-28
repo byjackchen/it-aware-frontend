@@ -25,7 +25,26 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
     cancelled: { bg: 'bg-zinc-500/20', text: 'text-zinc-400' },
 };
 
-const short = (v: string | null | undefined, n = 8) => (v ? `${v.slice(0, n)}…` : '—');
+// IDs are shown in full (no truncation/masking) by request.
+const idText = (v: string | null | undefined) => v || '—';
+
+// "Time lap" a run spent: started→completed, or started→now while in-flight.
+function fmtDuration(start?: string | null, end?: string | null): string {
+    if (!start) return '—';
+    const s = new Date(start).getTime();
+    const e = end ? new Date(end).getTime() : Date.now();
+    const ms = e - s;
+    if (!Number.isFinite(ms) || ms < 0) return '—';
+    const sec = Math.floor(ms / 1000);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s2 = sec % 60;
+    if (h) return `${h}h ${m}m ${s2}s`;
+    if (m) return `${m}m ${s2}s`;
+    return `${s2}s`;
+}
+
+const TERMINAL = new Set(['succeeded', 'completed', 'failed', 'cancelled']);
 
 export function RunsListPage({ initial, total }: Props) {
     const { theme } = useTheme();
@@ -63,6 +82,7 @@ export function RunsListPage({ initial, total }: Props) {
                                     <th className={thClass}>Failure</th>
                                     <th className={thClass}>Created</th>
                                     <th className={thClass}>Completed</th>
+                                    <th className={thClass}>Duration</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,21 +95,24 @@ export function RunsListPage({ initial, total }: Props) {
                                                     {run.status.replace('_', ' ')}
                                                 </span>
                                             </td>
-                                            <td className={`${tdClass} font-mono text-xs`}>{short(run.agent_oid)}</td>
+                                            <td className={`${tdClass} font-mono text-xs`}>{idText(run.agent_oid)}</td>
                                             <td className={`${tdClass} font-mono text-xs`}>
                                                 {run.ticket_oid ? (
                                                     <Link href={`/data/agentops/tickets/${run.ticket_oid}`} className="text-[var(--accent-color)] hover:underline">
-                                                        {short(run.ticket_oid)}
+                                                        {idText(run.ticket_oid)}
                                                     </Link>
                                                 ) : '—'}
                                             </td>
-                                            <td className={`${tdClass} font-mono text-xs`}>{short(run.conversation_id, 12)}</td>
+                                            <td className={`${tdClass} font-mono text-xs`}>{idText(run.conversation_id)}</td>
                                             <td className={tdClass}>{run.attempt}/{run.max_attempts}</td>
                                             <td className={`${tdClass} max-w-[220px] truncate whitespace-normal text-xs text-[var(--text-secondary)]`} title={run.failure_reason || ''}>
                                                 {run.failure_reason || '—'}
                                             </td>
                                             <td className={`${tdClass} text-xs text-[var(--text-secondary)]`}>{formatDateTime(run.created_at, timezone)}</td>
                                             <td className={`${tdClass} text-xs text-[var(--text-secondary)]`}>{run.completed_at ? formatDateTime(run.completed_at, timezone) : '—'}</td>
+                                            <td className={`${tdClass} text-xs tabular-nums ${TERMINAL.has(run.status) ? 'text-[var(--text-secondary)]' : 'text-blue-400'}`} title={TERMINAL.has(run.status) ? 'Total time' : 'Elapsed so far'}>
+                                                {fmtDuration(run.started_at, run.completed_at)}{!TERMINAL.has(run.status) && run.started_at ? '…' : ''}
+                                            </td>
                                         </tr>
                                     );
                                 })}
