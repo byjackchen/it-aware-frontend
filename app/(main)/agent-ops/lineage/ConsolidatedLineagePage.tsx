@@ -254,7 +254,7 @@ export function ConsolidatedLineagePage() {
                                         const mx = (x1 + x2) / 2;
                                         return (
                                             <path key={i} d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
-                                                fill="none" stroke="var(--card-border)" strokeWidth={1.5} />
+                                                fill="none" strokeWidth={2} strokeOpacity={0.6} style={{ stroke: 'var(--accent-color, #8b5cf6)' }} />
                                         );
                                     })}
                                 </svg>
