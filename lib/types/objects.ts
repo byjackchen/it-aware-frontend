@@ -1879,6 +1879,8 @@ export interface Ticket {
     updated_at: string;
     // Populated on the detail GET; true while a run is queued/claimed/running.
     has_active_run: boolean | null;
+    // Populated on the detail GET; the latest run's conversation_id.
+    conversation_id?: string | null;
 }
 
 export interface TicketCreate {

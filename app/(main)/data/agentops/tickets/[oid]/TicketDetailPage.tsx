@@ -271,8 +271,13 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                             </div>
                             <div>
                                 <h1 className={`text-2xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>Ticket Details</h1>
-                                <p className={`text-sm flex items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                <p className={`text-sm flex flex-wrap items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                     <span className="font-mono">{ticket.oid}</span>
+                                    {ticket.conversation_id && (
+                                        <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400" title="Latest run conversation_id">
+                                            conv {ticket.conversation_id}
+                                        </span>
+                                    )}
                                     <AgentStatusIndicator agentStatus={agentRunning ? 'running' : 'idle'} size="sm" />
                                 </p>
                             </div>
