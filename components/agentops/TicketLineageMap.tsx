@@ -170,7 +170,7 @@ export function TicketLineageMap({ ticketOid }: { ticketOid: string }) {
     return (
         <div className="flex flex-col lg:flex-row gap-4">
             {/* Map */}
-            <div className="flex-1 overflow-auto rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)]" data-testid="lineage-map">
+            <div className="flex-1 overflow-auto max-h-[70vh] rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)]" data-testid="lineage-map">
                 <div className="relative" style={{ width: layout.width, height: layout.height }}>
                     <svg className="absolute inset-0 pointer-events-none" width={layout.width} height={layout.height}>
                         {graph.edges.map((e, i) => {
