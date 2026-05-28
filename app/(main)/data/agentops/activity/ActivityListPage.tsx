@@ -108,6 +108,11 @@ export function ActivityListPage() {
                                         </td>
                                         <td className={`${tdClass} text-xs text-[var(--text-secondary)] whitespace-nowrap`}>{formatDateTime(ev.occurred_at, timezone)}</td>
                                         <td className={`${tdClass} max-w-[360px]`}>
+                                            {ev.details?.conversation_id ? (
+                                                <span className="block font-mono text-[11px] text-purple-400 break-all">
+                                                    conv {String(ev.details.conversation_id)}
+                                                </span>
+                                            ) : null}
                                             <span className="block truncate font-mono text-[11px] text-[var(--text-secondary)]" title={compactJson(ev.details)}>
                                                 {compactJson(ev.details).slice(0, 120)}
                                             </span>

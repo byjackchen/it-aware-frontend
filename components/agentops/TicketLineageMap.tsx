@@ -88,6 +88,7 @@ function eventLabel(kind: string): string {
         case 'ticket.created': return 'Created';
         case 'ticket.reassigned': return 'Reassigned';
         case 'ticket.subticket_created': return 'Sub-ticket created';
+        case 'ticket.handed_off': return 'Handed off';
         case 'ticket.mention_dispatched': return '@mention dispatched';
         case 'run.started': return 'Run started';
         case 'run.completed': return 'Run completed';
@@ -103,7 +104,7 @@ function eventLabel(kind: string): string {
 function eventAccent(kind: string): string {
     if (kind.startsWith('run.completed') || kind === 'agent_reply') return 'text-purple-400';
     if (kind.startsWith('run.failed')) return 'text-red-400';
-    if (kind === 'ticket.reassigned' || kind === 'ticket.mention_dispatched') return 'text-amber-400';
+    if (kind === 'ticket.reassigned' || kind === 'ticket.mention_dispatched' || kind === 'ticket.handed_off') return 'text-amber-400';
     if (kind === 'human_comment') return 'text-blue-400';
     return 'text-[var(--text-secondary)]';
 }

@@ -1960,6 +1960,7 @@ export interface ThreadMessage {
     body: string;
     author_account_oid: string | null; // set for human_comment
     run_oid: string | null;            // set for agent_reply
+    conversation_id: string | null;    // hydrated from run_oid (agent_reply)
     reply_to_message_oid: string | null;
     created_at: string;
 }
