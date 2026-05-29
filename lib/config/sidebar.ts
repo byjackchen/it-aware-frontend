@@ -563,11 +563,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
+        ],
+    },
+    '/chatbot': {
+        sections: [
             {
-                labelKey: 'opsOhla',
+                labelKey: 'chatbotDashboard',
                 items: [
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/overview',
+                        href: '/chatbot/dashboard/overview',
                         labelKey: 'opsOhlaOverview',
                         icon: LineChart,
                         permissions: requireAnyPermission([
@@ -575,7 +579,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/user-ask-analysis',
+                        href: '/chatbot/dashboard/user-ask-analysis',
                         labelKey: 'opsOhlaUserAsk',
                         icon: HelpCircle,
                         permissions: requireAnyPermission([
@@ -583,7 +587,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/agent-support',
+                        href: '/chatbot/dashboard/agent-support',
                         labelKey: 'opsOhlaAgentSupport',
                         icon: Headphones,
                         permissions: requireAnyPermission([
@@ -591,7 +595,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/survey-details',
+                        href: '/chatbot/dashboard/survey-details',
                         labelKey: 'opsOhlaSurveyDetails',
                         icon: ClipboardSignature,
                         permissions: requireAnyPermission([
@@ -599,7 +603,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/other-case',
+                        href: '/chatbot/dashboard/other-case',
                         labelKey: 'opsOhlaOtherCase',
                         icon: Search,
                         permissions: requireAnyPermission([
@@ -607,7 +611,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/latency-breakdown',
+                        href: '/chatbot/dashboard/latency-breakdown',
                         labelKey: 'opsOhlaLatencyBreakdown',
                         icon: Timer,
                         permissions: requireAnyPermission([
