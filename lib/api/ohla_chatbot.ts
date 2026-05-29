@@ -184,48 +184,54 @@ export interface OhlaChatbotOtherCaseReport {
     previous: OtherCaseBlock;
 }
 
-// ── Timing Variances ─────────────────────────────────────────────────────────
+// ── Latency Breakdown ────────────────────────────────────────────────────────
 
-export interface TimingStat {
+/** One derived latency metric: its contributing-row count + avg/p50/p95 (s). */
+export interface TimingMetric {
+    count: number;
     avg: number | null;
     p50: number | null;
     p95: number | null;
 }
 
-export interface TimingVariancesKpis {
-    /** Interactions in-window that carry timing data (cycle_seconds set). */
-    sample_count: number;
-    react: TimingStat;
-    response: TimingStat;
-    cycle: TimingStat;
+export interface LatencyBreakdownKpis {
+    /** All chatbot interactions in-window (volume backing the per-hour chart). */
+    total_count: number;
+    agentic_response: TimingMetric; // react_seconds
+    logical_response: TimingMetric; // non-react response_seconds
+    post_work: TimingMetric; // max(cycle - response, 0)
 }
 
-export interface TimingVariancesDailyRow {
-    date: string;
-    count: number;
-    react_avg: number | null;
-    react_p50: number | null;
-    react_p95: number | null;
-    response_avg: number | null;
-    response_p50: number | null;
-    response_p95: number | null;
-    cycle_avg: number | null;
-    cycle_p50: number | null;
-    cycle_p95: number | null;
+export interface LatencyBreakdownHourlyRow {
+    /** UTC hour bucket as ISO-8601 (e.g. "2026-05-28T14:00:00+00:00"). */
+    bucket: string;
+    total_count: number;
+    agentic_count: number;
+    agentic_avg: number | null;
+    agentic_p50: number | null;
+    agentic_p95: number | null;
+    logical_count: number;
+    logical_avg: number | null;
+    logical_p50: number | null;
+    logical_p95: number | null;
+    post_work_count: number;
+    post_work_avg: number | null;
+    post_work_p50: number | null;
+    post_work_p95: number | null;
 }
 
-export interface TimingVariancesCharts {
-    daily: TimingVariancesDailyRow[];
+export interface LatencyBreakdownCharts {
+    hourly: LatencyBreakdownHourlyRow[];
 }
 
-export interface TimingVariancesBlock {
-    kpis: TimingVariancesKpis;
-    charts: TimingVariancesCharts;
+export interface LatencyBreakdownBlock {
+    kpis: LatencyBreakdownKpis;
+    charts: LatencyBreakdownCharts;
 }
 
-export interface OhlaChatbotTimingVariancesReport {
-    current: TimingVariancesBlock;
-    previous: TimingVariancesBlock;
+export interface OhlaChatbotLatencyBreakdownReport {
+    current: LatencyBreakdownBlock;
+    previous: LatencyBreakdownBlock;
 }
 
 // ── View discriminator + report type union ──────────────────────────────────
@@ -236,7 +242,7 @@ export type OhlaChatbotView =
     | 'agent-support'
     | 'survey'
     | 'other-case'
-    | 'timing-variances';
+    | 'latency-breakdown';
 
 export interface OhlaChatbotReportByView {
     overview: OhlaChatbotOverviewReport;
@@ -244,7 +250,7 @@ export interface OhlaChatbotReportByView {
     'agent-support': OhlaChatbotAgentSupportReport;
     survey: OhlaChatbotSurveyReport;
     'other-case': OhlaChatbotOtherCaseReport;
-    'timing-variances': OhlaChatbotTimingVariancesReport;
+    'latency-breakdown': OhlaChatbotLatencyBreakdownReport;
 }
 
 // ── Fetchers ────────────────────────────────────────────────────────────────
@@ -297,7 +303,7 @@ export const fetchOhlaChatbotSurvey = (p: ReportRangeParams) =>
 export const fetchOhlaChatbotOtherCase = (p: ReportRangeParams) =>
     fetchReport('other-case', p);
 
-export const fetchOhlaChatbotTimingVariances = (p: ReportRangeParams) =>
-    fetchReport('timing-variances', p);
+export const fetchOhlaChatbotLatencyBreakdown = (p: ReportRangeParams) =>
+    fetchReport('latency-breakdown', p);
 
 export { fetchReport as fetchOhlaChatbotReport };

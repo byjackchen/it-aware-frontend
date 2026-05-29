@@ -2012,7 +2012,7 @@
     "opsOhlaAgentSupport": "Agent Support",
     "opsOhlaSurveyDetails": "Survey Details",
     "opsOhlaOtherCase": "Other Case Analysis",
-    "opsOhlaTimingVariances": "Timing Variances",
+    "opsOhlaLatencyBreakdown": "Latency Breakdown",
     "incidentReport": "Incident Report",
     "surveyLookup": "Survey Lookup",
     "opsUnassigned": "Unassigned"
@@ -2671,7 +2671,8 @@
       "dateRange": "Date range",
       "rowCount": "{count} rows",
       "active": "Active filters",
-      "clearAll": "Clear all"
+      "clearAll": "Clear all",
+      "timezoneHint": "Filter window is in your local timezone; sent to the backend as UTC."
     },
     "behaviour": {
       "enter_chat": "enter_chat",
@@ -2801,16 +2802,16 @@
         "response": "Response"
       }
     },
-    "timingVariances": {
-      "title": "Timing Variances",
-      "subtitle": "Daily react / response / cycle latency for chatbot conversations",
+    "latencyBreakdown": {
+      "title": "Latency Breakdown",
+      "subtitle": "Hourly agentic / logical / post-work latency for chatbot turns",
       "kpis": {
-        "reactAvg": "Avg React",
-        "reactInfo": "Average time from user request to the bot's first response (seconds).",
-        "responseAvg": "Avg Response",
-        "responseInfo": "Average time the bot spends producing its full response (seconds).",
-        "cycleAvg": "Avg Cycle",
-        "cycleInfo": "Average end-to-end cycle time from request to completion (seconds).",
+        "agenticAvg": "Avg Agentic Response",
+        "agenticInfo": "Average agentic-response time — the ReAct agent's first-reaction span (react_seconds, 3 decimals).",
+        "logicalAvg": "Avg Logical Response",
+        "logicalInfo": "Average logical-response time for non-ReAct turns — the bot's response excluding agentic reaction (response_seconds, 3 decimals).",
+        "postWorkAvg": "Avg Post Work",
+        "postWorkInfo": "Average post-work time after the response completes — cycle minus response, clamped to ≥ 0 (3 decimals).",
         "p95Sub": "p95 {value}"
       },
       "series": {
@@ -2819,10 +2820,11 @@
         "p95": "p95"
       },
       "charts": {
-        "reactTrend": "React Time (daily)",
-        "responseTrend": "Response Time (daily)",
-        "cycleTrend": "Cycle Time (daily)",
-        "secondsAxis": "Values in seconds — avg / p50 / p95 per UTC day."
+        "agenticTrend": "Agentic Response (hourly)",
+        "logicalTrend": "Logical Response (hourly)",
+        "postWorkTrend": "Post Work (hourly)",
+        "volumeSeries": "Volume",
+        "secondsAxis": "Left axis: seconds (avg / p50 / p95). Right axis: this phase's sample volume per hour (local time)."
       }
     },
     "surveyDetails": {

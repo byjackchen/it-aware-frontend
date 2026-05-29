@@ -22,6 +22,23 @@ export function InteractionsListPage() {
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
+    const [hideEnterChat, setHideEnterChat] = useState(false);
+    const [hideClick, setHideClick] = useState(false);
+
+    // Compose the toggles into one comma-separated exclude_action_types param
+    // (the backend splits on commas → NOT IN (...)). Memoized so the query-string
+    // identity only changes when a toggle does; useInfiniteResource keys its
+    // cache/paging reset on this object.
+    const query = useMemo(() => {
+        const excluded: string[] = [];
+        if (hideEnterChat) excluded.push('enter_chat');
+        if (hideClick) excluded.push('click');
+        return {
+            sort_by: 'created_at',
+            order: 'desc' as const,
+            ...(excluded.length ? { exclude_action_types: excluded.join(',') } : {}),
+        };
+    }, [hideEnterChat, hideClick]);
 
     const {
         items: interactions,
@@ -35,10 +52,7 @@ export function InteractionsListPage() {
     } = useInfiniteResource<Interaction, InteractionListResponse>('interactions', {
         pageSize: 300,
         auto: true,
-        query: {
-            sort_by: 'created_at',
-            order: 'desc',
-        },
+        query,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
         inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
@@ -105,6 +119,28 @@ export function InteractionsListPage() {
                             className={`w-full pl-10 pr-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
                         />
                     </div>
+                    <label
+                        className={`flex items-center gap-2 text-sm cursor-pointer select-none shrink-0 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={hideEnterChat}
+                            onChange={(e) => setHideEnterChat(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50"
+                        />
+                        Hide enter_chat
+                    </label>
+                    <label
+                        className={`flex items-center gap-2 text-sm cursor-pointer select-none shrink-0 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={hideClick}
+                            onChange={(e) => setHideClick(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50"
+                        />
+                        Hide click
+                    </label>
                 </div>
 
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
