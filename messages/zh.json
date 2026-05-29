@@ -1685,6 +1685,7 @@
     "channels": "群聊",
     "activity": "活动事件",
     "opsOhla": "Ohla 聊天机器人",
+    "chatbotDashboard": "Chatbot Dashboard",
     "opsOhlaOverview": "概览",
     "opsOhlaUserAsk": "用户提问分析",
     "opsOhlaAgentSupport": "人工支持",
@@ -2253,6 +2254,7 @@
     "campaign": "运营活动",
     "sscCockpit": "SSC 团队",
     "operationTeams": "运维团队",
+    "chatbot": "Ohla Chatbot",
     "agentOps": "AgentOps"
   },
   "SSCFAQReport": {
