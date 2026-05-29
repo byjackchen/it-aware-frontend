@@ -91,14 +91,6 @@ export function TopBar() {
       ]),
     },
     {
-      href: '/operation-teams',
-      label: t('operationTeams'),
-      icon: Wrench,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-      ]),
-    },
-    {
       href: '/chatbot',
       label: t('chatbot'),
       icon: Bot,
@@ -112,6 +104,14 @@ export function TopBar() {
       icon: Headset,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_SSC,
+      ]),
+    },
+    {
+      href: '/operation-teams',
+      label: t('operationTeams'),
+      icon: Wrench,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
     },
     {
