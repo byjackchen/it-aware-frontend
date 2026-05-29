@@ -607,8 +607,8 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/timing-variances',
-                        labelKey: 'opsOhlaTimingVariances',
+                        href: '/operation-teams/ops-dashboard/ohla/latency-breakdown',
+                        labelKey: 'opsOhlaLatencyBreakdown',
                         icon: Timer,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
