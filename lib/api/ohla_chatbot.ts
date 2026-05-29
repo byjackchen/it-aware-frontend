@@ -184,6 +184,50 @@ export interface OhlaChatbotOtherCaseReport {
     previous: OtherCaseBlock;
 }
 
+// ── Timing Variances ─────────────────────────────────────────────────────────
+
+export interface TimingStat {
+    avg: number | null;
+    p50: number | null;
+    p95: number | null;
+}
+
+export interface TimingVariancesKpis {
+    /** Interactions in-window that carry timing data (cycle_seconds set). */
+    sample_count: number;
+    react: TimingStat;
+    response: TimingStat;
+    cycle: TimingStat;
+}
+
+export interface TimingVariancesDailyRow {
+    date: string;
+    count: number;
+    react_avg: number | null;
+    react_p50: number | null;
+    react_p95: number | null;
+    response_avg: number | null;
+    response_p50: number | null;
+    response_p95: number | null;
+    cycle_avg: number | null;
+    cycle_p50: number | null;
+    cycle_p95: number | null;
+}
+
+export interface TimingVariancesCharts {
+    daily: TimingVariancesDailyRow[];
+}
+
+export interface TimingVariancesBlock {
+    kpis: TimingVariancesKpis;
+    charts: TimingVariancesCharts;
+}
+
+export interface OhlaChatbotTimingVariancesReport {
+    current: TimingVariancesBlock;
+    previous: TimingVariancesBlock;
+}
+
 // ── View discriminator + report type union ──────────────────────────────────
 
 export type OhlaChatbotView =
@@ -191,7 +235,8 @@ export type OhlaChatbotView =
     | 'user-ask'
     | 'agent-support'
     | 'survey'
-    | 'other-case';
+    | 'other-case'
+    | 'timing-variances';
 
 export interface OhlaChatbotReportByView {
     overview: OhlaChatbotOverviewReport;
@@ -199,6 +244,7 @@ export interface OhlaChatbotReportByView {
     'agent-support': OhlaChatbotAgentSupportReport;
     survey: OhlaChatbotSurveyReport;
     'other-case': OhlaChatbotOtherCaseReport;
+    'timing-variances': OhlaChatbotTimingVariancesReport;
 }
 
 // ── Fetchers ────────────────────────────────────────────────────────────────
@@ -250,5 +296,8 @@ export const fetchOhlaChatbotSurvey = (p: ReportRangeParams) =>
 
 export const fetchOhlaChatbotOtherCase = (p: ReportRangeParams) =>
     fetchReport('other-case', p);
+
+export const fetchOhlaChatbotTimingVariances = (p: ReportRangeParams) =>
+    fetchReport('timing-variances', p);
 
 export { fetchReport as fetchOhlaChatbotReport };

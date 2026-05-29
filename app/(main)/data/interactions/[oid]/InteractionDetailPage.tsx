@@ -24,6 +24,10 @@ import {
     SERVICE_TYPE_LEAF_DEPTH,
     SERVICE_TYPE_ROOT_STABLE_ID,
 } from '@/lib/utils/serviceCatalog';
+import {
+    EventTrackingSection,
+    ReactSection,
+} from './InteractionFlowStateSections';
 
 // Resolve a service-catalog OID to its leaf name; falls back to the OID
 // (or "—" when null) so the cell never goes blank.
@@ -298,21 +302,6 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Content Raw (JSON)</span>
-                            <div className={`p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
-                                <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.content_raw)}</pre>
-                            </div>
-                        </div>
-                        <div>
-                            <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Response Raw (JSON)</span>
-                            <div className={`p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
-                                <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.response_raw)}</pre>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dashed border-slate-200 dark:border-white/10">
                         <div>
                             <span className="block text-xs font-semibold opacity-60 uppercase tracking-wider mb-1">Created At</span>
@@ -334,6 +323,29 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                             <span>Delete Interaction</span>
                         </button>
                     </div>
+                </div>
+
+                {/* Chatbot flow-state sections (only meaningful for chatbot-sourced
+                    interactions; render for all but they self-handle empty data). */}
+                <EventTrackingSection interaction={interaction} />
+                <ReactSection interaction={interaction} />
+
+                {/* Raw JSON — heavy payloads kept at the very bottom, collapsed by
+                    default so they don't dominate the page. */}
+                <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                    <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>Raw JSON</h3>
+                    <details>
+                        <summary className="text-xs font-semibold opacity-60 uppercase tracking-wider cursor-pointer">Content Raw (JSON)</summary>
+                        <div className={`mt-2 p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
+                            <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.content_raw)}</pre>
+                        </div>
+                    </details>
+                    <details>
+                        <summary className="text-xs font-semibold opacity-60 uppercase tracking-wider cursor-pointer">Response Raw (JSON)</summary>
+                        <div className={`mt-2 p-4 rounded-lg overflow-x-auto ${isLight ? 'bg-slate-50' : 'bg-black/20'}`}>
+                            <pre className={`text-xs font-mono ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{formatJson(interaction.response_raw)}</pre>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>

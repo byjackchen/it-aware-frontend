@@ -2012,6 +2012,7 @@
     "opsOhlaAgentSupport": "Agent Support",
     "opsOhlaSurveyDetails": "Survey Details",
     "opsOhlaOtherCase": "Other Case Analysis",
+    "opsOhlaTimingVariances": "Timing Variances",
     "incidentReport": "Incident Report",
     "surveyLookup": "Survey Lookup",
     "opsUnassigned": "Unassigned"
@@ -2798,6 +2799,30 @@
         "wecomId": "Masked WeComID",
         "userContent": "User Content",
         "response": "Response"
+      }
+    },
+    "timingVariances": {
+      "title": "Timing Variances",
+      "subtitle": "Daily react / response / cycle latency for chatbot conversations",
+      "kpis": {
+        "reactAvg": "Avg React",
+        "reactInfo": "Average time from user request to the bot's first response (seconds).",
+        "responseAvg": "Avg Response",
+        "responseInfo": "Average time the bot spends producing its full response (seconds).",
+        "cycleAvg": "Avg Cycle",
+        "cycleInfo": "Average end-to-end cycle time from request to completion (seconds).",
+        "p95Sub": "p95 {value}"
+      },
+      "series": {
+        "avg": "Avg",
+        "p50": "p50",
+        "p95": "p95"
+      },
+      "charts": {
+        "reactTrend": "React Time (daily)",
+        "responseTrend": "Response Time (daily)",
+        "cycleTrend": "Cycle Time (daily)",
+        "secondsAxis": "Values in seconds — avg / p50 / p95 per UTC day."
       }
     },
     "surveyDetails": {
