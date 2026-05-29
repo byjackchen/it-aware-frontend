@@ -1140,6 +1140,12 @@ export interface Interaction {
     service_type_oid?: string | null;
     helpful_score?: number | null;
 
+    // Chatbot per-cycle latency (single-chats event_tracking timing); the full
+    // event_tracking trace is retained inside content_raw.record.flow_states.
+    react_seconds?: number | null;
+    response_seconds?: number | null;
+    cycle_seconds?: number | null;
+
     // SSC dashboard — human review (edited via PATCH /review)
     review_code?: ReviewCode | null;
     service_catalog_override_oid?: string | null;
