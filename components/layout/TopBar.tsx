@@ -2,7 +2,7 @@
 
 import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench, Cpu } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -112,6 +112,14 @@ export function TopBar() {
       icon: KanbanSquare,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+      ]),
+    },
+    {
+      href: '/systems',
+      label: t('systems'),
+      icon: Cpu,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_SYSTEMS,
       ]),
     },
     {

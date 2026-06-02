@@ -625,6 +625,34 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
+    '/systems': {
+        items: [
+            {
+                href: '/systems/routes',
+                labelKey: 'llmRoutes',
+                icon: Route,
+                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+            },
+            {
+                href: '/systems/models',
+                labelKey: 'llmModels',
+                icon: Cpu,
+                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+            },
+            {
+                href: '/systems/keys',
+                labelKey: 'llmKeys',
+                icon: Lock,
+                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+            },
+            {
+                href: '/systems/usage',
+                labelKey: 'llmUsage',
+                icon: BarChart3,
+                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+            },
+        ],
+    },
     // Note: /persona is intentionally excluded - it uses the full page width for the profile view
     // Note: /knowledge is intentionally excluded - it uses its own CatalogSidebar
     // instead of the standard navigation sidebar
