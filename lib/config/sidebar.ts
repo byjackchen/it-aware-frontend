@@ -49,6 +49,9 @@ import {
     Search,
     UserPlus,
     UserX,
+    PlayCircle,
+    MessagesSquare,
+    History,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -310,6 +313,38 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.OBJECTS.TICKETS_READ,
                         ]),
                     },
+                    {
+                        href: '/data/agentops/prompts',
+                        labelKey: 'prompts',
+                        icon: Sparkles,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/runs',
+                        labelKey: 'runs',
+                        icon: PlayCircle,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/threads',
+                        labelKey: 'threads',
+                        icon: MessagesSquare,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/activity',
+                        labelKey: 'activity',
+                        icon: History,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
                 ],
             },
         ],
@@ -528,11 +563,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
+        ],
+    },
+    '/chatbot': {
+        sections: [
             {
-                labelKey: 'opsOhla',
+                labelKey: 'chatbotDashboard',
                 items: [
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/overview',
+                        href: '/chatbot/dashboard/overview',
                         labelKey: 'opsOhlaOverview',
                         icon: LineChart,
                         permissions: requireAnyPermission([
@@ -540,7 +579,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/user-ask-analysis',
+                        href: '/chatbot/dashboard/user-ask-analysis',
                         labelKey: 'opsOhlaUserAsk',
                         icon: HelpCircle,
                         permissions: requireAnyPermission([
@@ -548,7 +587,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/agent-support',
+                        href: '/chatbot/dashboard/agent-support',
                         labelKey: 'opsOhlaAgentSupport',
                         icon: Headphones,
                         permissions: requireAnyPermission([
@@ -556,7 +595,7 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/survey-details',
+                        href: '/chatbot/dashboard/survey-details',
                         labelKey: 'opsOhlaSurveyDetails',
                         icon: ClipboardSignature,
                         permissions: requireAnyPermission([
@@ -564,9 +603,17 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
-                        href: '/operation-teams/ops-dashboard/ohla/other-case',
+                        href: '/chatbot/dashboard/other-case',
                         labelKey: 'opsOhlaOtherCase',
                         icon: Search,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/latency-breakdown',
+                        labelKey: 'opsOhlaLatencyBreakdown',
+                        icon: Timer,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
@@ -621,6 +668,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 icon: Activity,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
+            {
+                href: '/agent-ops/lineage',
+                labelKey: 'lineage',
+                icon: Network,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
                 ]),
             },
         ],

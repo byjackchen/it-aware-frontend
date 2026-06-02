@@ -184,6 +184,56 @@ export interface OhlaChatbotOtherCaseReport {
     previous: OtherCaseBlock;
 }
 
+// ── Latency Breakdown ────────────────────────────────────────────────────────
+
+/** One derived latency metric: its contributing-row count + avg/p50/p95 (s). */
+export interface TimingMetric {
+    count: number;
+    avg: number | null;
+    p50: number | null;
+    p95: number | null;
+}
+
+export interface LatencyBreakdownKpis {
+    /** All chatbot interactions in-window (volume backing the per-hour chart). */
+    total_count: number;
+    agentic_response: TimingMetric; // react_seconds
+    logical_response: TimingMetric; // non-react response_seconds
+    post_work: TimingMetric; // max(cycle - response, 0)
+}
+
+export interface LatencyBreakdownHourlyRow {
+    /** UTC hour bucket as ISO-8601 (e.g. "2026-05-28T14:00:00+00:00"). */
+    bucket: string;
+    total_count: number;
+    agentic_count: number;
+    agentic_avg: number | null;
+    agentic_p50: number | null;
+    agentic_p95: number | null;
+    logical_count: number;
+    logical_avg: number | null;
+    logical_p50: number | null;
+    logical_p95: number | null;
+    post_work_count: number;
+    post_work_avg: number | null;
+    post_work_p50: number | null;
+    post_work_p95: number | null;
+}
+
+export interface LatencyBreakdownCharts {
+    hourly: LatencyBreakdownHourlyRow[];
+}
+
+export interface LatencyBreakdownBlock {
+    kpis: LatencyBreakdownKpis;
+    charts: LatencyBreakdownCharts;
+}
+
+export interface OhlaChatbotLatencyBreakdownReport {
+    current: LatencyBreakdownBlock;
+    previous: LatencyBreakdownBlock;
+}
+
 // ── View discriminator + report type union ──────────────────────────────────
 
 export type OhlaChatbotView =
@@ -191,7 +241,8 @@ export type OhlaChatbotView =
     | 'user-ask'
     | 'agent-support'
     | 'survey'
-    | 'other-case';
+    | 'other-case'
+    | 'latency-breakdown';
 
 export interface OhlaChatbotReportByView {
     overview: OhlaChatbotOverviewReport;
@@ -199,6 +250,7 @@ export interface OhlaChatbotReportByView {
     'agent-support': OhlaChatbotAgentSupportReport;
     survey: OhlaChatbotSurveyReport;
     'other-case': OhlaChatbotOtherCaseReport;
+    'latency-breakdown': OhlaChatbotLatencyBreakdownReport;
 }
 
 // ── Fetchers ────────────────────────────────────────────────────────────────
@@ -250,5 +302,8 @@ export const fetchOhlaChatbotSurvey = (p: ReportRangeParams) =>
 
 export const fetchOhlaChatbotOtherCase = (p: ReportRangeParams) =>
     fetchReport('other-case', p);
+
+export const fetchOhlaChatbotLatencyBreakdown = (p: ReportRangeParams) =>
+    fetchReport('latency-breakdown', p);
 
 export { fetchReport as fetchOhlaChatbotReport };

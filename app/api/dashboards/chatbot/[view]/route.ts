@@ -14,6 +14,7 @@ const ALLOWED_VIEWS = new Set([
     'agent-support',
     'survey',
     'other-case',
+    'latency-breakdown',
 ]);
 
 function isAscii(value: string): boolean {

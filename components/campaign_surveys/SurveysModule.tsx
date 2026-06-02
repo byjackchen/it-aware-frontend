@@ -23,6 +23,7 @@ import {
     cancelCampaignSurveyBatchAction,
     closeCampaignSurveyBatchAction,
     createCampaignSurveyAction,
+    deleteCampaignSurveyBatchAction,
     publishCampaignSurveyBatchAction,
     reopenCampaignSurveyBatchAction,
     revokeCampaignSurveyAction,
@@ -31,7 +32,7 @@ import {
     updateCampaignSurveyAction,
     deleteCampaignSurveyAction,
 } from '@/app/actions/campaigns';
-import { PaneQuickScrollButtons } from '@/components/campaign_shared';
+import { DeleteBatchModal, PaneQuickScrollButtons } from '@/components/campaign_shared';
 import { SurveyAccessGate } from './SurveyAccessGate';
 import { SurveyQuestionBuilder } from './SurveyQuestionBuilder';
 import type { SurveyQuestionDraft } from './types';
@@ -227,6 +228,9 @@ export function SurveysModule() {
     const [detailsError, setDetailsError] = useState<string | null>(null);
 
     const [selectedSurveyOid, setSelectedSurveyOid] = useState<string | null>(null);
+
+    const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
+    const [deleteBatchError, setDeleteBatchError] = useState<string | null>(null);
 
     const [isObjectEditing, setIsObjectEditing] = useState(false);
     const [objectName, setObjectName] = useState('');
@@ -667,6 +671,23 @@ export function SurveysModule() {
         });
     };
 
+    const handleDeleteBatch = () => {
+        if (!selectedSurveyBatch) return;
+        setDeleteBatchError(null);
+        startBatchActionTransition(async () => {
+            const result = await deleteCampaignSurveyBatchAction(selectedSurveyBatch.oid);
+            if (!result.success) {
+                setDeleteBatchError(result.error);
+                return;
+            }
+
+            setIsDeleteBatchModalOpen(false);
+            setSelectedSurveyBatchDetail(null);
+            setQueryParam('surveyBatch', null);
+            await reloadSurveys();
+        });
+    };
+
     const openCreateRowEditor = () => {
         if (!isBatchDraft) return;
         const reference = details[0]?.survey_questions ?? fallbackSurveyQuestions();
@@ -1091,6 +1112,21 @@ export function SurveysModule() {
                                                 >
                                                     {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                     <span>{t('details.actions.reopenBatch')}</span>
+                                                </button>
+                                            )}
+
+                                            {canWrite && selectedSurveyBatch.status !== 'collecting' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setDeleteBatchError(null);
+                                                        setIsDeleteBatchModalOpen(true);
+                                                    }}
+                                                    disabled={isBatchActionPending}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    <span>{t('details.actions.deleteBatch')}</span>
                                                 </button>
                                             )}
 
@@ -1648,6 +1684,22 @@ export function SurveysModule() {
                     </section>
                 </div>
             </div>
+
+            <DeleteBatchModal
+                isOpen={isDeleteBatchModalOpen}
+                batchName={selectedSurveyBatch?.name ?? ''}
+                isPending={isBatchActionPending}
+                error={deleteBatchError}
+                onCancel={() => setIsDeleteBatchModalOpen(false)}
+                onConfirm={handleDeleteBatch}
+                labels={{
+                    title: t('details.deleteModal.title'),
+                    description: t('details.deleteModal.description', { name: selectedSurveyBatch?.name ?? '' }),
+                    typeToConfirm: t('details.deleteModal.typeToConfirm'),
+                    confirm: t('details.deleteModal.confirm'),
+                    cancel: t('details.deleteModal.cancel'),
+                }}
+            />
         </SurveyAccessGate>
     );
 }

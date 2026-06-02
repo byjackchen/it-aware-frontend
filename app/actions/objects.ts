@@ -50,7 +50,7 @@ import {
     updateScenario,
     deleteScenario,
 } from '@/lib/api/scenarios';
-import type { WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
+import type { WorkerProfile, WorkerProfileUpsert, TicketStatus } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -1291,6 +1291,7 @@ export async function createAgentAction(formData: FormData) {
     logger.info(`Started`, { requestId, action });
 
     try {
+        const promptsRaw = formData.get('prompt_oids') as string | null;
         const agent = await createAgent({
             name: formData.get('name') as string,
             agent_id: formData.get('agent_id') as string,
@@ -1298,6 +1299,7 @@ export async function createAgentAction(formData: FormData) {
             contact_worker_oid: formData.get('contact_worker_oid') as string,
             agent_key: formData.get('agent_key') as string || undefined,
             description: formData.get('description') as string || undefined,
+            prompt_oids: promptsRaw ? JSON.parse(promptsRaw) : undefined,
         });
         revalidatePath('/agentops/agents');
         const duration = Date.now() - startTime;
@@ -1317,6 +1319,7 @@ export async function updateAgentAction(oid: string, formData: FormData) {
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
     try {
+        const promptsRaw = formData.get('prompt_oids') as string | null;
         const agent = await updateAgent(oid, {
             name: formData.get('name') as string || undefined,
             agent_id: formData.get('agent_id') as string || undefined,
@@ -1325,7 +1328,7 @@ export async function updateAgentAction(oid: string, formData: FormData) {
             agent_platform: formData.get('agent_platform') as string || undefined,
             contact_worker_oid: formData.get('contact_worker_oid') as string || undefined,
             description: formData.get('description') as string || undefined,
-            agent_workspace_id: formData.get('agent_workspace_id') as string || undefined,
+            prompt_oids: promptsRaw ? JSON.parse(promptsRaw) : undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
         revalidatePath('/agentops/agents');
@@ -1444,8 +1447,10 @@ export async function createTicketAction(formData: FormData) {
         const tagsRaw = formData.get('tags') as string | null;
         const ticket = await createTicket({
             title: formData.get('title') as string,
-            description: formData.get('description') as string || undefined,
+            body: formData.get('body') as string || undefined,
+            status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            parent_ticket_oid: formData.get('parent_ticket_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });
         revalidatePath('/agentops/tickets');
@@ -1469,10 +1474,10 @@ export async function updateTicketAction(oid: string, formData: FormData) {
         const tagsRaw = formData.get('tags') as string | null;
         const ticket = await updateTicket(oid, {
             title: formData.get('title') as string || undefined,
-            description: formData.get('description') as string || undefined,
-            status: formData.get('status') as string || undefined,
-            flagged: formData.get('flagged') !== null ? formData.get('flagged') === 'true' : undefined,
+            body: formData.get('body') as string || undefined,
+            status: (formData.get('status') as TicketStatus) || undefined,
             assignee_account_oid: formData.get('assignee_account_oid') as string || undefined,
+            parent_ticket_oid: formData.get('parent_ticket_oid') as string || undefined,
             tags: tagsRaw ? JSON.parse(tagsRaw) : undefined,
         });
         revalidatePath('/agentops/tickets');

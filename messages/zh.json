@@ -319,6 +319,11 @@
       "agents": "Agents",
       "systems": "系统",
       "tickets": "工单",
+      "prompts": "提示词",
+      "runs": "运行",
+      "threads": "对话消息",
+      "activity": "活动事件",
+      "lineage": "工单脉络",
       "ticketList": "工单列表",
       "ticketKanban": "工单看板"
     },
@@ -739,6 +744,14 @@
         "editObject": "编辑批次",
         "addRow": "新增通知",
         "cancelBatch": "取消批次",
+        "deleteBatch": "删除批次",
+        "cancel": "取消"
+      },
+      "deleteModal": {
+        "title": "确认删除该通知批次？",
+        "description": "此操作将永久删除该批次及其所有通知。请输入 {name} 以确认。",
+        "typeToConfirm": "请输入批次名称",
+        "confirm": "删除批次",
         "cancel": "取消"
       },
       "rowEditor": {
@@ -923,6 +936,14 @@
         "closeBatch": "关闭批次",
         "reopenBatch": "重新开启批次",
         "cancelBatch": "取消批次",
+        "deleteBatch": "删除批次",
+        "cancel": "取消"
+      },
+      "deleteModal": {
+        "title": "确认删除该问卷批次？",
+        "description": "此操作将永久删除该批次及其所有问卷条目。请输入 {name} 以确认。",
+        "typeToConfirm": "请输入批次名称",
+        "confirm": "删除批次",
         "cancel": "取消"
       },
       "rowEditor": {
@@ -1654,16 +1675,23 @@
     "agents": "Agents",
     "systems": "系统",
     "tickets": "工单",
+    "prompts": "提示词",
+    "runs": "运行",
+    "threads": "对话消息",
+    "activity": "活动事件",
+    "lineage": "工单脉络",
     "ticketList": "工单列表",
     "ticketKanban": "工单看板",
     "channels": "群聊",
     "activity": "活动事件",
     "opsOhla": "Ohla 聊天机器人",
+    "chatbotDashboard": "Chatbot Dashboard",
     "opsOhlaOverview": "概览",
     "opsOhlaUserAsk": "用户提问分析",
     "opsOhlaAgentSupport": "人工支持",
     "opsOhlaSurveyDetails": "满意度详情",
     "opsOhlaOtherCase": "其它案例分析",
+    "opsOhlaLatencyBreakdown": "延迟分解",
     "incidentReport": "工单分析报告",
     "surveyLookup": "调查链接查询",
     "opsUnassigned": "未分派",
@@ -2230,6 +2258,7 @@
     "campaign": "运营活动",
     "sscCockpit": "SSC 团队",
     "operationTeams": "运维团队",
+    "chatbot": "Ohla Chatbot",
     "agentOps": "AgentOps",
     "systems": "系统"
   },
@@ -2327,7 +2356,8 @@
       "dateRange": "时间范围",
       "rowCount": "{count} 条记录",
       "active": "当前筛选",
-      "clearAll": "清空"
+      "clearAll": "清空",
+      "timezoneHint": "筛选窗口使用本地时区；提交后端时转换为 UTC。"
     },
     "behaviour": {
       "enter_chat": "enter_chat",
@@ -2455,6 +2485,31 @@
         "wecomId": "WeCom ID",
         "userContent": "用户内容",
         "response": "回复"
+      }
+    },
+    "latencyBreakdown": {
+      "title": "延迟分解",
+      "subtitle": "聊天机器人对话的每小时 agentic / logical / post-work 延迟",
+      "kpis": {
+        "agenticAvg": "平均 Agentic 响应",
+        "agenticInfo": "平均 agentic 响应耗时 —— ReAct 智能体的首次反应时长（react_seconds，3 位小数）。",
+        "logicalAvg": "平均 Logical 响应",
+        "logicalInfo": "非 ReAct 对话的平均 logical 响应耗时 —— 不含 agentic 反应的机器人响应（response_seconds，3 位小数）。",
+        "postWorkAvg": "平均 Post Work",
+        "postWorkInfo": "响应完成后的平均后处理耗时 —— cycle 减 response，且不小于 0（3 位小数）。",
+        "p95Sub": "p95 {value}"
+      },
+      "series": {
+        "avg": "平均值",
+        "p50": "p50",
+        "p95": "p95"
+      },
+      "charts": {
+        "agenticTrend": "Agentic 响应（每小时）",
+        "logicalTrend": "Logical 响应（每小时）",
+        "postWorkTrend": "Post Work（每小时）",
+        "volumeSeries": "样本量",
+        "secondsAxis": "左轴：秒（avg / p50 / p95）。右轴：该阶段每小时的样本量（本地时间）。"
       }
     },
     "surveyDetails": {

@@ -639,6 +639,11 @@
       "agents": "Agents",
       "systems": "Systems",
       "tickets": "Tickets",
+      "prompts": "Prompts",
+      "runs": "Runs",
+      "threads": "Threads",
+      "activity": "Activity Events",
+      "lineage": "Lineage",
       "ticketList": "Ticket List",
       "ticketKanban": "Ticket Kanban"
     },
@@ -1059,6 +1064,14 @@
         "editObject": "Edit Batch",
         "addRow": "Add Notification",
         "cancelBatch": "Cancel Batch",
+        "deleteBatch": "Delete Batch",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete this notification batch?",
+        "description": "This permanently removes the batch and all of its notifications. Type {name} below to confirm.",
+        "typeToConfirm": "Type the batch name",
+        "confirm": "Delete Batch",
         "cancel": "Cancel"
       },
       "rowEditor": {
@@ -1243,6 +1256,14 @@
         "closeBatch": "Close Batch",
         "reopenBatch": "Reopen Batch",
         "cancelBatch": "Cancel Batch",
+        "deleteBatch": "Delete Batch",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete this survey batch?",
+        "description": "This permanently removes the batch and all of its survey rows. Type {name} below to confirm.",
+        "typeToConfirm": "Type the batch name",
+        "confirm": "Delete Batch",
         "cancel": "Cancel"
       },
       "rowEditor": {
@@ -1976,16 +1997,23 @@
     "agents": "Agents",
     "systems": "Systems",
     "tickets": "Tickets",
+    "prompts": "Prompts",
+    "runs": "Runs",
+    "threads": "Threads",
+    "activity": "Activity Events",
+    "lineage": "Lineage",
     "ticketList": "Ticket List",
     "ticketKanban": "Ticket Kanban",
     "channels": "Channels",
     "activity": "Activity Events",
     "opsOhla": "Ohla Chatbot",
+    "chatbotDashboard": "Chatbot Dashboard",
     "opsOhlaOverview": "Overview",
     "opsOhlaUserAsk": "User Ask Analysis",
     "opsOhlaAgentSupport": "Agent Support",
     "opsOhlaSurveyDetails": "Survey Details",
     "opsOhlaOtherCase": "Other Case Analysis",
+    "opsOhlaLatencyBreakdown": "Latency Breakdown",
     "incidentReport": "Incident Report",
     "surveyLookup": "Survey Lookup",
     "opsUnassigned": "Unassigned",
@@ -2552,6 +2580,7 @@
     "campaign": "Campaign",
     "sscCockpit": "SSC Team",
     "operationTeams": "Ops Team",
+    "chatbot": "Ohla Chatbot",
     "agentOps": "AgentOps",
     "systems": "Systems"
   },
@@ -2649,7 +2678,8 @@
       "dateRange": "Date range",
       "rowCount": "{count} rows",
       "active": "Active filters",
-      "clearAll": "Clear all"
+      "clearAll": "Clear all",
+      "timezoneHint": "Filter window is in your local timezone; sent to the backend as UTC."
     },
     "behaviour": {
       "enter_chat": "enter_chat",
@@ -2777,6 +2807,31 @@
         "wecomId": "Masked WeComID",
         "userContent": "User Content",
         "response": "Response"
+      }
+    },
+    "latencyBreakdown": {
+      "title": "Latency Breakdown",
+      "subtitle": "Hourly agentic / logical / post-work latency for chatbot turns",
+      "kpis": {
+        "agenticAvg": "Avg Agentic Response",
+        "agenticInfo": "Average agentic-response time — the ReAct agent's first-reaction span (react_seconds, 3 decimals).",
+        "logicalAvg": "Avg Logical Response",
+        "logicalInfo": "Average logical-response time for non-ReAct turns — the bot's response excluding agentic reaction (response_seconds, 3 decimals).",
+        "postWorkAvg": "Avg Post Work",
+        "postWorkInfo": "Average post-work time after the response completes — cycle minus response, clamped to ≥ 0 (3 decimals).",
+        "p95Sub": "p95 {value}"
+      },
+      "series": {
+        "avg": "Avg",
+        "p50": "p50",
+        "p95": "p95"
+      },
+      "charts": {
+        "agenticTrend": "Agentic Response (hourly)",
+        "logicalTrend": "Logical Response (hourly)",
+        "postWorkTrend": "Post Work (hourly)",
+        "volumeSeries": "Volume",
+        "secondsAxis": "Left axis: seconds (avg / p50 / p95). Right axis: this phase's sample volume per hour (local time)."
       }
     },
     "surveyDetails": {
