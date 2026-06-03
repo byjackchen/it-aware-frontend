@@ -10,13 +10,31 @@ interface SidebarSectionProps {
     t: (key: string) => string;
     isLight: boolean;
     checkMenuAccess: (permissions: MenuItem['permissions']) => boolean;
+    globalActiveHref: string | null;
 }
 
-export function SidebarSection({ labelKey, items, pathname, t, isLight, checkMenuAccess }: SidebarSectionProps) {
+export function SidebarSection({ labelKey, items, pathname, t, isLight, checkMenuAccess, globalActiveHref }: SidebarSectionProps) {
     const [isOpen, setIsOpen] = useState(true); // Open by default
     const authorizedItems = items.filter(item => checkMenuAccess(item.permissions));
 
     if (authorizedItems.length === 0) return null;
+
+    /**
+     * Use the global longest-prefix activeHref computed in Sidebar.tsx
+     * so that sibling sections can't "steal" the highlight via their own
+     * longest-prefix logic. When globalActiveHref is null the section falls
+     * back to its local longest-prefix rule.
+     */
+    const activeHref = globalActiveHref ?? (() => {
+        const matching = authorizedItems
+            .map((it) => it.href)
+            .filter(
+                (href) =>
+                    pathname === href || (href !== '/' && pathname.startsWith(href + '/')),
+            )
+        if (matching.length === 0) return null
+        return matching.reduce((a, b) => (b.length > a.length ? b : a))
+    })()
 
     return (
         <div className="space-y-1">
@@ -42,8 +60,7 @@ export function SidebarSection({ labelKey, items, pathname, t, isLight, checkMen
                 <div className="space-y-1 pl-2">
                     {authorizedItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href ||
-                            (item.href !== '/' && pathname.startsWith(item.href));
+                        const isActive = item.href === activeHref;
 
                         return (
                             <NavLink

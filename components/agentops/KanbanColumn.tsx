@@ -14,7 +14,7 @@ interface KanbanColumnProps {
 }
 
 const COLUMN_STYLES: Record<string, { border: string; badge: string; glow: string }> = {
-    backlog: {
+    open: {
         border: 'border-t-gray-400',
         badge: 'bg-gray-500/20 text-gray-400',
         glow: 'shadow-gray-500/20',
@@ -38,7 +38,7 @@ const COLUMN_STYLES: Record<string, { border: string; badge: string; glow: strin
 
 export function KanbanColumn({ status, label, tickets, onStatusChange, onCardClick }: KanbanColumnProps) {
     const { setNodeRef, isOver } = useDroppable({ id: status });
-    const styles = COLUMN_STYLES[status] || COLUMN_STYLES.backlog;
+    const styles = COLUMN_STYLES[status] || COLUMN_STYLES.open;
 
     return (
         <div

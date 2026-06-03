@@ -18,7 +18,7 @@ export function DeviceBlock({ scan }: { scan: IoaScanRead }) {
         <section>
             <div className="flex items-baseline justify-between mb-2">
                 <h2 className="text-lg font-semibold">Devices · Last 72 Hours</h2>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                     {scan.device_count ?? 0} machines · {scan.device_distinct_macs_count ?? 0} distinct MACs
                 </div>
             </div>
@@ -64,10 +64,10 @@ function DeviceCard({
                 <div className="font-mono text-sm">
                     {machine.machine_name}
                     {primary && (
-                        <span className="ml-2 text-xs uppercase text-blue-700">primary</span>
+                        <span className="ml-2 text-xs uppercase text-blue-700 dark:text-blue-300">primary</span>
                     )}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                     {machine.connections_in_window != null
                         ? `${machine.connections_in_window.toLocaleString()} conns in window`
                         : '—'}
@@ -143,7 +143,7 @@ function Field({
 }) {
     return (
         <div>
-            <div className="text-xs text-slate-500">{label}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
             <div className="font-mono break-all">{value || '—'}</div>
         </div>
     );

@@ -22,11 +22,12 @@ import {
     cancelCampaignNotificationBatchAction,
     createCampaignNotificationAction,
     deleteCampaignNotificationAction,
+    deleteCampaignNotificationBatchAction,
     triggerCampaignNotificationBatchAction,
     updateCampaignNotificationAction,
     updateCampaignNotificationBatchAction,
 } from '@/app/actions/campaigns';
-import { PaneQuickScrollButtons } from '@/components/campaign_shared';
+import { DeleteBatchModal, PaneQuickScrollButtons } from '@/components/campaign_shared';
 import { CampaignAccessGate } from './CampaignAccessGate';
 import { NotificationContentBlocksEditor } from './NotificationContentBlocksEditor';
 import { cloneContentBlocks, createEmptyBlock, getNotificationStatusClass, getNotificationStatusRowClass, summarizeContentBlocks } from './utils';
@@ -133,6 +134,9 @@ export function NotificationsModule() {
     const [detailsError, setDetailsError] = useState<string | null>(null);
 
     const [selectedNotificationOid, setSelectedNotificationOid] = useState<string | null>(null);
+
+    const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
+    const [deleteBatchError, setDeleteBatchError] = useState<string | null>(null);
 
     const [isObjectEditing, setIsObjectEditing] = useState(false);
     const [objectName, setObjectName] = useState('');
@@ -552,6 +556,23 @@ export function NotificationsModule() {
         });
     };
 
+    const handleDeleteBatch = () => {
+        if (!selectedNotificationBatchOid) return;
+        setDeleteBatchError(null);
+        startBatchActionTransition(async () => {
+            const result = await deleteCampaignNotificationBatchAction(selectedNotificationBatchOid);
+            if (!result.success) {
+                setDeleteBatchError(result.error);
+                return;
+            }
+
+            setIsDeleteBatchModalOpen(false);
+            setSelectedNotificationBatchDetail(null);
+            setQueryParam('notificationBatch', null);
+            await reloadNotifications();
+        });
+    };
+
     const openCreateRowEditor = () => {
         const sourceBlocks = details[0] ? cloneContentBlocks(details[0].content_blocks) : [createEmptyBlock('text')];
         setRowEditorMode('create');
@@ -885,6 +906,21 @@ export function NotificationsModule() {
                                                 >
                                                     {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                     <span>{t('details.actions.cancelBatch')}</span>
+                                                </button>
+                                            )}
+
+                                            {canWrite && selectedNotification.status !== 'running' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setDeleteBatchError(null);
+                                                        setIsDeleteBatchModalOpen(true);
+                                                    }}
+                                                    disabled={isBatchActionPending}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    <span>{t('details.actions.deleteBatch')}</span>
                                                 </button>
                                             )}
 
@@ -1298,6 +1334,22 @@ export function NotificationsModule() {
                     </section>
                 </div>
             </div>
+
+            <DeleteBatchModal
+                isOpen={isDeleteBatchModalOpen}
+                batchName={selectedNotification?.name ?? ''}
+                isPending={isBatchActionPending}
+                error={deleteBatchError}
+                onCancel={() => setIsDeleteBatchModalOpen(false)}
+                onConfirm={handleDeleteBatch}
+                labels={{
+                    title: t('details.deleteModal.title'),
+                    description: t('details.deleteModal.description', { name: selectedNotification?.name ?? '' }),
+                    typeToConfirm: t('details.deleteModal.typeToConfirm'),
+                    confirm: t('details.deleteModal.confirm'),
+                    cancel: t('details.deleteModal.cancel'),
+                }}
+            />
         </CampaignAccessGate>
     );
 }

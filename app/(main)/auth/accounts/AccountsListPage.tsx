@@ -7,26 +7,59 @@
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
 import { Plus, User, Check, X } from 'lucide-react';
-import type { Account, Worker, AccountWorker } from '@/lib/types/security';
+import type {
+    Account,
+    Worker,
+    AccountWorker,
+    AccountAgent,
+    AccountSystem,
+} from '@/lib/types/security';
+import type { Agent, System } from '@/lib/types/objects';
 
 interface AccountsListPageProps {
     accounts: Account[];
     workers: Worker[];
+    agents: Agent[];
+    systems: System[];
     accountWorkers: AccountWorker[];
+    accountAgents: AccountAgent[];
+    accountSystems: AccountSystem[];
 }
 
 export function AccountsListPage({
     accounts,
     workers,
+    agents,
+    systems,
     accountWorkers,
+    accountAgents,
+    accountSystems,
 }: AccountsListPageProps) {
     const t = useTranslations('Auth');
     const router = useTransitionRouter();
 
-    const getLinkedWorker = (accountOid: string): Worker | null => {
-        const link = accountWorkers.find((aw) => aw.account_oid === accountOid);
-        if (!link) return null;
-        return workers.find((w) => w.oid === link.worker_oid) || null;
+    // For a given account, return a display label for its linked entity
+    // (worker / agent / system depending on account_type), or null if unlinked.
+    const getLinkedLabel = (account: Account): string | null => {
+        if (account.account_type === 'user') {
+            const link = accountWorkers.find((aw) => aw.account_oid === account.oid);
+            if (!link) return null;
+            const w = workers.find((x) => x.oid === link.worker_oid);
+            return w ? w.fullname : null;
+        }
+        if (account.account_type === 'agent') {
+            const link = accountAgents.find((aa) => aa.account_oid === account.oid);
+            if (!link) return null;
+            const a = agents.find((x) => x.oid === link.agent_oid);
+            return a ? a.name : null;
+        }
+        if (account.account_type === 'system') {
+            const link = accountSystems.find((as) => as.account_oid === account.oid);
+            if (!link) return null;
+            const s = systems.find((x) => x.oid === link.system_oid);
+            return s ? s.name : null;
+        }
+        return null;
     };
 
     const handleRowClick = (account: Account) => {
@@ -69,12 +102,12 @@ export function AccountsListPage({
                                     <th className="px-4 py-3 font-medium">{t('accounts.username')}</th>
                                     <th className="px-4 py-3 font-medium">{t('accounts.type')}</th>
                                     <th className="px-4 py-3 font-medium">{t('accounts.status')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('accounts.linkedWorker')}</th>
+                                    <th className="px-4 py-3 font-medium">Linked</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {accounts.map((account) => {
-                                    const worker = getLinkedWorker(account.oid);
+                                    const linkedLabel = getLinkedLabel(account);
                                     return (
                                         <tr
                                             key={account.oid}
@@ -107,8 +140,8 @@ export function AccountsListPage({
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {worker ? (
-                                                    <span className="text-white">{worker.fullname}</span>
+                                                {linkedLabel ? (
+                                                    <span className="text-white">{linkedLabel}</span>
                                                 ) : (
                                                     <span className="text-gray-500">—</span>
                                                 )}

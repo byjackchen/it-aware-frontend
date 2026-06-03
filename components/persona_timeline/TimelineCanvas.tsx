@@ -40,8 +40,6 @@ function getHeatIntensity(bin: TimelineHeatBin, type: PersonaActivityEventType):
             return bin.incidentIntensity;
         case 'request':
             return bin.requestIntensity;
-        case 'inquiry':
-            return bin.inquiryIntensity;
         case 'interaction':
             return bin.interactionIntensity;
         case 'survey':
@@ -59,8 +57,6 @@ function getHeatCount(bin: TimelineHeatBin, type: PersonaActivityEventType): num
             return bin.incidentCount;
         case 'request':
             return bin.requestCount;
-        case 'inquiry':
-            return bin.inquiryCount;
         case 'interaction':
             return bin.interactionCount;
         case 'survey':
@@ -78,7 +74,6 @@ function buildHeatTitle(bin: TimelineHeatBin, timezone: string, t: (key: string,
         `${t('timeline.heatTooltip.total')}: ${bin.totalCount}`,
         `${t('timeline.heatTooltip.incident')}: ${bin.incidentCount}`,
         `${t('timeline.heatTooltip.request')}: ${bin.requestCount}`,
-        `${t('timeline.heatTooltip.inquiry')}: ${bin.inquiryCount}`,
         `${t('timeline.heatTooltip.interaction')}: ${bin.interactionCount}`,
         `${t('timeline.heatTooltip.survey')}: ${bin.surveyCount}`,
         `${t('timeline.heatTooltip.analysis')}: ${bin.analysisCount}`,

@@ -398,7 +398,7 @@ export async function linkAccountWorker(accountOid: string, workerOid: string) {
   }
 }
 
-export async function unlinkAccountWorker(accountOid: string) {
+export async function unlinkAccountWorker(accountOid: string, workerOid: string) {
   const requestId = logger.generateRequestId();
   const action = 'Security:unlinkAccountWorker';
   const startTime = Date.now();
@@ -406,7 +406,7 @@ export async function unlinkAccountWorker(accountOid: string) {
   logger.info(`Started`, { requestId, action });
 
   try {
-    await api.unlinkAccountWorker(accountOid);
+    await api.unlinkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
     revalidatePath('/auth/accounts');
@@ -415,6 +415,70 @@ export async function unlinkAccountWorker(accountOid: string) {
     const duration = Date.now() - startTime;
     logger.error(`Failed after ${duration}ms`, error, { requestId, action });
     return { error: error instanceof Error ? error.message : 'Failed to unlink worker' };
+  }
+}
+
+export async function linkAccountAgent(accountOid: string, agentOid: string) {
+  const requestId = logger.generateRequestId();
+  const action = 'Security:linkAccountAgent';
+  logger.info('Started', { requestId, action });
+  try {
+    await api.linkAccountAgent(accountOid, agentOid);
+    revalidatePath('/auth/accounts');
+    revalidatePath(`/auth/accounts/${accountOid}`);
+    logger.info('Success', { requestId, action });
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed', error, { requestId, action });
+    return { error: error instanceof Error ? error.message : 'Failed to link agent' };
+  }
+}
+
+export async function unlinkAccountAgent(accountOid: string, agentOid: string) {
+  const requestId = logger.generateRequestId();
+  const action = 'Security:unlinkAccountAgent';
+  logger.info('Started', { requestId, action });
+  try {
+    await api.unlinkAccountAgent(accountOid, agentOid);
+    revalidatePath('/auth/accounts');
+    revalidatePath(`/auth/accounts/${accountOid}`);
+    logger.info('Success', { requestId, action });
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed', error, { requestId, action });
+    return { error: error instanceof Error ? error.message : 'Failed to unlink agent' };
+  }
+}
+
+export async function linkAccountSystem(accountOid: string, systemOid: string) {
+  const requestId = logger.generateRequestId();
+  const action = 'Security:linkAccountSystem';
+  logger.info('Started', { requestId, action });
+  try {
+    await api.linkAccountSystem(accountOid, systemOid);
+    revalidatePath('/auth/accounts');
+    revalidatePath(`/auth/accounts/${accountOid}`);
+    logger.info('Success', { requestId, action });
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed', error, { requestId, action });
+    return { error: error instanceof Error ? error.message : 'Failed to link system' };
+  }
+}
+
+export async function unlinkAccountSystem(accountOid: string, systemOid: string) {
+  const requestId = logger.generateRequestId();
+  const action = 'Security:unlinkAccountSystem';
+  logger.info('Started', { requestId, action });
+  try {
+    await api.unlinkAccountSystem(accountOid, systemOid);
+    revalidatePath('/auth/accounts');
+    revalidatePath(`/auth/accounts/${accountOid}`);
+    logger.info('Success', { requestId, action });
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed', error, { requestId, action });
+    return { error: error instanceof Error ? error.message : 'Failed to unlink system' };
   }
 }
 

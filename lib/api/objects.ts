@@ -1,6 +1,6 @@
 /**
  * Server-side API client for Objects module (organizations, locations, workers, service catalogs, articles).
- * Also includes edges, activities (incidents/requests/inquiries/interactions), and worker-hierarchy-role APIs.
+ * Also includes edges, activities (incidents/requests/interactions), and worker-hierarchy-role APIs.
  */
 
 // cookies and redirect removed as they are now used in core.ts
@@ -38,11 +38,6 @@ import type {
     IncidentCreate,
     IncidentUpdate,
     IncidentSlaListResponse,
-    Inquiry,
-    InquiryListParams,
-    InquiryListResponse,
-    InquiryCreate,
-    InquiryUpdate,
     Request,
     RequestListParams,
     RequestListResponse,
@@ -55,19 +50,30 @@ import type {
     AgentCreate,
     AgentUpdate,
     AgentListResponse,
+    System,
+    SystemCreate,
+    SystemUpdate,
+    SystemListResponse,
     Ticket,
     TicketCreate,
     TicketUpdate,
     TicketListResponse,
-    TicketComment,
-    TicketCommentCreate,
-    TicketCommentListResponse,
+    ThreadMessage,
+    ThreadMessageCreate,
+    ThreadListResponse,
+    Run,
+    RunListResponse,
+    Prompt,
+    PromptCreate,
+    PromptUpdate,
+    PromptListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
 const OBJECTS_BASE = `${RUNTIME_CONFIG.backend.domain}/objects`;
 const EDGES_BASE = `${RUNTIME_CONFIG.backend.domain}/edges`;
 const AUTH_CONFIG_BASE = `${RUNTIME_CONFIG.backend.domain}/auth/config`;
+const DASHBOARDS_BASE = `${RUNTIME_CONFIG.backend.domain}/dashboards`;
 
 // ============================================================================
 // Core API Fetch Function
@@ -652,33 +658,6 @@ export async function getRequest(oid: string): Promise<Request> {
     return fetchApi<Request>(`${OBJECTS_BASE}/activities/requests/${encodeURIComponent(oid)}`);
 }
 
-export async function getInquiries(): Promise<Inquiry[]> {
-    return fetchAllPages<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`);
-}
-
-export async function getInquiriesPage(params: InquiryListParams = {}): Promise<InquiryListResponse> {
-    const queryParams = new URLSearchParams();
-    setOptionalQueryParam(queryParams, 'state', params.state);
-    setOptionalQueryParam(queryParams, 'actor_oid', params.actor_oid);
-    setOptionalQueryParam(queryParams, 'created_at_from', params.created_at_from);
-    setOptionalQueryParam(queryParams, 'created_at_to', params.created_at_to);
-    setOptionalQueryParam(queryParams, 'updated_at_from', params.updated_at_from);
-    setOptionalQueryParam(queryParams, 'updated_at_to', params.updated_at_to);
-    setOptionalQueryParam(queryParams, 'effective_at_from', params.effective_at_from);
-    setOptionalQueryParam(queryParams, 'effective_at_to', params.effective_at_to);
-    if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
-    if (params.limit !== undefined) queryParams.set('limit', String(params.limit));
-
-    const queryString = queryParams.toString();
-    const url = `${OBJECTS_BASE}/activities/inquiries${queryString ? `?${queryString}` : ''}`;
-    return fetchApi<InquiryListResponse>(url);
-}
-
-
-export async function getInquiry(oid: string): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`);
-}
-
 export async function getInteractions(params: InteractionListParams = {}): Promise<InteractionListResponse> {
     const queryParams = new URLSearchParams();
 
@@ -686,8 +665,6 @@ export async function getInteractions(params: InteractionListParams = {}): Promi
     if (params.stable_id_prefix) queryParams.set('stable_id_prefix', params.stable_id_prefix);
     if (params.actor_stable_id) queryParams.set('actor_stable_id', params.actor_stable_id);
     if (params.source_system) queryParams.set('source_system', params.source_system);
-    if (params.assignment_status !== undefined) queryParams.set('assignment_status', params.assignment_status);
-    if (params.assigned_inquiry_oid) queryParams.set('assigned_inquiry_oid', params.assigned_inquiry_oid);
     if (params.created_at_from) queryParams.set('created_at_from', params.created_at_from);
     if (params.created_at_to) queryParams.set('created_at_to', params.created_at_to);
     if (params.skip !== undefined) queryParams.set('skip', String(params.skip));
@@ -799,32 +776,6 @@ export async function deleteRequest(oid: string): Promise<void> {
     });
 }
 
-export async function createInquiry(data: InquiryCreate): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateInquiry(oid: string, data: InquiryUpdate): Promise<Inquiry> {
-    return fetchApi<Inquiry>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function deleteInquiry(oid: string): Promise<void> {
-    return fetchApi<void>(`${OBJECTS_BASE}/activities/inquiries/${encodeURIComponent(oid)}`, {
-        method: 'DELETE',
-    });
-}
-
 export async function deleteInteraction(oid: string): Promise<void> {
     return fetchApi<void>(`${OBJECTS_BASE}/activities/interactions/${encodeURIComponent(oid)}`, {
         method: 'DELETE',
@@ -837,7 +788,8 @@ export async function deleteInteraction(oid: string): Promise<void> {
 // ==================== Agents ====================
 
 export async function getAgents(): Promise<Agent[]> {
-    return fetchApi<Agent[]>(`${OBJECTS_BASE}/agents?limit=1000`);
+    const resp = await fetchApi<AgentListResponse>(`${OBJECTS_BASE}/agents?limit=1000`);
+    return resp.items;
 }
 
 export async function getAgentsPage(params: { skip?: number; limit?: number; is_active?: boolean; agent_platform?: string }): Promise<AgentListResponse> {
@@ -873,18 +825,58 @@ export async function deleteAgent(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agents/${oid}`, { method: 'DELETE' });
 }
 
+// ==================== Systems ====================
+
+export async function getSystems(): Promise<System[]> {
+    const resp = await fetchApi<SystemListResponse>(`${OBJECTS_BASE}/systems?limit=1000`);
+    return resp.items;
+}
+
+export async function getSystemsPage(params: { skip?: number; limit?: number; is_active?: boolean; system_platform?: string }): Promise<SystemListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
+    if (params.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params.system_platform) searchParams.set('system_platform', params.system_platform);
+    return fetchApi<SystemListResponse>(`${OBJECTS_BASE}/systems?${searchParams}`);
+}
+
+export async function getSystem(oid: string): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`);
+}
+
+export async function createSystem(data: SystemCreate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateSystem(oid: string, data: SystemUpdate): Promise<System> {
+    return fetchApi<System>(`${OBJECTS_BASE}/systems/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteSystem(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/systems/${oid}`, { method: 'DELETE' });
+}
+
 // ==================== Tickets ====================
 
 export async function getTickets(): Promise<Ticket[]> {
     return fetchApi<Ticket[]>(`${OBJECTS_BASE}/agentops/tickets?limit=1000`);
 }
 
-export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; flagged?: boolean; assignee_account_oid?: string }): Promise<TicketListResponse> {
+export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; tag?: string; assignee_account_oid?: string }): Promise<TicketListResponse> {
     const searchParams = new URLSearchParams();
     if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
     if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
     if (params.status) searchParams.set('status', params.status);
-    if (params.flagged !== undefined) searchParams.set('flagged', String(params.flagged));
+    if (params.tag) searchParams.set('tag', params.tag);
     if (params.assignee_account_oid) searchParams.set('assignee_account_oid', params.assignee_account_oid);
     return fetchApi<TicketListResponse>(`${OBJECTS_BASE}/agentops/tickets?${searchParams}`);
 }
@@ -921,31 +913,104 @@ export async function deleteTicket(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, { method: 'DELETE' });
 }
 
-// ==================== Ticket Comments ====================
+// ==================== Ticket Thread (conversation) ====================
+// v2: the ticket thread is read via /tickets/{oid}/thread and appended to via
+// the top-level /thread-messages endpoint. There is no delete endpoint —
+// threads are append-only (history is preserved).
 
-export async function getTicketComments(ticketOid: string, params?: { skip?: number; limit?: number }): Promise<TicketCommentListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    return fetchApi<TicketCommentListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments?${searchParams}`);
+export async function getTicketThread(ticketOid: string): Promise<ThreadListResponse> {
+    return fetchApi<ThreadListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/thread`);
 }
 
-export async function createTicketComment(ticketOid: string, data: TicketCommentCreate): Promise<TicketComment> {
-    return fetchApi<TicketComment>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments`, {
+export async function createThreadMessage(data: ThreadMessageCreate): Promise<ThreadMessage> {
+    return fetchApi<ThreadMessage>(`${OBJECTS_BASE}/agentops/thread-messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
 
-export async function deleteTicketComment(ticketOid: string, commentOid: string): Promise<void> {
-    await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/comments/${commentOid}`, { method: 'DELETE' });
+// Read-only list of thread messages across tickets (envelope shape). The
+// ticket-scoped thread is fetched via getTicketThread; this is the flat,
+// filterable list used by the AgentOps → Threads page.
+export async function getThreadMessages(params?: { ticket_oid?: string; kind?: string; skip?: number; limit?: number }): Promise<ThreadListResponse & { total?: number; skip?: number; limit?: number }> {
+    const searchParams = new URLSearchParams();
+    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
+    if (params?.kind) searchParams.set('kind', params.kind);
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<ThreadListResponse & { total?: number; skip?: number; limit?: number }>(`${OBJECTS_BASE}/agentops/thread-messages?${searchParams}`);
 }
 
-export async function getFAQMonthlyReport(startDate?: string, endDate?: string): Promise<import('@/lib/types/objects').InteractionFAQReport> {
+// ==================== Runs (agent dispatch executions, read-only) ====================
+
+export async function getRuns(params?: { agent_oid?: string; ticket_oid?: string; status?: string; skip?: number; limit?: number }): Promise<RunListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.agent_oid) searchParams.set('agent_oid', params.agent_oid);
+    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<RunListResponse>(`${OBJECTS_BASE}/agentops/runs?${searchParams}`);
+}
+
+// ==================== Prompts (role/persona prompt bundles) ====================
+
+export async function getPrompts(params?: { kind?: string; is_active?: boolean; skip?: number; limit?: number }): Promise<PromptListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.kind) searchParams.set('kind', params.kind);
+    if (params?.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
+    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
+    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
+    return fetchApi<PromptListResponse>(`${OBJECTS_BASE}/agentops/prompts?${searchParams}`);
+}
+
+export async function getPrompt(oid: string): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`);
+}
+
+export async function createPrompt(data: PromptCreate): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updatePrompt(oid: string, data: PromptUpdate): Promise<Prompt> {
+    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deletePrompt(oid: string): Promise<void> {
+    await fetchApi<void>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, { method: 'DELETE' });
+}
+
+// SSC analyst reports. Backend interprets start_date / end_date as
+// UTC days; frontend pages own any wall-clock TZ math. See
+// `docs/it_aware_merge_review.md` Appendix A rule #11.
+
+export async function getFAQMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+): Promise<import('@/lib/types/objects').InteractionFAQReport> {
     const params = new URLSearchParams();
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
     const qs = params.toString();
-    return fetchApi(`${OBJECTS_BASE}/activities/interactions/report/faq-monthly${qs ? `?${qs}` : ''}`);
+    return fetchApi(`${DASHBOARDS_BASE}/ssc/faq-monthly${qs ? `?${qs}` : ''}`);
+}
+
+export async function getIncidentMonthlyReport(
+    startDate?: string,
+    endDate?: string,
+): Promise<import('@/lib/types/objects').IncidentMonthlyReportData> {
+    const params = new URLSearchParams();
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+    const qs = params.toString();
+    return fetchApi(`${DASHBOARDS_BASE}/ssc/incident-monthly${qs ? `?${qs}` : ''}`);
 }

@@ -58,7 +58,7 @@ async function proxyRequest(
 
     const response = await fetch(upstreamUrl.toString(), fetchOptions);
 
-    if (method === 'DELETE' && response.status === 204) {
+    if (response.status === 204) {
         return new NextResponse(null, { status: 204 });
     }
 
@@ -70,8 +70,19 @@ async function proxyRequest(
         );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const text = await response.text();
+    if (!text) {
+        return new NextResponse(null, { status: response.status });
+    }
+    try {
+        const data = JSON.parse(text);
+        return NextResponse.json(data);
+    } catch {
+        return new NextResponse(text, {
+            status: response.status,
+            headers: { 'Content-Type': response.headers.get('content-type') || 'text/plain' },
+        });
+    }
 }
 
 export async function GET(

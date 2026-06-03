@@ -2,7 +2,7 @@
 
 import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench, Bot } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -91,9 +91,9 @@ export function TopBar() {
       ]),
     },
     {
-      href: '/operation-teams',
-      label: t('operationTeams'),
-      icon: Wrench,
+      href: '/chatbot',
+      label: t('chatbot'),
+      icon: Bot,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
@@ -104,6 +104,14 @@ export function TopBar() {
       icon: Headset,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_SSC,
+      ]),
+    },
+    {
+      href: '/operation-teams',
+      label: t('operationTeams'),
+      icon: Wrench,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
       ]),
     },
     {

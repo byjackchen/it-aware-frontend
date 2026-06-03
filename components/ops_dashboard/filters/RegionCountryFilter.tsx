@@ -129,10 +129,7 @@ export function RegionCountryFilter<T>({
         return [...union];
     }, [locationsByCountry, visibleCountries, selectedCountries]);
 
-    const hasAnyCountry = visibleCountries.length > 0;
-    const hasAnyLocation = visibleLocations.length > 0;
-
-    // ----- Cascade cleanup -----
+    // ----- Footer -----
     // When Region narrows, drop selected countries that no longer belong.
     useEffect(() => {
         if (selectedCountries.length === 0) return;
@@ -238,46 +235,42 @@ export function RegionCountryFilter<T>({
                 onChange={onRegionMultiChange}
             />
 
-            {/* Country dropdown — grouped by Region. Hidden when there's
-                no classifiable country in the dataset. */}
-            {hasAnyCountry && (
-                <div className="flex flex-col gap-1">
-                    <MultiSelect
-                        label={t('filters.country')}
-                        options={countryOptions}
-                        value={selectedCountries}
-                        onChange={onCountriesChange}
-                        searchable
-                        searchPlaceholder={countrySearchPlaceholder ?? t('filters.searchCountry')}
-                    />
-                    <span className={`text-[11px] ${subtleCls}`}>
-                        {t('filters.showingCountries', {
-                            count: visibleCountries.length,
-                            scope: regionsLabel(),
-                        })}
-                    </span>
-                </div>
-            )}
+            {/* Country dropdown — grouped by Region. Always render so
+                options are ready the moment data arrives. */}
+            <div className="flex flex-col gap-1">
+                <MultiSelect
+                    label={t('filters.country')}
+                    options={countryOptions}
+                    value={selectedCountries}
+                    onChange={onCountriesChange}
+                    searchable
+                    searchPlaceholder={countrySearchPlaceholder ?? t('filters.searchCountry')}
+                />
+                <span className={`text-[11px] ${subtleCls}`}>
+                    {t('filters.showingCountries', {
+                        count: visibleCountries.length,
+                        scope: regionsLabel(),
+                    })}
+                </span>
+            </div>
 
             {/* Location dropdown — grouped by Country. */}
-            {hasAnyLocation && (
-                <div className="flex flex-col gap-1">
-                    <MultiSelect
-                        label={t('filters.location')}
-                        options={locationOptions}
-                        value={selectedLocations}
-                        onChange={onLocationsChange}
-                        searchable
-                        searchPlaceholder={locationSearchPlaceholder ?? t('filters.searchLocation')}
-                    />
-                    <span className={`text-[11px] ${subtleCls}`}>
-                        {t('filters.showingLocations', {
-                            count: visibleLocations.length,
-                            scope: countriesLabel(),
-                        })}
-                    </span>
-                </div>
-            )}
+            <div className="flex flex-col gap-1">
+                <MultiSelect
+                    label={t('filters.location')}
+                    options={locationOptions}
+                    value={selectedLocations}
+                    onChange={onLocationsChange}
+                    searchable
+                    searchPlaceholder={locationSearchPlaceholder ?? t('filters.searchLocation')}
+                />
+                <span className={`text-[11px] ${subtleCls}`}>
+                    {t('filters.showingLocations', {
+                        count: visibleLocations.length,
+                        scope: countriesLabel(),
+                    })}
+                </span>
+            </div>
 
             {showClearButton && (
                 <div className="col-span-full flex">

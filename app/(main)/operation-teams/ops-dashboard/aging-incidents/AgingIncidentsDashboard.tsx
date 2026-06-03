@@ -15,7 +15,8 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
-import { ACTIVE_STATES, daysSinceUpdated, isActiveState } from '@/lib/ops_dashboard/aggregate';
+import { ACTIVE_STATES, daysSinceUpdated, isActiveState, isInScopeGroup, openedAt } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -28,6 +29,8 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const PAGE_SIZE = 100;
 
@@ -53,9 +56,7 @@ function openedByOf(row: TicketRow): string {
 }
 
 function formatShortDate(iso: string): string {
-    const t = Date.parse(iso);
-    if (!Number.isFinite(t)) return '—';
-    return new Date(t).toLocaleDateString();
+    return laDateLabel(iso);
 }
 
 export function AgingIncidentsDashboard() {
@@ -78,16 +79,33 @@ export function AgingIncidentsDashboard() {
     // no slicers live here anymore — Region/Country/Location filter
     // owns the only filter state (held in dedicated useStates below).
     const [filters, setFilters] = useState<FilterState>({});
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Base: active + aging > 2d.
+    // Base: active + aging > 2d + OIT scope.
+    // OIT-scope filter keeps this page's count aligned with the Active
+    // Monitoring Hub's "Aging >2d" KPI, which also scopes to OIT
+    // assignment groups. Without it non-OIT queues (Workday / SN_WD /
+    // etc.) inflate the Aging page by ~15 rows on the current snapshot.
     const base: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
-        return rows.filter((r) => isActiveState(r.state) && daysSinceUpdated(r, now) > 2);
+        return rows.filter((r) =>
+            isActiveState(r.state)
+            && isInScopeGroup(r.assigned_group)
+            && daysSinceUpdated(r, now) > 2,
+        );
     }, [data, now]);
 
     // No panel slicers — the Region/Country/Location filter lives in
@@ -118,7 +136,7 @@ export function AgingIncidentsDashboard() {
                 _daysNoUpdate: daysSinceUpdated(r, now),
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
-                _openedFormatted: formatShortDate(r.created_at),
+                _openedFormatted: formatShortDate(openedAt(r)),
                 _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now],
@@ -153,13 +171,16 @@ export function AgingIncidentsDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:aging-incidents:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             {/* Filter panel — Region/Country/Location only. Aging is

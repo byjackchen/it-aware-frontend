@@ -4,6 +4,8 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { MessageCircle, Loader2, Download, Filter, X, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
+import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
@@ -14,6 +16,7 @@ import {
     type Interaction,
     type InteractionListResponse,
     type ReviewCode,
+    type ServiceCatalog,
     type WorkerContext,
 } from '@/lib/types/objects';
 
@@ -22,7 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_80px_80px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -57,6 +60,8 @@ export function InteractionsPanel({
 }: InteractionsPanelProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
+    // Sourced from the user-profile preference (TopBar dropdown → cookie).
+    const { timezone } = useTimezone();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const alignedRef = useRef<HTMLDivElement | null>(null);
     const firstFocusedRef = useRef<HTMLDivElement | null>(null);
@@ -136,16 +141,60 @@ export function InteractionsPanel({
         return map;
     }, [workerMap]);
 
-    // Data loading — initial batch (first 500); later pages fetched on demand
+    // One-shot fetch of all service-catalog leaves so we can resolve
+    // {ai,review}_service_catalog_oid to a human-readable leaf name. The
+    // catalog is small (~460 active entries) so this loads once on mount.
+    // Uses the Next.js /api proxy directly (this file is a Client Component
+    // so importing the server-side @/lib/api/objects helper would pull
+    // next/headers into the client bundle and break the build).
+    const [catalogMap, setCatalogMap] = useState<Record<string, string>>({});
+    const [catalogEntries, setCatalogEntries] = useState<ServiceCatalog[]>([]);
+    const catalogByOid = useMemo<Record<string, ServiceCatalog | undefined>>(() => {
+        const idx: Record<string, ServiceCatalog | undefined> = {};
+        for (const e of catalogEntries) if (e.oid) idx[e.oid] = e;
+        return idx;
+    }, [catalogEntries]);
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(
+                    '/api/objects/service-catalogs?limit=1000&is_active=true',
+                    { credentials: 'include' },
+                );
+                if (!res.ok) return;
+                const payload = (await res.json()) as {
+                    items?: ServiceCatalog[];
+                };
+                if (cancelled) return;
+                const items = payload.items ?? [];
+                setCatalogEntries(items);
+                const next: Record<string, string> = {};
+                for (const e of items) {
+                    if (e.oid && e.name) next[e.oid] = e.name;
+                }
+                setCatalogMap(next);
+            } catch {
+                // Non-fatal: rows just show the OID instead of the name.
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Data loading — initial batch (first 500); later pages fetched on demand.
+    // TZ-aware 2026-05-11 — see Appendix A rule #11 in merge-review SOP.
     const query = useMemo(
         () => ({
             sort_by: 'created_at',
             order: 'desc' as const,
-            ...(dateFrom ? { created_at_from: dateFrom } : {}),
-            ...(dateTo ? { created_at_to: dateTo } : {}),
+            ...(dateFrom ? { created_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
+            ...(dateTo ? { created_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
             ...(workerFilter ? { actor_stable_id: workerFilter } : {}),
+            ...(selectedAiCodes.size > 0 ? { ai_code: [...selectedAiCodes].join(',') } : {}),
         }),
-        [dateFrom, dateTo, workerFilter],
+        [dateFrom, dateTo, workerFilter, timezone, selectedAiCodes],
     );
 
     const {
@@ -176,7 +225,7 @@ export function InteractionsPanel({
         }
         if (selectedAiCodes.size > 0) {
             items = items.filter(i => {
-                const code = i.ai_code ?? 'NA';
+                const code = i.review_code ?? i.ai_code ?? 'NA';
                 return selectedAiCodes.has(code as ReviewCode | 'NA');
             });
         }
@@ -241,9 +290,10 @@ export function InteractionsPanel({
                 sort_by: 'created_at',
                 order: 'desc',
             });
-            if (dateFrom) params.set('created_at_from', dateFrom);
-            if (dateTo) params.set('created_at_to', dateTo);
+            if (dateFrom) params.set('created_at_from', localDateTimeToIso(dateFrom, timezone));
+            if (dateTo) params.set('created_at_to', localDateTimeToIso(dateTo, timezone));
             if (workerFilter) params.set('actor_stable_id', workerFilter);
+            if (selectedAiCodes.size > 0) params.set('ai_code', [...selectedAiCodes].join(','));
 
             fetch(`/api/objects/interactions?${params.toString()}`, {
                 cache: 'no-store',
@@ -261,7 +311,7 @@ export function InteractionsPanel({
                     setIsPageLoading(false);
                 });
         },
-        [pageSize, dateFrom, dateTo, workerFilter],
+        [pageSize, dateFrom, dateTo, workerFilter, selectedAiCodes],
     );
 
     useEffect(() => {
@@ -339,11 +389,12 @@ export function InteractionsPanel({
             await downloadDashboardXlsx(
                 'interactions',
                 {
-                    created_at_from: dateFrom,
-                    created_at_to: dateTo,
+                    created_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
+                    created_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,
+                    ...(selectedAiCodes.size > 0 ? { ai_code: [...selectedAiCodes].join(',') } : {}),
                 },
-                `ssc_faq_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                `ssc_faq_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Download failed');
@@ -749,8 +800,10 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.department')}</div>
                 <div className={columnHeaderClass}>{t('headers.question')}</div>
                 <div className={columnHeaderClass}>{t('headers.faqReply')}</div>
-                <div className={columnHeaderClass}>{t('headers.ciAi')}</div>
-                <div className={columnHeaderClass}>{t('headers.ciReview')}</div>
+                <div className={columnHeaderClass}>{t('headers.catalogAi')}</div>
+                <div className={columnHeaderClass}>{t('headers.catalogReview')}</div>
+                <div className={columnHeaderClass}>{t('headers.typeAi')}</div>
+                <div className={columnHeaderClass}>{t('headers.typeReview')}</div>
                 <div className={columnHeaderClass}>{t('headers.helpful')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeAi')}</div>
                 <div className={columnHeaderClass}>{t('headers.codeReview')}</div>
@@ -817,6 +870,9 @@ export function InteractionsPanel({
                                     key={effective.oid}
                                     interaction={effective}
                                     worker={worker}
+                                    catalogMap={catalogMap}
+                                    catalogEntries={catalogEntries}
+                                    catalogByOid={catalogByOid}
                                     isAligned={isAligned}
                                     inWindow={inWindow}
                                     isFocused={isFocused}

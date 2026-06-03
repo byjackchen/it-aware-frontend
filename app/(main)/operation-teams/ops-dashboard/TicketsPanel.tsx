@@ -8,23 +8,26 @@
  * lives on the parent so the sidebar can drive it.
  */
 
-import { Activity, AlertTriangle, Boxes, Briefcase, Star } from 'lucide-react';
+import { Activity, AlertTriangle, AlertCircle, Boxes, Briefcase, Star, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
-import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
+import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
+// TrendLineCard dropped along with the monthly-opened trend card.
 import { RegionMap, type RegionBubble } from '@/components/ops_dashboard/RegionMap';
-import type { DeltaInfo, TrendPoint } from '@/lib/ops_dashboard/aggregate';
+import type { DeltaInfo, GroupCount, TrendPoint } from '@/lib/ops_dashboard/aggregate';
 
 const DONUT_PALETTE = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#94a3b8'];
 
 export interface TicketKpis {
     totalActive: number;
     activeIncident: number;
+    activeIncidentHigh: number;
     activeCatalog: number;
     activeAsset: number;
     vipActive: number;
+    unassigned: number;
     agingIncidentGt2d: number;
     agingCatalogGt30d: number;
     agingAssetGt30d: number;
@@ -41,6 +44,8 @@ export interface TicketKpiDeltas {
 export interface TicketsPanelProps {
     kpis: TicketKpis;
     groupDonut: Array<{ name: string; value: number }>;
+    /** Top-N assignee bar chart data — ranked by active ticket count. */
+    assigneeBar: GroupCount[];
     trend: TrendPoint[];
     trendMonths: number;
     regionData: RegionBubble[];
@@ -59,8 +64,13 @@ export interface TicketsPanelProps {
 export function TicketsPanel({
     kpis,
     groupDonut,
-    trend,
-    trendMonths,
+    assigneeBar,
+    // `trend` / `trendMonths` are still on the props contract for
+    // backwards-compat with OpsDashboardHub; the monthly-opened trend
+    // card was removed from the row, so we deliberately don't read
+    // these locally any more.
+    trend: _trend,
+    trendMonths: _trendMonths,
     regionData,
     loading,
     filteredCount,
@@ -99,68 +109,102 @@ export function TicketsPanel({
                 </span>
             </div>
 
-            {/* KPI row 1 */}
+            {/* KPI row 1 — Total + per-type breakdown (Incidents,
+                Catalog Tasks, Asset Tasks). Unassigned moved to row 2
+                per user request so it sits next to the other
+                "needs-attention" tiles. */}
             <div className="grid grid-cols-4 gap-2 mb-2">
                 <KpiCard
                     label={t('kpis.totalActive')}
                     value={kpis.totalActive}
                     icon={Activity}
-                    delta={deltaProp(kpiDeltas?.totalActive)}
-                />
+                
+                        tooltip={t('kpis.totalActiveInfo')}
+    />
                 <KpiCard
                     label={t('kpis.activeIncident')}
                     value={kpis.activeIncident}
                     icon={AlertTriangle}
-                    delta={deltaProp(kpiDeltas?.activeIncident)}
-                />
+                
+                        tooltip={t('kpis.activeIncidentInfo')}
+    />
                 <KpiCard
                     label={t('kpis.activeCatalog')}
                     value={kpis.activeCatalog}
                     icon={Briefcase}
-                    delta={deltaProp(kpiDeltas?.activeCatalog)}
-                />
+                
+                        tooltip={t('kpis.activeCatalogInfo')}
+    />
                 <KpiCard
                     label={t('kpis.activeAsset')}
                     value={kpis.activeAsset}
                     icon={Boxes}
-                    delta={deltaProp(kpiDeltas?.activeAsset)}
-                />
+                
+                        tooltip={t('kpis.activeAssetInfo')}
+    />
             </div>
-            {/* KPI row 2 — each tile drills into its dedicated dashboard via the right-side arrow. */}
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            {/* KPI row 2 — Unassigned (lead) + High Priority + VIP +
+                Aging tiles share one row. Each tile drills into its
+                dedicated dashboard via the right-side arrow. */}
+            <div className="grid grid-cols-6 gap-2 mb-3">
+                <KpiCard
+                    label={t('kpis.unassigned')}
+                    value={kpis.unassigned}
+                    icon={UserX}
+                    tooltip={t('kpis.unassignedInfo')}
+                    linkHref="/operation-teams/ops-dashboard/unassigned"
+                    linkLabel={t('links.openUnassigned')}
+                    valueColor={kpis.unassigned > 100 ? 'text-red-500' : kpis.unassigned > 0 ? 'text-yellow-500' : 'text-green-500'}
+                />
+                <KpiCard
+                    label={t('kpis.highPriorityIncident')}
+                    value={kpis.activeIncidentHigh}
+                    icon={AlertCircle}
+                    tooltip={t('kpis.highPriorityIncidentInfo')}
+                    valueColor={kpis.activeIncidentHigh > 0 ? 'text-red-500' : 'text-green-500'}
+                />
                 <KpiCard
                     label={t('kpis.vipActive')}
                     value={kpis.vipActive}
                     icon={Star}
-                    delta={deltaProp(kpiDeltas?.vipActive)}
                     linkHref="/operation-teams/ops-dashboard/vip-tickets"
                     linkLabel={t('links.openVipTickets')}
+                    tooltip={t('kpis.vipActiveInfo')}
+                    valueColor={kpis.vipActive > 0 ? 'text-red-500' : 'text-green-500'}
                 />
                 <KpiCard
                     label={t('kpis.agingIncidentsGt2d')}
                     value={kpis.agingIncidentGt2d}
                     linkHref="/operation-teams/ops-dashboard/aging-incidents"
                     linkLabel={t('links.openAgingIncidents')}
+                    tooltip={t('kpis.agingIncidentsGt2dInfo')}
+                    valueColor={kpis.agingIncidentGt2d > 0 ? 'text-yellow-500' : 'text-green-500'}
                 />
                 <KpiCard
                     label={t('kpis.agingCatalogGt30d')}
                     value={kpis.agingCatalogGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-sc-tasks"
                     linkLabel={t('links.openAgingCatalogTasks')}
+                    tooltip={t('kpis.agingCatalogGt30dInfo')}
+                    valueColor={kpis.agingCatalogGt30d > 0 ? 'text-yellow-500' : 'text-green-500'}
                 />
                 <KpiCard
                     label={t('kpis.agingAsset30d')}
                     value={kpis.agingAssetGt30d}
                     linkHref="/operation-teams/ops-dashboard/aging-asset-tasks"
                     linkLabel={t('links.openAgingAssetTasks')}
+                    tooltip={t('kpis.agingAsset30dInfo')}
+                    valueColor={kpis.agingAssetGt30d > 0 ? 'text-yellow-500' : 'text-green-500'}
                 />
             </div>
 
-            {/* Charts row */}
-            <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+            {/* Charts row — two cards share the row 50/50 after the
+                monthly-opened trend line was removed per user request. */}
+            <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 <DonutCard
                     title={t('charts.byAssignmentGroupTop8')}
                     subtitle={t('charts.byAssignmentGroupTop8Subtitle')}
+                    info={t('charts.byAssignmentGroupTop8Info')}
                     data={groupDonut}
                     palette={DONUT_PALETTE}
                     height={200}
@@ -169,18 +213,29 @@ export function TicketsPanel({
                     onLegendToggle={onGroupLegendToggle}
                     emptyText={emptyText}
                 />
-                <TrendLineCard
-                    title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
-                    data={trend}
-                    color="#3b82f6"
-                    height={200}
-                    emptyText={emptyText}
-                />
                 <RegionMap
                     title={t('charts.worldMap')}
                     subtitle={t('charts.worldMapSubtitle')}
+                    info={t('charts.worldMapInfo')}
                     data={regionData}
                     height={200}
+                />
+            </div>
+            {/* By Assignee — horizontal bar. Bar chart over donut because
+                assignee names are long (username / full-name) and the
+                count of assignees can easily exceed 8, which renders
+                a donut unreadable. Top 10 keeps it comparable at a
+                glance. */}
+            <div className="mt-3">
+                <GroupBarCard
+                    title={t('charts.byAssignee')}
+                    subtitle={t('charts.byAssigneeSubtitle')}
+                    info={t('charts.byAssigneeInfo')}
+                    data={assigneeBar}
+                    topN={10}
+                    height={260}
+                    color={DONUT_PALETTE}
+                    emptyText={emptyText}
                 />
             </div>
         </div>

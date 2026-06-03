@@ -31,6 +31,8 @@ export interface RegionMapProps {
     /** Optional title rendered above the map. */
     title?: string;
     subtitle?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
 }
 
 const RegionMapImpl = dynamic(() => import('./RegionMapImpl').then((m) => m.RegionMapImpl), {

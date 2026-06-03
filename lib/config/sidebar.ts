@@ -15,7 +15,7 @@ import {
     Layers,
     AlertCircle,
     ClipboardList,
-    MessageCircle,
+    Link2,
     MousePointerClick,
     Bell,
     BellRing,
@@ -28,6 +28,7 @@ import {
     BarChart3,
     BarChart2,
     Bot,
+    Cpu,
     TicketCheck,
     KanbanSquare,
     List,
@@ -37,6 +38,20 @@ import {
     PackageCheck,
     PackageOpen,
     Wrench,
+    DollarSign,
+    Bot as Chatbot,
+    LineChart,
+    MessageSquare,
+    Activity,
+    HelpCircle,
+    Headphones,
+    ClipboardSignature,
+    Search,
+    UserPlus,
+    UserX,
+    PlayCircle,
+    MessagesSquare,
+    History,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
@@ -152,6 +167,15 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         ]),
                     },
                     {
+                        href: '/data/systems',
+                        labelKey: 'systems',
+                        icon: Cpu,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                            PERMISSIONS.OBJECTS.SYSTEMS_READ,
+                        ]),
+                    },
+                    {
                         href: '/data/hardwares',
                         labelKey: 'hardwares',
                         icon: HardDrive,
@@ -204,15 +228,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.REQUESTS_READ,
-                        ]),
-                    },
-                    {
-                        href: '/data/inquiries',
-                        labelKey: 'inquiries',
-                        icon: MessageCircle,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.INQUIRIES_READ,
                         ]),
                     },
                     {
@@ -298,6 +313,38 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.OBJECTS.TICKETS_READ,
                         ]),
                     },
+                    {
+                        href: '/data/agentops/prompts',
+                        labelKey: 'prompts',
+                        icon: Sparkles,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/runs',
+                        labelKey: 'runs',
+                        icon: PlayCircle,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/threads',
+                        labelKey: 'threads',
+                        icon: MessagesSquare,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
+                    {
+                        href: '/data/agentops/activity',
+                        labelKey: 'activity',
+                        icon: History,
+                        permissions: requireAllPermissions([
+                            PERMISSIONS.UI.NAVIGATION_DATA,
+                        ]),
+                    },
                 ],
             },
         ],
@@ -375,6 +422,24 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     PERMISSIONS.OBJECTS.INTERACTIONS_READ,
                 ]),
             },
+            {
+                href: '/ssc-cockpit/incident-report',
+                labelKey: 'incidentReport',
+                icon: AlertCircle,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
+            {
+                href: '/ssc-cockpit/survey-lookup',
+                labelKey: 'surveyLookup',
+                icon: Link2,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_SSC,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
+                ]),
+            },
         ],
     },
     '/operation-teams': {
@@ -410,6 +475,22 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/operation-teams/ops-dashboard/vip-tickets',
                         labelKey: 'opsVipTickets',
                         icon: Crown,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/unassigned',
+                        labelKey: 'opsUnassigned',
+                        icon: UserX,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/operation-teams/ops-dashboard/on-off-boarding',
+                        labelKey: 'opsOnOffBoarding',
+                        icon: UserPlus,
                         permissions: requireAnyPermission([
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
@@ -472,6 +553,74 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                             PERMISSIONS.UI.NAVIGATION_OPERATION,
                         ]),
                     },
+                    {
+                        href: '/operation-teams/ops-dashboard/zero-residual-assets',
+                        labelKey: 'opsZeroResidualAssets',
+                        icon: DollarSign,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                ],
+            },
+        ],
+    },
+    '/chatbot': {
+        sections: [
+            {
+                labelKey: 'chatbotDashboard',
+                items: [
+                    {
+                        href: '/chatbot/dashboard/overview',
+                        labelKey: 'opsOhlaOverview',
+                        icon: LineChart,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/user-ask-analysis',
+                        labelKey: 'opsOhlaUserAsk',
+                        icon: HelpCircle,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/agent-support',
+                        labelKey: 'opsOhlaAgentSupport',
+                        icon: Headphones,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/survey-details',
+                        labelKey: 'opsOhlaSurveyDetails',
+                        icon: ClipboardSignature,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/other-case',
+                        labelKey: 'opsOhlaOtherCase',
+                        icon: Search,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    {
+                        href: '/chatbot/dashboard/latency-breakdown',
+                        labelKey: 'opsOhlaLatencyBreakdown',
+                        icon: Timer,
+                        permissions: requireAnyPermission([
+                            PERMISSIONS.UI.NAVIGATION_OPERATION,
+                        ]),
+                    },
+                    // Raw Data sub-page deleted as part of the Ohla Chatbot
+                    // dashboard perf overhaul — it was the only consumer that
+                    // required pulling the full 200k-row /interactions list.
                 ],
             },
         ],
@@ -500,6 +649,31 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 href: '/agent-ops/ticket-kanban',
                 labelKey: 'ticketKanban',
                 icon: KanbanSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                    PERMISSIONS.OBJECTS.TICKETS_READ,
+                ]),
+            },
+            {
+                href: '/agent-ops/channels',
+                labelKey: 'channels',
+                icon: MessageSquare,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
+            {
+                href: '/agent-ops/activity',
+                labelKey: 'activity',
+                icon: Activity,
+                permissions: requireAllPermissions([
+                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+                ]),
+            },
+            {
+                href: '/agent-ops/lineage',
+                labelKey: 'lineage',
+                icon: Network,
                 permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
                     PERMISSIONS.OBJECTS.TICKETS_READ,

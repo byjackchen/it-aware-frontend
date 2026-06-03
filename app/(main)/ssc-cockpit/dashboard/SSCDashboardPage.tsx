@@ -8,6 +8,8 @@ import { InteractionsPanel } from '@/components/ssc/InteractionsPanel';
 import { IncidentsPanel } from '@/components/ssc/IncidentsPanel';
 import { AlignmentStatusBar } from '@/components/ssc/AlignmentStatusBar';
 import type { WorkerContext, Incident, Interaction } from '@/lib/types/objects';
+import { formatLocalDateTime } from '@/lib/utils/datetime';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface SSCDashboardPageProps {
     initialWorkerMap: Record<string, WorkerContext>;
@@ -16,14 +18,22 @@ interface SSCDashboardPageProps {
 
 const ALIGN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
-function getDefaultDateFrom(): string {
+// TZ-aware defaults — the analyst's "today" is their local calendar day,
+// not the UTC day. Each value is the wall-clock string consumed by
+// `<input type="datetime-local">`: `YYYY-MM-DDTHH:MM:SS`. The dashboard
+// composes ISO-with-offset at submission time via `localDateTimeToIso`.
+function getDefaultDateFrom(timezone: string): string {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
+    // Start of the day 7 days ago in the analyst's calendar.
+    const dayPart = formatLocalDateTime(d, timezone).slice(0, 10);
+    return `${dayPart}T00:00:00`;
 }
 
-function getDefaultDateTo(): string {
-    return new Date().toISOString().slice(0, 10);
+function getDefaultDateTo(timezone: string): string {
+    // End of "today" in the analyst's calendar.
+    const dayPart = formatLocalDateTime(new Date(), timezone).slice(0, 10);
+    return `${dayPart}T23:59:59`;
 }
 
 /**
@@ -65,11 +75,19 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
     const workerMap = initialWorkerMap;
     const catalogMap = initialCatalogMap;
 
-    // Filter state
-    const [dateFrom, setDateFrom] = useState(getDefaultDateFrom);
-    const [dateTo, setDateTo] = useState(getDefaultDateTo);
-    const [appliedDateFrom, setAppliedDateFrom] = useState(getDefaultDateFrom);
-    const [appliedDateTo, setAppliedDateTo] = useState(getDefaultDateTo);
+    // Single source of timezone truth for this page. Sourced from the
+    // user's profile preference (set via the TopBar dropdown, persisted in
+    // the user-data cookie) so changing the TZ there dynamically updates
+    // every filter on the dashboard. Falls back to the browser-detected
+    // zone when the user hasn't picked one yet.
+    // See `docs/it_aware_merge_review.md` Appendix A rule #11.
+    const { timezone } = useTimezone();
+
+    // Filter state — computed in the analyst's local timezone
+    const [dateFrom, setDateFrom] = useState(() => getDefaultDateFrom(timezone));
+    const [dateTo, setDateTo] = useState(() => getDefaultDateTo(timezone));
+    const [appliedDateFrom, setAppliedDateFrom] = useState(() => getDefaultDateFrom(timezone));
+    const [appliedDateTo, setAppliedDateTo] = useState(() => getDefaultDateTo(timezone));
     const [workerFilter, setWorkerFilter] = useState('');
     const [appliedWorkerFilter, setAppliedWorkerFilter] = useState('');
 
@@ -81,8 +99,8 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
     const [alignedRowOid, setAlignedRowOid] = useState<string | null>(null);
 
     // Interactions panel date range — overridden during alignment
-    const [interactionDateFrom, setInteractionDateFrom] = useState(getDefaultDateFrom);
-    const [interactionDateTo, setInteractionDateTo] = useState(getDefaultDateTo);
+    const [interactionDateFrom, setInteractionDateFrom] = useState(() => getDefaultDateFrom(timezone));
+    const [interactionDateTo, setInteractionDateTo] = useState(() => getDefaultDateTo(timezone));
 
     // Track interactions loaded by InteractionsPanel for alignment search
     const [interactionsRef, setInteractionsRef] = useState<Interaction[]>([]);
@@ -142,20 +160,26 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
         }
 
         // Resolve incident worker oid → stable_id for filtering interactions
-        const incidentWorkerStableId = workerMap[incident.actor_oid]?.stable_id ?? null;
+        // Phase 3: actor_oid is null for external actors. Skip the workerMap
+        // lookup when there's no oid (the panel falls back to actor_stable_id).
+        const incidentWorkerStableId = incident.actor_oid
+            ? workerMap[incident.actor_oid]?.stable_id ?? null
+            : (incident.actor_stable_id ?? null);
 
-        // Narrow interactions panel to the 30-min window so it fetches the right data
-        const windowStartDate = new Date(windowStart).toISOString().slice(0, 10);
-        const windowEndDate = new Date(incidentTs + 86400000).toISOString().slice(0, 10);
-        setInteractionDateFrom(windowStartDate);
-        setInteractionDateTo(windowEndDate);
+        // Narrow interactions panel to the 30-min window so it fetches the right data.
+        // Datetime-local strings (no offset) sit on the page state; the panel adds
+        // the offset back at submission via `localDateTimeToIso`.
+        const startLocal = formatLocalDateTime(new Date(windowStart), timezone);
+        const endLocal = formatLocalDateTime(new Date(incidentTs + 30 * 60 * 1000), timezone);
+        setInteractionDateFrom(startLocal);
+        setInteractionDateTo(endLocal);
 
         setAlignedIncidentOid(incident.oid);
         setAlignedIncidentStableId(incident.stable_id ?? incident.oid);
         setAlignedWorkerStableId(incidentWorkerStableId);
         setHighlightWindow({ start: windowStart, end: incidentTs });
         setAlignedRowOid(null);
-    }, [alignedIncidentOid, appliedDateFrom, appliedDateTo, workerMap]);
+    }, [alignedIncidentOid, appliedDateFrom, appliedDateTo, workerMap, timezone]);
 
     const handleClearAlignment = useCallback(() => {
         setAlignedIncidentOid(null);
@@ -193,6 +217,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                     dateFrom={dateFrom}
                     dateTo={dateTo}
                     workerFilter={workerFilter}
+                    timezone={timezone}
                     onDateFromChange={setDateFrom}
                     onDateToChange={setDateTo}
                     onWorkerFilterChange={setWorkerFilter}

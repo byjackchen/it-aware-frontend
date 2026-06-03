@@ -64,12 +64,11 @@ export const SCENARIO_AXIS_GAP = 8;
 export const SCENARIO_COLOR = '#06b6d4';
 export const SCENARIO_LINK_DASH = '4 3';
 
-export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'inquiry', 'interaction', 'survey', 'analysis'];
+export const TIMELINE_TYPES: PersonaActivityEventType[] = ['incident', 'request', 'interaction', 'survey', 'analysis'];
 
 export const EVENT_COLORS: Record<PersonaActivityEventType, string> = {
     incident: '#ef4444',
     request: '#f97316',
-    inquiry: '#a855f7',
     interaction: '#2563eb',
     survey: '#10b981',
     analysis: '#ec4899',

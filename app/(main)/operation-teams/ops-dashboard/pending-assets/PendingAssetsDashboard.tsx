@@ -12,22 +12,41 @@
  * query params.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { PackageOpen, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useHardwares } from '@/lib/hooks/useOpsDashboard';
 import type { HardwareRow } from '@/lib/api/ops_dashboard';
 import {
+    groupBy,
     inferDeviceType,
+    isInScopeAsset,
     isPendingRepair,
     isPendingReturn,
     isUnconfirmed,
 } from '@/lib/ops_dashboard/aggregate';
+import { countryToRegion, extractCountry, normalizeRegion } from '@/lib/ops_dashboard/region';
 import { DataTable, type ColDef } from '@/components/ops_dashboard/DataTable';
+import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
-const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 const PAGE_SIZE = 100;
+
+function supportGroupOf(row: HardwareRow): string {
+    const r =
+        normalizeRegion(row.office_region) ??
+        normalizeRegion(row.region) ??
+        normalizeRegion(row.region_code) ??
+        normalizeRegion(row.location) ??
+        countryToRegion(extractCountry(row.location)) ??
+        countryToRegion(row.stock_room);
+    return r ? `${r} OIT Support` : 'Unassigned';
+}
+function procuredByOf(row: HardwareRow): string {
+    return row.asset_owner?.trim() || 'Unknown';
+}
 
 type Tab = 'unconfirmed' | 'pending_return' | 'pending_repair';
 
@@ -58,8 +77,21 @@ function residualAsNumber(v: string | number | null): number {
     return Number.isFinite(n) ? n : 0;
 }
 
-function ageMonths(createdAt: string, now: number = Date.now()): number {
-    const t = Date.parse(createdAt);
+/**
+ * Approximate hardware age in months from the asset's true
+ * procurement/creation timestamp.
+ *
+ * Source priority:
+ *   1. erp_created_date  — SN/ERP-side asset record creation
+ *   2. first_assigned_date — first time it was given to a user
+ *   3. created_at        — our DB sync time (almost always recent;
+ *                          previous implementation used this alone
+ *                          and every asset looked < 1 month old)
+ */
+function ageMonths(row: HardwareRow, now: number = Date.now()): number {
+    const candidate = row.erp_created_date ?? row.first_assigned_date ?? row.created_at;
+    if (!candidate) return 0;
+    const t = Date.parse(candidate);
     if (!Number.isFinite(t)) return 0;
     const diffMs = now - t;
     if (diffMs <= 0) return 0;
@@ -96,24 +128,110 @@ export function PendingAssetsDashboard() {
     const [now] = useState<number>(() => Date.now());
 
     const base = useMemo(
-        () => rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category)),
+        () => rows.filter(isInScopeAsset),
         [rows],
     );
 
-    const tabCounts = useMemo(
+    // Support Group / Procured By / Department — shared across every
+    // asset-oriented dashboard via useOpsAssetFilter.
+    const {
+        filter: assetFilter,
+        setSupportGroups,
+        setProcuredBy,
+        setDepartments,
+    } = useOpsAssetFilter();
+    const [filters, setFilters] = useState<FilterState>({});
+    const filterStateForBar: FilterState = useMemo(
         () => ({
-            unconfirmed: base.filter(isUnconfirmed).length,
-            pending_return: base.filter(isPendingReturn).length,
-            pending_repair: base.filter(isPendingRepair).length,
+            ...filters,
+            support_group: assetFilter.supportGroups,
+            procured_by: assetFilter.procuredBy,
+            department: assetFilter.departments,
         }),
-        [base],
+        [filters, assetFilter],
+    );
+    const onFilterStateChange = useCallback(
+        (next: FilterState) => {
+            const supportGroups = (next.support_group as string[]) ?? [];
+            const procuredBy = (next.procured_by as string[]) ?? [];
+            const departments = (next.department as string[]) ?? [];
+            if (JSON.stringify(supportGroups) !== JSON.stringify(assetFilter.supportGroups)) {
+                setSupportGroups(supportGroups);
+            }
+            if (JSON.stringify(procuredBy) !== JSON.stringify(assetFilter.procuredBy)) {
+                setProcuredBy(procuredBy);
+            }
+            if (JSON.stringify(departments) !== JSON.stringify(assetFilter.departments)) {
+                setDepartments(departments);
+            }
+            const localOnly: FilterState = { ...next };
+            delete localOnly.support_group;
+            delete localOnly.procured_by;
+            delete localOnly.department;
+            setFilters(localOnly);
+            setPage({ skip: 0, limit: PAGE_SIZE });
+        },
+        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
     );
 
-    const filtered = useMemo(() => base.filter(tabPredicate(tab)), [base, tab]);
+    const slicers: SlicerConfig[] = useMemo(() => {
+        const supportGroups = groupBy(base, supportGroupOf).map((g) => g.key);
+        const procured = groupBy(base, procuredByOf).map((g) => g.key);
+        const departments = groupBy(base, (r) => r.department ?? 'Unknown').map((g) => g.key);
+        return [
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
+        ];
+    }, [base, t]);
+
+    // Shared-filter narrowed set — used by tab counts and the table
+    // alike so switching Support Group narrows both the badges and
+    // the rows below in lockstep.
+    const scoped = useMemo(() => {
+        const supportSel = assetFilter.supportGroups;
+        const procuredSel = assetFilter.procuredBy;
+        const deptSel = assetFilter.departments;
+        return base.filter((r) => {
+            if (supportSel.length && !supportSel.includes(supportGroupOf(r))) return false;
+            if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
+            if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
+            return true;
+        });
+    }, [base, assetFilter]);
+
+    const tabCounts = useMemo(
+        () => ({
+            unconfirmed: scoped.filter(isUnconfirmed).length,
+            pending_return: scoped.filter(isPendingReturn).length,
+            pending_repair: scoped.filter(isPendingRepair).length,
+        }),
+        [scoped],
+    );
+
+    const filtered = useMemo(() => scoped.filter(tabPredicate(tab)), [scoped, tab]);
 
     const enriched: TableRow[] = useMemo(() => {
         return filtered.map((r) => {
-            const months = ageMonths(r.created_at, now);
+            const months = ageMonths(r, now);
             const enrichedRow: TableRow = {
                 ...r,
                 _residualNumber: residualAsNumber(r.residual_value),
@@ -201,14 +319,28 @@ export function PendingAssetsDashboard() {
                         <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.pendingSubtitle')}</p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:pending-assets:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
+
+            {/* Shared asset filter bar */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filterStateForBar}
+                onChange={onFilterStateChange}
+                storageKey="ops-dashboard:pending-assets:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
 
             {/* Tabs */}
             <div className="flex items-center gap-3 mb-3 shrink-0">
@@ -262,6 +394,8 @@ export function PendingAssetsDashboard() {
                     emptyText={t('empty.noData')}
                     loadingText={t('empty.loading')}
                     partialText={t('empty.partialResult')}
+                    csvFilename="pending_assets"
+                    csvRows={enriched}
                 />
             </div>
         </div>

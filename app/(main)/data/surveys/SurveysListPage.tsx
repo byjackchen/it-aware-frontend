@@ -323,7 +323,8 @@ export function SurveysListPage() {
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
                             {filteredSurveys.map((survey) => {
                                 const statusStyle = STATUS_COLORS[survey.status] || STATUS_COLORS.created;
-                                const geo = workerGeoMap.get(survey.receiver_oid);
+                                // receiver_oid is null for externally-sourced surveys (external_source !== null).
+                                const geo = survey.receiver_oid ? workerGeoMap.get(survey.receiver_oid) : undefined;
                                 const locationLabel = geo?.location ?? '—';
                                 const submittedLabel = survey.submitted_at
                                     ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}`
@@ -340,11 +341,32 @@ export function SurveysListPage() {
                                             </div>
                                             <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {submittedLabel} · {locationLabel}
+                                                {survey.external_id && (
+                                                    <> · <span className="font-mono">{survey.external_id}</span></>
+                                                )}
                                             </div>
                                         </div>
-                                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                                            {survey.status}
-                                        </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {survey.external_source === 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-500"
+                                                    title="Imported from ServiceNow"
+                                                >
+                                                    SN
+                                                </span>
+                                            )}
+                                            {survey.external_source && survey.external_source !== 'servicenow' && (
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full bg-slate-500/20 text-slate-500"
+                                                    title={`External source: ${survey.external_source}`}
+                                                >
+                                                    {survey.external_source}
+                                                </span>
+                                            )}
+                                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
+                                                {survey.status}
+                                            </span>
+                                        </div>
                                     </button>
                                 );
                             })}

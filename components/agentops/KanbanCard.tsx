@@ -2,7 +2,6 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Flag } from 'lucide-react';
 import { AgentStatusIndicator } from './AgentStatusIndicator';
 import type { Ticket } from '@/lib/types/objects';
 
@@ -47,8 +46,7 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                     : 'bg-[var(--card-bg)] border-[var(--card-border)] hover:border-[var(--accent-color)]/50 hover:shadow-lg hover:shadow-black/10'
                 }
                 transition-all duration-200 ease-out
-                ${ticket.agent_status === 'running' ? 'ring-2 ring-blue-400/60 animate-pulse' : ''}
-                ${ticket.agent_status === 'error' ? 'ring-2 ring-red-400/60' : ''}
+                ${ticket.has_active_run ? 'ring-2 ring-blue-400/60 animate-pulse' : ''}
             `}
         >
             <div className="flex items-start justify-between gap-2">
@@ -59,12 +57,11 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                     {ticket.title}
                 </button>
                 <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    {ticket.flagged && <Flag className="w-3 h-3 text-orange-500 fill-orange-500" />}
-                    <AgentStatusIndicator agentStatus={ticket.agent_status} />
+                    <AgentStatusIndicator agentStatus={ticket.has_active_run ? 'running' : 'idle'} />
                 </div>
             </div>
 
-            {ticket.tags && ticket.tags.length > 0 && (
+            {ticket.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
                     {ticket.tags.map(tag => (
                         <span key={tag} className="px-1.5 py-0.5 text-[10px] font-medium rounded-md
@@ -89,10 +86,11 @@ export function KanbanCard({ ticket, onStatusChange, onClick, isOverlay }: Kanba
                         className="text-[10px] bg-transparent border border-[var(--card-border)] rounded-md px-1.5 py-0.5
                             hover:border-[var(--accent-color)]/50 transition-colors cursor-pointer"
                     >
-                        <option value="backlog">Backlog</option>
+                        <option value="open">Open</option>
                         <option value="in_progress">In Progress</option>
                         <option value="blocked">Blocked</option>
                         <option value="done">Done</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
                 )}
             </div>

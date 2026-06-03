@@ -632,8 +632,34 @@ export function getIncidentCategoryLabel(cat: IncidentCategory | string, locale:
 }
 
 // ============================================================================
-// Activity Types (Incidents, Requests, Inquiries, Interactions)
+// Activity Types (Incidents, Requests, Interactions)
 // ============================================================================
+
+// QA Scoring types
+export interface QAScoreItem {
+    score: number;
+    reason: string;
+}
+
+export interface QACategoryScore {
+    score: number;
+    max: number;
+    [key: string]: number | QAScoreItem;
+}
+
+export interface QAScoreDetail {
+    total_score: number;
+    ticket_management: QACategoryScore;
+    policies_procedures: QACategoryScore;
+    problem_determination: QACategoryScore;
+    soft_skills: QACategoryScore;
+}
+
+// Phase 3 typed actor: an incident/request actor is one of these four
+// kinds. 'worker' is the historical default; 'system' / 'agent' point
+// at objects.systems / objects.agents respectively; 'external' has no
+// oid (only actor_stable_id).
+export type ActorType = 'worker' | 'system' | 'agent' | 'external';
 
 export interface Incident {
     oid: string;
@@ -653,7 +679,10 @@ export interface Incident {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -661,6 +690,9 @@ export interface Incident {
     fact_embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     assigned_group: string | null;
     chat_transcripts: Record<string, unknown> | null;
@@ -694,6 +726,11 @@ export interface Incident {
     ai_category_at?: string | null;
     // Human review override of ai_category
     review_category?: string | null;
+
+    // QA Scoring — populated by score_incidents_qa DAG
+    qa_score?: number | null;
+    qa_score_detail?: QAScoreDetail | null;
+    qa_scored_at?: string | null;
 
     // ---------------------------------------------------------------------
     // Phase 2 — ServiceNow authoritative fields.
@@ -775,7 +812,10 @@ export interface Request {
     channel: string | null;
 
     // Relationships
-    actor_oid: string;
+    // Phase 3 typed actor: actor_oid is nullable (external actors have none).
+    actor_oid: string | null;
+    actor_type: ActorType;
+    actor_stable_id: string | null;
     actor_role: string;
     fact: string | null;
     source_system: string | null;
@@ -783,6 +823,9 @@ export interface Request {
     fact_embedded_at: string | null;
     assigned_to_oid: string | null;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     assigned_group: string | null;
     chat_transcripts: Record<string, unknown> | null;
@@ -887,7 +930,10 @@ export interface IncidentSlaListResponse {
 
 export interface IncidentCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -902,6 +948,9 @@ export interface IncidentCreate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -914,7 +963,10 @@ export interface IncidentCreate {
 
 export interface RequestCreate {
     stable_id?: string | null;
-    actor_oid: string;
+    // Phase 3 typed actor (defaults to 'worker' server-side).
+    actor_type?: ActorType;
+    actor_oid?: string | null;
+    actor_stable_id?: string | null;
     actor_role?: string | null;
     title: string;
     description?: string | null;
@@ -932,6 +984,9 @@ export interface RequestCreate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -990,65 +1045,6 @@ export interface RequestListParams {
     limit?: number;
 }
 
-export interface Inquiry {
-    oid: string;
-    object_type: 'inquiry';
-    topic: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: any[] | null;
-    state: string;
-
-    // Relationships
-    actor_oid: string;
-    actor_role: string;
-    fact: string | null;
-    source_system?: string | null;
-    fact_embedding_id: string | null;
-    fact_embedded_at: string | null;
-    service_catalog_oid: string | null;
-    configuration_item_oid: string | null;
-
-    created_at: string;
-    updated_at: string;
-    effective_at: string;
-}
-
-export interface InquiryCreate {
-    actor_oid: string;
-    actor_role?: string | null;
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
-export interface InquiryListResponse {
-    items: Inquiry[];
-    total: number;
-    skip: number;
-    limit: number;
-}
-
-export interface InquiryListParams {
-    state?: string;
-    actor_oid?: string;
-    created_at_from?: string;
-    created_at_to?: string;
-    updated_at_from?: string;
-    updated_at_to?: string;
-    effective_at_from?: string;
-    effective_at_to?: string;
-    skip?: number;
-    limit?: number;
-}
-
-
 export interface IncidentUpdate {
     title: string;
     stable_id?: string | null;
@@ -1064,6 +1060,9 @@ export interface IncidentUpdate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -1098,6 +1097,9 @@ export interface RequestUpdate {
     channel?: string | null;
     assigned_to_oid?: string | null;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
     assigned_group?: string | null;
     chat_transcripts?: Record<string, unknown> | null;
@@ -1109,22 +1111,7 @@ export interface RequestUpdate {
     effective_at?: string;
 }
 
-export interface InquiryUpdate {
-    topic?: string | null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages?: any[] | null;
-    service_catalog_oid?: string | null;
-    configuration_item_oid?: string | null;
-    fact?: string | null;
-    source_system?: string | null;
-    state?: string;
-    created_at?: string;
-    updated_at?: string;
-    effective_at?: string;
-}
-
 export type InteractionActionType = 'enter' | 'click' | 'send_msg';
-export type InteractionAssignmentStatus = 'assigned' | 'deferred' | null;
 export type InteractionSortBy = 'created_at' | 'ingested_at' | 'updated_at';
 export type InteractionOrder = 'asc' | 'desc';
 
@@ -1139,22 +1126,30 @@ export interface Interaction {
     content_raw: Record<string, unknown> | null;
     response_text: string | null;
     response_raw: Record<string, unknown> | null;
-    assignment_status: InteractionAssignmentStatus;
-    assigned_inquiry_oid: string | null;
-    assignment_updated_at: string | null;
-    assignment_log: Record<string, unknown> | null;
     created_at: string;
     ingested_at: string;
     updated_at: string;
 
-    // SSC dashboard — AI-derived (populated by digest_interactions DAG; nullable until then)
-    ai_ci?: string | null;
+    // SSC dashboard — AI-derived defaults (populated by digest_interactions DAG; nullable until then).
+    // Service catalog / type follow the project's default+_override naming:
+    //   service_catalog_oid       — L3 leaf under IT Services (ITSC0000)
+    //   service_type_oid          — one of the ITST leaves (Enquiry/Faulty/Requirement)
+    // Effective value at render: COALESCE(<override>_oid, <default>_oid).
     ai_code?: ReviewCode | null;
+    service_catalog_oid?: string | null;
+    service_type_oid?: string | null;
     helpful_score?: number | null;
 
+    // Chatbot per-cycle latency (single-chats event_tracking timing); the full
+    // event_tracking trace is retained inside content_raw.record.flow_states.
+    react_seconds?: number | null;
+    response_seconds?: number | null;
+    cycle_seconds?: number | null;
+
     // SSC dashboard — human review (edited via PATCH /review)
-    review_ci?: string | null;
     review_code?: ReviewCode | null;
+    service_catalog_override_oid?: string | null;
+    service_type_override_oid?: string | null;
     review_needs_optimization?: boolean | null;
     review_optimization_notes?: string | null;
     review_completed_at?: string | null;
@@ -1166,8 +1161,6 @@ export interface InteractionListParams {
     stable_id_prefix?: string;
     actor_stable_id?: string;
     source_system?: string;
-    assignment_status?: 'assigned' | 'deferred' | 'null';
-    assigned_inquiry_oid?: string;
     created_at_from?: string;
     created_at_to?: string;
     skip?: number;
@@ -1439,7 +1432,20 @@ export interface Survey {
     oid: string;
     survey_batch_oid: string;
     receiver_stable_id: string;
-    receiver_oid: string;
+    /**
+     * `null` when `external_source` is non-null — externally-sourced surveys
+     * may carry a respondent who is not a known Worker. For native surveys
+     * (external_source === null) this is always a valid Worker OID.
+     */
+    receiver_oid: string | null;
+    /** Provenance marker for surveys imported from outside it-aware (e.g. "feishu-forms", "servicenow"). */
+    external_source: string | null;
+    /** Upstream record id when external_source is set (e.g. "AINST0137544" for a ServiceNow ASMT instance). */
+    external_id: string | null;
+    /** Typed pointer label, paired with context_oid (e.g. "incident", "request"). */
+    context_type: string | null;
+    /** 22-char ULID of the linked object, paired with context_type. */
+    context_oid: string | null;
     survey_questions: SurveyQuestions;
     survey_answer: SurveyAnswerPayload | null;
     status: SurveyStatus;
@@ -1451,12 +1457,18 @@ export interface Survey {
 export interface SurveyCreate {
     receiver_stable_id: string;
     receiver_oid?: string | null;
+    external_source?: string | null;
+    external_id?: string | null;
+    context_type?: string | null;
+    context_oid?: string | null;
     survey_questions: SurveyQuestions;
 }
 
 export interface SurveyUpdate {
     receiver_oid?: string | null;
     survey_questions?: SurveyQuestions;
+    context_type?: string | null;
+    context_oid?: string | null;
 }
 
 export interface SurveySubmitActionRequest {
@@ -1473,6 +1485,10 @@ export type SurveyActionRequest = SurveySubmitActionRequest | SurveyRevokeAction
 export interface SurveyListParams {
     status?: SurveyStatus;
     receiver_stable_id?: string;
+    external_source?: string;
+    context_type?: string;
+    context_oid?: string;
+    external_id?: string;
     submitted_at_from?: string;
     submitted_at_to?: string;
     skip?: number;
@@ -1491,6 +1507,10 @@ export interface CrossBatchSurveyListParams {
     survey_status?: SurveyStatus;
     survey_batch_status?: SurveyBatchStatus;
     survey_batch_oid?: string;
+    external_source?: string;
+    context_type?: string;
+    context_oid?: string;
+    external_id?: string;
     skip?: number;
     limit?: number;
 }
@@ -1517,6 +1537,9 @@ export interface Analysis {
     semantic: AnalysisSemantic;
     intent: AnalysisIntent;
     service_catalog_oid: string | null;
+    service_catalog_override_oid: string | null;
+    service_type_oid: string | null;
+    service_type_override_oid: string | null;
     configuration_item_oid: string | null;
     created_at: string;
     updated_at: string;
@@ -1535,6 +1558,9 @@ export interface AnalysisCreate {
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
 }
 
@@ -1544,6 +1570,9 @@ export interface AnalysisUpdate {
     semantic?: AnalysisSemantic;
     intent?: AnalysisIntent;
     service_catalog_oid?: string | null;
+    service_catalog_override_oid?: string | null;
+    service_type_oid?: string | null;
+    service_type_override_oid?: string | null;
     configuration_item_oid?: string | null;
 }
 
@@ -1701,9 +1730,8 @@ export interface Agent {
     agent_admin_key: string | null;
     agent_platform: string;
     contact_worker_oid: string;
-    account_oid: string | null;
     description: string | null;
-    agent_workspace_id: string | null;
+    prompt_oids: string[];   // attached role/persona prompts (injected via the agent API)
     is_active: boolean;
     created_at: string;
     updated_at: string;
@@ -1716,20 +1744,19 @@ export interface AgentCreate {
     agent_admin_key?: string;
     agent_platform: string;
     contact_worker_oid: string;
-    account_oid?: string;
     description?: string;
-    agent_workspace_id?: string;
+    prompt_oids?: string[];
 }
 
 export interface AgentUpdate {
     name?: string;
+    agent_id?: string;
     agent_key?: string;
     agent_admin_key?: string;
     agent_platform?: string;
     contact_worker_oid?: string;
-    account_oid?: string;
     description?: string;
-    agent_workspace_id?: string;
+    prompt_oids?: string[];
     is_active?: boolean;
 }
 
@@ -1740,36 +1767,146 @@ export interface AgentListResponse {
     limit: number;
 }
 
-// ==================== Ticket ====================
+// ==================== Prompt ====================
+// A Prompt is a reusable role/persona instruction bundle. Agents are generic;
+// their behaviour comes from the prompts attached to them (agent.prompt_oids),
+// which the dispatcher prepends as a role preamble to the first message of each
+// agent conversation (background_knowledge is reserved for the handoff packet).
+// A "skill" is just one `kind` of prompt.
 
-export interface Ticket {
+export interface Prompt {
     oid: string;
-    title: string;
+    name: string;
+    display_name: string | null;
     description: string | null;
-    status: 'backlog' | 'in_progress' | 'blocked' | 'done';
-    flagged: boolean;
-    creator_account_oid: string;
-    assignee_account_oid: string | null;
-    agent_status: 'idle' | 'running' | 'error';
-    tags: string[] | null;
+    kind: string;
+    content: string | null;
+    metadata: Record<string, unknown> | null;
+    version: number;
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
 
+export interface PromptListItem {
+    oid: string;
+    name: string;
+    display_name: string | null;
+    kind: string;
+    is_active: boolean;
+    version: number;
+}
+
+export interface PromptListResponse {
+    items: PromptListItem[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+export interface PromptCreate {
+    name: string;
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PromptUpdate {
+    display_name?: string;
+    description?: string;
+    kind?: string;
+    content?: string;
+    metadata?: Record<string, unknown>;
+    is_active?: boolean;
+}
+
+// ==================== System ====================
+// Phase 3: objects.systems is a first-class identity for non-human,
+// non-AI actors (ServiceNow ingest, Airflow scheduler, etc.). Mirrors
+// Agent shape but contact_worker_oid is nullable (infrastructure
+// systems are ownerless) and there are no agent_key / admin_key /
+// workspace_id analogs.
+
+export interface System {
+    oid: string;
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid: string | null;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SystemCreate {
+    name: string;
+    system_id: string;
+    system_platform: string;
+    contact_worker_oid?: string;
+    description?: string;
+}
+
+export interface SystemUpdate {
+    name?: string;
+    system_platform?: string;
+    contact_worker_oid?: string;
+    description?: string;
+    is_active?: boolean;
+}
+
+export interface SystemListResponse {
+    items: System[];
+    total: number;
+    skip: number;
+    limit: number;
+}
+
+// ==================== Ticket ====================
+
+export type TicketStatus = 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled';
+
+export interface Ticket {
+    oid: string;
+    title: string;
+    body: string | null;
+    status: TicketStatus;
+    assignee_account_oid: string | null;
+    created_by_account_oid: string;
+    parent_ticket_oid: string | null;
+    channel_message_oid: string | null;
+    channel_oid: string | null;
+    tags: string[];
+    priority: number;
+    closed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    // Populated on the detail GET; true while a run is queued/claimed/running.
+    has_active_run: boolean | null;
+    // Populated on the detail GET; the latest run's conversation_id.
+    conversation_id?: string | null;
+}
+
 export interface TicketCreate {
     title: string;
-    description?: string;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketUpdate {
     title?: string;
-    description?: string;
-    status?: string;
-    flagged?: boolean;
+    body?: string;
+    status?: TicketStatus;
     assignee_account_oid?: string;
+    parent_ticket_oid?: string;
     tags?: string[];
+    priority?: number;
 }
 
 export interface TicketListResponse {
@@ -1779,28 +1916,124 @@ export interface TicketListResponse {
     limit: number;
 }
 
-// ==================== TicketComment ====================
+// ==================== Run (agentops dispatch execution) ====================
+// A Run is one execution of an agent against a ticket (or ad-hoc payload).
+// The dispatcher claims a queued run, executes it, and records status / result
+// / error. Runs are read-only in the UI.
 
-export interface TicketComment {
+export type RunStatus = string;
+
+export interface Run {
     oid: string;
-    ticket_oid: string;
-    author_account_oid: string;
-    content: string;
-    replied_to_comment_oid: string | null;
-    agent_conversation_id: string | null;
+    agent_oid: string;
+    ticket_oid: string | null;
+    status: RunStatus;
+    priority: number;
+    claim_token: string | null;
+    claimed_at: string | null;
+    parent_run_oid: string | null;
+    attempt: number;
+    max_attempts: number;
+    failure_reason: string | null;
+    conversation_id: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    payload: Record<string, unknown> | null;
+    result: Record<string, unknown> | null;
+    error: Record<string, unknown> | null;
     created_at: string;
+    updated_at: string;
 }
 
-export interface TicketCommentCreate {
-    content: string;
-    replied_to_comment_oid?: string;
-}
-
-export interface TicketCommentListResponse {
-    items: TicketComment[];
+export interface RunListResponse {
+    items: Run[];
     total: number;
     skip: number;
     limit: number;
+}
+
+// ==================== ThreadMessage (ticket conversation) ====================
+// v2: replaces the old `TicketComment`. A ticket's thread interleaves human
+// comments, agent replies (linked to the Run that produced them), and system
+// notes. Posting a `human_comment` on an agent-assigned ticket dispatches the
+// assigned agent, reusing the prior run's conversation_id to continue the
+// same session.
+
+export type ThreadMessageKind = 'human_comment' | 'agent_reply' | 'system_note';
+
+export interface ThreadMessage {
+    oid: string;
+    ticket_oid: string;
+    kind: ThreadMessageKind;
+    body: string;
+    author_account_oid: string | null; // set for human_comment
+    run_oid: string | null;            // set for agent_reply
+    conversation_id: string | null;    // hydrated from run_oid (agent_reply)
+    reply_to_message_oid: string | null;
+    created_at: string;
+}
+
+export interface ThreadMessageCreate {
+    ticket_oid: string;
+    body: string;
+    reply_to_message_oid?: string;
+}
+
+// GET /tickets/{oid}/thread returns just { items } (no pagination envelope).
+export interface ThreadListResponse {
+    items: ThreadMessage[];
+}
+
+// ==================== Ticket lineage (handoff/traceability) ====================
+
+export interface TicketGraphAssignee {
+    type: 'agent' | 'human';
+    account_oid: string;
+    agent_oid?: string;
+    name: string | null;
+    is_agent: boolean;
+}
+
+export interface TicketGraphNode {
+    oid: string;
+    title: string;
+    status: TicketStatus;
+    depth: number;
+    assignee: TicketGraphAssignee | null;
+    has_active_run: boolean;
+    run_count: number;
+    handoff_count: number;
+}
+
+export interface TicketGraphEdge {
+    parent_oid: string;
+    child_oid: string;
+}
+
+export interface TicketGraph {
+    root_oid: string;
+    focus_oid: string;
+    nodes: TicketGraphNode[];
+    edges: TicketGraphEdge[];
+}
+
+export interface TicketTraceEvent {
+    ts: string;
+    kind: string;
+    actor_type?: string | null;
+    actor_oid?: string | null;
+    run_oid?: string | null;
+    agent_oid?: string | null;
+    session?: string | null;
+    author_account_oid?: string | null;
+    body?: string;
+    failure_reason?: string | null;
+    details?: Record<string, unknown> | null;
+}
+
+export interface TicketTrace {
+    ticket_oid: string;
+    events: TicketTraceEvent[];
 }
 
 // ── FAQ Monthly Report ────────────────────────────────────────────────────────
@@ -1823,6 +2056,7 @@ export interface MonthStats {
     ok_rate: number;
     imp_rate: number;
     human_escalation_rate: number;
+    wecom_incident_count: number;
 }
 
 export interface FAQEnquiryItem {
@@ -1837,4 +2071,60 @@ export interface InteractionFAQReport {
     current: MonthStats;
     previous: MonthStats;
     top5_faq: FAQEnquiryItem[];
+}
+
+// ── Incident Monthly Report ─────────────────────────────────────────────────
+
+export interface IncidentCategoryBreakdownItem {
+    code: string;
+    display: string;
+    count: number;
+    percentage: number;
+}
+
+export interface IncidentMonthStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    breakdown: IncidentCategoryBreakdownItem[];
+    grand_total: number;
+    resolved_count: number;
+    high_priority_count: number;
+    overdue_count: number;
+    state_breakdown: IncidentCategoryBreakdownItem[];
+    priority_breakdown: IncidentCategoryBreakdownItem[];
+}
+
+export interface IncidentTop5Item {
+    name: string;
+    count: number;
+    percentage: number;
+}
+
+export interface ChatbotEscalationStats {
+    start_date: string;
+    end_date: string;
+    label: string;
+    total_sessions: number;
+    meaningful_sessions: number;
+    escalated_sessions: number;
+    bot_handled_sessions: number;
+    direct_escalation_sessions: number;
+    after_bot_escalation_sessions: number;
+    escalation_rate: number;
+    bot_handled_rate: number;
+    direct_escalation_rate: number;
+    after_bot_rate: number;
+    adjusted_bot_failure_rate: number;
+    avg_interactions_before_escalation: number;
+    repeat_escalator_count: number;
+}
+
+export interface IncidentMonthlyReportData {
+    current: IncidentMonthStats;
+    previous: IncidentMonthStats;
+    top5_assigned_group: IncidentTop5Item[];
+    top5_service_catalog: IncidentTop5Item[];
+    chatbot_escalation: ChatbotEscalationStats | null;
+    chatbot_escalation_previous: ChatbotEscalationStats | null;
 }

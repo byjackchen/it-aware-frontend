@@ -7,8 +7,9 @@ import type { Interaction, Incident, ReviewCode } from '@/lib/types/objects';
 // ============================================================================
 
 export interface InteractionReviewPayload {
-    review_ci?: string | null;
     review_code?: ReviewCode | null;
+    service_catalog_override_oid?: string | null;
+    service_type_override_oid?: string | null;
     review_needs_optimization?: boolean | null;
     review_optimization_notes?: string | null;
     mark_completed?: boolean | null;
@@ -64,9 +65,12 @@ export async function updateIncidentReview(
 export interface ExportFilters {
   created_at_from?: string;
   created_at_to?: string;
+  effective_at_from?: string;
+  effective_at_to?: string;
   actor_stable_id?: string;
   needs_optimization?: boolean;
   completed?: boolean;
+  ai_code?: string;
 }
 
 /**

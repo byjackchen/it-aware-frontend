@@ -20,7 +20,10 @@ import {
     classifyRequestType,
     daysSinceUpdated,
     isActiveState,
+    isInScopeGroup,
+    openedAt,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import {
     AgingTable,
     type AgingTableRow,
@@ -34,6 +37,8 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
 const PAGE_SIZE = 100;
 
@@ -59,9 +64,7 @@ function openedByOf(row: TicketRow): string {
 }
 
 function formatShortDate(iso: string): string {
-    const t = Date.parse(iso);
-    if (!Number.isFinite(t)) return '—';
-    return new Date(t).toLocaleDateString();
+    return laDateLabel(iso);
 }
 
 export function AgingScTasksDashboard() {
@@ -78,19 +81,31 @@ export function AgingScTasksDashboard() {
     const [now] = useState<number>(() => Date.now());
 
     const [filters, setFilters] = useState<FilterState>({});
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
     const [page, setPage] = useState<{ skip: number; limit: number }>({ skip: 0, limit: PAGE_SIZE });
     const resetPage = () => setPage({ skip: 0, limit: PAGE_SIZE });
 
-    // Base: catalog tasks + active + aging > 30d.
+    // Base: catalog tasks + active + aging > 30d + OIT scope.
+    // OIT-scope keeps this aligned with the Active Monitoring Hub's
+    // Aging >30d catalog-task KPI.
     const base: TicketRow[] = useMemo(() => {
         const rows = data?.items ?? [];
         return rows.filter(
             (r) =>
                 classifyRequestType(r) === 'catalog_task' &&
                 isActiveState(r.state) &&
+                isInScopeGroup(r.assigned_group) &&
                 daysSinceUpdated(r, now) > 30,
         );
     }, [data, now]);
@@ -121,7 +136,7 @@ export function AgingScTasksDashboard() {
                 _daysNoUpdate: daysSinceUpdated(r, now),
                 _openedBy: openedByOf(r),
                 _location: locationOf(r),
-                _openedFormatted: formatShortDate(r.created_at),
+                _openedFormatted: formatShortDate(openedAt(r)),
                 _updatedAtMs: Date.parse(r.source_updated_at ?? r.updated_at) || 0,
             })),
         [filtered, now],
@@ -154,13 +169,16 @@ export function AgingScTasksDashboard() {
                         </p>
                     </div>
                 </div>
-                <button
+                <div className="flex items-center gap-2">
+                    <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:aging-sc-tasks:auto-refresh" />
+                    <button
                     onClick={() => void refetch()}
                     className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                     title={t('empty.retry')}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
+                </div>
             </div>
 
             <TopFilterBar

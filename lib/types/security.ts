@@ -102,6 +102,18 @@ export interface AccountWorker {
   linked_at: string;
 }
 
+export interface AccountAgent {
+  account_oid: string;
+  agent_oid: string;
+  linked_at: string;
+}
+
+export interface AccountSystem {
+  account_oid: string;
+  system_oid: string;
+  linked_at: string;
+}
+
 export interface AccountGroup {
   account_oid: string;
   group_oid: string;

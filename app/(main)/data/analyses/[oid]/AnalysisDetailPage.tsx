@@ -66,7 +66,15 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
     const [fact, setFact] = useState(analysis.fact || '');
     const [semantic, setSemantic] = useState(analysis.semantic || '');
     const [intent, setIntent] = useState(analysis.intent || '');
-    const [serviceCatalogOid, setServiceCatalogOid] = useState(analysis.service_catalog_oid || '');
+    // UI edits write to the *_override fields; the no-suffix defaults remain
+    // whatever the source/ingest pipeline set. Effective value (override ||
+    // default) is shown in the read-only view.
+    const [serviceCatalogOverrideOid, setServiceCatalogOverrideOid] = useState(
+        analysis.service_catalog_override_oid || '',
+    );
+    const [serviceTypeOverrideOid, setServiceTypeOverrideOid] = useState(
+        analysis.service_type_override_oid || '',
+    );
     const [configurationItemOid, setConfigurationItemOid] = useState(analysis.configuration_item_oid || '');
 
     const worker = workers.find((w) => w.oid === analysis.worker_oid);
@@ -85,7 +93,8 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
             formData.set('fact', fact);
             formData.set('semantic', semantic);
             formData.set('intent', intent);
-            formData.set('service_catalog_oid', serviceCatalogOid);
+            formData.set('service_catalog_override_oid', serviceCatalogOverrideOid);
+            formData.set('service_type_override_oid', serviceTypeOverrideOid);
             formData.set('configuration_item_oid', configurationItemOid);
 
             await updateAnalysisAction(analysis.oid, formData);
@@ -118,7 +127,8 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
         setFact(analysis.fact || '');
         setSemantic(analysis.semantic || '');
         setIntent(analysis.intent || '');
-        setServiceCatalogOid(analysis.service_catalog_oid || '');
+        setServiceCatalogOverrideOid(analysis.service_catalog_override_oid || '');
+        setServiceTypeOverrideOid(analysis.service_type_override_oid || '');
         setConfigurationItemOid(analysis.configuration_item_oid || '');
         setIsEditing(false);
     };
@@ -266,16 +276,44 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
                         <div>
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('analyses.serviceCatalog')}</label>
                             {isEditing ? (
-                                <select value={serviceCatalogOid} onChange={(e) => setServiceCatalogOid(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}>
-                                    <option value="">None</option>
+                                <select value={serviceCatalogOverrideOid} onChange={(e) => setServiceCatalogOverrideOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the default value; clear to fall back">
+                                    <option value="">No override (use default)</option>
                                     {serviceCatalogs.map(sc => (<option key={sc.oid} value={sc.oid}>{sc.name}</option>))}
                                 </select>
                             ) : (
                                 <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                     <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                        {serviceCatalogs.find(sc => sc.oid === analysis.service_catalog_oid)?.name || 'None'}
+                                        {serviceCatalogs.find(sc => sc.oid === (analysis.service_catalog_override_oid ?? analysis.service_catalog_oid))?.name || 'None'}
+                                        {analysis.service_catalog_override_oid && analysis.service_catalog_override_oid !== analysis.service_catalog_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        {/* Service Type */}
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Type</label>
+                            {isEditing ? (
+                                <select value={serviceTypeOverrideOid} onChange={(e) => setServiceTypeOverrideOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the AI-derived type; clear to fall back">
+                                    <option value="">No override (use default)</option>
+                                    {serviceCatalogs
+                                        .filter(sc => (sc.stable_id ?? '').startsWith('ITST') && (sc.path?.length ?? 0) === 2)
+                                        .map(sc => (<option key={sc.oid} value={sc.oid}>{sc.name}</option>))}
+                                </select>
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find(sc => sc.oid === (analysis.service_type_override_oid ?? analysis.service_type_oid))?.name || 'None'}
+                                        {analysis.service_type_override_oid && analysis.service_type_override_oid !== analysis.service_type_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
                                     </span>
                                 </div>
                             )}

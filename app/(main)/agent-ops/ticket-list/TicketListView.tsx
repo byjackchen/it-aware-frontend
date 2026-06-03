@@ -2,38 +2,48 @@
 
 import { useMemo, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
-import { Flag, Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { formatDateTime } from '@/lib/utils/datetime';
+import { formatDateTime, formatLocalDateTime, localDateTimeToIso, formatTzBadge } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import type { Ticket, TicketListResponse } from '@/lib/types/objects';
 
-type StatusFilter = 'all' | 'backlog' | 'in_progress' | 'blocked' | 'done';
+type StatusFilter = 'all' | 'open' | 'in_progress' | 'blocked' | 'done' | 'cancelled';
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
     { key: 'all', label: 'All' },
-    { key: 'backlog', label: 'Backlog' },
+    { key: 'open', label: 'Open' },
     { key: 'in_progress', label: 'In Progress' },
     { key: 'blocked', label: 'Blocked' },
     { key: 'done', label: 'Done' },
+    { key: 'cancelled', label: 'Cancelled' },
 ];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-    backlog: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
+    open: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
     in_progress: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
     blocked: { bg: 'bg-red-500/20', text: 'text-red-400' },
     done: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    cancelled: { bg: 'bg-gray-500/20', text: 'text-gray-400' },
 };
+
+function defaultFrom(tz: string): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return `${formatLocalDateTime(d, tz).slice(0, 10)}T00:00:00`;
+}
+function defaultTo(tz: string): string {
+    return `${formatLocalDateTime(new Date(), tz).slice(0, 10)}T23:59:59`;
+}
 
 export function TicketListView() {
     const router = useTransitionRouter();
     const { timezone } = useTimezone();
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [flaggedOnly, setFlaggedOnly] = useState(false);
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
+    const [dateFrom, setDateFrom] = useState(() => defaultFrom(timezone));
+    const [dateTo, setDateTo] = useState(() => defaultTo(timezone));
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
 
@@ -53,17 +63,14 @@ export function TicketListView() {
         if (statusFilter !== 'all') {
             result = result.filter(t => t.status === statusFilter);
         }
-        if (flaggedOnly) {
-            result = result.filter(t => t.flagged);
-        }
         if (dateFrom) {
-            result = result.filter(t => new Date(t.created_at) >= new Date(dateFrom));
+            result = result.filter(t => new Date(t.created_at) >= new Date(localDateTimeToIso(dateFrom, timezone)));
         }
         if (dateTo) {
-            result = result.filter(t => new Date(t.created_at) <= new Date(dateTo + 'T23:59:59'));
+            result = result.filter(t => new Date(t.created_at) <= new Date(localDateTimeToIso(dateTo, timezone)));
         }
         return result;
-    }, [tickets, statusFilter, flaggedOnly, dateFrom, dateTo]);
+    }, [tickets, statusFilter, dateFrom, dateTo, timezone]);
 
     const totalPages = Math.ceil(filteredTickets.length / pageSize) || 1;
     const startIdx = (currentPage - 1) * pageSize;
@@ -80,11 +87,6 @@ export function TicketListView() {
 
     const handleFilterChange = (filter: StatusFilter) => {
         setStatusFilter(filter);
-        setCurrentPage(1);
-    };
-
-    const handleFlaggedToggle = () => {
-        setFlaggedOnly(prev => !prev);
         setCurrentPage(1);
     };
 
@@ -119,32 +121,24 @@ export function TicketListView() {
                         </button>
                     ))}
                 </div>
-                <button
-                    onClick={handleFlaggedToggle}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded border text-sm transition-colors ${
-                        flaggedOnly
-                            ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300'
-                            : 'border-[var(--card-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                >
-                    <Flag className="w-3.5 h-3.5" />
-                    Flagged
-                </button>
                 <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                     <Calendar className="w-3.5 h-3.5" />
                     <input
-                        type="date"
+                        type="datetime-local"
+                        step={1}
                         value={dateFrom}
                         onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
                         className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                     />
                     <span>to</span>
                     <input
-                        type="date"
+                        type="datetime-local"
+                        step={1}
                         value={dateTo}
                         onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
                         className="px-2 py-1 rounded border border-[var(--card-border)] bg-transparent text-xs"
                     />
+                    <span title="filter timezone">{formatTzBadge(timezone)}</span>
                     {(dateFrom || dateTo) && (
                         <button
                             onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
@@ -170,7 +164,6 @@ export function TicketListView() {
                             <tr className="border-b border-[var(--card-border)] bg-[var(--glass-bg)]">
                                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Title</th>
                                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Status</th>
-                                <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Flagged</th>
                                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Agent</th>
                                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Assignee</th>
                                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Created</th>
@@ -178,7 +171,7 @@ export function TicketListView() {
                         </thead>
                         <tbody className="divide-y divide-[var(--card-border)]">
                             {displayedTickets.map(ticket => {
-                                const statusStyle = STATUS_COLORS[ticket.status] || STATUS_COLORS.backlog;
+                                const statusStyle = STATUS_COLORS[ticket.status] || STATUS_COLORS.open;
                                 return (
                                     <tr
                                         key={ticket.oid}
@@ -200,20 +193,16 @@ export function TicketListView() {
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="text-xs bg-transparent border border-[var(--card-border)] rounded px-1 py-0.5 text-[var(--text-secondary)]"
                                                 >
-                                                    <option value="backlog">Backlog</option>
+                                                    <option value="open">Open</option>
                                                     <option value="in_progress">In Progress</option>
                                                     <option value="blocked">Blocked</option>
                                                     <option value="done">Done</option>
+                                                    <option value="cancelled">Cancelled</option>
                                                 </select>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            {ticket.flagged && (
-                                                <Flag className="w-4 h-4 text-orange-500 fill-orange-500" />
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <AgentStatusIndicator agentStatus={ticket.agent_status} />
+                                            <AgentStatusIndicator agentStatus={ticket.has_active_run ? 'running' : 'idle'} />
                                         </td>
                                         <td className="px-4 py-3 text-[var(--text-secondary)]">
                                             {ticket.assignee_account_oid

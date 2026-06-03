@@ -29,6 +29,8 @@ export interface KpiCardProps {
     delta?: {
         value: string;
         trend: 'up' | 'down' | 'flat';
+        /** If provided, a small ? icon next to the delta text reveals this on hover. */
+        tooltip?: string;
     };
     icon?: LucideIcon;
     onClick?: () => void;
@@ -44,13 +46,20 @@ export interface KpiCardProps {
     /** Extra Tailwind classes for the root card div (e.g. `h-full` for grid stretch). */
     className?: string;
     /** Optional definition / formula shown on hover as a tooltip next to the label. */
-    tooltip?: string;
+    tooltip?: React.ReactNode;
     /**
      * Headline number size — defaults to `md` (text-2xl). Pass `lg`
      * (text-4xl) or `xl` (text-5xl) for big-number tiles that share a
      * row with taller charts.
      */
     valueSize?: 'md' | 'lg' | 'xl';
+    /**
+     * Override the headline number's text colour. Use Tailwind colour
+     * classes — e.g. `text-red-500` (red/warning when > 0) or
+     * `text-green-500` (green/ok when = 0). Defaults to the neutral
+     * slate/white colour driven by the theme.
+     */
+    valueColor?: string;
 }
 
 export function KpiCard({
@@ -66,6 +75,7 @@ export function KpiCard({
     className,
     valueSize = 'md',
     tooltip,
+    valueColor,
 }: KpiCardProps) {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -74,7 +84,6 @@ export function KpiCard({
     const cardBase = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
     const hover = onClick ? (isLight ? 'hover:bg-slate-50 cursor-pointer' : 'hover:bg-white/10 cursor-pointer') : '';
     const labelCls = isLight ? 'text-slate-500' : 'text-gray-400';
-    const valueCls = isLight ? 'text-slate-800' : 'text-white';
     const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-500';
     const arrowCls = isLight
         ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
@@ -96,6 +105,7 @@ export function KpiCard({
 
     const valueSizeCls =
         valueSize === 'xl' ? 'text-5xl' : valueSize === 'lg' ? 'text-4xl' : 'text-2xl';
+    const valueColorCls = valueColor ?? (isLight ? 'text-slate-800' : 'text-white');
 
     return (
         <div
@@ -109,7 +119,7 @@ export function KpiCard({
                     {tooltip && (
                         <span className="group relative inline-flex shrink-0 items-center">
                             <HelpCircle className={`h-3 w-3 transition-colors ${isLight ? 'text-slate-400 group-hover:text-slate-700' : 'text-gray-500 group-hover:text-white'}`} />
-                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-56 -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
+                            <span className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border px-3 py-2 text-[11px] leading-5 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
                                 {tooltip}
                             </span>
                         </span>
@@ -117,12 +127,24 @@ export function KpiCard({
                 </div>
                 {accent}
             </div>
-            <p className={`${valueSizeCls} font-bold mt-1.5 ${valueCls}`}>
+            <p className={`${valueSizeCls} font-bold mt-1.5 ${valueColorCls}`}>
                 {typeof value === 'number' ? value.toLocaleString() : value}
             </p>
             {(delta || subtitle) && (
                 <div className="flex items-center gap-2 mt-1">
-                    {delta && <span className={`text-xs font-medium ${deltaCls}`}>{delta.value}</span>}
+                    {delta && (
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${deltaCls}`}>
+                            {delta.value}
+                            {delta.tooltip && (
+                                <span className="group relative inline-flex items-center">
+                                    <HelpCircle className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
+                                    <span className={`pointer-events-none absolute left-1/2 bottom-full z-50 mb-2 hidden w-max max-w-[200px] -translate-x-1/2 rounded-lg border px-2.5 py-1.5 text-[11px] leading-4 shadow-lg group-hover:block ${isLight ? 'border-slate-200 bg-white text-slate-600' : 'border-white/10 bg-slate-900 text-gray-300'}`}>
+                                        {delta.tooltip}
+                                    </span>
+                                </span>
+                            )}
+                        </span>
+                    )}
                     {subtitle && <span className={`text-xs ${subtitleCls}`}>{subtitle}</span>}
                 </div>
             )}
