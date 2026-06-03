@@ -17,7 +17,7 @@ import { KanbanCard } from './KanbanCard';
 import type { Ticket } from '@/lib/types/objects';
 
 const COLUMNS = [
-    { status: 'backlog', label: 'Backlog' },
+    { status: 'open', label: 'Open' },
     { status: 'in_progress', label: 'In Progress' },
     { status: 'blocked', label: 'Blocked' },
     { status: 'done', label: 'Done' },
@@ -47,7 +47,7 @@ export function KanbanBoard({ tickets, onStatusChange, onCardClick }: KanbanBoar
     }, [tickets]);
 
     const ticketsByStatus = useMemo(() => {
-        const grouped: Record<string, Ticket[]> = { backlog: [], in_progress: [], blocked: [], done: [] };
+        const grouped: Record<string, Ticket[]> = { open: [], in_progress: [], blocked: [], done: [] };
         for (const ticket of optimisticTickets) {
             if (grouped[ticket.status]) {
                 grouped[ticket.status].push(ticket);

@@ -145,12 +145,11 @@ export function AgentsListPage() {
 
                 {/* Column Headers */}
                 <div className={`rounded-t-xl border-x border-t px-4 py-2 grid grid-cols-12 gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'border-slate-200 bg-slate-50 text-slate-500' : 'border-white/10 bg-white/5 text-gray-500'}`}>
-                    <div className="col-span-3">Name</div>
+                    <div className="col-span-4">Name</div>
                     <div className="col-span-2">Agent ID</div>
                     <div className="col-span-2">Platform</div>
-                    <div className="col-span-2">Contact Worker</div>
+                    <div className="col-span-3">Contact Worker</div>
                     <div className="col-span-1">Active</div>
-                    <div className="col-span-2">Account</div>
                 </div>
 
                 {/* List */}
@@ -171,7 +170,7 @@ export function AgentsListPage() {
                                     onClick={() => router.push(`/data/agents/${agent.oid}`)}
                                     className={`w-full grid grid-cols-12 gap-2 items-center px-4 py-3 text-left transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
                                 >
-                                    <div className={`col-span-3 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                                    <div className={`col-span-4 font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                                         {agent.name}
                                     </div>
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -180,7 +179,7 @@ export function AgentsListPage() {
                                     <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {agent.agent_platform}
                                     </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    <div className={`col-span-3 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                         {agent.contact_worker_oid}
                                     </div>
                                     <div className="col-span-1">
@@ -190,9 +189,6 @@ export function AgentsListPage() {
                                         }`}>
                                             {agent.is_active ? 'Yes' : 'No'}
                                         </span>
-                                    </div>
-                                    <div className={`col-span-2 text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                        {agent.account_oid || '—'}
                                     </div>
                                 </button>
                             ))}

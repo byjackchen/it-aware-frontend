@@ -118,6 +118,54 @@ Uses `console.log` with structured prefixes for traceability.
 
 10 operations-focused pages at `/operation-teams/ops-dashboard/*` backed by client-side aggregation over the existing activity + hardware list endpoints. See [`docs/ops-dashboard.md`](docs/ops-dashboard.md) for the route map, key architectural notes (slim view / partial responses / actor eager-load), smoke-test checklist, and Phase 2 follow-ups.
 
+## End-to-End Testing
+
+Two complementary modes — pick whichever fits the task.
+
+| Mode | When to use | Setup |
+|------|-------------|-------|
+| **In-repo Playwright spec** | Regression net. Run before merging, in CI, or whenever you want a deterministic "did I break the smoke?" answer in ~15 s. | One-time: `npm install` (already includes `@playwright/test`) then `npx playwright install chromium`. |
+| **MCP-driven Playwright** | Exploratory walks, debugging a UI bug visually, capturing selectors for a brand-new spec, or having Claude Code drive the browser as you. | One-time, user-scoped: `claude mcp add playwright --scope user -- npx -y @playwright/mcp@latest` then restart Claude Code. |
+
+### In-repo spec — `npx playwright test`
+
+Pre-reqs: backend on `localhost:8007` with auth seeding done (P0–P5), frontend on `localhost:3007`, `byjackchen` admin account exists.
+
+```bash
+npm run test:e2e              # headless run, default reporter
+npm run test:e2e:headed       # watch the browser drive itself
+npm run test:e2e:ui           # interactive Playwright UI
+E2E_BASE_URL=http://localhost:3007 npx playwright test       # override base URL
+E2E_USERNAME=foo E2E_PASSWORD=secret npx playwright test     # different account
+```
+
+Layout (`e2e/`):
+- `auth.setup.ts` — logs in once and saves storageState; every other test starts pre-authenticated.
+- `qa-smoke.spec.ts` — Phase C activities-decouple smoke (sidebar / Systems / no Inquiries / QA Score).
+- `qa-activities.spec.ts` — incidents + requests routes (list, detail, dashboards, persona, creation form) with explicit regression nets for known issues (B1 ABAC alias, B2/B3/B4 i18n drift).
+
+Failure artifacts land under `test-results/<test>/` — screenshot, video, and Playwright trace. Open a trace with `npx playwright show-trace test-results/.../trace.zip`.
+
+When adding a new spec, **always start the listener before navigating**:
+```ts
+const listPromise = page.waitForResponse(r => r.url().includes('/api/objects/things') && r.request().method() === 'GET');
+await page.goto('/data/things');
+const list = await listPromise;
+```
+Otherwise the client-side fetch can resolve before the listener attaches and you'll get a flaky timeout.
+
+### MCP-driven Playwright — Claude drives the browser
+
+Once installed, Claude Code gains 23 `mcp__playwright__browser_*` tools (`_navigate`, `_click`, `_fill_form`, `_snapshot`, `_evaluate`, `_console_messages`, `_network_requests`, `_take_screenshot`, …). You can ask Claude things like:
+
+- "Log in as byjackchen and walk every incident route, capture any console errors."
+- "Drive the requests/new form and submit a test request."
+- "Toggle dark mode and screenshot the persona page."
+
+The MCP server creates a per-session `.playwright-mcp/` folder for screenshots and console logs (already in `.gitignore`).
+
+**Workflow tip:** use MCP to explore + capture working selectors, then have Claude port the verified flow into `e2e/*.spec.ts` so you have a permanent regression net. The activities-decouple Phase C verification was done exactly this way: 10 routes driven via MCP, 4 bugs surfaced and fixed, then crystallized into the 10 tests in `qa-activities.spec.ts`.
+
 ## Docker
 
 Build and run the image:

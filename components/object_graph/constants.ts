@@ -37,7 +37,6 @@ export const TYPE_COLORS: Record<string, { bg: string; border: string }> = {
     article: { bg: '#14b8a6', border: '#0d9488' },
     incident: { bg: '#ef4444', border: '#dc2626' },
     request: { bg: '#f97316', border: '#ea580c' },
-    inquiry: { bg: '#a855f7', border: '#9333ea' },
     interaction: { bg: '#2563eb', border: '#1d4ed8' },
     service_catalog: { bg: '#06b6d4', border: '#0891b2' },
     survey: { bg: '#10b981', border: '#059669' },

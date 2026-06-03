@@ -23,9 +23,10 @@
  * Existing callers that don't pass these new props are unaffected.
  */
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { DonutLegend } from './DonutLegend';
+import { TitleWithInfo } from './TitleWithInfo';
 
 export interface DonutSlice {
     name: string;
@@ -36,6 +37,10 @@ export interface DonutSlice {
 export interface DonutCardProps {
     title: string;
     subtitle?: string;
+    /** If provided, a ? icon next to the subtitle reveals this on hover. */
+    subtitleTooltip?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
     data: DonutSlice[];
     /** Fallback palette for slices that don't carry their own colour. */
     palette?: string[];
@@ -70,6 +75,8 @@ const DEFAULT_PALETTE = [
 export function DonutCard({
     title,
     subtitle,
+    subtitleTooltip,
+    info,
     data,
     palette = DEFAULT_PALETTE,
     height = 500,
@@ -106,12 +113,9 @@ export function DonutCard({
     const chartHeight = interactive ? Math.max(height - externalLegendHeight, 120) : height;
 
     return (
-        <div className={`rounded-xl border p-4 ${cardBase}`}>
+        <div className={`rounded-xl border p-4 w-full h-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                    <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                    {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
-                </div>
+                <TitleWithInfo title={title} subtitle={subtitle} subtitleTooltip={subtitleTooltip} info={info} />
                 {actionSlot}
             </div>
 
@@ -149,6 +153,102 @@ export function DonutCard({
                                     );
                                 })}
                             </Pie>
+                            {/* Themed tooltip — shows slice name + count
+                                + share-of-total. recharts' default is a
+                                white panel with black text, which is
+                                illegible on the dark dashboard theme,
+                                AND it doesn't surface the slice name on
+                                Pie charts unless we render a custom
+                                content. */}
+                            <Tooltip
+                                cursor={false}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const entry = payload[0];
+                                    const name = (entry.payload as { name?: string }).name ?? '';
+                                    const value = Number(entry.value ?? 0);
+                                    const pct = total > 0 ? (value / total) * 100 : 0;
+                                    const swatch = (entry.payload as { color?: string }).color;
+                                    return (
+                                        <div
+                                            style={{
+                                                backgroundColor: isLight ? '#fff' : '#1e293b',
+                                                border: isLight
+                                                    ? '1px solid #e2e8f0'
+                                                    : '1px solid rgba(255,255,255,0.12)',
+                                                borderRadius: 8,
+                                                color: isLight ? '#1e293b' : '#f1f5f9',
+                                                fontSize: 12,
+                                                padding: '8px 10px',
+                                                lineHeight: 1.4,
+                                                boxShadow: isLight
+                                                    ? '0 4px 12px rgba(15,23,42,0.08)'
+                                                    : '0 4px 12px rgba(0,0,0,0.4)',
+                                                minWidth: 140,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    fontWeight: 600,
+                                                    marginBottom: 2,
+                                                }}
+                                            >
+                                                {swatch && (
+                                                    <span
+                                                        style={{
+                                                            width: 8,
+                                                            height: 8,
+                                                            borderRadius: 2,
+                                                            background: swatch,
+                                                            display: 'inline-block',
+                                                        }}
+                                                    />
+                                                )}
+                                                <span>{name}</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    gap: 12,
+                                                    color: isLight ? '#475569' : '#94a3b8',
+                                                }}
+                                            >
+                                                <span>Count</span>
+                                                <span
+                                                    style={{
+                                                        color: isLight ? '#1e293b' : '#f1f5f9',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                    }}
+                                                >
+                                                    {value.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    gap: 12,
+                                                    color: isLight ? '#475569' : '#94a3b8',
+                                                }}
+                                            >
+                                                <span>Share</span>
+                                                <span
+                                                    style={{
+                                                        color: isLight ? '#1e293b' : '#f1f5f9',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                    }}
+                                                >
+                                                    {pct.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }}
+                            />
                             {!interactive && (
                                 <Legend
                                     verticalAlign="bottom"

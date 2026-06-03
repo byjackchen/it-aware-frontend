@@ -14,8 +14,9 @@
  *     Catalog dashboards.
  */
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Brush } from 'recharts';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { TitleWithInfo } from './TitleWithInfo';
 export interface TrendSeries {
     /** Field name on each data point (e.g. "opened", "closed"). */
     key: string;
@@ -39,6 +40,8 @@ export interface TrendChartRow {
 export interface TrendLineCardProps {
     title: string;
     subtitle?: string;
+    /** Optional definition / formula shown on hover as a tooltip next to the title. */
+    info?: string;
     data: TrendChartRow[];
     height?: number;
     /** Single-series stroke colour — defaults to blue-500. Ignored when `series` is set. */
@@ -49,9 +52,36 @@ export interface TrendLineCardProps {
     actionSlot?: React.ReactNode;
     /** Optional multi-series config; when set, replaces the single `count` line. */
     series?: TrendSeries[];
+    /** Show a Brush at the bottom for click-and-drag zoom into a date range. */
+    zoomable?: boolean;
 }
 
 function defaultXFormat(bucket: string): string {
+    // Detect bucket granularity from the input string shape:
+    //   `YYYY-MM`        → monthly bucket  →  "May"
+    //   `YYYY-MM-DD`     → daily   bucket  →  "Thu 05/14"
+    //   `YYYY-MM-DDT…`   → daily   bucket  →  same
+    // We deliberately don't try to parse week/quarter shapes here —
+    // callers using those should pass an explicit `formatXTick`.
+    const dailyMatch = bucket.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dailyMatch) {
+        // Construct the Date as a *local* date matching the bucket
+        // string's calendar day. We do this with the (year, monthIndex,
+        // day) constructor instead of `Date.parse(bucket)` because the
+        // latter treats `YYYY-MM-DD` as UTC midnight, which then renders
+        // as the previous day in any browser west of UTC.
+        const [, y, mo, da] = dailyMatch;
+        const local = new Date(Number(y), Number(mo) - 1, Number(da));
+        const wd = local.toLocaleDateString(undefined, { weekday: 'short' });
+        return `${wd} ${mo}/${da}`;
+    }
+    const monthMatch = bucket.match(/^(\d{4})-(\d{2})$/);
+    if (monthMatch) {
+        const [, y, mo] = monthMatch;
+        const local = new Date(Number(y), Number(mo) - 1, 1);
+        return local.toLocaleDateString(undefined, { month: 'short' });
+    }
+    // Fallback for anything else parseable as a timestamp.
     const t = Date.parse(bucket);
     if (!Number.isFinite(t)) return bucket;
     return new Date(t).toLocaleDateString(undefined, { month: 'short' });
@@ -60,6 +90,7 @@ function defaultXFormat(bucket: string): string {
 export function TrendLineCard({
     title,
     subtitle,
+    info,
     data,
     height = 200,
     color = '#3b82f6',
@@ -67,6 +98,7 @@ export function TrendLineCard({
     emptyText = 'No data',
     actionSlot,
     series,
+    zoomable = false,
 }: TrendLineCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -82,12 +114,9 @@ export function TrendLineCard({
     const multi = Array.isArray(series) && series.length > 0;
 
     return (
-        <div className={`rounded-xl border p-4 ${cardBase}`}>
+        <div className={`rounded-xl border p-4 w-full h-full ${cardBase}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                    <h3 className={`text-sm font-medium ${titleCls}`}>{title}</h3>
-                    {subtitle && <p className={`text-xs mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
-                </div>
+                <TitleWithInfo title={title} subtitle={subtitle} info={info} />
                 {actionSlot}
             </div>
 
@@ -116,6 +145,12 @@ export function TrendLineCard({
                                 color: isLight ? '#1e293b' : '#f1f5f9',
                                 fontSize: '12px',
                             }}
+                            // Recharts ignores ``contentStyle.color`` for
+                            // per-item rows + the x-axis label header,
+                            // both of which default to black and become
+                            // invisible on dark mode. Force theme-aware.
+                            itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
+                            labelStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                             labelFormatter={(label) => formatXTick(String(label))}
                         />
                         {multi && (
@@ -151,6 +186,16 @@ export function TrendLineCard({
                                 strokeWidth={2}
                                 dot={{ r: 3, fill: color }}
                                 activeDot={{ r: 5 }}
+                            />
+                        )}
+                        {zoomable && data.length > 4 && (
+                            <Brush
+                                dataKey="bucket"
+                                height={18}
+                                stroke={color}
+                                fill={isLight ? '#f1f5f9' : 'rgba(255,255,255,0.05)'}
+                                travellerWidth={8}
+                                tickFormatter={formatXTick}
                             />
                         )}
                     </LineChart>

@@ -43,6 +43,182 @@ export function isActiveState(state: string | null | undefined): boolean {
 }
 
 // =============================================================================
+// Open-date selector
+// =============================================================================
+
+/**
+ * Canonical "opened-at" timestamp for a ticket (incident or request).
+ *
+ * Per the ops team's decision: every ticket-facing dashboard surfaces
+ * the **upstream** ServiceNow create timestamp (``source_created_at``)
+ * rather than the local DB row create timestamp (``created_at``). The
+ * latter is just when our sync pipeline ingested the row, which can
+ * lag SN by hours-to-days and so distorts trend / aging math.
+ *
+ * Falls back to ``created_at`` when ``source_created_at`` is null
+ * (older rows synced before Phase 2 started populating SN timestamps,
+ * or rows from non-SN sources).
+ *
+ * Returns ISO string. Empty string when both sources are missing —
+ * downstream Date.parse / slice() handle that gracefully.
+ */
+export function openedAt(row: { source_created_at?: string | null; created_at?: string | null }): string {
+    return row.source_created_at ?? row.created_at ?? '';
+}
+
+// =============================================================================
+// In-scope assignment-group filter
+// =============================================================================
+
+/**
+ * Assignment-group substrings that identify tickets the OIT team is on
+ * the hook for. Mirrors the ServiceNow condition builder the team uses
+ * when eyeballing their own queue:
+ *
+ *   assignment_group CONTAINS  OIT
+ *     OR assignment_group CONTAINS servicenow
+ *     OR assignment_group CONTAINS microsoft o365
+ *     OR assignment_group CONTAINS security
+ *     OR assignment_group CONTAINS myaccess
+ *
+ * Without this filter the ops-dashboard surfaces tickets owned by HR /
+ * Amazon Ordering / Workday / other external groups, which drowns out
+ * the signal — e.g. a single "Amazon Ordering Group" carries 213
+ * un-triaged catalog orders that are part of an automated flow and are
+ * not OIT's problem. Scoping the dashboard to the OIT footprint makes
+ * the Unassigned / Aging / By-Assignee numbers actionable instead of
+ * alarming.
+ *
+ * Comparisons are case-insensitive; the canonical SN labels we've seen
+ * include "OIT SSC", "APAC OIT Support", "Microsoft O365 group",
+ * "ServiceNow Support", "MyAccess Support", "OIT Security and
+ * Compliance Support", etc.
+ */
+export const OIT_SCOPE_GROUP_KEYWORDS: readonly string[] = [
+    'oit',
+    'servicenow',
+    'microsoft o365',
+    'security',
+    'myaccess',
+] as const;
+
+/**
+ * True when a ticket's ``assigned_group`` contains any of the OIT-scope
+ * keywords (case-insensitive). Rows with a null / empty assigned_group
+ * are excluded — the dashboard is about "what's in OIT's queue", and a
+ * ticket with no queue at all isn't in it.
+ */
+export function isInScopeGroup(
+    assignedGroup: string | null | undefined,
+): boolean {
+    if (!assignedGroup) return false;
+    const low = assignedGroup.toLowerCase();
+    for (const kw of OIT_SCOPE_GROUP_KEYWORDS) {
+        if (low.includes(kw)) return true;
+    }
+    return false;
+}
+
+// =============================================================================
+// Ticket-dashboard timezone date boundary helpers
+// =============================================================================
+
+/**
+ * Every ticket-facing dashboard (Incidents, Catalog, On/Offboarding,
+ * Hub, Aging, Unassigned, VIP) anchors its "Open Date" — both for
+ * server filtering and for table / chart rendering — in
+ * **America/Los_Angeles**.
+ *
+ * Why LA, not Asia/Shanghai (the ServiceNow instance's nominal tz)?
+ * The ops team reads SN UI in LA local time, so "Opened on 2026-05-01"
+ * means "what SN shows as 5/1 in the LA office", and that's the
+ * day the dashboard's user-picked date should align with.
+ *
+ * LA observes daylight saving time (PDT = UTC-7 between mid-March and
+ * early November, PST = UTC-8 the rest of the year), so we cannot
+ * hard-code the offset. Every helper below derives the correct offset
+ * for the date it's converting via `Intl.DateTimeFormat`.
+ *
+ * If the team ever moves to a different anchor timezone, update
+ * {@link TICKET_TIMEZONE} only — every dashboard picks up the new
+ * boundary automatically.
+ */
+export const TICKET_TIMEZONE = 'America/Los_Angeles';
+
+/**
+ * @deprecated Kept as an alias of {@link TICKET_TIMEZONE} so existing
+ * imports keep working. New code should reference {@link TICKET_TIMEZONE}.
+ */
+export const SN_TIMEZONE = TICKET_TIMEZONE;
+
+/**
+ * Compute the offset (e.g. `'-07:00'` for PDT, `'-08:00'` for PST)
+ * the LA timezone is on for the given UTC instant. Used internally so
+ * `snDayStartIso(YYYY-MM-DD)` produces the correct ISO across the DST
+ * boundary.
+ */
+function laOffsetForDate(yyyyMmDd: string): string {
+    // Probe with noon UTC of the picked date — far enough from any DST
+    // transition (which happens at 02:00 LA time = 09:00 / 10:00 UTC)
+    // that the offset is stable for that calendar date.
+    const probe = new Date(`${yyyyMmDd}T12:00:00Z`);
+    if (Number.isNaN(probe.getTime())) return '-08:00';
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TICKET_TIMEZONE,
+        timeZoneName: 'shortOffset',
+    });
+    const parts = formatter.formatToParts(probe);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT-8';
+    // shortOffset returns strings like "GMT-7" / "GMT-8" / "GMT-5:30".
+    const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(tzPart);
+    if (!match) return '-08:00';
+    const sign = match[1];
+    const hh = match[2].padStart(2, '0');
+    const mm = match[3] ?? '00';
+    return `${sign}${hh}:${mm}`;
+}
+
+/**
+ * Convert a `YYYY-MM-DD` string the user picked in the date picker
+ * into the **LA-day-start** ISO timestamp the backend should compare
+ * against (e.g. `2026-05-01T00:00:00-07:00`).
+ *
+ * Returns `undefined` when `date` is null / empty so the caller can
+ * spread it into a query params object without sending an explicit
+ * `from=undefined`.
+ *
+ * Name kept (`snDayStartIso`) for backward compatibility with all
+ * existing call sites; semantics changed from Asia/Shanghai to LA.
+ */
+export function snDayStartIso(date: string | null | undefined): string | undefined {
+    if (!date) return undefined;
+    return `${date}T00:00:00${laOffsetForDate(date)}`;
+}
+
+/**
+ * Convert a `YYYY-MM-DD` string into the **LA-day-end** ISO timestamp
+ * (e.g. `2026-05-01T23:59:59.999-07:00`). Use this for the upper
+ * bound of a `created_at <= :to` filter so the user's picked day is
+ * fully included.
+ *
+ * Name kept (`snDayEndIso`) for backward compatibility; semantics
+ * changed from Asia/Shanghai to LA.
+ */
+export function snDayEndIso(date: string | null | undefined): string | undefined {
+    if (!date) return undefined;
+    return `${date}T23:59:59.999${laOffsetForDate(date)}`;
+}
+
+/**
+ * @deprecated Kept as an alias of {@link snDayStartIso}. The historic
+ * `SN_TIMEZONE_OFFSET` constant referenced Asia/Shanghai's fixed +08;
+ * the ticket dashboards now anchor in LA, which has DST so a single
+ * offset constant is no longer accurate. Read the offset for a
+ * specific date via {@link snDayStartIso} / {@link snDayEndIso}.
+ */
+export const SN_TIMEZONE_OFFSET = '-08:00';
+
+// =============================================================================
 // Request-type classifier (Phase 1 client-side)
 // =============================================================================
 
@@ -50,14 +226,37 @@ export type RequestType = 'asset_task' | 'catalog_task' | 'generic';
 
 /**
  * Phase 1 heuristic: requests don't carry a server-side request_type
- * yet, so classify via substring match on item + request_item.
- * Phase 2 adds a real column that supersedes this.
+ * yet, so classify via:
+ *   1. SN ticket-number prefix on ``stable_id`` — the authoritative
+ *      signal. ServiceNow numbers asset tasks ``ASTTASK*`` and
+ *      regular service catalog tasks ``SCTASK*``. Prefix beats text
+ *      heuristics (e.g. an SCTASK whose item happens to mention
+ *      "device" is still a catalog task, not an asset task).
+ *   2. Substring match on ``item`` / ``request_item`` — used only
+ *      when the prefix is unrecognised (legacy / non-SN sources).
+ *
+ * When neither signal matches, default to ``catalog_task`` — rows
+ * without a populated item field are still SN service catalog
+ * requests; they're just miscellaneous entries the catalog didn't
+ * pre-fill the item attribute for. Treating them as ``generic`` led
+ * to a gap on the Active Monitoring Hub where ``totalActive`` (all
+ * request types) exceeded the sum of the three bucket KPIs by the
+ * row count of unclassified requests.
+ *
+ * Phase 2 adds a real column that supersedes this heuristic.
  */
 export function classifyRequestType(row: TicketRow): RequestType {
+    // 1. ServiceNow ticket-number prefix is authoritative.
+    const sid = (row.stable_id ?? '').toUpperCase();
+    if (sid.startsWith('ASTTASK')) return 'asset_task';
+    if (sid.startsWith('SCTASK')) return 'catalog_task';
+
+    // 2. Fallback: keyword-sniff item / request_item for non-SN sources.
     const text = `${row.item ?? ''} ${row.request_item ?? ''}`.toLowerCase();
     if (/asset|hardware|device/.test(text)) return 'asset_task';
-    if (row.item || row.request_item) return 'catalog_task';
-    return 'generic';
+
+    // 3. Default — see module docstring above for rationale.
+    return 'catalog_task';
 }
 
 // =============================================================================
@@ -71,7 +270,7 @@ export function classifyRequestType(row: TicketRow): RequestType {
  * ``sys_updated_on`` and bumps only when the upstream record actually
  * changes. Fall back to ``updated_at`` (the DB-row lifecycle timestamp)
  * only when ``source_updated_at`` is null — a pre-backfill row or a
- * non-SN activity source (inquiry / interaction from chat).
+ * non-SN activity source (interaction from chat).
  *
  * Never aging off ``updated_at`` alone: after Phase 2 that field bumps
  * on every DB mutation (``onupdate=func.now()``) including internal
@@ -190,11 +389,21 @@ export interface TrendPoint {
 }
 
 function monthStart(iso: string): string | null {
+    // Bucket month boundaries in the ticket-dashboard timezone (LA),
+    // not UTC, so a row whose UTC timestamp lands in (e.g.) "April"
+    // but is "May 1 in LA" is bucketed under May the way the ops
+    // team and SN UI both read it.
     const t = Date.parse(iso);
     if (!Number.isFinite(t)) return null;
-    const d = new Date(t);
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: TICKET_TIMEZONE,
+        year: 'numeric',
+        month: '2-digit',
+    });
+    const parts = fmt.formatToParts(new Date(t));
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const m = parts.find((p) => p.type === 'month')?.value;
+    if (!y || !m) return null;
     return `${y}-${m}-01`;
 }
 
@@ -255,7 +464,7 @@ export interface CumulativeTrendPoint {
  * `source_closed_at` for requests. Rows whose extractor returns null
  * are treated as still open.
  */
-export function cumulativeTrendByMonth<T extends { created_at: string }>(
+export function cumulativeTrendByMonth<T extends { source_created_at?: string | null; created_at?: string | null }>(
     rows: T[],
     closedAtFor: (row: T) => string | null | undefined,
     monthCount: number = 10,
@@ -267,7 +476,10 @@ export function cumulativeTrendByMonth<T extends { created_at: string }>(
     const openedDelta = new Map<string, number>();
     const closedDelta = new Map<string, number>();
     for (const row of rows) {
-        const oBucket = monthStart(row.created_at);
+        // Trend lines bucket by upstream SN create date (source_created_at)
+        // per the ops-team contract; fall back to local created_at when
+        // the source field is missing.
+        const oBucket = monthStart(openedAt(row));
         if (oBucket) openedDelta.set(oBucket, (openedDelta.get(oBucket) ?? 0) + 1);
         const cAt = closedAtFor(row);
         if (cAt) {
@@ -307,11 +519,13 @@ export function cumulativeTrendByMonth<T extends { created_at: string }>(
 
 /**
  * Trailing `monthCount`-month trend (inclusive of the current month),
- * bucketed by `created_at`. Months with zero rows are filled in so the
- * chart renders a continuous axis.
+ * bucketed by upstream SN create date (``source_created_at``, falling
+ * back to local ``created_at`` when missing — see ``openedAt``).
+ * Months with zero rows are filled in so the chart renders a
+ * continuous axis.
  */
 export function trendByMonth(
-    rows: Array<{ created_at: string }>,
+    rows: Array<{ source_created_at?: string | null; created_at?: string | null }>,
     monthCount: number = 10,
     now: number = Date.now(),
 ): TrendPoint[] {
@@ -319,7 +533,7 @@ export function trendByMonth(
 
     const counts = new Map<string, number>();
     for (const row of rows) {
-        const bucket = monthStart(row.created_at);
+        const bucket = monthStart(openedAt(row));
         if (!bucket) continue;
         counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
     }
@@ -398,7 +612,10 @@ export function momByDate<T>(
  * heuristic the cumulative-trend chart uses.
  */
 function wasActiveAt(row: TicketRow, atMs: number): boolean {
-    const createdMs = Date.parse(row.created_at);
+    // "Was opened by atMs" — gated on the upstream SN open time so the
+    // snapshot reflects when the ticket actually existed in SN, not
+    // when our pipeline ingested it.
+    const createdMs = Date.parse(openedAt(row));
     if (!Number.isFinite(createdMs) || createdMs > atMs) return false;
     let closedMs: number | null = null;
     const realClosed = row.source_resolved_at ?? row.source_closed_at;
@@ -462,11 +679,58 @@ export function formatMoM({ current, previous }: MoMResult): DeltaInfo | null {
 
 export type DeviceType = 'Mac' | 'Windows' | 'Other';
 
+/**
+ * Whitelist of `model_category` values that count as "IT assets" for
+ * the Ops Dashboard. Hardware rows whose model_category falls outside
+ * this set (peripherals, accessories, monitors-only, etc.) are filtered
+ * out from every asset KPI, donut and bar chart so the numbers reflect
+ * only managed IT endpoints.
+ *
+ * Match is case-insensitive and trims whitespace. Values agreed with
+ * the team (2026-05-10):
+ *   - Computer
+ *   - Laptop
+ *   - Desktop
+ *   - Server
+ *   - Hardware
+ */
+export const ASSET_MODEL_CATEGORY_WHITELIST: readonly string[] = [
+    'computer',
+    'laptop',
+    'desktop',
+    'server',
+    'hardware',
+];
+
+const ASSET_MODEL_CATEGORY_SET = new Set(ASSET_MODEL_CATEGORY_WHITELIST);
+
+/**
+ * Returns true when the hardware row's `model_category` is inside the
+ * agreed whitelist. Use this as the FIRST gate when filtering assets
+ * for any Ops Dashboard view.
+ */
+export function isInScopeAsset(row: HardwareRow): boolean {
+    const cat = (row.model_category ?? '').toLowerCase().trim();
+    if (!cat) return false;
+    return ASSET_MODEL_CATEGORY_SET.has(cat);
+}
+
 export function inferDeviceType(modelName: string | null | undefined): DeviceType {
     if (!modelName) return 'Other';
     const s = modelName.toLowerCase();
     if (s.includes('mac')) return 'Mac';
-    if (s.includes('win')) return 'Windows';
+    // Brand-based shortcut — anything Lenovo or Dell ships is Windows.
+    // Catches naming conventions the model-line keyword list below
+    // would otherwise miss (e.g. "Lenovo P620 Workstation",
+    // "Dell OptiPlex 7080").
+    if (s.includes('lenovo') || s.includes('dell')) return 'Windows';
+    if (s.includes('win') || s.includes('thinkpad') || s.includes('latitude') ||
+        s.includes('precision') || s.includes('inspiron') || s.includes('xps') ||
+        s.includes('probook') || s.includes('elitebook') || s.includes('zbook') ||
+        s.includes('surface') || s.includes('aspire') || s.includes('swift') ||
+        s.includes('travelmate') || s.includes('zenbook') || s.includes('vivobook') ||
+        s.includes('lifetime') || s.includes('lifebook') || s.includes('notebook') ||
+        s.includes('pc') || s.includes('laptop')) return 'Windows';
     return 'Other';
 }
 
@@ -478,6 +742,31 @@ export function isInStock(row: HardwareRow): boolean {
     // Location donut, KPI tiles and bar chart.
     const s = row.asset_status?.toLowerCase() ?? '';
     return s.startsWith('in stock') || s === '(60)';
+}
+
+/**
+ * "Active" hardware as the team defines it: any of the four operational
+ * asset_status values minus rows currently sitting in a Legal Hold
+ * substatus. Used as the numerator of the In-Stock Rate KPI and as a
+ * standalone "Active Assets" tile.
+ *
+ * State whitelist matches the SN drop-down captured in the team's
+ * filter screenshot — `In stock - available` / `Unavailable` /
+ * `In use` / `Consumed`. Anything else (Retired / Awaiting Approval /
+ * `(66)` placeholder values / etc.) is excluded.
+ */
+const ACTIVE_ASSET_STATES = new Set([
+    'in stock - available',
+    'unavailable',
+    'in use',
+    'consumed',
+]);
+export function isActiveAsset(row: HardwareRow): boolean {
+    const s = (row.asset_status ?? '').toLowerCase().trim();
+    if (!ACTIVE_ASSET_STATES.has(s)) return false;
+    const sub = (row.substatus ?? '').toLowerCase();
+    if (sub.includes('legal hold')) return false;
+    return true;
 }
 
 export function isPendingReturn(row: HardwareRow): boolean {
@@ -509,7 +798,9 @@ export function isZeroResidual(row: HardwareRow): boolean {
 export interface AssetKpis {
     total: number;
     inStock: number;
-    /** 0–100, rounded to the nearest integer. */
+    /** Hardware in one of the operational states minus Legal Hold (see isActiveAsset). */
+    activeAsset: number;
+    /** activeAsset / total — 0–100, rounded to the nearest integer. */
     inStockRatePct: number;
     pendingReturn: number;
     pendingRepair: number;
@@ -519,6 +810,7 @@ export interface AssetKpis {
 
 export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
     let inStock = 0;
+    let activeAsset = 0;
     let pendingReturn = 0;
     let pendingRepair = 0;
     let unconfirmed = 0;
@@ -526,6 +818,7 @@ export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
 
     for (const row of rows) {
         if (isInStock(row)) inStock += 1;
+        if (isActiveAsset(row)) activeAsset += 1;
         if (isPendingReturn(row)) pendingReturn += 1;
         if (isPendingRepair(row)) pendingRepair += 1;
         if (isUnconfirmed(row)) unconfirmed += 1;
@@ -533,15 +826,145 @@ export function summarizeAssets(rows: HardwareRow[]): AssetKpis {
     }
 
     const total = rows.length;
-    const inStockRatePct = total === 0 ? 0 : Math.round((inStock / total) * 100);
+    // In-Stock Rate = inStock ÷ activeAsset — share of the currently
+    // operational fleet that is sitting unassigned in a stockroom
+    // (vs. handed out to a worker / consumed / unavailable). Falls
+    // back to 0 when there are no active rows so the tile shows '—'.
+    const inStockRatePct = activeAsset === 0 ? 0 : Math.round((inStock / activeAsset) * 100);
 
     return {
         total,
         inStock,
+        activeAsset,
         inStockRatePct,
         pendingReturn,
         pendingRepair,
         unconfirmed,
         zeroResidual,
     };
+}
+
+// =============================================================================
+// Duration formatting
+// =============================================================================
+
+/**
+ * Format a seconds count as "Xd Yh" / "Yh Zm" / "Nm" — picks the
+ * coarsest two units that aren't both zero so a 14-day duration reads
+ * "14d 3h" instead of "14d 3h 22m 8s".
+ *
+ *   86_400 → "1d 0h"
+ *   90_000 → "1d 1h"
+ *    7_200 → "2h 0m"
+ *      300 → "5m"
+ *        0 → "0m"
+ *
+ * Returns "—" when the value is null / non-finite / negative — the
+ * dashboards use that as the empty-state cell.
+ */
+export function formatDurationSec(secs: number | null | undefined): string {
+    if (secs === null || secs === undefined || !Number.isFinite(secs) || secs < 0) {
+        return '—';
+    }
+    const total = Math.round(secs);
+    const days = Math.floor(total / 86_400);
+    const hours = Math.floor((total % 86_400) / 3_600);
+    const minutes = Math.floor((total % 3_600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+/**
+ * Mean of a numeric column over rows where the value is set. Returns
+ * `null` when no row has a usable value — the caller can render that
+ * as "—" via {@link formatDurationSec}.
+ */
+export function meanOf<T>(rows: T[], pick: (r: T) => number | null | undefined): number | null {
+    let total = 0;
+    let count = 0;
+    for (const r of rows) {
+        const v = pick(r);
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+            total += v;
+            count += 1;
+        }
+    }
+    return count === 0 ? null : total / count;
+}
+
+/**
+ * Sum of a numeric column over rows. Like {@link meanOf} but additive —
+ * used for "total time worked across all rows" KPIs.
+ */
+export function sumOf<T>(rows: T[], pick: (r: T) => number | null | undefined): number {
+    let total = 0;
+    for (const r of rows) {
+        const v = pick(r);
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) total += v;
+    }
+    return total;
+}
+
+// =============================================================================
+// Model-family fuzzy classifier
+// =============================================================================
+
+/**
+ * Bucket a SN model_display_name into a coarse family so the
+ * In-Stock Assets bar chart shows a digestible number of bars
+ * (~10–15) instead of one bar per SKU (the raw model dimension has
+ * hundreds of distinct values).
+ *
+ * Order matters — we check the most specific patterns first
+ * ("MacBook Pro 16" before "MacBook Pro" before plain Apple). The
+ * fallback is "Other".
+ */
+export function modelFamily(modelName: string | null | undefined): string {
+    if (!modelName) return 'Unknown';
+    const s = modelName.toLowerCase();
+
+    // Apple line — split MacBook Pro / Air / Mac mini / iMac / iPad / iPhone.
+    if (s.includes('macbook pro 16')) return 'MacBook Pro 16';
+    if (s.includes('macbook pro 14')) return 'MacBook Pro 14';
+    if (s.includes('macbook pro 13')) return 'MacBook Pro 13';
+    if (s.includes('macbook pro')) return 'MacBook Pro';
+    if (s.includes('macbook air')) return 'MacBook Air';
+    if (s.includes('mac mini')) return 'Mac mini';
+    if (s.includes('imac')) return 'iMac';
+    if (s.includes('macbook')) return 'MacBook (other)';
+    if (s.includes('ipad')) return 'iPad';
+    if (s.includes('iphone')) return 'iPhone';
+    if (s.includes('apple')) return 'Apple (other)';
+
+    // Lenovo line — X1 Carbon / Thinkpad / Workstation / generic.
+    if (s.includes('x1 carbon')) return 'Lenovo X1 Carbon';
+    if (s.includes('thinkpad')) return 'Lenovo Thinkpad';
+    if (s.includes('lenovo') && s.includes('workstation')) return 'Lenovo Workstation';
+    if (s.includes('lenovo')) return 'Lenovo (other)';
+
+    // Dell line — Latitude / OptiPlex / Precision / monitor / generic.
+    if (s.includes('latitude')) return 'Dell Latitude';
+    if (s.includes('optiplex')) return 'Dell OptiPlex';
+    if (s.includes('precision')) return 'Dell Precision';
+    if (s.includes('xps')) return 'Dell XPS';
+    if (s.includes('dell') && s.includes('monitor')) return 'Dell Monitor';
+    if (s.includes('dell')) return 'Dell (other)';
+
+    // HP / Microsoft / common other vendors.
+    if (s.includes('elitebook')) return 'HP EliteBook';
+    if (s.includes('probook')) return 'HP ProBook';
+    if (s.includes('zbook')) return 'HP ZBook';
+    if (s.includes('surface')) return 'Microsoft Surface';
+
+    // Specialty equipment — keep in their own buckets so they don't
+    // inflate "Other".
+    if (s.includes('mocap')) return 'MOCAP Camera';
+    if (s.includes('ps5') || s.includes('playstation')) return 'PlayStation';
+    if (s.includes('xbox')) return 'Xbox';
+    if (s.includes('nvidia') || s.includes('rtx ') || s.includes('gtx ')) return 'NVIDIA GPU';
+    if (s.includes('monitor')) return 'Monitor';
+    if (s.includes('custom pc') || s.includes('workstation')) return 'Custom Workstation';
+
+    return 'Other';
 }

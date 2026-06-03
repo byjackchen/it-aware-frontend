@@ -13,8 +13,9 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { downloadCsv, type CsvColumn } from '@/lib/ops_dashboard/csv_export';
 
 export interface ColDef<T> {
     key: keyof T | string;
@@ -22,6 +23,10 @@ export interface ColDef<T> {
     width?: string;
     render?: (row: T) => React.ReactNode;
     sortValue?: (row: T) => string | number;
+    /** Value extractor for CSV export. Falls back to sortValue / row[key]. */
+    csvValue?: (row: T) => string | number | boolean | null | undefined;
+    /** Set false to exclude column from CSV. Defaults to true. */
+    exportable?: boolean;
 }
 
 export interface DataTableProps<T extends Record<string, unknown>> {
@@ -52,6 +57,18 @@ export interface DataTableProps<T extends Record<string, unknown>> {
     emptyText?: string;
     loadingText?: string;
     partialText?: string;
+    /**
+     * Filename stem for CSV export. When provided, an "Export CSV"
+     * button appears beside the search input.
+     */
+    csvFilename?: string;
+    /**
+     * Full row set for CSV export. `rows` is just the current server
+     * page, so CSV export needs the complete filtered result from the
+     * caller. When omitted, export falls back to `rows` (current page
+     * only) with a visual warning in the button tooltip.
+     */
+    csvRows?: T[];
 }
 
 type SortDir = 'asc' | 'desc' | null;
@@ -74,6 +91,8 @@ export function DataTable<T extends Record<string, unknown>>({
     emptyText = 'No records found',
     loadingText = 'Loading...',
     partialText = 'Still loading — the server is taking longer than expected. Please retry.',
+    csvFilename,
+    csvRows,
 }: DataTableProps<T>) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -127,6 +146,30 @@ export function DataTable<T extends Record<string, unknown>>({
         onPageChange({ skip: 0, limit: nextLimit });
     }
 
+    // Export all filtered rows (caller's complete set) as CSV. When
+    // `csvRows` is not provided, fall back to the current server page
+    // (and make this clear in the tooltip).
+    function onExport() {
+        if (!csvFilename) return;
+        const source = csvRows ?? rows;
+        const csvCols: CsvColumn<T>[] = cols
+            .filter((c) => c.exportable !== false)
+            .map((c) => ({
+                label: c.label,
+                getValue: (row: T) => {
+                    if (c.csvValue) return c.csvValue(row);
+                    if (c.sortValue) return c.sortValue(row);
+                    const v = row[c.key as keyof T];
+                    if (v === null || v === undefined) return null;
+                    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+                        return v;
+                    }
+                    return String(v);
+                },
+            }));
+        downloadCsv(csvFilename, source, csvCols);
+    }
+
     const th = isLight
         ? 'bg-slate-50 text-slate-600 border-slate-200'
         : 'bg-white/5 text-gray-400 border-white/10';
@@ -161,6 +204,25 @@ export function DataTable<T extends Record<string, unknown>>({
                     {search && ` (filtered on page)`}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
+                    {csvFilename && (rows.length > 0 || (csvRows && csvRows.length > 0)) && (
+                        <button
+                            type="button"
+                            onClick={onExport}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border transition-colors ${
+                                isLight
+                                    ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                    : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
+                            }`}
+                            title={
+                                csvRows
+                                    ? 'Export all filtered rows to CSV'
+                                    : 'Export current page only (full filtered set not available)'
+                            }
+                        >
+                            <Download className="w-3 h-3" />
+                            Export CSV
+                        </button>
+                    )}
                     <label className={`text-xs ${mutedText}`} htmlFor="page-size">
                         Rows
                     </label>
@@ -285,27 +347,48 @@ export function DataTable<T extends Record<string, unknown>>({
                     <span>
                         Page {currentPage + 1} of {totalPages}
                     </span>
-                    <div className="flex gap-1">
-                        {[...Array(Math.min(totalPages, 7))].map((_, i) => {
-                            const p =
-                                totalPages <= 7
-                                    ? i
-                                    : i === 0
-                                        ? 0
-                                        : i === 6
-                                            ? totalPages - 1
-                                            : currentPage - 2 + i;
-                            const clamped = Math.max(0, Math.min(p, totalPages - 1));
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => goToPage(clamped)}
-                                    className={`px-2 py-0.5 rounded ${currentPage === clamped ? 'bg-blue-500 text-white' : isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
-                                >
-                                    {clamped + 1}
-                                </button>
-                            );
-                        })}
+                    <div className="flex gap-1 items-center">
+                        {(() => {
+                            // Build a de-duped, sorted list of page
+                            // indices: always include first + last, a
+                            // ±1 window around the current page, and
+                            // render an ellipsis wherever the sequence
+                            // jumps by more than one. Previous naive
+                            // algorithm emitted `1 1 1 2 3 4 N` when
+                            // currentPage was near 0 because the
+                            // windowing produced repeats that were
+                            // then clamped back to 0.
+                            const pages = new Set<number>([0, totalPages - 1]);
+                            for (let d = -1; d <= 1; d += 1) {
+                                const p = currentPage + d;
+                                if (p >= 0 && p < totalPages) pages.add(p);
+                            }
+                            const sorted = [...pages].sort((a, b) => a - b);
+                            const nodes: React.ReactNode[] = [];
+                            for (let i = 0; i < sorted.length; i += 1) {
+                                const p = sorted[i];
+                                if (i > 0 && p - sorted[i - 1] > 1) {
+                                    nodes.push(
+                                        <span
+                                            key={`ellipsis-${p}`}
+                                            className={`px-1 ${mutedText}`}
+                                        >
+                                            …
+                                        </span>,
+                                    );
+                                }
+                                nodes.push(
+                                    <button
+                                        key={p}
+                                        onClick={() => goToPage(p)}
+                                        className={`px-2 py-0.5 rounded ${currentPage === p ? 'bg-blue-500 text-white' : isLight ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}
+                                    >
+                                        {p + 1}
+                                    </button>,
+                                );
+                            }
+                            return nodes;
+                        })()}
                     </div>
                     <span>
                         {typeof total === 'number'

@@ -1,0 +1,79 @@
+/**
+ * Proxy for the 5 Ohla Chatbot report endpoints.
+ *
+ * Maps   GET /api/dashboards/chatbot/<view>?date_from=&date_to=
+ * to     GET <BACKEND>/dashboards/chatbot/<view>?date_from=&date_to=
+ */
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { RUNTIME_CONFIG } from '@/lib/config/runtime';
+
+const ALLOWED_VIEWS = new Set([
+    'overview',
+    'user-ask',
+    'agent-support',
+    'survey',
+    'other-case',
+    'latency-breakdown',
+]);
+
+function isAscii(value: string): boolean {
+    for (let i = 0; i < value.length; i++) {
+        if (value.charCodeAt(i) > 127) return false;
+    }
+    return true;
+}
+
+function buildSafeCookieHeader(items: Array<{ name: string; value: string }>): string {
+    return items
+        .filter((item) => item.name.startsWith('it_aware_'))
+        .filter((item) => isAscii(item.name) && isAscii(item.value))
+        .map((item) => `${item.name}=${item.value}`)
+        .join('; ');
+}
+
+export async function GET(
+    request: Request,
+    context: { params: Promise<{ view: string }> },
+) {
+    const { view } = await context.params;
+    if (!ALLOWED_VIEWS.has(view)) {
+        return NextResponse.json({ error: 'Unsupported view' }, { status: 400 });
+    }
+
+    try {
+        const incomingUrl = new URL(request.url);
+        const upstreamUrl = new URL(
+            `${RUNTIME_CONFIG.backend.domain}/dashboards/chatbot/${view}`,
+        );
+        incomingUrl.searchParams.forEach((value, key) => {
+            upstreamUrl.searchParams.append(key, value);
+        });
+
+        const cookieStore = await cookies();
+        const cookieHeader = buildSafeCookieHeader(cookieStore.getAll());
+
+        const response = await fetch(upstreamUrl.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            return NextResponse.json(
+                { error: `dashboards/chatbot/${view} upstream ${response.status}`, body: body.slice(0, 500) },
+                { status: response.status },
+            );
+        }
+
+        const data = await response.json();
+        return NextResponse.json(data);
+    } catch (error) {
+        console.error(`Failed to proxy /api/dashboards/chatbot/${view}:`, error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}

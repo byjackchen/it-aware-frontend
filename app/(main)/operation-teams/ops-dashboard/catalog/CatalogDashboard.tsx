@@ -23,15 +23,24 @@ import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
     classifyRequestType,
     cumulativeTrendByMonth,
+    trendByMonth,
     daysSinceUpdated,
+    formatDurationSec,
     formatMoM,
     groupBy,
     isActiveState,
+    isInScopeGroup,
+    meanOf,
     momActiveSnapshot,
     momByDate,
     monthsFromRange,
+    openedAt,
+    snDayEndIso,
+    snDayStartIso,
+    sumOf,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
@@ -45,6 +54,10 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 /** Catalog tasks use the prototype's blue-family palette to distinguish them from incidents. */
 const CATALOG_PALETTE = [
@@ -67,10 +80,6 @@ function departmentOf(row: TicketRow): string {
     return row.actor?.organization?.descriptor?.trim() || 'Unknown';
 }
 
-function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
-}
-
 /** Trim a long department/group label to fit the horizontal bar chart. */
 function trimLabel(label: string, max = 22): string {
     return label.length > max ? `${label.slice(0, max)}…` : label;
@@ -88,9 +97,16 @@ export function CatalogDashboard() {
     // 3-month default seeded into the user-visible filter so the picker
     // reflects what's actually being fetched. Otherwise users see a date
     // gap and mistake it for a server-side cutoff.
-    const [defaultFromIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    );
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so all MONITORING dashboards open on the
+    // same month-to-date window — easier to compare numbers
+    // across pages and matches how the team reports MTD.
+    const [defaultFromIso] = useState<string>(() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}-01`;
+    });
 
     // Stable aging clock.
     const [now] = useState<number>(() => Date.now());
@@ -104,17 +120,32 @@ export function CatalogDashboard() {
         created_at_to: { from: defaultFromIso, to: null },
     });
 
-    // Three-level Region / Country / Location slicer state — geographic.
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
 
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
     const { data, loading, error, refetch } = useRequests(
         {
             limit: 1000,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            // SN reports timestamps in Asia/Shanghai (+08:00); anchor
+            // the user-picked YYYY-MM-DD in that timezone so the API
+            // boundaries align with what SN itself shows. Filter against
+            // the upstream SN create timestamp (`source_created_at`),
+            // not the local DB ingest timestamp (`created_at`): sync
+            // backfills land recent `created_at` on historical tickets
+            // and would otherwise explode MTD counts on bulk re-sync.
+            source_created_at_from: snDayStartIso(dateRange.from),
+            source_created_at_to: snDayEndIso(dateRange.to),
         },
         { fetchAll: true },
     );
@@ -138,16 +169,24 @@ export function CatalogDashboard() {
     const filtered = useMemo(() => {
         const groupSel = (filters.assigned_group as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
         return catalogRows.filter((r) => {
+            // Scope to OIT assignment groups so the dashboard reflects
+            // OIT's own queue (matches Active Monitoring Hub + Incident
+            // Analysis + Unassigned Tab). Non-OIT groups like IT
+            // Automation / OA Account Creation / Amazon Ordering / etc.
+            // are filtered out.
+            if (!isInScopeGroup(r.assigned_group)) return false;
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationForFilter)) return false;
             if (groupSel.length && !groupSel.includes(r.assigned_group ?? 'Unknown')) return false;
             if (stateSel.length && !stateSel.includes(r.state)) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
+            // NOTE: no client-side date predicate. The user-picked
+            // date range is already applied server-side via
+            // `created_at_from` / `created_at_to` (anchored in
+            // SN's Asia/Shanghai timezone via snDayStartIso/EndIso).
+            // Re-filtering here with a UTC YYYY-MM-DD string compare
+            // would shift the boundary back by 8 hours and double-
+            // count / drop tickets that SN displays on the boundary
+            // day's morning (00:00–07:59 SN-time).
             return true;
         });
     }, [catalogRows, filters, selectedRegions, selectedCountries, selectedLocations]);
@@ -156,7 +195,7 @@ export function CatalogDashboard() {
 
     // Month-over-month delta for the volume + active KPIs.
     const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
         [filtered, now],
     );
     const activeMoM = useMemo(
@@ -176,7 +215,57 @@ export function CatalogDashboard() {
             if (days > 7) aging7d += 1;
             if (days > 30) aging30d += 1;
         }
-        return { total, active, resolved, resolvedRate, aging7d, aging30d };
+
+        // Resolved-on-day-1 and time metrics — mirror the
+        // IncidentAnalysisDashboard treatment: prefer SN's
+        // `business_duration_sec` (the ops admin's SN filter is
+        // "business_duration is not empty AND less than 24 hours"),
+        // and fall back to a wall-clock window when SN hasn't computed
+        // business_duration yet. Closure timestamp uses
+        // `source_closed_at` (requests don't carry
+        // `source_resolved_at`); falls back to `source_updated_at`/
+        // `updated_at` when the row is non-active but SN didn't fill
+        // closed_at — same heuristic the cumulative-trend chart uses.
+        let resolvedDay1 = 0;
+        const resolvedRows: TicketRow[] = [];
+        const DAY_SEC = 24 * 60 * 60;
+        for (const r of filtered) {
+            const closedIso =
+                r.source_closed_at ??
+                (!isActiveState(r.state) ? (r.source_updated_at ?? r.updated_at) : null);
+            if (!closedIso) continue;
+            resolvedRows.push(r);
+            const bizSec = r.business_duration_sec;
+            if (bizSec != null) {
+                if (bizSec < DAY_SEC) resolvedDay1 += 1;
+                continue;
+            }
+            // Fallback: wall-clock when business_duration_sec is null.
+            const opened = Date.parse(openedAt(r));
+            const closed = Date.parse(closedIso);
+            if (
+                Number.isFinite(opened) &&
+                Number.isFinite(closed) &&
+                closed - opened <= DAY_SEC * 1000 &&
+                closed >= opened
+            ) {
+                resolvedDay1 += 1;
+            }
+        }
+        const mttrSec = meanOf(resolvedRows, (r) => r.business_resolve_time_sec ?? r.business_duration_sec ?? null);
+        const totalTimeWorkedSec = sumOf(resolvedRows, (r) => r.resolve_time_sec ?? r.duration_sec ?? null);
+
+        return {
+            total,
+            active,
+            resolved,
+            resolvedRate,
+            aging7d,
+            aging30d,
+            resolvedDay1,
+            mttrSec,
+            totalTimeWorkedSec,
+        };
     }, [filtered, activeRows, now]);
 
     const stateDonut = useMemo(
@@ -187,6 +276,14 @@ export function CatalogDashboard() {
     const groupDonut = useMemo(() => {
         const ranked = groupBy(activeRows, (r) => r.assigned_group).slice(0, 8);
         return ranked.map((g) => ({ name: g.key, value: g.count }));
+    }, [activeRows]);
+
+    // Catalog "category" donut — uses SN's `item` (with request_item
+    // fallback) since requests don't have a category column. Top-N
+    // keeps the donut readable when the long tail is large.
+    const categoryDonut = useMemo(() => {
+        const ranked = groupBy(activeRows, (r) => r.item ?? r.request_item ?? 'Unknown').slice(0, 8);
+        return ranked.map((g) => ({ name: trimLabel(g.key, 32), value: g.count }));
     }, [activeRows]);
 
     const departmentBar = useMemo(() => {
@@ -215,6 +312,14 @@ export function CatalogDashboard() {
                 trendMonths,
                 now,
             ),
+        [filtered, trendMonths, now],
+    );
+
+    // Non-cumulative monthly opened — separate "Monthly Volume" line
+    // chart so users can spot period-over-period swings without the
+    // smoothing effect of a cumulative line.
+    const monthlyTrend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
         [filtered, trendMonths, now],
     );
 
@@ -294,6 +399,97 @@ export function CatalogDashboard() {
         resetAllParentFilters();
     }
 
+    // ── Detail table at the bottom — collapsible. Renders the
+    //   `filtered` Catalog row set with search, sort, pagination, and
+    //   CSV export.
+    interface CatDetailRow extends Record<string, unknown> {
+        oid: string;
+        stable_id: string;
+        title: string | null;
+        state: string;
+        priority: string;
+        assigned_group: string | null;
+        assigned_to_name: string | null;
+        _daysNoUpdate: number;
+        _location: string;
+        _openedAt: string;
+        _openedBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: CatDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            stable_id: r.stable_id,
+            title: r.title,
+            state: r.state,
+            priority: r.priority,
+            assigned_group: r.assigned_group,
+            assigned_to_name: r.assigned_to_name,
+            _daysNoUpdate: daysSinceUpdated(r, now),
+            _location: locationForFilter(r) ?? '—',
+            _openedAt: openedAt(r),
+            _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
+        }));
+    }, [filtered, now]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<CatDetailRow>[] = useMemo(() => [
+        {
+            key: 'stable_id',
+            label: t('tables.number'),
+            width: '120px',
+            render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+        },
+        { key: 'state', label: t('tables.state'), width: '130px' },
+        { key: 'priority', label: t('tables.priority'), width: '90px' },
+        {
+            key: '_daysNoUpdate',
+            label: t('tables.daysNoUpdate'),
+            width: '110px',
+            render: (r) => {
+                const cls =
+                    r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
+                    : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                return <span className={cls}>{r._daysNoUpdate}d</span>;
+            },
+            sortValue: (r) => r._daysNoUpdate,
+            csvValue: (r) => r._daysNoUpdate,
+        },
+        {
+            key: 'assigned_group',
+            label: t('tables.assignmentGroup'),
+            width: '170px',
+            render: (r) => r.assigned_group ?? '—',
+        },
+        {
+            key: 'assigned_to_name',
+            label: t('tables.assignedTo'),
+            width: '140px',
+            render: (r) => r.assigned_to_name ?? '—',
+        },
+        { key: '_openedBy', label: t('tables.openedBy'), width: '140px' },
+        { key: '_location', label: t('tables.location'), width: '150px' },
+        {
+            key: '_openedAt',
+            label: t('tables.openedAt'),
+            width: '110px',
+            render: (r) => laDateLabel(r._openedAt),
+            sortValue: (r) => r._openedAt,
+            csvValue: (r) => laDateLabel(r._openedAt),
+        },
+        {
+            key: 'title',
+            label: t('tables.title'),
+            width: '360px',
+            render: (r) => <span className="truncate block" title={r.title ?? ''}>{r.title ?? ''}</span>,
+        },
+    ], [t]);
+
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
             {/* Header */}
@@ -316,13 +512,16 @@ export function CatalogDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:catalog:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -393,29 +592,55 @@ export function CatalogDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: KPIs */}
-                <div className="grid grid-cols-6 gap-3 mb-3">
+                {/* Row 1: KPIs (top tier — total + outcome metrics) */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.totalCatalogTasks')}
                         value={kpis.total}
                         icon={ShoppingCart}
-                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
+                        tooltip={t('kpis.totalCatalogTasksInfo')}
                     />
+                    <KpiCard
+                        label={t('kpis.resolvedDay1')}
+                        value={kpis.resolvedDay1}
+                        tooltip={t('kpis.resolvedDay1Info')}
+                    />
+                    <KpiCard
+                        label={t('kpis.mttr')}
+                        value={formatDurationSec(kpis.mttrSec)}
+                        tooltip={t('kpis.mttrInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.totalTimeWorked')}
+                        value={formatDurationSec(kpis.totalTimeWorkedSec)}
+                        tooltip={t('kpis.totalTimeWorkedInfo')}
+                    />
+                </div>
+                {/* Row 1b: KPIs (volume + aging tier) */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
                     <KpiCard
                         label={t('kpis.active')}
                         value={kpis.active}
-                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
+                        tooltip={t('kpis.activeInfo')}
                     />
-                    <KpiCard label={t('kpis.resolved')} value={kpis.resolved} />
-                    <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
-                    <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />
-                    <KpiCard label={t('kpis.agingGt30d')} value={kpis.aging30d} />
+                    <KpiCard label={t('kpis.resolvedRate')} tooltip={t('kpis.resolvedRateInfo')} value={kpis.resolvedRate} />
+                    <KpiCard label={t('kpis.agingGt7d')} tooltip={t('kpis.agingGt7dInfo')} value={kpis.aging7d} />
+                    <KpiCard label={t('kpis.agingGt30d')} tooltip={t('kpis.agingGt30dInfo')} value={kpis.aging30d} />
                 </div>
 
-                {/* Row 2: Donuts */}
-                <div className="grid gap-3 mb-3 grid-cols-2">
+                {/* Row 2: Donuts — By Category + By State + By Group */}
+                <div className="grid gap-3 mb-3 grid-cols-3">
+                    <DonutCard
+                        title={t('charts.activeByCategoryCatalog')}
+                        info={t('charts.activeByCategoryCatalogInfo')}
+                        data={categoryDonut}
+                        palette={CATALOG_PALETTE}
+                        height={220}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
                     <DonutCard
                         title={t('charts.byStateAll')}
+                        info={t('charts.byStateAllInfo')}
                         data={stateDonut}
                         palette={CATALOG_PALETTE}
                         height={220}
@@ -427,6 +652,7 @@ export function CatalogDashboard() {
                     <DonutCard
                         title={t('charts.activeByGroupCatalog')}
                         subtitle={t('charts.activeByGroupSubtitle')}
+                        info={t('charts.activeByGroupCatalogInfo')}
                         data={groupDonut}
                         palette={CATALOG_PALETTE}
                         height={220}
@@ -437,10 +663,11 @@ export function CatalogDashboard() {
                     />
                 </div>
 
-                {/* Row 3: Department bar + trend */}
+                {/* Row 3: Department bar + cumulative trend */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
                     <GroupBarCard
                         title={t('charts.byDepartment')}
+                        info={t('charts.byDepartmentInfo')}
                         data={departmentBar}
                         topN={10}
                         height={260}
@@ -450,6 +677,7 @@ export function CatalogDashboard() {
                     <TrendLineCard
                         title={t('charts.volumeTrend')}
                         subtitle={t('charts.cumulativeOpenedClosed')}
+                        info={t('charts.volumeTrendInfo')}
                         data={trend}
                         height={260}
                         series={[
@@ -457,6 +685,46 @@ export function CatalogDashboard() {
                             { key: 'closed', label: 'Closed (cumulative)', color: '#22c55e' },
                         ]}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 4: Non-cumulative monthly opened trend */}
+                <div className="mb-3">
+                    <TrendLineCard
+                        title={t('charts.monthlyVolume')}
+                        subtitle={t('charts.monthlyVolumeSubtitle')}
+                        info={t('charts.monthlyVolumeInfo')}
+                        data={monthlyTrend}
+                        height={220}
+                        color="#0ea5e9"
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Detail table — collapsible. */}
+                <div className="mb-3">
+                    <CollapsibleDetailTable<CatDetailRow>
+                        storageKey="ops-dashboard:catalog:detail-open"
+                        title={t('tables.catalogDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['stable_id', 'title', 'assigned_group', 'assigned_to_name', '_openedBy'] as (keyof CatDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="catalog_detail"
                     />
                 </div>
             </div>

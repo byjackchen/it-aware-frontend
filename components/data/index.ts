@@ -11,3 +11,5 @@ export { OrganizationTypeSelect } from './OrganizationTypeSelect';
 export { TimezoneSelect } from './TimezoneSelect';
 export { Phase2FieldsCard } from './Phase2FieldsCard';
 export { IncidentSlasCard } from './IncidentSlasCard';
+export { QAScoreCard } from './QAScoreCard';
+export { ActorBadge } from './ActorBadge';

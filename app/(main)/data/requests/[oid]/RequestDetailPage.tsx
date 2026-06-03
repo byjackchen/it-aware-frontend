@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { ObjectGraph, Phase2FieldsCard } from '@/components/data';
+import { ActorBadge, ObjectGraph, Phase2FieldsCard } from '@/components/data';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Request, GlobalEdge, Worker, ServiceCatalog } from '@/lib/types/objects';
 import { updateRequestAction, deleteRequestAction } from '@/app/actions/objects';
@@ -62,7 +62,15 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
     const [subcategory, setSubcategory] = useState(request.subcategory || '');
     const [impact, setImpact] = useState(request.impact || '');
     const [assignedToOid, setAssignedToOid] = useState(request.assigned_to_oid || '');
-    const [serviceCatalogOid, setServiceCatalogOid] = useState(request.service_catalog_oid || '');
+    // UI edits write to the *_override fields; ServiceNow sync continues to
+    // populate the no-suffix default. Effective value (override || default)
+    // is shown in the read-only badge below.
+    const [serviceCatalogOverrideOid, setServiceCatalogOverrideOid] = useState(
+        request.service_catalog_override_oid || '',
+    );
+    const [serviceTypeOverrideOid, setServiceTypeOverrideOid] = useState(
+        request.service_type_override_oid || '',
+    );
     const [assignedGroup, setAssignedGroup] = useState(request.assigned_group || '');
     const [configurationItemOid, setConfigurationItemOid] = useState(request.configuration_item_oid || '');
     const [chatTranscripts, setChatTranscripts] = useState(
@@ -75,10 +83,6 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
     const [effectiveAt, setEffectiveAt] = useState(request.effective_at);
 
     const assignedWorkerName = workers.find((w) => w.oid === request.assigned_to_oid)?.fullname || 'Unassigned';
-    const creator = workers.find((w) => w.oid === request.actor_oid);
-    const creatorStableId = creator?.stable_id || 'Unknown';
-    const actorRoleLabel = request.actor_role || 'requester';
-    const actorOidLabel = request.actor_oid || 'Unknown';
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === request.oid ? e.to_object : e.from_object;
@@ -125,7 +129,8 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
             if (subcategory) formData.set('subcategory', subcategory);
             if (impact) formData.set('impact', impact);
             if (assignedToOid) formData.set('assigned_to_oid', assignedToOid);
-            if (serviceCatalogOid) formData.set('service_catalog_oid', serviceCatalogOid);
+            formData.set('service_catalog_override_oid', serviceCatalogOverrideOid);
+            formData.set('service_type_override_oid', serviceTypeOverrideOid);
             formData.set('assigned_group', assignedGroup);
             if (configurationItemOid) formData.set('configuration_item_oid', configurationItemOid);
             if (chatTranscriptsTrimmed) formData.set('chat_transcripts', chatTranscriptsTrimmed);
@@ -177,7 +182,8 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
         setSubcategory(request.subcategory || '');
         setImpact(request.impact || '');
         setAssignedToOid(request.assigned_to_oid || '');
-        setServiceCatalogOid(request.service_catalog_oid || '');
+        setServiceCatalogOverrideOid(request.service_catalog_override_oid || '');
+        setServiceTypeOverrideOid(request.service_type_override_oid || '');
         setAssignedGroup(request.assigned_group || '');
         setConfigurationItemOid(request.configuration_item_oid || '');
         setChatTranscripts(request.chat_transcripts ? JSON.stringify(request.chat_transcripts, null, 2) : '');
@@ -435,17 +441,13 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
 
                     <div className="pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
                         <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Actor</label>
-                        <div className={`flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                            <User className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
-                            <span className="text-sm capitalize">{actorRoleLabel}:</span>
-                            {creator ? (
-                                <Link href={`/data/workers/${creator.stable_id}`} className="underline underline-offset-4">
-                                    {creatorStableId}
-                                </Link>
-                            ) : (
-                                <span className="font-mono text-xs">{actorOidLabel}</span>
-                            )}
-                        </div>
+                        <ActorBadge
+                            actorType={request.actor_type}
+                            actorStableId={request.actor_stable_id}
+                            actorOid={request.actor_oid}
+                            actorRole={request.actor_role}
+                            defaultRole="requester"
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/10">
@@ -492,11 +494,12 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                             <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Catalog</label>
                             {isEditing ? (
                                 <select
-                                    value={serviceCatalogOid}
-                                    onChange={(e) => setServiceCatalogOid(e.target.value)}
+                                    value={serviceCatalogOverrideOid}
+                                    onChange={(e) => setServiceCatalogOverrideOid(e.target.value)}
                                     className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the source-system value; clear to fall back to ServiceNow"
                                 >
-                                    <option value="">None</option>
+                                    <option value="">No override (use source value)</option>
                                     {serviceCatalogs.map(sc => (
                                         <option key={sc.oid} value={sc.oid}>{sc.name}</option>
                                     ))}
@@ -505,7 +508,39 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                                 <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
                                     <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
                                     <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
-                                        {serviceCatalogs.find(sc => sc.oid === request.service_catalog_oid)?.name || 'None'}
+                                        {serviceCatalogs.find(sc => sc.oid === (request.service_catalog_override_oid ?? request.service_catalog_oid))?.name || 'None'}
+                                        {request.service_catalog_override_oid && request.service_catalog_override_oid !== request.service_catalog_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>Service Type</label>
+                            {isEditing ? (
+                                <select
+                                    value={serviceTypeOverrideOid}
+                                    onChange={(e) => setServiceTypeOverrideOid(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white'}`}
+                                    title="Override the AI-derived type; clear to fall back"
+                                >
+                                    <option value="">No override (use source value)</option>
+                                    {serviceCatalogs
+                                        .filter(sc => (sc.stable_id ?? '').startsWith('ITST') && (sc.path?.length ?? 0) === 2)
+                                        .map(sc => (
+                                            <option key={sc.oid} value={sc.oid}>{sc.name}</option>
+                                        ))}
+                                </select>
+                            ) : (
+                                <div className={`flex items-center gap-2 p-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                                    <Building2 className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                                    <span className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                                        {serviceCatalogs.find(sc => sc.oid === (request.service_type_override_oid ?? request.service_type_oid))?.name || 'None'}
+                                        {request.service_type_override_oid && request.service_type_override_oid !== request.service_type_oid && (
+                                            <span className="ml-2 text-[10px] uppercase tracking-wider opacity-60">override</span>
+                                        )}
                                     </span>
                                 </div>
                             )}

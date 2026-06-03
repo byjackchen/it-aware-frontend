@@ -18,19 +18,28 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents } from '@/lib/hooks/useOpsDashboard';
 import type { TicketRow } from '@/lib/api/ops_dashboard';
 import {
+    ACTIVE_STATES,
+    formatDurationSec,
     groupBy,
     isActiveState,
+    isInScopeGroup,
     daysSinceUpdated,
+    meanOf,
     monthsFromRange,
     cumulativeTrendByMonth,
+    trendByMonth,
     momByDate,
     momActiveSnapshot,
+    openedAt,
+    snDayEndIso,
+    snDayStartIso,
+    sumOf,
     formatMoM,
     type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
+import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
-import { GroupBarCard } from '@/components/ops_dashboard/GroupBarCard';
 import { TrendLineCard } from '@/components/ops_dashboard/TrendLineCard';
 import {
     TopFilterBar,
@@ -40,6 +49,10 @@ import {
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
 import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
+import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
 const STATE_PALETTE = [
     '#3b82f6',
@@ -97,10 +110,6 @@ function locationOf(row: TicketRow): string | null {
     return row.actor?.location?.descriptor?.trim() || null;
 }
 
-function openedDateStr(row: TicketRow): string {
-    return (row.created_at ?? '').slice(0, 10);
-}
-
 export function IncidentAnalysisDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
@@ -113,9 +122,16 @@ export function IncidentAnalysisDashboard() {
     // 3-month default horizon on page load. Seeded into the user-facing
     // filter state so the date picker shows it — otherwise the default is
     // invisible and users mistake it for a data cutoff.
-    const [defaultFromIso] = useState<string>(
-        () => new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    );
+    // Default Open-date filter starts at the FIRST DAY OF THE
+    // CURRENT MONTH so all MONITORING dashboards open on the
+    // same month-to-date window — easier to compare numbers
+    // across pages and matches how the team reports MTD.
+    const [defaultFromIso] = useState<string>(() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}-01`;
+    });
 
     // Capture "now" at mount so aging math is stable across re-renders
     // (react-hooks/purity rejects Date.now() inside useMemo).
@@ -137,19 +153,55 @@ export function IncidentAnalysisDashboard() {
     // Three-level Region / Country / Location slicer state — geographic.
     // Country is the leading-token form (US, UK, …); Location is the
     // full string (US-California-Palo Alto, …).
-    const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
-    const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    // Region / Country / Location are SHARED across every MONITORING
+    // dashboard via useOpsGlobalFilter — picking AMER on one page
+    // carries the selection to the others so users don't repeat it.
+    const {
+        filter: globalFilter,
+        setRegions: setSelectedRegions,
+        setCountries: setSelectedCountries,
+        setLocations: setSelectedLocations,
+    } = useOpsGlobalFilter();
+    const selectedRegions = globalFilter.regions;
+    const selectedCountries = globalFilter.countries;
+    const selectedLocations = globalFilter.locations;
 
     // Drive the server fetch from the user-visible date range so the
     // picker and the payload stay in sync. fetchAll: true pages through
     // skip/limit to avoid the 1000-row silent cutoff.
     const dateRange = (filters.created_at_from as { from: string | null; to: string | null } | undefined) ?? { from: null, to: null };
+    // SN reports timestamps in Asia/Shanghai (+08:00); anchor the
+    // user-picked YYYY-MM-DD in that timezone so the API boundaries
+    // align with what SN itself shows. Filter against the *upstream*
+    // SN create timestamp (`source_created_at`), not the local DB
+    // ingest timestamp (`created_at`) — sync pipeline backfills land
+    // recent `created_at` on historical tickets and would otherwise
+    // explode MTD counts when SN does a bulk re-sync.
+    const dateFromIso = snDayStartIso(dateRange.from);
+    const dateToIso = snDayEndIso(dateRange.to);
     const { data, loading, error, refetch } = useIncidents(
         {
             limit: 1000,
-            created_at_from: dateRange.from ?? undefined,
-            created_at_to: dateRange.to ?? undefined,
+            source_created_at_from: dateFromIso,
+            source_created_at_to: dateToIso,
+        },
+        { fetchAll: true },
+    );
+
+    // Dedicated VIP fetch — `is_vip` is a workers-table column, not a
+    // ticket-row field, so the slim view doesn't expose it. We mirror
+    // the VipTicketsDashboard approach: ask the backend to filter by
+    // is_vip + active states + the same date window, then count the
+    // returned rows. Sniffing `r.is_vip` on the slim row would always
+    // return undefined → 0, which is what produced the "VIP Active = 0"
+    // bug seen on this page.
+    const vipQuery = useIncidents(
+        {
+            limit: 200,
+            is_vip: true,
+            states_list: ACTIVE_STATES,
+            source_created_at_from: dateFromIso,
+            source_created_at_to: dateToIso,
         },
         { fetchAll: true },
     );
@@ -173,19 +225,38 @@ export function IncidentAnalysisDashboard() {
         // toggleState below), not by slicers in the filter panel.
         const prioSel = (filters.priority as string[]) ?? [];
         const stateSel = (filters.state as string[]) ?? [];
-        const range = (filters.created_at_from as { from: string | null; to: string | null }) ?? { from: null, to: null };
+        const groupSel = (filters.assigned_group as string[]) ?? [];
+        const categorySel = (filters.category as string[]) ?? [];
         return rows.filter((r) => {
+            // Scope to OIT assignment groups so the dashboard reflects
+            // OIT's own queue (matches Active Monitoring Hub +
+            // Unassigned Tab). Non-OIT groups like Workday HQ BA Group
+            // / SN_WD-* are filtered out.
+            if (!isInScopeGroup(r.assigned_group)) return false;
             if (!matchesRegionCountry(r, selectedRegions, selectedCountries, selectedLocations, locationOf)) return false;
             if (prioSel.length) {
                 const bucket = priorityBucket(r.priority);
                 if (!bucket || !prioSel.includes(bucket)) return false;
             }
             if (stateSel.length && !stateSel.includes(r.state)) return false;
-            if (range.from || range.to) {
-                const opened = openedDateStr(r);
-                if (range.from && opened && opened < range.from) return false;
-                if (range.to && opened && opened > range.to) return false;
-            }
+            // Assigned-group filter is driven by the By-Group donut
+            // (slice click + legend toggle). NULL groups never match
+            // when the filter is active — same convention as the other
+            // chart-driven filters.
+            if (groupSel.length && (!r.assigned_group || !groupSel.includes(r.assigned_group))) return false;
+            // Category filter — driven by the By-Category donut click
+            // / legend toggle. Missing categories surface as the
+            // "Unknown" bucket in the donut (see categoryDonut), so
+            // we keep that label as a selectable value.
+            if (categorySel.length && !categorySel.includes(r.category ?? 'Unknown')) return false;
+            // NOTE: no client-side date predicate. The user-picked
+            // date range is already applied server-side via
+            // `created_at_from` / `created_at_to` (anchored in
+            // SN's Asia/Shanghai timezone via snDayStartIso/EndIso).
+            // Re-filtering here with a UTC YYYY-MM-DD string compare
+            // would shift the boundary back by 8 hours and double-
+            // count / drop tickets that SN displays on the boundary
+            // day's morning (00:00–07:59 SN-time).
             return true;
         });
     }, [rows, filters, selectedRegions, selectedCountries, selectedLocations]);
@@ -200,49 +271,116 @@ export function IncidentAnalysisDashboard() {
     //   point-in-time replay (see momActiveSnapshot).
     // - VIP Active: same snapshot, narrowed to VIP rows.
     const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => r.created_at, now)),
+        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
         [filtered, now],
     );
     const activeMoM = useMemo(
         () => formatMoM(momActiveSnapshot(filtered, now)),
         [filtered, now],
     );
-    const vipMoM = useMemo(
-        () =>
-            formatMoM(
-                momActiveSnapshot(filtered, now, (r) => {
-                    const vip =
-                        (r as unknown as { is_vip?: boolean }).is_vip === true ||
-                        (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
-                    return vip;
-                }),
-            ),
-        [filtered, now],
-    );
+    // VIP active comes from a dedicated is_vip=true server-side fetch
+    // (vipQuery above) — no MoM delta available because that fetch
+    // only returns currently-active rows.
 
     const kpis = useMemo(() => {
         const total = filtered.length;
         const active = activeRows.length;
-        let high = 0;
-        let medium = 0;
         let aging2d = 0;
         let aging7d = 0;
-        let vipActive = 0;
         for (const r of activeRows) {
-            const bucket = priorityBucket(r.priority);
-            if (bucket === 'High') high += 1;
-            if (bucket === 'Medium') medium += 1;
             const days = daysSinceUpdated(r, now);
             if (days > 2) aging2d += 1;
             if (days > 7) aging7d += 1;
-            const vip =
-                (r as unknown as { is_vip?: boolean }).is_vip === true ||
-                (r.actor as unknown as { is_vip?: boolean } | null)?.is_vip === true;
-            if (vip) vipActive += 1;
         }
+
+        // Resolved-on-day-1: matches the ServiceNow saved-condition the
+        // ops admin uses ("business_duration is not empty AND less than
+        // 24 hours"). When SN populates `business_duration_sec` we use
+        // that directly so the dashboard count agrees with SN's own
+        // filter. When `business_duration_sec` is null (incidents SN
+        // hasn't yet computed business duration for, or rows from the
+        // dev dump which omits the field) we fall back to a wall-clock
+        // window (resolve - open <= 24h) so the count isn't silently
+        // truncated to zero in non-prod environments.
+        let resolvedDay1 = 0;
+        const resolvedRows: TicketRow[] = [];
+        const DAY_SEC = 24 * 60 * 60;
+        for (const r of filtered) {
+            if (!r.source_resolved_at) continue;
+            resolvedRows.push(r);
+            const bizSec = r.business_duration_sec;
+            if (bizSec != null) {
+                if (bizSec < DAY_SEC) resolvedDay1 += 1;
+                continue;
+            }
+            // Fallback: wall-clock when business_duration_sec is null.
+            const opened = Date.parse(openedAt(r));
+            const resolved = Date.parse(r.source_resolved_at);
+            if (
+                Number.isFinite(opened) &&
+                Number.isFinite(resolved) &&
+                resolved - opened <= DAY_SEC * 1000 &&
+                resolved >= opened
+            ) {
+                resolvedDay1 += 1;
+            }
+        }
+
+        // Mean Time to Resolve — business-hours calendar so nights /
+        // weekends don't inflate the average. Prefers SN's
+        // ``business_duration_sec`` (total business-hours from create
+        // → close) and falls back to ``business_resolve_time_sec``
+        // (business-hours from create → first resolve). The dev dump
+        // omits business_duration; production carries both.
+        const mttrSec = meanOf(
+            resolvedRows,
+            (r) => r.business_duration_sec ?? r.business_resolve_time_sec ?? null,
+        );
+
+        // Total Time Worked — sum of resolve_time_sec across every
+        // resolved row in scope. resolve_time_sec is total wall-clock
+        // resolve time (vs. business_resolve_time_sec which is
+        // business-hours-only). Falls back to duration_sec when the
+        // SN sync didn't populate resolve_time.
+        const totalTimeWorkedSec = sumOf(
+            resolvedRows,
+            (r) => r.resolve_time_sec ?? r.duration_sec ?? null,
+        );
+
+        // VIP active comes from the dedicated is_vip=true server-side
+        // fetch — see comment on `vipQuery` above. Apply the same
+        // Region/Country slicer so the KPI tracks geo narrowing.
+        const vipRows = vipQuery.data?.items ?? [];
+        const vipActive = vipRows.filter((r) =>
+            matchesRegionCountry(
+                r,
+                selectedRegions,
+                selectedCountries,
+                selectedLocations,
+                locationOf,
+            ),
+        ).length;
         const resolvedRate = total > 0 ? `${(((total - active) / total) * 100).toFixed(1)}%` : '—';
-        return { total, active, high, medium, aging2d, aging7d, vipActive, resolvedRate };
-    }, [filtered, activeRows, now]);
+        return {
+            total,
+            active,
+            resolvedDay1,
+            mttrSec,
+            totalTimeWorkedSec,
+            aging2d,
+            aging7d,
+            vipActive,
+            resolvedRate,
+        };
+    }, [
+        filtered,
+        activeRows,
+        now,
+        vipQuery.data,
+        selectedRegions,
+        selectedCountries,
+        selectedLocations,
+    ]);
 
     const priorityDonut = useMemo(() => {
         // Bucket the active rows into High/Medium/Low and emit slices
@@ -260,12 +398,36 @@ export function IncidentAnalysisDashboard() {
         }));
     }, [activeRows]);
 
+    // Category donut — replaces the By Priority slice on the page.
+    // Uses SN's incident.category column; rows missing a category fall
+    // into a "Unknown" bucket so the donut total still matches the
+    // active-row count.
+    const categoryDonut = useMemo(
+        () =>
+            groupBy(activeRows, (r) => r.category ?? 'Unknown')
+                .slice(0, 8)
+                .map((g) => ({ name: g.key, value: g.count })),
+        [activeRows],
+    );
+
     const stateDonut = useMemo(
         () => groupBy(filtered, (r) => r.state).map((g) => ({ name: g.key, value: g.count })),
         [filtered],
     );
 
-    const groupBar = useMemo(() => groupBy(activeRows, (r) => r.assigned_group), [activeRows]);
+    // By-Group donut: top 8 assignment groups + "Other" rollup. Donut
+    // beats horizontal bar here because we want slice-click to act as
+    // a filter (matching the priority / state donuts above) and
+    // because at typical dataset sizes 8 groups + Other reads cleaner
+    // than 10+ thin bars.
+    const groupDonut = useMemo(() => {
+        const ranked = groupBy(activeRows, (r) => r.assigned_group);
+        const TOP = 8;
+        const top = ranked.slice(0, TOP).map((g) => ({ name: g.key, value: g.count }));
+        const restCount = ranked.slice(TOP).reduce((acc, g) => acc + g.count, 0);
+        if (restCount > 0) top.push({ name: 'Other', value: restCount });
+        return top;
+    }, [activeRows]);
 
     const trendMonths = useMemo(
         () => monthsFromRange(dateRange.from, dateRange.to, now),
@@ -291,6 +453,14 @@ export function IncidentAnalysisDashboard() {
         [filtered, trendMonths, now],
     );
 
+    // Non-cumulative monthly opened — separate "Monthly Volume" line
+    // chart so users can spot period-over-period swings without the
+    // smoothing effect of a cumulative line.
+    const monthlyTrend = useMemo(
+        () => trendByMonth(filtered, trendMonths, now),
+        [filtered, trendMonths, now],
+    );
+
     // Both the donut slice click (via DonutCard.onSliceClick) and the
     // interactive legend toggle (via DonutCard.onLegendToggle) feed
     // through these toggle helpers so the two stay in sync.
@@ -310,6 +480,27 @@ export function IncidentAnalysisDashboard() {
     const onStateSliceClick = (slice: { name: string }) => toggleState(slice.name);
     const selectedStates = (filters.state as string[]) ?? [];
 
+    const toggleCategory = (name: string) => {
+        const cur = (filters.category as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, category: next });
+    };
+    const onCategorySliceClick = (slice: { name: string }) => toggleCategory(slice.name);
+    const selectedCategories = (filters.category as string[]) ?? [];
+
+    const toggleAssignedGroup = (name: string) => {
+        // The "Other" rollup in the donut isn't a real assigned_group
+        // value — clicking it would set a filter that matches nothing.
+        // Treat it as a no-op so the click stays inert (no state
+        // change, no surprising empty dashboard).
+        if (name === 'Other') return;
+        const cur = (filters.assigned_group as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, assigned_group: next });
+    };
+    const onGroupSliceClick = (slice: { name: string }) => toggleAssignedGroup(slice.name);
+    const selectedAssignedGroups = (filters.assigned_group as string[]) ?? [];
+
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
 
@@ -324,6 +515,8 @@ export function IncidentAnalysisDashboard() {
      * to drive the consolidated Clear All button. Counts:
      *   - Priority (Active by Priority donut)
      *   - State (By State donut)
+     *   - Category (By Category donut)
+     *   - Assigned Group (By Group donut)
      *   - Open Date range (when not at the page default)
      */
     const extraActiveFilterCount = useMemo(() => {
@@ -332,6 +525,10 @@ export function IncidentAnalysisDashboard() {
         if (Array.isArray(prio)) n += prio.length;
         const st = filters.state;
         if (Array.isArray(st)) n += st.length;
+        const cat = filters.category;
+        if (Array.isArray(cat)) n += cat.length;
+        const grp = filters.assigned_group;
+        if (Array.isArray(grp)) n += grp.length;
         const r = filters.created_at_from as { from: string | null; to: string | null } | undefined;
         // Default state has from=defaultFromIso, to=null. Anything other
         // than that should count as "active" so the clear button lights
@@ -350,6 +547,7 @@ export function IncidentAnalysisDashboard() {
             assigned_group: [],
             priority: [],
             state: [],
+            category: [],
             department: [],
             created_at_from: { from: defaultFromIso, to: null },
             created_at_to: { from: defaultFromIso, to: null },
@@ -371,6 +569,98 @@ export function IncidentAnalysisDashboard() {
         setSelectedLocations([]);
         resetAllParentFilters();
     }
+
+    // ── Detail table at the bottom — collapsible. Renders the
+    //   `filtered` Incident set as a row-level breakdown with search,
+    //   sort, pagination, and CSV export. Heavy enrichment only runs
+    //   when the disclosure is open.
+    interface IncDetailRow extends Record<string, unknown> {
+        oid: string;
+        stable_id: string;
+        title: string | null;
+        state: string;
+        priority: string;
+        assigned_group: string | null;
+        assigned_to_name: string | null;
+        _daysNoUpdate: number;
+        _location: string;
+        _openedAt: string;
+        _openedBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: IncDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            stable_id: r.stable_id,
+            title: r.title,
+            state: r.state,
+            priority: r.priority,
+            assigned_group: r.assigned_group,
+            assigned_to_name: r.assigned_to_name,
+            _daysNoUpdate: daysSinceUpdated(r, now),
+            _location: locationOf(r) ?? '—',
+            _openedAt: openedAt(r),
+            _openedBy: r.actor?.fullname?.trim() || r.caller_name?.trim() || '—',
+        }));
+    }, [filtered, now]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<IncDetailRow>[] = useMemo(() => [
+        {
+            key: 'stable_id',
+            label: t('tables.number'),
+            width: '120px',
+            render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+        },
+        { key: 'state', label: t('tables.state'), width: '130px' },
+        { key: 'priority', label: t('tables.priority'), width: '90px' },
+        {
+            key: '_daysNoUpdate',
+            label: t('tables.daysNoUpdate'),
+            width: '110px',
+            render: (r) => {
+                const cls =
+                    r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
+                    : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                return <span className={cls}>{r._daysNoUpdate}d</span>;
+            },
+            sortValue: (r) => r._daysNoUpdate,
+            csvValue: (r) => r._daysNoUpdate,
+        },
+        {
+            key: 'assigned_group',
+            label: t('tables.assignmentGroup'),
+            width: '170px',
+            render: (r) => r.assigned_group ?? '—',
+        },
+        {
+            key: 'assigned_to_name',
+            label: t('tables.assignedTo'),
+            width: '140px',
+            render: (r) => r.assigned_to_name ?? '—',
+        },
+        { key: '_openedBy', label: t('tables.openedBy'), width: '140px' },
+        { key: '_location', label: t('tables.location'), width: '150px' },
+        {
+            key: '_openedAt',
+            label: t('tables.openedAt'),
+            width: '110px',
+            render: (r) => laDateLabel(r._openedAt),
+            sortValue: (r) => r._openedAt,
+            csvValue: (r) => laDateLabel(r._openedAt),
+        },
+        {
+            key: 'title',
+            label: t('tables.title'),
+            width: '360px',
+            render: (r) => <span className="truncate block" title={r.title ?? ''}>{r.title ?? ''}</span>,
+        },
+    ], [t]);
 
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
@@ -394,13 +684,16 @@ export function IncidentAnalysisDashboard() {
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:incidents:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -478,46 +771,55 @@ export function IncidentAnalysisDashboard() {
                         label={t('kpis.totalIncidents')}
                         value={kpis.total}
                         icon={AlertTriangle}
-                        delta={totalMoM ? { value: deltaLabel(totalMoM), trend: totalMoM.trend } : undefined}
+                        tooltip={t('kpis.totalIncidentsInfo')}
                     />
                     <KpiCard
-                        label={t('kpis.active')}
-                        value={kpis.active}
+                        label={t('kpis.resolvedDay1')}
+                        value={kpis.resolvedDay1}
                         icon={Activity}
-                        delta={activeMoM ? { value: deltaLabel(activeMoM), trend: activeMoM.trend } : undefined}
+                        tooltip={t('kpis.resolvedDay1Info')}
                     />
-                    <KpiCard label={t('kpis.highPriority')} value={kpis.high} />
-                    <KpiCard label={t('kpis.mediumPriority')} value={kpis.medium} />
+                    <KpiCard
+                        label={t('kpis.mttr')}
+                        value={formatDurationSec(kpis.mttrSec)}
+                        tooltip={t('kpis.mttrInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.totalTimeWorked')}
+                        value={formatDurationSec(kpis.totalTimeWorkedSec)}
+                        tooltip={t('kpis.totalTimeWorkedInfo')}
+                    />
                 </div>
                 <div className="grid grid-cols-4 gap-3 mb-3">
-                    <KpiCard label={t('kpis.agingGt2d')} value={kpis.aging2d} />
-                    <KpiCard label={t('kpis.agingGt7d')} value={kpis.aging7d} />
+                    <KpiCard label={t('kpis.agingGt2d')} tooltip={t('kpis.agingGt2dInfo')} value={kpis.aging2d} />
+                    <KpiCard label={t('kpis.agingGt7d')} tooltip={t('kpis.agingGt7dInfo')} value={kpis.aging7d} />
                     <KpiCard
                         label={t('kpis.vipActive')}
                         value={kpis.vipActive}
                         icon={Star}
-                        delta={vipMoM ? { value: deltaLabel(vipMoM), trend: vipMoM.trend } : undefined}
+                        tooltip={t('kpis.vipActiveInfo')}
                     />
-                    <KpiCard label={t('kpis.resolvedRate')} value={kpis.resolvedRate} />
+                    <KpiCard label={t('kpis.resolvedRate')} tooltip={t('kpis.resolvedRateInfo')} value={kpis.resolvedRate} />
                 </div>
 
                 {/* Donut row */}
                 <div className="grid gap-3 mb-3 grid-cols-2">
                     <DonutCard
-                        title={t('charts.activeByPriority')}
-                        subtitle={t('charts.activeByPrioritySubtitle')}
-                        data={priorityDonut}
+                        title={t('charts.activeByCategoryIncidents')}
+                        info={t('charts.activeByCategoryIncidentsInfo')}
+                        data={categoryDonut}
                         height={220}
-                        onSliceClick={onPrioritySliceClick}
-                        // Interactive legend — pairs with onSliceClick so a
-                        // priority can be toggled either by clicking a slice
-                        // or its legend entry.
-                        selectedSlices={selectedPriorities}
-                        onLegendToggle={togglePriority}
+                        // Slice click + legend toggle drive the
+                        // category client-filter, mirroring how the
+                        // priority / state donuts work above.
+                        onSliceClick={onCategorySliceClick}
+                        selectedSlices={selectedCategories}
+                        onLegendToggle={toggleCategory}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <DonutCard
                         title={t('charts.byStateAll')}
+                        info={t('charts.byStateAllInfo')}
                         data={stateDonut}
                         palette={STATE_PALETTE}
                         height={220}
@@ -533,16 +835,29 @@ export function IncidentAnalysisDashboard() {
 
                 {/* Bar + trend row */}
                 <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '3fr 2fr' }}>
-                    <GroupBarCard
+                    <DonutCard
                         title={t('charts.activeByGroup')}
-                        data={groupBar}
-                        topN={10}
+                        info={t('charts.activeByGroupInfo')}
+                        data={groupDonut}
                         height={260}
+                        // Slice click + legend toggle drive the
+                        // assigned_group filter, mirroring the
+                        // priority / state donut interaction model.
+                        // The "Other" bucket is intentionally not
+                        // clickable as a filter target — clicking it
+                        // is a no-op because we don't track which
+                        // groups it rolls up; if a user wants to
+                        // filter inside "Other" they'd need a list
+                        // view which this card isn't.
+                        onSliceClick={onGroupSliceClick}
+                        selectedSlices={selectedAssignedGroups}
+                        onLegendToggle={toggleAssignedGroup}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                     <TrendLineCard
                         title={t('charts.monthlyOpenedTrend', { months: trendMonths })}
                         subtitle={t('charts.cumulativeOpenedClosed')}
+                        info={t('charts.monthlyOpenedTrendInfo', { months: trendMonths })}
                         data={trend}
                         height={260}
                         series={[
@@ -550,6 +865,47 @@ export function IncidentAnalysisDashboard() {
                             { key: 'closed', label: 'Closed (cumulative)', color: '#22c55e' },
                         ]}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row: Non-cumulative monthly opened trend */}
+                <div className="mb-3">
+                    <TrendLineCard
+                        title={t('charts.monthlyVolume')}
+                        subtitle={t('charts.monthlyVolumeSubtitle')}
+                        info={t('charts.monthlyVolumeInfo')}
+                        data={monthlyTrend}
+                        height={220}
+                        color="#ef4444"
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Detail table — collapsible. Heavy DOM stays out of the
+                    initial render; user choice persists per page. */}
+                <div className="mb-3">
+                    <CollapsibleDetailTable<IncDetailRow>
+                        storageKey="ops-dashboard:incidents:detail-open"
+                        title={t('tables.incidentDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['stable_id', 'title', 'assigned_group', 'assigned_to_name', '_openedBy'] as (keyof IncDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="incidents_detail"
                     />
                 </div>
             </div>

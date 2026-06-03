@@ -8,3 +8,5 @@ export { DeleteButton } from './DeleteButton';
 export { AssignmentManager } from './AssignmentManager';
 export { EmptyState } from './EmptyState';
 export { WorkerSearchDialog } from './WorkerSearchDialog';
+export { AgentSearchDialog } from './AgentSearchDialog';
+export { SystemSearchDialog } from './SystemSearchDialog';

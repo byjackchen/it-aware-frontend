@@ -102,7 +102,8 @@ export async function exportSurveysXlsx({
                 qaCells.push(q.title, resolveAnswerText(q, answerByQid.get(q.question_id)));
             }
 
-            const geo = workerGeoMap.get(survey.receiver_oid);
+            // receiver_oid is null for externally-sourced surveys (external_source !== null).
+            const geo = survey.receiver_oid ? workerGeoMap.get(survey.receiver_oid) : undefined;
             rows.push([
                 survey.receiver_stable_id,
                 geo?.country ?? '',

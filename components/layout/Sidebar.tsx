@@ -32,13 +32,41 @@ export function Sidebar() {
     // Don't render sidebar if no sub-menu for current path
     if (!activeConfig) return null;
 
+    // Build the global set of authorized hrefs across every section + flat
+    // items so the longest-prefix rule can disqualify a parent route when a
+    // deeper child route belongs to a different section.
+    const allHrefs: string[] = (() => {
+        const acc: string[] = []
+        if (activeConfig.sections) {
+            for (const sec of activeConfig.sections) {
+                for (const it of sec.items) {
+                    if (checkMenuAccess(it.permissions)) acc.push(it.href)
+                }
+            }
+        }
+        if (activeConfig.items) {
+            for (const it of activeConfig.items) {
+                if (checkMenuAccess(it.permissions)) acc.push(it.href)
+            }
+        }
+        return acc
+    })()
+
+    const globalActiveHref = (() => {
+        const matching = allHrefs.filter(
+            (href) =>
+                pathname === href || (href !== '/' && pathname.startsWith(href + '/')),
+        )
+        if (matching.length === 0) return null
+        return matching.reduce((a, b) => (b.length > a.length ? b : a))
+    })()
+
     const renderMenuItems = (items: MenuItem[]) => {
         const authorizedItems = items.filter(item => checkMenuAccess(item.permissions));
 
         return authorizedItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(item.href));
+            const isActive = item.href === globalActiveHref;
 
             return (
                 <NavLink
@@ -74,6 +102,7 @@ export function Sidebar() {
                         t={t}
                         isLight={isLight}
                         checkMenuAccess={checkMenuAccess}
+                        globalActiveHref={globalActiveHref}
                     />
                 ))}
 

@@ -11,12 +11,6 @@ import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
 
-const STATUS_STYLE: Record<'assigned' | 'deferred' | 'unassigned', { bg: string; text: string }> = {
-    assigned: { bg: 'bg-green-500/20', text: 'text-green-500' },
-    deferred: { bg: 'bg-yellow-500/20', text: 'text-yellow-500' },
-    unassigned: { bg: 'bg-gray-500/20', text: 'text-gray-500' },
-};
-
 function getCreatedAtTimestamp(value: string): number {
     const ts = Date.parse(value);
     return Number.isNaN(ts) ? 0 : ts;
@@ -28,6 +22,23 @@ export function InteractionsListPage() {
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
+    const [hideEnterChat, setHideEnterChat] = useState(false);
+    const [hideClick, setHideClick] = useState(false);
+
+    // Compose the toggles into one comma-separated exclude_action_types param
+    // (the backend splits on commas → NOT IN (...)). Memoized so the query-string
+    // identity only changes when a toggle does; useInfiniteResource keys its
+    // cache/paging reset on this object.
+    const query = useMemo(() => {
+        const excluded: string[] = [];
+        if (hideEnterChat) excluded.push('enter_chat');
+        if (hideClick) excluded.push('click');
+        return {
+            sort_by: 'created_at',
+            order: 'desc' as const,
+            ...(excluded.length ? { exclude_action_types: excluded.join(',') } : {}),
+        };
+    }, [hideEnterChat, hideClick]);
 
     const {
         items: interactions,
@@ -41,10 +52,7 @@ export function InteractionsListPage() {
     } = useInfiniteResource<Interaction, InteractionListResponse>('interactions', {
         pageSize: 300,
         auto: true,
-        query: {
-            sort_by: 'created_at',
-            order: 'desc',
-        },
+        query,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
         inferHasMore: (response, _pageItems, totalLoaded) => totalLoaded < response.total,
@@ -111,6 +119,28 @@ export function InteractionsListPage() {
                             className={`w-full pl-10 pr-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
                         />
                     </div>
+                    <label
+                        className={`flex items-center gap-2 text-sm cursor-pointer select-none shrink-0 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={hideEnterChat}
+                            onChange={(e) => setHideEnterChat(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50"
+                        />
+                        Hide enter_chat
+                    </label>
+                    <label
+                        className={`flex items-center gap-2 text-sm cursor-pointer select-none shrink-0 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={hideClick}
+                            onChange={(e) => setHideClick(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50"
+                        />
+                        Hide click
+                    </label>
                 </div>
 
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
@@ -124,35 +154,27 @@ export function InteractionsListPage() {
                         <div className={`py-12 text-center ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>No interactions found</div>
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-white/5">
-                            {filteredInteractions.map((interaction) => {
-                                const statusKey = (interaction.assignment_status || 'unassigned') as 'assigned' | 'deferred' | 'unassigned';
-                                const statusStyle = STATUS_STYLE[statusKey];
-
-                                return (
-                                    <button
-                                        key={interaction.oid}
-                                        onClick={() => router.push(`/data/interactions/${interaction.oid}`)}
-                                        className={`w-full text-left px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0 flex-1">
-                                                <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                                                    {interaction.content_text || '[No content text]'}
-                                                </div>
-                                                <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                    {interaction.stable_id} · {interaction.action_type} · {interaction.source_system} · {interaction.actor_stable_id}
-                                                </div>
-                                                <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                    {formatDateTime(interaction.created_at, timezone)}
-                                                </div>
+                            {filteredInteractions.map((interaction) => (
+                                <button
+                                    key={interaction.oid}
+                                    onClick={() => router.push(`/data/interactions/${interaction.oid}`)}
+                                    className={`w-full text-left px-4 py-3 transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-white/5'}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                                                {interaction.content_text || '[No content text]'}
                                             </div>
-                                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${statusStyle.bg} ${statusStyle.text}`}>
-                                                {statusKey}
-                                            </span>
+                                            <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {interaction.stable_id} · {interaction.action_type} · {interaction.source_system} · {interaction.actor_stable_id}
+                                            </div>
+                                            <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                {formatDateTime(interaction.created_at, timezone)}
+                                            </div>
                                         </div>
-                                    </button>
-                                );
-                            })}
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>

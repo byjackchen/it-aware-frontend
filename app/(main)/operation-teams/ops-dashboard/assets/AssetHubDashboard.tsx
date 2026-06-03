@@ -4,14 +4,14 @@
  * Asset Hub (Page 1.3.1) — ports `temp_ref/.../assets/AssetsDashboardPage.tsx`
  * to the real API via {@link useHardwares}.
  *
- * Base filter: model_category ∈ DASHBOARD_ASSET_CATEGORIES. We pull the
+ * Base filter: model_category whitelisted via `isInScopeAsset`. We pull the
  * data with no category filter (Phase 1 backend param is single-value)
  * and narrow client-side — `limit=1000` plus active-only covers
  * reasonable dashboard volumes.
  */
 
-import { useMemo, useState } from 'react';
-import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -21,6 +21,7 @@ import {
     summarizeAssets,
     groupBy,
     inferDeviceType,
+    isInScopeAsset,
     isInStock,
 } from '@/lib/ops_dashboard/aggregate';
 import {
@@ -31,8 +32,11 @@ import {
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
 import { DonutCard } from '@/components/ops_dashboard/DonutCard';
 import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
 
-const DASHBOARD_ASSET_CATEGORIES = new Set(['Computer', 'Desktop', 'Hardware', 'Server', 'Laptop']);
 const MAC_COLOR = '#6366f1';
 const WIN_COLOR = '#3b82f6';
 const OTHER_COLOR = '#0ea5e9';
@@ -75,13 +79,54 @@ export function AssetHubDashboard() {
 
     // Sidebar filter state — three slicers + a chart-only
     // `stock_room` dimension driven exclusively by the In-Stock
-    // Location donut (no panel slicer for it).
+    // Location donut (no panel slicer for it). Support Group /
+    // Procured By / Department are SHARED across every asset-oriented
+    // dashboard via useOpsAssetFilter — picking "AMER OIT Support"
+    // on Asset Overview carries to In-Stock / Pending / Zero Residual.
+    const {
+        filter: assetFilter,
+        setSupportGroups,
+        setProcuredBy,
+        setDepartments,
+    } = useOpsAssetFilter();
     const [filters, setFilters] = useState<FilterState>({
-        support_group: [],
-        procured_by: [],
-        department: [],
         stock_room: [],
     });
+    // Mirror the three shared dims into the legacy FilterState shape
+    // the TopFilterBar expects. Updates flow back into the global hook.
+    const filterStateForBar: FilterState = useMemo(
+        () => ({
+            ...filters,
+            support_group: assetFilter.supportGroups,
+            procured_by: assetFilter.procuredBy,
+            department: assetFilter.departments,
+        }),
+        [filters, assetFilter],
+    );
+    const onFilterStateChange = useCallback(
+        (next: FilterState) => {
+            // Pull the three shared dims out and route them through
+            // the global hook. Everything else (stock_room) stays local.
+            const supportGroups = (next.support_group as string[]) ?? [];
+            const procuredBy = (next.procured_by as string[]) ?? [];
+            const departments = (next.department as string[]) ?? [];
+            if (JSON.stringify(supportGroups) !== JSON.stringify(assetFilter.supportGroups)) {
+                setSupportGroups(supportGroups);
+            }
+            if (JSON.stringify(procuredBy) !== JSON.stringify(assetFilter.procuredBy)) {
+                setProcuredBy(procuredBy);
+            }
+            if (JSON.stringify(departments) !== JSON.stringify(assetFilter.departments)) {
+                setDepartments(departments);
+            }
+            const localOnly: FilterState = { ...next };
+            delete localOnly.support_group;
+            delete localOnly.procured_by;
+            delete localOnly.department;
+            setFilters(localOnly);
+        },
+        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
+    );
 
     // Option pools derive from the fetched data.
     const slicers: SlicerConfig[] = useMemo(() => {
@@ -115,21 +160,36 @@ export function AssetHubDashboard() {
 
     // Base set: dashboard model categories + user sidebar slicers applied.
     const filtered = useMemo(() => {
-        const supportGroupSel = (filters.support_group as string[]) ?? [];
-        const procuredSel = (filters.procured_by as string[]) ?? [];
-        const deptSel = (filters.department as string[]) ?? [];
+        const supportGroupSel = assetFilter.supportGroups;
+        const procuredSel = assetFilter.procuredBy;
+        const deptSel = assetFilter.departments;
         const stockRoomSel = (filters.stock_room as string[]) ?? [];
+        const statusSel = (filters.asset_status as string[]) ?? [];
+        const substatusSel = (filters.substatus as string[]) ?? [];
         return rows.filter((r) => {
-            if (!r.model_category || !DASHBOARD_ASSET_CATEGORIES.has(r.model_category)) return false;
+            if (!isInScopeAsset(r)) return false;
             if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
             if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
             if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
             if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
+            if (statusSel.length && !statusSel.includes(r.asset_status ?? 'Unknown')) return false;
+            if (substatusSel.length && !substatusSel.includes(r.substatus ?? 'Unknown')) return false;
             return true;
         });
-    }, [rows, filters]);
+    }, [rows, filters, assetFilter]);
 
     const kpis = useMemo(() => summarizeAssets(filtered), [filtered]);
+
+    // Pending Image — count assets whose `substatus` equals "Pending Image"
+    // (case-insensitive). Surfaced as a dedicated big-chart banner below
+    // Row 1 so the operations team can spot a growing queue at a glance.
+    const pendingImageCount = useMemo(() => {
+        let n = 0;
+        for (const r of filtered) {
+            if ((r.substatus ?? '').trim().toLowerCase() === 'pending image') n += 1;
+        }
+        return n;
+    }, [filtered]);
 
     const procuredBySlices = useMemo(() => {
         return groupBy(filtered, procuredByOf)
@@ -143,6 +203,20 @@ export function AssetHubDashboard() {
         // of small rooms so the donut stays readable.
         return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
             .slice(0, TOP_LOCATIONS)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+
+    // Asset status / substatus donuts — split the inventory by SN's
+    // status taxonomy. Top 8 keeps each donut legible; the long tail
+    // collapses into "Unknown" if the SN row didn't carry a value.
+    const statusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.asset_status ?? 'Unknown')
+            .slice(0, 8)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+    const substatusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.substatus ?? 'Unknown')
+            .slice(0, 8)
             .map((g) => ({ name: g.key, value: g.count }));
     }, [filtered]);
 
@@ -176,17 +250,110 @@ export function AssetHubDashboard() {
     const onProcuredLegendToggle = (name: string) => toggleFilter('procured_by', name);
     const onLocationSliceClick = (slice: { name: string }) => toggleFilter('stock_room', slice.name);
     const onLocationLegendToggle = (name: string) => toggleFilter('stock_room', name);
+    const onStatusSliceClick = (slice: { name: string }) => toggleFilter('asset_status', slice.name);
+    const onStatusLegendToggle = (name: string) => toggleFilter('asset_status', name);
+    const onSubstatusSliceClick = (slice: { name: string }) => toggleFilter('substatus', slice.name);
+    const onSubstatusLegendToggle = (name: string) => toggleFilter('substatus', name);
     const selectedProcured = (filters.procured_by as string[]) ?? [];
     const selectedStockRooms = (filters.stock_room as string[]) ?? [];
+    const selectedStatuses = (filters.asset_status as string[]) ?? [];
+    const selectedSubstatuses = (filters.substatus as string[]) ?? [];
 
     const textMain = isLight ? 'text-slate-800' : 'text-white';
     const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
     const cardBg = isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10';
     const axisStroke = isLight ? '#94a3b8' : '#64748b';
 
-    const hasFilters = (Object.values(filters) as string[][]).some((v) => Array.isArray(v) && v.length > 0);
+    const hasFilters =
+        (Object.values(filters) as string[][]).some((v) => Array.isArray(v) && v.length > 0) ||
+        assetFilter.supportGroups.length > 0 ||
+        assetFilter.procuredBy.length > 0 ||
+        assetFilter.departments.length > 0;
     const inStockPct = kpis.inStockRatePct;
-    const inStockPctCritical = kpis.total > 0 && inStockPct < 70;
+    // In-Stock Rate colour — asset spec:
+    //   < 15%  → green (healthy — stock is moving)
+    //   15-25% → yellow (watch)
+    //   > 25%  → red (too much idle stock)
+    const inStockRateColor =
+        kpis.total === 0
+            ? textMain
+            : inStockPct > 25
+                ? 'text-red-500'
+                : inStockPct > 15
+                    ? 'text-yellow-500'
+                    : 'text-green-500';
+
+    // Unconfirmed / Pending Repair / Pending Return colour rule:
+    //   > 10 → red, > 0 → yellow, = 0 → green
+    const pendingRuleColor = (n: number): string =>
+        n > 10 ? 'text-red-500' : n > 0 ? 'text-yellow-500' : 'text-green-500';
+
+    // ── Detail table at the bottom — collapsible. Rows mirror the
+    //   `filtered` HardwareRow set so it always reflects the current
+    //   slicer + donut-driven filter state.
+    interface AssetDetailRow extends Record<string, unknown> {
+        oid: string;
+        serial_number: string;
+        model_category: string | null;
+        model_name: string | null;
+        asset_status: string | null;
+        substatus: string | null;
+        stock_room: string | null;
+        assigned_to_display_name: string | null;
+        department: string | null;
+        _supportGroup: string;
+        _procuredBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: AssetDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            serial_number: r.serial_number,
+            model_category: r.model_category,
+            model_name: r.model_name,
+            asset_status: r.asset_status,
+            substatus: r.substatus,
+            stock_room: r.stock_room,
+            assigned_to_display_name: r.assigned_to_display_name,
+            department: r.department,
+            _supportGroup: supportGroupOf(r),
+            _procuredBy: procuredByOf(r),
+        }));
+    }, [filtered]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<AssetDetailRow>[] = useMemo(() => [
+        {
+            key: 'serial_number',
+            label: t('tables.serialNumber'),
+            width: '160px',
+            render: (r) => <span className="font-mono text-xs">{r.serial_number}</span>,
+        },
+        { key: 'model_category', label: t('tables.modelCategory'), width: '120px' },
+        {
+            key: 'model_name',
+            label: t('tables.model'),
+            width: '200px',
+            render: (r) => r.model_name ?? '—',
+        },
+        { key: 'asset_status', label: t('tables.state'), width: '120px', render: (r) => r.asset_status ?? '—' },
+        { key: 'substatus', label: t('tables.substate'), width: '160px', render: (r) => r.substatus ?? '—' },
+        { key: 'stock_room', label: t('filters.stockroom'), width: '140px', render: (r) => r.stock_room ?? '—' },
+        {
+            key: 'assigned_to_display_name',
+            label: t('tables.assignedTo'),
+            width: '160px',
+            render: (r) => r.assigned_to_display_name ?? '—',
+        },
+        { key: 'department', label: t('tables.department'), width: '140px', render: (r) => r.department ?? '—' },
+        { key: '_supportGroup', label: t('tables.supportGroup'), width: '150px' },
+        { key: '_procuredBy', label: t('filters.procuredBy'), width: '120px' },
+    ], [t]);
 
     return (
         <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
@@ -206,25 +373,28 @@ export function AssetHubDashboard() {
                         <span className="text-xs text-blue-400">
                             {t('pages.filteredCount', {
                                 filtered: filtered.length.toLocaleString(),
-                                total: rows.filter((r) => r.model_category && DASHBOARD_ASSET_CATEGORIES.has(r.model_category)).length.toLocaleString(),
+                                total: rows.filter(isInScopeAsset).length.toLocaleString(),
                             })}
                         </span>
                     )}
-                    <button
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:assets:auto-refresh" />
+                        <button
                         onClick={() => void refetch()}
                         className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
                         title={t('empty.retry')}
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
+                    </div>
                 </div>
             </div>
 
             {/* Filters */}
             <TopFilterBar
                 slicers={slicers}
-                value={filters}
-                onChange={setFilters}
+                value={filterStateForBar}
+                onChange={onFilterStateChange}
                 storageKey="ops-dashboard:assets:filters"
                 title={t('filters.title')}
                 clearLabel={t('filters.clearAll')}
@@ -247,61 +417,135 @@ export function AssetHubDashboard() {
                     </div>
                 )}
 
-                {/* Row 1: Total + In Stock Rate + donuts.
-                    Column 1 uses `grid-rows-2` + `h-full` so the two
-                    big-number tiles each fill half the column height
-                    and the row visually matches the taller donut
-                    cards on the right (no empty padding below). */}
-                <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div className="grid grid-rows-2 gap-3">
-                        <KpiCard
-                            label={t('kpis.totalAssets')}
-                            value={kpis.total}
-                            icon={HardDrive}
-                            valueSize="lg"
-                            className="h-full flex flex-col justify-center"
-                        />
-                        <div
-                            className={`rounded-xl border p-4 h-full flex flex-col justify-center ${cardBg}`}
-                        >
-                            <p className={`text-[10px] uppercase tracking-wide ${textMuted}`}>{t('kpis.inStockRate')}</p>
-                            <p className={`text-4xl font-bold mt-1.5 ${inStockPctCritical ? 'text-red-400' : textMain}`}>
-                                {kpis.total > 0 ? `${inStockPct}%` : '—'}
-                            </p>
-                        </div>
-                    </div>
+                {/* Row 1: headline counts.
+                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.totalAssets')}
+                        value={kpis.total}
+                        icon={HardDrive}
+                        tooltip={t('kpis.totalAssetsInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.activeHardware')}
+                        value={kpis.activeAsset}
+                        tooltip={t('kpis.activeHardwareInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStock')}
+                        value={kpis.inStock}
+                        icon={PackageCheck}
+                        linkHref="/operation-teams/ops-dashboard/in-stock-assets"
+                        linkLabel={t('links.openInStockAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStockRate')}
+                        value={kpis.total > 0 ? `${inStockPct}%` : '—'}
+                        tooltip={t('kpis.inStockRateInfo')}
+                        valueColor={inStockRateColor}
+                    />
+                </div>
 
+                {/* Row 2: Pending Return / Pending Repair / Pending Image
+                    / Unconfirmed / Zero Residual. Pending* sub-counts
+                    share the 0-green / 1-10-yellow / >10-red rule.
+                    Pending Image clicking applies a substatus filter so
+                    the donuts + sub-status counts narrow to the imaging
+                    queue. Zero Residual sits on the right as the
+                    operational tail. */}
+                <div className="grid grid-cols-5 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.pendingReturn')}
+                        value={kpis.pendingReturn}
+                        icon={Truck}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingReturn)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingRepair')}
+                        value={kpis.pendingRepair}
+                        icon={Wrench}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingRepair)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingImage')}
+                        value={pendingImageCount}
+                        icon={ImageIcon}
+                        tooltip={t('kpis.pendingImageInfo')}
+                        valueColor={pendingRuleColor(pendingImageCount)}
+                        onClick={() =>
+                            setFilters((f) => ({ ...f, substatus: ['Pending Image'] }))
+                        }
+                    />
+                    <KpiCard
+                        label={t('kpis.unconfirmed')}
+                        value={kpis.unconfirmed}
+                        icon={HelpCircle}
+                        linkHref="/operation-teams/ops-dashboard/pending-assets"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.unconfirmed)}
+                    />
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/operation-teams/ops-dashboard/zero-residual-assets"
+                        linkLabel={t('links.openZeroResidualAssets')}
+                    />
+                </div>
+
+                {/* Row 2: Donuts — 4 across, click-to-filter. */}
+                <div className="grid gap-3 mb-3 grid-cols-2">
                     <DonutCard
                         title={t('charts.procuredBy')}
                         subtitle={t('charts.procuredBySubtitle')}
+                        info={t('charts.procuredByInfo')}
                         data={procuredBySlices}
                         palette={DONUT_PALETTE}
-                        height={200}
+                        height={220}
                         onSliceClick={onProcuredSliceClick}
                         selectedSlices={selectedProcured}
                         onLegendToggle={onProcuredLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
-
                     <DonutCard
                         title={t('charts.inStockLocation')}
+                        info={t('charts.inStockLocationInfo')}
                         data={inStockLocationSlices}
                         palette={DONUT_PALETTE}
-                        height={200}
+                        height={220}
                         onSliceClick={onLocationSliceClick}
                         selectedSlices={selectedStockRooms}
                         onLegendToggle={onLocationLegendToggle}
                         emptyText={loading ? t('empty.loading') : t('empty.noData')}
                     />
                 </div>
-
-                {/* Row 2: KPI tiles */}
-                <div className="grid grid-cols-5 gap-3 mb-3">
-                    <KpiCard label={t('kpis.inStock')} value={kpis.inStock} icon={PackageCheck} />
-                    <KpiCard label={t('kpis.pendingReturn')} value={kpis.pendingReturn} icon={Truck} />
-                    <KpiCard label={t('kpis.pendingRepair')} value={kpis.pendingRepair} icon={Wrench} />
-                    <KpiCard label={t('kpis.unconfirmed')} value={kpis.unconfirmed} icon={HelpCircle} />
-                    <KpiCard label={t('kpis.zeroResidual')} value={kpis.zeroResidual} icon={DollarSign} />
+                <div className="grid gap-3 mb-3 grid-cols-2">
+                    <DonutCard
+                        title={t('charts.assetsByStatus')}
+                        info={t('charts.assetsByStatusInfo')}
+                        data={statusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onStatusSliceClick}
+                        selectedSlices={selectedStatuses}
+                        onLegendToggle={onStatusLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <DonutCard
+                        title={t('charts.assetsBySubstatus')}
+                        info={t('charts.assetsBySubstatusInfo')}
+                        data={substatusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onSubstatusSliceClick}
+                        selectedSlices={selectedSubstatuses}
+                        onLegendToggle={onSubstatusLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
                 </div>
 
                 {/* Row 3: Support-group × device-type stacked bar (inline recharts -- GroupBarCard does not support stacked) */}
@@ -352,6 +596,35 @@ export function AssetHubDashboard() {
                             </BarChart>
                         </ResponsiveContainer>
                     )}
+                </div>
+
+                {/* Detail table — collapsible. Mirrors the filtered
+                    HardwareRow set with search, sort, pagination, and
+                    CSV export. */}
+                <div className="mt-3 mb-3">
+                    <CollapsibleDetailTable<AssetDetailRow>
+                        storageKey="ops-dashboard:assets:detail-open"
+                        title={t('tables.assetDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['serial_number', 'model_name', 'assigned_to_display_name', '_supportGroup', 'stock_room'] as (keyof AssetDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="assets_detail"
+                    />
                 </div>
             </div>
         </div>
