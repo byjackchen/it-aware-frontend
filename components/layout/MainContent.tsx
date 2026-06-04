@@ -13,7 +13,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
     return (
         <>
             <Sidebar />
-            <main className={`relative pt-16 min-h-screen transition-all ${hasSidebar ? 'pl-56' : 'pl-0'}`}>
+            <main className={`relative pt-[calc(4rem+var(--env-banner-h,0px))] min-h-screen transition-all ${hasSidebar ? 'pl-56' : 'pl-0'}`}>
                 {children}
             </main>
         </>

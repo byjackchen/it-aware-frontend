@@ -6,6 +6,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { ThemeProvider } from '@/lib/contexts/theme-context';
 import { cookies } from 'next/headers';
+import { EnvBanner, ENV_BANNER_HEIGHT_PX } from '@/components/layout/EnvBanner';
+import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +40,10 @@ export default async function RootLayout({
   // Providing all messages to the client side
   const messages = await getMessages();
 
+  // Yellow safety banner on every page for any non-prod environment.
+  const itAwareEnv = RUNTIME_CONFIG.app.itAwareEnv;
+  const showEnvBanner = itAwareEnv !== 'prod';
+
   return (
     <html lang={locale} className={initialTheme} suppressHydrationWarning>
       <head>
@@ -64,10 +70,12 @@ export default async function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased gradient-bg-animated theme-${initialTheme}`}
+        style={{ '--env-banner-h': showEnvBanner ? `${ENV_BANNER_HEIGHT_PX}px` : '0px' } as React.CSSProperties}
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
+            {showEnvBanner && <EnvBanner env={itAwareEnv} />}
             {children}
           </ThemeProvider>
         </NextIntlClientProvider>

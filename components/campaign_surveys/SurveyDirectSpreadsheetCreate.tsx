@@ -5,11 +5,10 @@ import { useTransitionRouter } from '@/components/navigation/useTransitionRouter
 import { Download, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import {
-    createCampaignSurveyBatchSpreadsheetImportAction,
-    type SurveyBatchSpreadsheetImportRow,
-} from '@/app/actions/campaigns';
+import { createCampaignSurveyBatchAction } from '@/app/actions/campaigns';
+import type { SurveyCreate } from '@/lib/types/objects';
 import type { SurveySpreadsheetParseResult } from './types';
+import { upsertSurveysInBatches, type SurveyBatchWriteProgress } from './detailBatchWriter';
 import { buildSurveySpreadsheetTemplateXlsx, parseSurveySpreadsheetFile } from './utils';
 
 interface SurveyDirectSpreadsheetCreateProps {
@@ -38,8 +37,10 @@ export function SurveyDirectSpreadsheetCreate({
     const router = useTransitionRouter();
     const isLight = theme === 'light';
 
+    const [name, setName] = useState('');
     const [parseResult, setParseResult] = useState<SurveySpreadsheetParseResult>(EMPTY_PARSE_RESULT);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [batchProgress, setBatchProgress] = useState<SurveyBatchWriteProgress | null>(null);
     const [isSubmitting, startSubmitting] = useTransition();
 
     const validStableIdSet = useMemo(() => new Set(validStableIds), [validStableIds]);
@@ -48,6 +49,7 @@ export function SurveyDirectSpreadsheetCreate({
     const canSubmit =
         !isWorkersLoading
         && !workersError
+        && name.trim().length > 0
         && parseResult.fatalError === null
         && parseResult.validRows > 0;
 
@@ -71,6 +73,7 @@ export function SurveyDirectSpreadsheetCreate({
         if (!file) return;
 
         setSubmitError(null);
+        setBatchProgress(null);
 
         if (isWorkersLoading) {
             setSubmitError(t('directUpload.waitWorkers'));
@@ -95,10 +98,15 @@ export function SurveyDirectSpreadsheetCreate({
 
     const handleImport = () => {
         setSubmitError(null);
+        setBatchProgress(null);
 
         if (!canSubmit) {
             if (parseResult.fatalError) {
                 setSubmitError(parseResult.fatalError);
+                return;
+            }
+            if (name.trim().length === 0) {
+                setSubmitError(t('create.errors.emptyName'));
                 return;
             }
             setSubmitError(t('directUpload.noValidRows'));
@@ -106,25 +114,33 @@ export function SurveyDirectSpreadsheetCreate({
         }
 
         startSubmitting(async () => {
-            const rows: SurveyBatchSpreadsheetImportRow[] = parseResult.rows.map((row) => ({
-                name: row.name,
+            const createResult = await createCampaignSurveyBatchAction({
+                name: name.trim(),
+            });
+
+            if (!createResult.success) {
+                setSubmitError(createResult.error);
+                return;
+            }
+
+            const surveyBatchOid = createResult.data.oid;
+            const surveys: SurveyCreate[] = parseResult.rows.map((row) => ({
                 receiver_stable_id: row.receiverStableId,
                 survey_questions: row.surveyQuestions,
             }));
 
-            const result = await createCampaignSurveyBatchSpreadsheetImportAction(rows);
-
-            if (!result.success) {
-                setSubmitError(result.error);
+            const upsertResult = await upsertSurveysInBatches(surveyBatchOid, surveys, setBatchProgress);
+            if (!upsertResult.success) {
+                setSubmitError(t('create.errors.partialWrite', {
+                    surveyBatchOid,
+                    processed: upsertResult.processedRows,
+                    total: upsertResult.totalRows,
+                    error: upsertResult.error,
+                }));
                 return;
             }
 
-            const firstOid = result.data.created_batch_oids[0];
-            if (firstOid) {
-                router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(firstOid)}`);
-            } else {
-                router.push('/campaign/survey-batches');
-            }
+            router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
             router.refresh();
         });
     };
@@ -138,6 +154,19 @@ export function SurveyDirectSpreadsheetCreate({
                 <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     {t('directUpload.subtitle')}
                 </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('create.fields.name')}</label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        placeholder={t('create.fields.namePlaceholder')}
+                        className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                    />
+                </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -161,16 +190,6 @@ export function SurveyDirectSpreadsheetCreate({
                         className="hidden"
                     />
                 </label>
-
-                <button
-                    type="button"
-                    onClick={handleImport}
-                    disabled={!canSubmit || isSubmitting}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
-                >
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    <span>{t('directUpload.import')}</span>
-                </button>
             </div>
 
             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('directUpload.templateHint')}</p>
@@ -249,7 +268,6 @@ export function SurveyDirectSpreadsheetCreate({
                             <thead className={isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-gray-300'}>
                                 <tr>
                                     <th className="text-left px-3 py-2">{t('directUpload.previewColumns.row')}</th>
-                                    <th className="text-left px-3 py-2">{t('directUpload.previewColumns.name')}</th>
                                     <th className="text-left px-3 py-2">{t('directUpload.previewColumns.receiver')}</th>
                                     <th className="text-left px-3 py-2">{t('directUpload.previewColumns.questionCount')}</th>
                                 </tr>
@@ -258,7 +276,6 @@ export function SurveyDirectSpreadsheetCreate({
                                 {previewRows.map((row) => (
                                     <tr key={`${row.sourceRow}-${row.receiverStableId}`} className="border-t border-white/5">
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.sourceRow}</td>
-                                        <td className={`px-3 py-1.5 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.name}</td>
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.receiverStableId}</td>
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.surveyQuestions.questions.length}</td>
                                     </tr>
@@ -268,6 +285,28 @@ export function SurveyDirectSpreadsheetCreate({
                     </div>
                 </div>
             )}
+
+            <div className="flex items-center justify-end gap-3">
+                {batchProgress && isSubmitting && (
+                    <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                        {t('batchProgress', {
+                            processed: batchProgress.processedRows,
+                            total: batchProgress.totalRows,
+                            currentBatch: batchProgress.currentBatch,
+                            totalBatches: batchProgress.totalBatches,
+                        })}
+                    </p>
+                )}
+                <button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={!canSubmit || isSubmitting}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>{t('directUpload.import')}</span>
+                </button>
+            </div>
         </section>
     );
 }

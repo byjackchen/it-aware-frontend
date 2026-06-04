@@ -5,6 +5,12 @@
     "goBack": "Go Back",
     "goHome": "Go Home"
   },
+  "EnvBanner": {
+    "local": "Local Env | 本地环境",
+    "dev": "Dev Env | 开发环境",
+    "test": "Test Env | 测试环境",
+    "unknown": "Unknown Env | 未知环境"
+  },
   "Auth": {
     "common": {
       "save": "Save",
@@ -1368,11 +1374,11 @@
     },
     "directUpload": {
       "title": "Spreadsheet Import",
-      "subtitle": "One row creates one survey batch with one survey receiver row.",
+      "subtitle": "Upload one spreadsheet to create a single survey batch; each row becomes one survey receiver row.",
       "downloadTemplate": "Download Template",
       "uploadFile": "Upload .xlsx",
-      "import": "Import Survey Batches",
-      "templateHint": "Required columns: name, receiver_stable_id, intro, and q01..q20 question columns.",
+      "import": "Import Survey Batch",
+      "templateHint": "Required columns: receiver_stable_id, intro, and q01..q20 question columns.",
       "waitWorkers": "Please wait until worker data has finished loading before uploading.",
       "parseFatal": "Failed to parse uploaded file.",
       "noValidRows": "No valid rows found in upload.",
@@ -1389,7 +1395,6 @@
       "previewTitle": "Parsed row preview",
       "previewColumns": {
         "row": "Row",
-        "name": "Survey Name",
         "receiver": "Receiver",
         "questionCount": "Questions"
       }

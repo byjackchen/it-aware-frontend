@@ -22,7 +22,6 @@ export interface SurveyQuestionDraft {
 }
 
 export interface SurveySpreadsheetRowDraft {
-    name: string;
     receiverStableId: string;
     surveyQuestions: SurveyQuestions;
     sourceRow: number;
