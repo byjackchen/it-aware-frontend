@@ -5,6 +5,12 @@
     "goBack": "Go Back",
     "goHome": "Go Home"
   },
+  "EnvBanner": {
+    "local": "Local Env | 本地环境",
+    "dev": "Dev Env | 开发环境",
+    "test": "Test Env | 测试环境",
+    "unknown": "Unknown Env | 未知环境"
+  },
   "Auth": {
     "common": {
       "save": "Save",
