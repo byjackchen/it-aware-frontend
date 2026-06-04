@@ -1048,11 +1048,11 @@
     },
     "directUpload": {
       "title": "表格导入",
-      "subtitle": "每一行创建一个问卷批次及其单条问卷接收人记录。",
+      "subtitle": "上传一个表格将创建单个问卷批次；每一行对应一条问卷接收人记录。",
       "downloadTemplate": "下载模板",
       "uploadFile": "上传 .xlsx",
       "import": "导入问卷批次",
-      "templateHint": "必填列：name、receiver_stable_id、intro，以及 q01..q20 题目列。",
+      "templateHint": "必填列：receiver_stable_id、intro，以及 q01..q20 题目列。",
       "waitWorkers": "请等待员工数据加载完成后再上传。",
       "parseFatal": "上传文件解析失败。",
       "noValidRows": "未找到可用数据行。",
@@ -1069,7 +1069,6 @@
       "previewTitle": "解析预览",
       "previewColumns": {
         "row": "行号",
-        "name": "问卷名称",
         "receiver": "接收人",
         "questionCount": "题目数"
       }

@@ -37,7 +37,6 @@ import type {
     SurveyBatchCreate,
     SurveyBatchUpdate,
     SurveyCreate,
-    SurveyQuestions,
     SurveyUpdate,
 } from '@/lib/types/objects';
 
@@ -55,12 +54,6 @@ interface AuthMePayload {
         self_scoped?: string[];
         role_based?: string[];
     };
-}
-
-export interface SurveyBatchSpreadsheetImportRow {
-    name: string;
-    receiver_stable_id: string;
-    survey_questions: SurveyQuestions;
 }
 
 function formatError(error: unknown, fallback: string): string {
@@ -853,95 +846,5 @@ export async function deleteCampaignSurveyAction(
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action, surveyOid });
         return { success: false, error: formatError(error, 'Failed to remove survey receiver') };
-    }
-}
-
-export async function createCampaignSurveyBatchSpreadsheetImportAction(
-    rows: SurveyBatchSpreadsheetImportRow[]
-): Promise<CampaignActionResult<{ created_batch_oids: string[] }>> {
-    const requestId = logger.generateRequestId();
-    const action = 'Campaign:createSurveyBatchSpreadsheetImport';
-    const startTime = Date.now();
-
-    const writeCheck = await checkCampaignWritePermission(
-        requestId,
-        action,
-        PERMISSIONS.OBJECTS.SURVEY_BATCHS_WRITE,
-        'survey_batchs'
-    );
-    if ('error' in writeCheck) {
-        return { success: false, error: writeCheck.error };
-    }
-
-    const normalizedRows = rows
-        .map((row) => ({
-            name: row.name.trim(),
-            receiver_stable_id: row.receiver_stable_id.trim(),
-            survey_questions: row.survey_questions,
-        }))
-        .filter((row) => row.name.length > 0 && row.receiver_stable_id.length > 0);
-
-    if (normalizedRows.length === 0) {
-        return { success: false, error: 'No valid rows to import' };
-    }
-
-    const creatorAccount = getCreatorAccount(writeCheck.authPayload);
-    const createdBatchOids: string[] = [];
-
-    try {
-        for (const row of normalizedRows) {
-            const createdBatch = await createSurveyBatch({
-                name: row.name,
-                ...(creatorAccount ? { creator_account: creatorAccount } : {}),
-            });
-            createdBatchOids.push(createdBatch.oid);
-
-            await createSurvey(createdBatch.oid, {
-                receiver_stable_id: row.receiver_stable_id,
-                survey_questions: row.survey_questions,
-            });
-        }
-
-        revalidatePath('/campaign');
-        revalidatePath('/campaign/survey-batches');
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action, createdCount: createdBatchOids.length });
-        return {
-            success: true,
-            data: {
-                created_batch_oids: createdBatchOids,
-            },
-        };
-    } catch (error) {
-        const rollbackFailures: string[] = [];
-
-        for (const oid of [...createdBatchOids].reverse()) {
-            try {
-                await deleteSurveyBatch(oid);
-            } catch (rollbackError) {
-                rollbackFailures.push(`${oid}: ${formatError(rollbackError, 'rollback delete failed')}`);
-            }
-        }
-
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, {
-            requestId,
-            action,
-            createdCountBeforeRollback: createdBatchOids.length,
-            rollbackFailures,
-        });
-
-        const baseError = formatError(error, 'Failed to import survey batches');
-        if (rollbackFailures.length > 0) {
-            return {
-                success: false,
-                error: `${baseError}. Rollback incomplete: ${rollbackFailures.join(' | ')}`,
-            };
-        }
-
-        return {
-            success: false,
-            error: `${baseError}. All created survey batches were rolled back.`,
-        };
     }
 }
