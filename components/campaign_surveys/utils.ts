@@ -416,13 +416,13 @@ export async function parseSurveySpreadsheetFile(
     const headers = normalizedRows[0].map((value) => value.trim().toLowerCase());
     const headerIndexMap = getHeaderIndexMap(headers);
 
-    if (!headerIndexMap.has('name') || !headerIndexMap.has('receiver_stable_id') || !headerIndexMap.has('intro')) {
-        return createEmptyParseResult('Missing required columns: name, receiver_stable_id, intro');
+    if (!headerIndexMap.has('receiver_stable_id') || !headerIndexMap.has('intro')) {
+        return createEmptyParseResult('Missing required columns: receiver_stable_id, intro');
     }
 
     const rowErrors: SurveySpreadsheetRowError[] = [];
     const unmatchedStableIds = new Set<string>();
-    const seenRowKeys = new Set<string>();
+    const seenStableIds = new Set<string>();
     const parsedRows: SurveySpreadsheetRowDraft[] = [];
     let duplicateRowsIgnored = 0;
     let totalRows = 0;
@@ -435,18 +435,8 @@ export async function parseSurveySpreadsheetFile(
 
         totalRows += 1;
 
-        const name = getCellValue(columns, headerIndexMap, 'name');
         const receiverStableId = getCellValue(columns, headerIndexMap, 'receiver_stable_id');
         const intro = getCellValue(columns, headerIndexMap, 'intro');
-
-        if (!name) {
-            rowErrors.push({
-                sourceRow,
-                receiverStableId,
-                message: 'name is required',
-            });
-            continue;
-        }
 
         if (!receiverStableId) {
             rowErrors.push({
@@ -466,12 +456,11 @@ export async function parseSurveySpreadsheetFile(
             continue;
         }
 
-        const dedupeKey = `${name}||${receiverStableId}`;
-        if (seenRowKeys.has(dedupeKey)) {
+        if (seenStableIds.has(receiverStableId)) {
             duplicateRowsIgnored += 1;
             continue;
         }
-        seenRowKeys.add(dedupeKey);
+        seenStableIds.add(receiverStableId);
 
         if (!validStableIds.has(receiverStableId)) {
             unmatchedStableIds.add(receiverStableId);
@@ -513,7 +502,6 @@ export async function parseSurveySpreadsheetFile(
 
         parsedRows.push({
             sourceRow,
-            name,
             receiverStableId,
             surveyQuestions,
         });
@@ -533,7 +521,7 @@ export async function parseSurveySpreadsheetFile(
 export function buildSurveySpreadsheetTemplateXlsx(): Uint8Array {
     const workbook = xlsxUtils.book_new();
 
-    const headers: string[] = ['name', 'receiver_stable_id', 'intro'];
+    const headers: string[] = ['receiver_stable_id', 'intro'];
     for (let i = 1; i <= MAX_TEMPLATE_QUESTIONS; i += 1) {
         const suffix = String(i).padStart(2, '0');
         headers.push(`q${suffix}_question_id`);
@@ -544,28 +532,26 @@ export function buildSurveySpreadsheetTemplateXlsx(): Uint8Array {
     }
 
     const exampleRowA = new Array(headers.length).fill('');
-    exampleRowA[0] = 'employee_pulse_alice';
-    exampleRowA[1] = 'alice_wxid';
-    exampleRowA[2] = 'Please complete this short pulse survey.';
-    exampleRowA[3] = 'q1';
-    exampleRowA[4] = 'single_select';
-    exampleRowA[5] = 'How satisfied are you?';
-    exampleRowA[6] = 'true';
-    exampleRowA[7] = 'a:Good|b:Bad';
-    exampleRowA[8] = 'q2';
-    exampleRowA[9] = 'text';
-    exampleRowA[10] = 'Any comment?';
-    exampleRowA[11] = 'false';
+    exampleRowA[0] = 'alice_wxid';
+    exampleRowA[1] = 'Please complete this short pulse survey.';
+    exampleRowA[2] = 'q1';
+    exampleRowA[3] = 'single_select';
+    exampleRowA[4] = 'How satisfied are you?';
+    exampleRowA[5] = 'true';
+    exampleRowA[6] = 'a:Good|b:Bad';
+    exampleRowA[7] = 'q2';
+    exampleRowA[8] = 'text';
+    exampleRowA[9] = 'Any comment?';
+    exampleRowA[10] = 'false';
 
     const exampleRowB = new Array(headers.length).fill('');
-    exampleRowB[0] = 'employee_pulse_bob';
-    exampleRowB[1] = 'bob_wxid';
-    exampleRowB[2] = 'We value your feedback.';
-    exampleRowB[3] = 'q1';
-    exampleRowB[4] = 'multi_select';
-    exampleRowB[5] = 'Which tools do you use?';
-    exampleRowB[6] = 'true';
-    exampleRowB[7] = 'jira:Jira|slack:Slack|wiki:Wiki';
+    exampleRowB[0] = 'bob_wxid';
+    exampleRowB[1] = 'We value your feedback.';
+    exampleRowB[2] = 'q1';
+    exampleRowB[3] = 'multi_select';
+    exampleRowB[4] = 'Which tools do you use?';
+    exampleRowB[5] = 'true';
+    exampleRowB[6] = 'jira:Jira|slack:Slack|wiki:Wiki';
 
     const sheet = xlsxUtils.aoa_to_sheet([
         headers,
