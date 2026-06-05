@@ -38,6 +38,7 @@ export function SurveyDirectSpreadsheetCreate({
     const isLight = theme === 'light';
 
     const [name, setName] = useState('');
+    const [existingBatchOid, setExistingBatchOid] = useState('');
     const [parseResult, setParseResult] = useState<SurveySpreadsheetParseResult>(EMPTY_PARSE_RESULT);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [batchProgress, setBatchProgress] = useState<SurveyBatchWriteProgress | null>(null);
@@ -46,10 +47,16 @@ export function SurveyDirectSpreadsheetCreate({
     const validStableIdSet = useMemo(() => new Set(validStableIds), [validStableIds]);
     const previewRows = useMemo(() => parseResult.rows.slice(0, 50), [parseResult.rows]);
 
+    // Optional: upsert into an existing batch instead of creating a new one.
+    const trimmedExistingBatchOid = existingBatchOid.trim();
+    const usesExistingBatch = trimmedExistingBatchOid.length > 0;
+    const isExistingBatchOidValid =
+        !usesExistingBatch || /^[A-Za-z0-9_-]{22}$/.test(trimmedExistingBatchOid);
+
     const canSubmit =
         !isWorkersLoading
         && !workersError
-        && name.trim().length > 0
+        && (usesExistingBatch ? isExistingBatchOidValid : name.trim().length > 0)
         && parseResult.fatalError === null
         && parseResult.validRows > 0;
 
@@ -105,7 +112,11 @@ export function SurveyDirectSpreadsheetCreate({
                 setSubmitError(parseResult.fatalError);
                 return;
             }
-            if (name.trim().length === 0) {
+            if (usesExistingBatch && !isExistingBatchOidValid) {
+                setSubmitError(t('directUpload.invalidExistingBatchOid'));
+                return;
+            }
+            if (!usesExistingBatch && name.trim().length === 0) {
                 setSubmitError(t('create.errors.emptyName'));
                 return;
             }
@@ -114,16 +125,19 @@ export function SurveyDirectSpreadsheetCreate({
         }
 
         startSubmitting(async () => {
-            const createResult = await createCampaignSurveyBatchAction({
-                name: name.trim(),
-            });
+            let surveyBatchOid = trimmedExistingBatchOid;
+            if (!usesExistingBatch) {
+                const createResult = await createCampaignSurveyBatchAction({
+                    name: name.trim(),
+                });
 
-            if (!createResult.success) {
-                setSubmitError(createResult.error);
-                return;
+                if (!createResult.success) {
+                    setSubmitError(createResult.error);
+                    return;
+                }
+
+                surveyBatchOid = createResult.data.oid;
             }
-
-            const surveyBatchOid = createResult.data.oid;
             const surveys: SurveyCreate[] = parseResult.rows.map((row) => ({
                 receiver_stable_id: row.receiverStableId,
                 survey_questions: row.surveyQuestions,
@@ -164,8 +178,24 @@ export function SurveyDirectSpreadsheetCreate({
                         value={name}
                         onChange={(event) => setName(event.target.value)}
                         placeholder={t('create.fields.namePlaceholder')}
-                        className={`w-full px-3 py-2 rounded-md border ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
+                        disabled={usesExistingBatch}
+                        className={`w-full px-3 py-2 rounded-md border disabled:opacity-50 ${isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white'}`}
                     />
+                </div>
+                <div>
+                    <label className={`block text-sm mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('directUpload.existingBatchOid')}</label>
+                    <input
+                        type="text"
+                        value={existingBatchOid}
+                        onChange={(event) => setExistingBatchOid(event.target.value)}
+                        placeholder={t('directUpload.existingBatchOidPlaceholder')}
+                        className={`w-full px-3 py-2 rounded-md border ${isExistingBatchOidValid ? (isLight ? 'border-slate-300 bg-white text-slate-900' : 'border-white/10 bg-slate-900/80 text-white') : 'border-rose-500/60 ' + (isLight ? 'bg-white text-slate-900' : 'bg-slate-900/80 text-white')}`}
+                    />
+                    <p className={`mt-1 text-xs ${isExistingBatchOidValid ? (isLight ? 'text-slate-500' : 'text-gray-400') : 'text-rose-400'}`}>
+                        {isExistingBatchOidValid
+                            ? t('directUpload.existingBatchOidHint')
+                            : t('directUpload.invalidExistingBatchOid')}
+                    </p>
                 </div>
             </div>
 
