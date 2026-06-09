@@ -50,8 +50,11 @@ export function useChannelStream(channelOid: string) {
     }, [channelOid]);
 
     const send = useCallback(
-        async (body: string): Promise<string[]> => {
-            const r = await postMessage(channelOid, { body });
+        async (body: string, replyToMessageOid?: string): Promise<string[]> => {
+            const r = await postMessage(channelOid, {
+                body,
+                reply_to_message_oid: replyToMessageOid,
+            });
             await refreshMessages();
             return r.unresolved_mentions ?? [];
         },
