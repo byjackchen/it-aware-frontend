@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { ThreadMessage, ThreadMessageKind } from '@/lib/types/objects';
+import { MarkdownBody } from './MarkdownBody';
 
 interface CommentThreadProps {
     messages: ThreadMessage[];
@@ -73,7 +74,7 @@ export function CommentThread({ messages, onReply, agentRunning, agentByRun }: C
                                 </span>
                             )}
                         </div>
-                        <div className="text-sm whitespace-pre-wrap">{message.body}</div>
+                        <MarkdownBody>{message.body}</MarkdownBody>
                         {message.kind !== 'system_note' && (
                             <div className="flex gap-2 mt-2">
                                 <button onClick={() => onReply(message.oid)} className="text-xs text-[var(--accent-color)] hover:underline">Reply</button>
