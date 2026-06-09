@@ -90,7 +90,7 @@ export function Sidebar() {
     };
 
     return (
-        <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-56 glass-dark p-4 overflow-y-auto z-40 ${isLight ? 'border-r border-slate-200' : ''}`}>
+        <aside className={`fixed left-0 top-[calc(4rem+var(--env-banner-h,0px))] h-[calc(100vh-4rem-var(--env-banner-h,0px))] w-56 glass-dark p-4 overflow-y-auto z-40 ${isLight ? 'border-r border-slate-200' : ''}`}>
             <nav className="space-y-2">
                 {/* Render sections if defined */}
                 {activeConfig.sections?.map((section, index) => (

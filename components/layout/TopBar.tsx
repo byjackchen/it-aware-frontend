@@ -186,7 +186,7 @@ export function TopBar() {
 
   return (
     <header
-      className={`px-6 flex flex-col fixed top-0 left-0 right-0 z-50 h-16 border-b transition-all duration-300 ease-in-out ${
+      className={`px-6 flex flex-col fixed top-[var(--env-banner-h,0px)] left-0 right-0 z-50 h-16 border-b transition-all duration-300 ease-in-out ${
         isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23] border-white/10'
       }`}
     >

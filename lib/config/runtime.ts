@@ -1,6 +1,10 @@
 export const RUNTIME_CONFIG = {
     app: {
         environment: process.env.NODE_ENV || 'development',
+        // Deployment environment: local | dev | test | prod.
+        // Defaults to 'local' so non-prod safety UI (env banner) shows
+        // unless prod is explicitly configured.
+        itAwareEnv: process.env.IT_AWARE_ENV || 'local',
     },
     backend: {
         // Server-side: where BFF proxy fetches from (in docker this is the

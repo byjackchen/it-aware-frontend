@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// Self-hosted via Vercel's `geist` package — `next/font/google` fetches from
+// fonts.googleapis.com at build time, which fails on closed-network CI builds
+// (e.g. Tencent DevCloud). The geist package bundles the same Geist Sans /
+// Geist Mono files locally and exposes the same CSS variables.
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import Script from "next/script";
 import "./globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { ThemeProvider } from '@/lib/contexts/theme-context';
 import { cookies } from 'next/headers';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { EnvBanner, ENV_BANNER_HEIGHT_PX } from '@/components/layout/EnvBanner';
+import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 
 export const metadata: Metadata = {
   title: "Ohla IT-Aware",
@@ -37,6 +34,10 @@ export default async function RootLayout({
 
   // Providing all messages to the client side
   const messages = await getMessages();
+
+  // Yellow safety banner on every page for any non-prod environment.
+  const itAwareEnv = RUNTIME_CONFIG.app.itAwareEnv;
+  const showEnvBanner = itAwareEnv !== 'prod';
 
   return (
     <html lang={locale} className={initialTheme} suppressHydrationWarning>
@@ -63,11 +64,13 @@ export default async function RootLayout({
         `}</Script>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased gradient-bg-animated theme-${initialTheme}`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased gradient-bg-animated theme-${initialTheme}`}
+        style={{ '--env-banner-h': showEnvBanner ? `${ENV_BANNER_HEIGHT_PX}px` : '0px' } as React.CSSProperties}
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
+            {showEnvBanner && <EnvBanner env={itAwareEnv} />}
             {children}
           </ThemeProvider>
         </NextIntlClientProvider>
