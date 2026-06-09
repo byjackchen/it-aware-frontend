@@ -479,16 +479,17 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
 
                 {/* Conversation (main column, wide) */}
                 <div className="lg:col-span-2 lg:order-1">
-                {/* Conversation section */}
-                <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
-                        <h2 className={`text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
+                {/* Conversation section — opaque on both themes so bubbles
+                    don't blend into the page chrome behind. */}
+                <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-slate-700 bg-slate-900'}`}>
+                    <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-200 bg-slate-50' : 'border-slate-700 bg-slate-900'}`}>
+                        <h2 className={`text-sm font-semibold ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
                             Conversation ({messages.length})
                         </h2>
                     </div>
 
                     {threadLoading ? (
-                        <div className={`py-8 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        <div className={`py-8 text-center text-sm ${isLight ? 'text-slate-500 bg-white' : 'text-slate-400 bg-slate-900'}`}>
                             <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading conversation...</span>
                         </div>
                     ) : (

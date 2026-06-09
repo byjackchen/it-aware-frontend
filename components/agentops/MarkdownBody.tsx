@@ -51,7 +51,7 @@ const components: Components = {
         if (isBlock) {
             return (
                 <code
-                    className={`block bg-black/30 dark:bg-black/40 rounded px-2 py-1.5 text-xs font-mono overflow-x-auto whitespace-pre ${className ?? ''}`}
+                    className={`block bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded px-2 py-1.5 text-xs font-mono overflow-x-auto whitespace-pre border border-slate-300 dark:border-slate-700 ${className ?? ''}`}
                     {...props}
                 >
                     {children}
@@ -60,7 +60,7 @@ const components: Components = {
         }
         return (
             <code
-                className="bg-black/20 dark:bg-black/30 rounded px-1 py-0.5 text-[0.85em] font-mono break-words"
+                className="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded px-1 py-0.5 text-[0.85em] font-mono break-words"
                 {...props}
             >
                 {children}
