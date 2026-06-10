@@ -27,12 +27,22 @@ export function CommentInput({ onSubmit, replyToOid, replyToPreview, onCancelRep
     };
 
     return (
-        <div className="border-t border-[var(--card-border)] p-4">
+        <div className="border-t border-slate-300 dark:border-slate-700 p-4 bg-white dark:bg-slate-900">
             {replyToOid && replyToPreview && (
-                <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded bg-[var(--glass-bg)] text-xs">
-                    <span className="text-[var(--text-secondary)]">Replying to:</span>
-                    <span className="truncate flex-1">{replyToPreview.slice(0, 100)}</span>
-                    <button onClick={onCancelReply} className="shrink-0"><X className="w-3 h-3" /></button>
+                <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        Replying to:
+                    </span>
+                    <span className="truncate flex-1 text-slate-700 dark:text-slate-200">
+                        {replyToPreview.slice(0, 100)}
+                    </span>
+                    <button
+                        onClick={onCancelReply}
+                        className="shrink-0 rounded p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        aria-label="Cancel reply"
+                    >
+                        <X className="w-3 h-3" />
+                    </button>
                 </div>
             )}
             <div className="flex gap-2">
@@ -40,7 +50,7 @@ export function CommentInput({ onSubmit, replyToOid, replyToPreview, onCancelRep
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Add a comment..."
-                    className="flex-1 resize-none rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] p-2 text-sm min-h-[60px]"
+                    className="flex-1 resize-none rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-2 text-sm min-h-[60px]"
                     disabled={disabled}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {

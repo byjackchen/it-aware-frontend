@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MessageItem } from './MessageItem';
 import type { ChannelMessage } from '@/lib/api/channels';
 import type { Ticket } from '@/lib/api/tickets-channel';
@@ -8,14 +8,15 @@ import type { Ticket } from '@/lib/api/tickets-channel';
 interface Props {
     messages: ChannelMessage[];
     currentAccountOid?: string;
-    onOpenThread?: (parentOid: string) => void;
+    /** Set the composer's reply target — replaces the old modal-thread flow. */
+    onSetReplyTarget?: (m: ChannelMessage | null) => void;
     ticketsByMsg?: Map<string, Ticket>;
 }
 
 export function MessageList({
     messages,
     currentAccountOid,
-    onOpenThread,
+    onSetReplyTarget,
     ticketsByMsg,
 }: Props) {
     const ref = useRef<HTMLDivElement>(null);
@@ -26,22 +27,32 @@ export function MessageList({
         }
     }, [messages]);
 
-    // Hide replies inline — they live in the thread dialog.
-    const topLevel = messages.filter((m) => !m.reply_to_message_oid);
+    // Build an oid → message map so each item can render the parent preview
+    // without re-scanning the list per row.
+    const byOid = useMemo(() => {
+        const m = new Map<string, ChannelMessage>();
+        for (const x of messages) m.set(x.oid, x);
+        return m;
+    }, [messages]);
 
     return (
-        <div ref={ref} className="flex-1 overflow-y-auto p-3">
-            {topLevel.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
+        <div ref={ref} className="flex-1 overflow-y-auto p-3 bg-white dark:bg-slate-900">
+            {messages.length === 0 ? (
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
                     No messages yet — start by @-mentioning an agent.
                 </p>
             ) : (
-                topLevel.map((m) => (
+                messages.map((m) => (
                     <MessageItem
                         key={m.oid}
                         message={m}
+                        repliedTo={
+                            m.reply_to_message_oid
+                                ? byOid.get(m.reply_to_message_oid)
+                                : undefined
+                        }
                         currentAccountOid={currentAccountOid}
-                        onOpenThread={onOpenThread}
+                        onSetReplyTarget={onSetReplyTarget}
                         ticket={ticketsByMsg?.get(m.oid)}
                     />
                 ))
