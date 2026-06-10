@@ -1,19 +1,27 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import { MentionAutocomplete } from './MentionAutocomplete';
-import type { ChannelMember } from '@/lib/api/channels';
+import type { ChannelMember, ChannelMessage } from '@/lib/api/channels';
 
 interface Props {
     members: ChannelMember[];
-    onSend: (body: string) => Promise<void>;
+    onSend: (body: string, replyToMessageOid?: string) => Promise<void>;
+    replyTo?: ChannelMessage | null;
+    onCancelReply?: () => void;
 }
 
-export function MessageComposer({ members, onSend }: Props) {
+export function MessageComposer({ members, onSend, replyTo, onCancelReply }: Props) {
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const [mentionQuery, setMentionQuery] = useState<string | null>(null);
     const ref = useRef<HTMLTextAreaElement>(null);
+
+    // Focus the composer whenever the user picks a new reply target.
+    useEffect(() => {
+        if (replyTo) ref.current?.focus();
+    }, [replyTo]);
 
     function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
         const v = e.target.value;
@@ -33,7 +41,6 @@ export function MessageComposer({ members, onSend }: Props) {
         const next = before + after;
         setText(next);
         setMentionQuery(null);
-        // Re-focus
         requestAnimationFrame(() => {
             el.focus();
             const pos = before.length;
@@ -45,9 +52,10 @@ export function MessageComposer({ members, onSend }: Props) {
         if (!text.trim() || sending) return;
         setSending(true);
         try {
-            await onSend(text);
+            await onSend(text, replyTo?.oid);
             setText('');
             setMentionQuery(null);
+            onCancelReply?.();
         } finally {
             setSending(false);
         }
@@ -57,14 +65,39 @@ export function MessageComposer({ members, onSend }: Props) {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
             send();
-        } else if (e.key === 'Escape' && mentionQuery !== null) {
-            e.preventDefault();
-            setMentionQuery(null);
+        } else if (e.key === 'Escape') {
+            if (mentionQuery !== null) {
+                e.preventDefault();
+                setMentionQuery(null);
+            } else if (replyTo && onCancelReply) {
+                e.preventDefault();
+                onCancelReply();
+            }
         }
     }
 
     return (
-        <div className="border-t p-3 relative bg-card">
+        <div className="border-t border-slate-300 dark:border-slate-700 p-3 relative bg-white dark:bg-slate-900">
+            {replyTo && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        Replying to:
+                    </span>
+                    <span className="truncate flex-1 text-slate-700 dark:text-slate-200">
+                        {replyTo.body.slice(0, 120)}
+                    </span>
+                    {onCancelReply && (
+                        <button
+                            type="button"
+                            onClick={onCancelReply}
+                            className="shrink-0 rounded p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            aria-label="Cancel reply"
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
+                    )}
+                </div>
+            )}
             {mentionQuery !== null && (
                 <div className="absolute bottom-full left-3 right-3 z-10">
                     <MentionAutocomplete
@@ -77,11 +110,15 @@ export function MessageComposer({ members, onSend }: Props) {
             <div className="flex gap-2">
                 <textarea
                     ref={ref}
-                    className="flex-1 border rounded p-2 min-h-[3rem] resize-y bg-background"
+                    className="flex-1 border border-slate-300 dark:border-slate-700 rounded p-2 min-h-[3rem] resize-y bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
                     value={text}
                     onChange={onChange}
                     onKeyDown={onKeyDown}
-                    placeholder="Type a message — @agent to mention. Cmd/Ctrl-Enter sends."
+                    placeholder={
+                        replyTo
+                            ? 'Reply inline. Cmd/Ctrl-Enter sends. Esc cancels reply.'
+                            : 'Type a message — @agent to mention. Cmd/Ctrl-Enter sends.'
+                    }
                     disabled={sending}
                 />
                 <button

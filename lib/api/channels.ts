@@ -292,20 +292,6 @@ export async function searchChannelMessages(
     );
 }
 
-export async function listThreadReplies(
-    channelOid: string,
-    parentMessageOid: string,
-    limit = 200,
-): Promise<ChannelMessageListResponse> {
-    const q = new URLSearchParams({
-        parent: parentMessageOid,
-        limit: String(limit),
-    });
-    return clientFetch<ChannelMessageListResponse>(
-        `${BASE}/${channelOid}/messages?${q.toString()}`,
-    );
-}
-
 export async function cancelRun(runOid: string): Promise<void> {
     await clientFetch<void>(`/api/agentops/runs/${runOid}/cancel`, {
         method: 'POST',

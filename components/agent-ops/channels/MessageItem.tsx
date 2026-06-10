@@ -17,13 +17,15 @@ import type { Ticket, TicketStatus } from '@/lib/api/tickets-channel';
 import { renderMarkdown } from '@/lib/markdown';
 import { formatRelative } from '@/lib/relative-time';
 
+// Opaque palette. The earlier translucent fills (`/30`, `/40`, …) overlapped
+// awkwardly when bubbles sat near each other or on top of the panel chrome.
 const KIND_STYLES: Record<string, string> = {
     human_post:
-        'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900/60',
+        'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-slate-900 dark:text-slate-100',
     agent_reply:
-        'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900/60',
+        'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-slate-900 dark:text-slate-100',
     system_note:
-        'bg-muted border-muted-foreground/20 text-muted-foreground text-sm italic',
+        'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-slate-700 dark:text-amber-100 text-sm italic',
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -36,26 +38,30 @@ const QUICK_EMOJIS = ['👍', '❤️', '😄', '🎉', '🤔', '🚀'];
 
 interface Props {
     message: ChannelMessage;
+    /** Parent message if this is a reply — drives the quote-tag header. */
+    repliedTo?: ChannelMessage;
     currentAccountOid?: string;
-    onOpenThread?: (parentOid: string) => void;
+    /** Set the composer's reply target. Replaces the old "open thread modal" verb. */
+    onSetReplyTarget?: (m: ChannelMessage | null) => void;
     ticket?: Ticket;
 }
 
 const TICKET_BADGE_STYLE: Record<TicketStatus, string> = {
-    open: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 border-blue-300 dark:border-blue-700',
-    in_progress: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 border-amber-300 dark:border-amber-700',
-    blocked: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200 border-red-300 dark:border-red-700',
-    done: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-200 border-green-300 dark:border-green-700',
-    cancelled: 'bg-muted text-muted-foreground border-muted-foreground/30',
+    open: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-300 dark:border-blue-700',
+    in_progress: 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-200 border-amber-300 dark:border-amber-700',
+    blocked: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 border-red-300 dark:border-red-700',
+    done: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-300 dark:border-green-700',
+    cancelled: 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700',
 };
 
 export function MessageItem({
     message: m,
+    repliedTo,
     currentAccountOid,
-    onOpenThread,
+    onSetReplyTarget,
     ticket,
 }: Props) {
-    const cls = KIND_STYLES[m.kind] ?? 'bg-card border';
+    const cls = KIND_STYLES[m.kind] ?? 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100';
     const isMine = !!currentAccountOid && m.author_account_oid === currentAccountOid;
     const isDeleted = !!m.deleted_at;
     const [editing, setEditing] = useState(false);
@@ -142,6 +148,9 @@ export function MessageItem({
         }
     }
 
+    const hoverBtn =
+        'px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700';
+
     return (
         <div className={`group relative border rounded p-3 mb-2 ${cls}`}>
             {m.pinned_at && (
@@ -149,8 +158,13 @@ export function MessageItem({
                     📌 pinned
                 </div>
             )}
+            {repliedTo && (
+                <div className="mb-2 pl-3 border-l-2 border-slate-400 dark:border-slate-500 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 italic">
+                    Replying to: {repliedTo.body.slice(0, 150)}
+                </div>
+            )}
             <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-slate-600 dark:text-slate-400">
                     {KIND_LABEL[m.kind] ?? m.kind} ·{' '}
                     <span
                         title={new Date(m.created_at).toLocaleString()}
@@ -166,19 +180,19 @@ export function MessageItem({
                             type="button"
                             disabled={busy}
                             onClick={() => setShowEmoji((s) => !s)}
-                            className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            className={hoverBtn}
                             title="Add reaction"
                         >
                             😀
                         </button>
-                        {onOpenThread && (
+                        {onSetReplyTarget && (
                             <button
                                 type="button"
-                                onClick={() => onOpenThread(m.oid)}
-                                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                                title="Reply in thread"
+                                onClick={() => onSetReplyTarget(m)}
+                                className={hoverBtn}
+                                title="Reply"
                             >
-                                💬
+                                ↩️
                             </button>
                         )}
                         {!ticket && m.kind === 'human_post' && (
@@ -186,7 +200,7 @@ export function MessageItem({
                                 type="button"
                                 disabled={busy}
                                 onClick={onCreateTicket}
-                                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                                className={hoverBtn}
                                 title="Open as task"
                             >
                                 🎫
@@ -196,7 +210,7 @@ export function MessageItem({
                             type="button"
                             disabled={busy}
                             onClick={onTogglePin}
-                            className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            className={hoverBtn}
                             title={m.pinned_at ? 'Unpin' : 'Pin'}
                         >
                             📌
@@ -210,7 +224,7 @@ export function MessageItem({
                                         setDraft(m.body);
                                         setEditing(true);
                                     }}
-                                    className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                                    className={hoverBtn}
                                     title="Edit"
                                 >
                                     ✏️
@@ -219,7 +233,7 @@ export function MessageItem({
                                     type="button"
                                     disabled={busy}
                                     onClick={onDelete}
-                                    className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                                    className={hoverBtn}
                                     title="Delete"
                                 >
                                     🗑️
@@ -230,13 +244,13 @@ export function MessageItem({
                 )}
             </div>
             {showEmoji && (
-                <div className="flex gap-1 mb-2 p-1 rounded border bg-card">
+                <div className="flex gap-1 mb-2 p-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900">
                     {QUICK_EMOJIS.map((e) => (
                         <button
                             key={e}
                             type="button"
                             onClick={() => onReact(e)}
-                            className="hover:bg-muted rounded px-1"
+                            className="hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-1"
                         >
                             {e}
                         </button>
@@ -249,7 +263,7 @@ export function MessageItem({
                         autoFocus
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
-                        className="w-full border rounded p-2 bg-background min-h-[3rem]"
+                        className="w-full border border-slate-300 dark:border-slate-700 rounded p-2 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-[3rem]"
                     />
                     <div className="flex gap-2 text-xs">
                         <button
@@ -263,7 +277,7 @@ export function MessageItem({
                         <button
                             type="button"
                             onClick={() => setEditing(false)}
-                            className="px-2 py-1 rounded hover:bg-muted"
+                            className="px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
                         >
                             Cancel
                         </button>
@@ -287,23 +301,14 @@ export function MessageItem({
                             onClick={() => onReact(r.emoji)}
                             className={`text-xs rounded-full border px-2 py-0.5 ${
                                 r.mine
-                                    ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700'
-                                    : 'bg-card hover:bg-muted'
+                                    ? 'bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200'
+                                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                         >
                             {r.emoji} {r.count}
                         </button>
                     ))}
                 </div>
-            )}
-            {m.reply_count > 0 && onOpenThread && (
-                <button
-                    type="button"
-                    onClick={() => onOpenThread(m.oid)}
-                    className="mt-2 text-xs text-blue-700 dark:text-blue-300 hover:underline"
-                >
-                    💬 {m.reply_count} {m.reply_count === 1 ? 'reply' : 'replies'}
-                </button>
             )}
             {ticket && (
                 <div className="mt-2 flex items-center gap-2 flex-wrap text-xs">
@@ -312,7 +317,7 @@ export function MessageItem({
                     >
                         🎫 #{ticket.oid.slice(0, 8)} — {ticket.status}
                     </span>
-                    <span className="text-muted-foreground truncate max-w-xs">
+                    <span className="text-slate-600 dark:text-slate-300 truncate max-w-xs">
                         {ticket.title}
                     </span>
                     {ticket.status === 'open' || ticket.status === 'blocked' ? (
@@ -330,7 +335,7 @@ export function MessageItem({
                             type="button"
                             onClick={onMarkDone}
                             disabled={busy}
-                            className="text-green-600 dark:text-green-300 hover:underline disabled:opacity-50"
+                            className="text-green-700 dark:text-green-300 hover:underline disabled:opacity-50"
                         >
                             Mark done
                         </button>
@@ -343,11 +348,9 @@ export function MessageItem({
 
 function renderBodyWithMentions(body: string): string {
     const md = renderMarkdown(body);
-    // Highlight @mentions after markdown — the markdown renderer escapes,
-    // so `@x` is already in raw text form (not inside an attribute).
     return md.replace(
         /@([a-zA-Z][a-zA-Z0-9_-]*)/g,
         (_m, name) =>
-            `<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 px-1 rounded font-mono text-sm">@${name}</span>`,
+            `<span class="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 px-1 rounded font-mono text-sm">@${name}</span>`,
     );
 }
