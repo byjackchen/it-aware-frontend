@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl';
 import { Plus, Lock, Pencil, Trash2 } from 'lucide-react';
 import type { LLMKey, LLMModel } from '@/lib/types/systems';
 import { createKey, deleteKey, updateKey } from '@/app/actions/systems';
+import { usePermissions } from '@/lib/contexts/user-context';
+import { PERMISSIONS } from '@/lib/config/permissions';
 import { Field, FormActions, Modal, inputClass } from '../_components/Modal';
 
 interface Props {
@@ -16,6 +18,8 @@ interface Props {
 export function KeysClient({ keys, models }: Props) {
   const t = useTranslations('Systems');
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+  const canWrite = hasPermission(PERMISSIONS.SYSTEMS.LLM_PROXY_WRITE);
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<LLMKey | null>(null);
   const [creating, setCreating] = useState(false);
@@ -73,14 +77,16 @@ export function KeysClient({ keys, models }: Props) {
             <Lock className="h-5 w-5 text-blue-400" />
             <h1 className="text-xl font-semibold text-white">{t('keys.title')}</h1>
           </div>
-          <button
-            onClick={() => setCreating(true)}
-            disabled={models.length === 0}
-            className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-4 py-2 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">{t('common.create')}</span>
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => setCreating(true)}
+              disabled={models.length === 0}
+              className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-4 py-2 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-sm font-medium">{t('common.create')}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-auto">
@@ -116,14 +122,16 @@ export function KeysClient({ keys, models }: Props) {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditing(k)} className="text-gray-400 hover:text-blue-400">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => onDelete(k)} className="text-gray-400 hover:text-red-400">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {canWrite && (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditing(k)} className="text-gray-400 hover:text-blue-400">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => onDelete(k)} className="text-gray-400 hover:text-red-400">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

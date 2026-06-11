@@ -15,11 +15,15 @@ import type {
   LLMRoute,
   LLMRouteCreate,
   LLMRouteUpdate,
+  AirflowDagsResponse,
+  LLMModelTestResult,
   LLMUsage,
   LLMUsageAggregateRow,
+  TaskKeyInfo,
 } from '@/lib/types/systems';
 
 const BASE = `${RUNTIME_CONFIG.backend.domain}/systems/llm_proxy`;
+const SYSTEMS_BASE = `${RUNTIME_CONFIG.backend.domain}/systems`;
 
 interface ListEnvelope<T> {
   items: T[];
@@ -48,6 +52,13 @@ export async function updateModel(oid: string, data: LLMModelUpdate): Promise<LL
 
 export async function deleteModel(oid: string): Promise<void> {
   return fetchApi<void>(`${BASE}/models/${encodeURIComponent(oid)}`, { method: 'DELETE' });
+}
+
+/** Fire one live test call at a model; result gates a route's model switch. */
+export async function testModel(oid: string): Promise<LLMModelTestResult> {
+  return fetchApi<LLMModelTestResult>(`${BASE}/models/${encodeURIComponent(oid)}/test`, {
+    method: 'POST',
+  });
 }
 
 // ── Keys ────────────────────────────────────────────────────────────────────
@@ -91,21 +102,34 @@ export async function deleteRoute(oid: string): Promise<void> {
   return fetchApi<void>(`${BASE}/routes/${encodeURIComponent(oid)}`, { method: 'DELETE' });
 }
 
+// ── Known task keys (Routes UI picker) ────────────────────────────────────────
+export async function getTaskKeys(): Promise<TaskKeyInfo[]> {
+  return (await fetchApi<ListEnvelope<TaskKeyInfo>>(`${BASE}/task-keys`)).items;
+}
+
 // ── Usage metrics ─────────────────────────────────────────────────────────────
 export async function getUsage(params?: {
   task_key?: string;
   model_name?: string;
+  window_hours?: number;
   limit?: number;
 }): Promise<LLMUsage[]> {
   const qs = new URLSearchParams();
   if (params?.task_key) qs.set('task_key', params.task_key);
   if (params?.model_name) qs.set('model_name', params.model_name);
+  if (params?.window_hours) qs.set('window_hours', String(params.window_hours));
   qs.set('limit', String(params?.limit ?? 100));
   return (await fetchApi<ListEnvelope<LLMUsage>>(`${BASE}/usage?${qs.toString()}`)).items;
 }
 
-export async function getUsageAggregate(): Promise<LLMUsageAggregateRow[]> {
+export async function getUsageAggregate(windowHours?: number): Promise<LLMUsageAggregateRow[]> {
+  const qs = windowHours ? `?window_hours=${windowHours}` : '';
   return (
-    await fetchApi<{ rows: LLMUsageAggregateRow[] }>(`${BASE}/usage/aggregate`)
+    await fetchApi<{ rows: LLMUsageAggregateRow[] }>(`${BASE}/usage/aggregate${qs}`)
   ).rows;
+}
+
+// ── Airflow (read-only DAG monitoring) ───────────────────────────────────────
+export async function getAirflowDags(): Promise<AirflowDagsResponse> {
+  return fetchApi<AirflowDagsResponse>(`${SYSTEMS_BASE}/airflow/dags`);
 }

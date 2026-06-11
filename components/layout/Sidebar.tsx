@@ -97,6 +97,7 @@ export function Sidebar() {
                     <SidebarSection
                         key={section.labelKey}
                         labelKey={section.labelKey}
+                        icon={section.icon}
                         items={section.items}
                         pathname={pathname}
                         t={t}

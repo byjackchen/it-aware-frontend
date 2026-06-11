@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { BarChart3 } from 'lucide-react';
 import type { LLMUsage, LLMUsageAggregateRow } from '@/lib/types/systems';
+import { FieldHint } from './FieldHint';
 
 interface Props {
   usage: LLMUsage[];
@@ -18,6 +19,9 @@ export function UsageClient({ usage, aggregate }: Props) {
         <div className="flex items-center gap-3 border-b border-white/10 p-4">
           <BarChart3 className="h-5 w-5 text-blue-400" />
           <h1 className="text-xl font-semibold text-white">{t('usage.summary')}</h1>
+          <span className="ml-2 rounded-full bg-white/5 px-2 py-0.5 text-xs text-gray-400">
+            {t('usage.window')}
+          </span>
         </div>
         {aggregate.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-gray-500">{t('usage.empty')}</div>
@@ -27,12 +31,24 @@ export function UsageClient({ usage, aggregate }: Props) {
               <tr className="border-b border-white/10 text-left text-sm text-gray-400">
                 <th className="px-4 py-3 font-medium">{t('usage.taskKey')}</th>
                 <th className="px-4 py-3 font-medium">{t('usage.model')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.calls')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.errors')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.inputTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.outputTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.cachedTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.avgLatency')}</th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.calls')} hint={t('usage.hints.calls')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.errors')} hint={t('usage.hints.errors')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.inputTokens')} hint={t('usage.hints.input')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.outputTokens')} hint={t('usage.hints.output')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.cachedTokens')} hint={t('usage.hints.cached')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.avgLatency')} hint={t('usage.hints.avgLatency')} />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -70,11 +86,21 @@ export function UsageClient({ usage, aggregate }: Props) {
                 <th className="px-4 py-3 font-medium">{t('usage.time')}</th>
                 <th className="px-4 py-3 font-medium">{t('usage.taskKey')}</th>
                 <th className="px-4 py-3 font-medium">{t('usage.model')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.key')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.inputTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.outputTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.cachedTokens')}</th>
-                <th className="px-4 py-3 font-medium">{t('usage.latency')}</th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.key')} hint={t('usage.hints.key')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.inputTokens')} hint={t('usage.hints.input')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.outputTokens')} hint={t('usage.hints.output')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.cachedTokens')} hint={t('usage.hints.cached')} />
+                </th>
+                <th className="px-4 py-3 font-medium">
+                  <FieldHint label={t('usage.latency')} hint={t('usage.hints.latency')} />
+                </th>
                 <th className="px-4 py-3 font-medium">{t('usage.status')}</th>
               </tr>
             </thead>

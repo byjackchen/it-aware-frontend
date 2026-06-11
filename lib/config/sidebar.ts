@@ -24,6 +24,7 @@ import {
     Sparkles,
     Network,
     Route,
+    Workflow,
     LayoutDashboard,
     BarChart3,
     BarChart2,
@@ -52,16 +53,23 @@ import {
     PlayCircle,
     MessagesSquare,
     History,
+    type LucideIcon,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 import { requireAnyPermission, requireAllPermissions, type MenuItem } from '@/lib/types/menu';
 
 /**
  * Section divider configuration for grouping menu items.
+ *
+ * When `icon` is set the section header renders as a prominent group title
+ * (icon + brighter, normal-case label) instead of the default faint divider —
+ * used for domain groups like LLM Proxy. Sections without an icon keep the
+ * subtle uppercase divider look used elsewhere.
  */
 export interface SectionConfig {
     labelKey: string;
     items: MenuItem[];
+    icon?: LucideIcon;
 }
 
 export type SubMenuWithSections = {
@@ -682,30 +690,48 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
         ],
     },
     '/systems': {
-        items: [
+        sections: [
             {
-                href: '/systems/routes',
-                labelKey: 'llmRoutes',
-                icon: Route,
-                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                labelKey: 'llmProxy',
+                icon: Bot,
+                items: [
+                    {
+                        href: '/systems/llm_proxy/routes',
+                        labelKey: 'llmRoutes',
+                        icon: Route,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                    {
+                        href: '/systems/llm_proxy/models',
+                        labelKey: 'llmModels',
+                        icon: Cpu,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                    {
+                        href: '/systems/llm_proxy/keys',
+                        labelKey: 'llmKeys',
+                        icon: Lock,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                    {
+                        href: '/systems/llm_proxy/usage',
+                        labelKey: 'llmUsage',
+                        icon: BarChart3,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                ],
             },
             {
-                href: '/systems/models',
-                labelKey: 'llmModels',
-                icon: Cpu,
-                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
-            },
-            {
-                href: '/systems/keys',
-                labelKey: 'llmKeys',
-                icon: Lock,
-                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
-            },
-            {
-                href: '/systems/usage',
-                labelKey: 'llmUsage',
-                icon: BarChart3,
-                permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                labelKey: 'airflow',
+                icon: Workflow,
+                items: [
+                    {
+                        href: '/systems/airflow',
+                        labelKey: 'airflowDags',
+                        icon: Workflow,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                ],
             },
         ],
     },

@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl';
 import { Plus, Cpu, Pencil, Trash2 } from 'lucide-react';
 import type { LLMModel } from '@/lib/types/systems';
 import { createModel, deleteModel, updateModel } from '@/app/actions/systems';
+import { usePermissions } from '@/lib/contexts/user-context';
+import { PERMISSIONS } from '@/lib/config/permissions';
 import { Field, FormActions, Modal, inputClass } from '../_components/Modal';
 
 function numOrNull(v: FormDataEntryValue | null): number | null {
@@ -16,6 +18,8 @@ function numOrNull(v: FormDataEntryValue | null): number | null {
 export function ModelsClient({ models }: { models: LLMModel[] }) {
   const t = useTranslations('Systems');
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+  const canWrite = hasPermission(PERMISSIONS.SYSTEMS.LLM_PROXY_WRITE);
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<LLMModel | null>(null);
   const [creating, setCreating] = useState(false);
@@ -65,13 +69,15 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
             <Cpu className="h-5 w-5 text-blue-400" />
             <h1 className="text-xl font-semibold text-white">{t('models.title')}</h1>
           </div>
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-4 py-2 text-blue-400 hover:bg-blue-500/30"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">{t('common.create')}</span>
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-4 py-2 text-blue-400 hover:bg-blue-500/30"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-sm font-medium">{t('common.create')}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-auto">
@@ -108,14 +114,16 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditing(m)} className="text-gray-400 hover:text-blue-400">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => onDelete(m)} className="text-gray-400 hover:text-red-400">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {canWrite && (
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditing(m)} className="text-gray-400 hover:text-blue-400">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => onDelete(m)} className="text-gray-400 hover:text-red-400">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

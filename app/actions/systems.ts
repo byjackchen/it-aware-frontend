@@ -36,33 +36,36 @@ async function run<T>(action: string, fn: () => Promise<T>, ...revalidate: strin
 
 // ── Models ──────────────────────────────────────────────────────────────────
 export async function createModel(data: LLMModelCreate) {
-  return run('Systems:createModel', () => api.createModel(data), '/systems/models');
+  return run('Systems:createModel', () => api.createModel(data), '/systems/llm_proxy/models');
 }
 export async function updateModel(oid: string, data: LLMModelUpdate) {
-  return run('Systems:updateModel', () => api.updateModel(oid, data), '/systems/models');
+  return run('Systems:updateModel', () => api.updateModel(oid, data), '/systems/llm_proxy/models');
 }
 export async function deleteModel(oid: string) {
-  return run('Systems:deleteModel', () => api.deleteModel(oid), '/systems/models');
+  return run('Systems:deleteModel', () => api.deleteModel(oid), '/systems/llm_proxy/models');
+}
+export async function testModel(oid: string) {
+  return run('Systems:testModel', () => api.testModel(oid));
 }
 
 // ── Keys ────────────────────────────────────────────────────────────────────
 export async function createKey(data: LLMKeyCreate) {
-  return run('Systems:createKey', () => api.createKey(data), '/systems/keys', '/systems/models');
+  return run('Systems:createKey', () => api.createKey(data), '/systems/llm_proxy/keys', '/systems/llm_proxy/models');
 }
 export async function updateKey(oid: string, data: LLMKeyUpdate) {
-  return run('Systems:updateKey', () => api.updateKey(oid, data), '/systems/keys', '/systems/models');
+  return run('Systems:updateKey', () => api.updateKey(oid, data), '/systems/llm_proxy/keys', '/systems/llm_proxy/models');
 }
 export async function deleteKey(oid: string) {
-  return run('Systems:deleteKey', () => api.deleteKey(oid), '/systems/keys', '/systems/models');
+  return run('Systems:deleteKey', () => api.deleteKey(oid), '/systems/llm_proxy/keys', '/systems/llm_proxy/models');
 }
 
 // ── Routes ──────────────────────────────────────────────────────────────────
 export async function createRoute(data: LLMRouteCreate) {
-  return run('Systems:createRoute', () => api.createRoute(data), '/systems/routes');
+  return run('Systems:createRoute', () => api.createRoute(data), '/systems/llm_proxy/routes');
 }
 export async function updateRoute(oid: string, data: LLMRouteUpdate) {
-  return run('Systems:updateRoute', () => api.updateRoute(oid, data), '/systems/routes');
+  return run('Systems:updateRoute', () => api.updateRoute(oid, data), '/systems/llm_proxy/routes');
 }
 export async function deleteRoute(oid: string) {
-  return run('Systems:deleteRoute', () => api.deleteRoute(oid), '/systems/routes');
+  return run('Systems:deleteRoute', () => api.deleteRoute(oid), '/systems/llm_proxy/routes');
 }

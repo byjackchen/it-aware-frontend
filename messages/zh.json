@@ -1692,7 +1692,6 @@
     "ticketList": "工单列表",
     "ticketKanban": "工单看板",
     "channels": "群聊",
-    "activity": "活动事件",
     "opsOhla": "Ohla 聊天机器人",
     "chatbotDashboard": "Chatbot Dashboard",
     "opsOhlaOverview": "概览",
@@ -1704,10 +1703,13 @@
     "incidentReport": "工单分析报告",
     "surveyLookup": "调查链接查询",
     "opsUnassigned": "未分派",
+    "llmProxy": "LLM 代理",
     "llmRoutes": "任务路由",
     "llmModels": "LLM 模型",
     "llmKeys": "API 密钥",
-    "llmUsage": "用量统计"
+    "llmUsage": "用量统计",
+    "airflow": "Airflow 调度",
+    "airflowDags": "DAG 监控"
   },
   "OpsDashboard": {
     "title": "运维仪表盘",
@@ -1894,7 +1896,7 @@
       "colAssetStatus": "状态",
       "colStockRoom": "位置 / 库房",
       "colResidualValue": "残值（截至）",
-      "colAssignedDate": "分配日期",
+      "colAssignedDate": "领取日期",
       "activeByGroupSubtitle": "点击切片以筛选",
       "byDepartment": "按部门",
       "byDepartmentInfo": "按活动工单数排名前 10 的部门",
@@ -1925,8 +1927,7 @@
       "offboardAssetsInfo": "从当前已筛选的离职工单（SCTASK）标题中解析用户名，再与资产清单中 assigned_to_username 精确匹配。覆盖率取决于 SCTASK 标题中的用户名书写规范。",
       "offboardAssetsEmpty": "当前筛选的离职用户在资产清单中未找到匹配设备",
       "colAssignedTo": "离职用户",
-      "colOffboardTicket": "工单号",
-      "colAssignedDate": "领取日期"
+      "colOffboardTicket": "工单号"
     },
     "filters": {
       "title": "筛选器",
@@ -2708,7 +2709,29 @@
       "taskKeyPlaceholder": "例如：ssc.faq_advice",
       "model": "模型",
       "description": "描述",
-      "help": "每个任务在运行时按此解析模型——约 10 秒内生效，无需重启。"
+      "help": "每个任务在运行时按此解析模型——约 10 秒内生效，无需重启。",
+      "modelMeta": "· {qpm} QPM · {keys} 个 key",
+      "noKeys": "（无可用 key）",
+      "noUsableModels": "没有可用模型，请先添加至少有一个启用 key 的模型。",
+      "unusableWarn": "该模型没有启用的 key —— 此任务会静默回退到旧模型。",
+      "noTaskKeys": "所有已知任务都已配置路由。",
+      "overridesHelp": "可选的按路由参数覆盖——留空则继承模型默认值。",
+      "inherit": "继承",
+      "on": "开",
+      "off": "关",
+      "confirmSwitchTitle": "确认切换模型",
+      "confirmSwitchWarn": "约 10 秒内对该任务的所有流量生效,请确认新模型无误。",
+      "confirmFrom": "原模型",
+      "confirmTo": "新模型",
+      "confirmSwitchBtn": "确认切换",
+      "testHint": "先对新模型跑一次真实测试,测试通过后才能确认切换。",
+      "testBtn": "测试新模型",
+      "testing": "测试中…",
+      "testOk": "测试通过",
+      "testFail": "测试失败",
+      "testReply": "回复",
+      "testLatency": "{ms}ms",
+      "testFellBack": "调用回退到了旧模型——目标模型没有可用 key,切换前请先配置好它的 key。"
     },
     "usage": {
       "title": "用量统计",
@@ -2726,7 +2749,36 @@
       "latency": "延迟 (ms)",
       "avgLatency": "平均延迟 (ms)",
       "status": "状态",
-      "time": "时间"
+      "time": "时间",
+      "window": "近 7 天",
+      "hints": {
+        "calls": "窗口内的 LLM 调用次数。",
+        "errors": "返回非 OK 状态(失败)的调用数。",
+        "input": "发送给模型的输入(prompt)token 数。",
+        "output": "模型生成的输出(completion)token 数。",
+        "cached": "命中服务商缓存的输入 token 数(比新输入更便宜)。",
+        "avgLatency": "请求平均往返耗时(毫秒)。",
+        "latency": "该次请求的往返耗时(毫秒)。",
+        "key": "本次调用使用的 API 密钥(按模型轮换)。"
+      }
+    },
+    "airflow": {
+      "title": "Airflow DAG",
+      "help": "实时从 Airflow 拉取的 DAG 运行状态(只读)。",
+      "refresh": "刷新",
+      "empty": "未找到 DAG。",
+      "unavailable": "当前无法连接 Airflow。",
+      "notConfigured": "Airflow 未配置(IT_AWARE_AIRFLOW_BASE_URL)。",
+      "dag": "DAG",
+      "status": "状态",
+      "schedule": "调度",
+      "lastRun": "最近运行",
+      "lastRunTime": "最近运行时间",
+      "duration": "时长",
+      "paused": "已暂停",
+      "active": "启用",
+      "noRun": "无运行记录",
+      "importError": "DAG 存在导入错误"
     }
   }
 }
