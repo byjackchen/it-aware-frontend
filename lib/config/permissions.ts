@@ -18,6 +18,12 @@ export const PERMISSIONS = {
     NAVIGATION_AGENT_OPS: 'ui:navigation:agent_ops',
     NAVIGATION_SSC: 'ui:navigation:ssc',
     NAVIGATION_OPERATION: 'ui:navigation:operation',
+    NAVIGATION_SYSTEMS: 'ui:navigation:systems',
+  },
+  // Systems domain permissions (LLM proxy + future platform config)
+  SYSTEMS: {
+    LLM_PROXY_READ: 'systems:llm_proxy:read',
+    LLM_PROXY_WRITE: 'systems:llm_proxy:write',
   },
   // Objects domain permissions
   OBJECTS: {
