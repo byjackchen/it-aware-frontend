@@ -44,9 +44,6 @@ export function UsageClient({ usage, aggregate }: Props) {
                   <FieldHint label={t('usage.outputTokens')} hint={t('usage.hints.output')} />
                 </th>
                 <th className="px-4 py-3 font-medium">
-                  <FieldHint label={t('usage.cachedTokens')} hint={t('usage.hints.cached')} />
-                </th>
-                <th className="px-4 py-3 font-medium">
                   <FieldHint label={t('usage.avgLatency')} hint={t('usage.hints.avgLatency')} />
                 </th>
               </tr>
@@ -62,7 +59,6 @@ export function UsageClient({ usage, aggregate }: Props) {
                   </td>
                   <td className="px-4 py-3 text-white">{r.input_tokens}</td>
                   <td className="px-4 py-3 text-white">{r.output_tokens}</td>
-                  <td className="px-4 py-3 text-white">{r.cached_tokens}</td>
                   <td className="px-4 py-3 text-white">
                     {r.avg_latency_ms != null ? Math.round(r.avg_latency_ms) : t('common.none')}
                   </td>
@@ -96,9 +92,6 @@ export function UsageClient({ usage, aggregate }: Props) {
                   <FieldHint label={t('usage.outputTokens')} hint={t('usage.hints.output')} />
                 </th>
                 <th className="px-4 py-3 font-medium">
-                  <FieldHint label={t('usage.cachedTokens')} hint={t('usage.hints.cached')} />
-                </th>
-                <th className="px-4 py-3 font-medium">
                   <FieldHint label={t('usage.latency')} hint={t('usage.hints.latency')} />
                 </th>
                 <th className="px-4 py-3 font-medium">{t('usage.status')}</th>
@@ -115,7 +108,6 @@ export function UsageClient({ usage, aggregate }: Props) {
                   <td className="px-4 py-3 text-white">{u.key_label ?? t('common.none')}</td>
                   <td className="px-4 py-3 text-white">{u.input_tokens}</td>
                   <td className="px-4 py-3 text-white">{u.output_tokens}</td>
-                  <td className="px-4 py-3 text-white">{u.cached_tokens}</td>
                   <td className="px-4 py-3 text-white">{u.latency_ms ?? t('common.none')}</td>
                   <td className="px-4 py-3 text-sm">
                     {u.status === 'ok' ? (
