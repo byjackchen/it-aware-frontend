@@ -20,6 +20,8 @@ import {
     Loader2,
     Network,
     Plus,
+    Pencil,
+    Eye,
 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -27,6 +29,7 @@ import { formatDateTime } from '@/lib/utils/datetime';
 import { AgentStatusIndicator } from '@/components/agentops/AgentStatusIndicator';
 import { CommentThread } from '@/components/agentops/CommentThread';
 import { CommentInput } from '@/components/agentops/CommentInput';
+import { MarkdownBody } from '@/components/agentops/MarkdownBody';
 import { TicketLineageMap } from '@/components/agentops/TicketLineageMap';
 import type { Ticket, ThreadMessage, ThreadListResponse, TicketStatus, Agent, RunListResponse } from '@/lib/types/objects';
 import type { Account } from '@/lib/types/security';
@@ -59,6 +62,8 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
     // Editable fields
     const [title, setTitle] = useState(ticket.title);
     const [body, setBody] = useState(ticket.body || '');
+    // Description view mode: rendered markdown (default) vs. raw editing.
+    const [bodyEditing, setBodyEditing] = useState(false);
     const [status, setStatus] = useState<TicketStatus>(ticket.status);
     const [assigneeOid, setAssigneeOid] = useState(ticket.assignee_account_oid || '');
     const [parentOid, setParentOid] = useState(ticket.parent_ticket_oid || '');
@@ -294,11 +299,7 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                     </div>
                 </div>
 
-                {/* Main grid: conversation (left, wide) + editing rail (right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                {/* Editing rail — fields + create sub-ticket (sticky on lg) */}
-                <div className="lg:col-span-1 lg:order-2 space-y-6 lg:sticky lg:top-4 self-start">
-                {/* Fields section */}
+                {/* Title + description — full width and prominent at the top. */}
                 <div className={`rounded-xl border p-6 space-y-5 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <div>
                         <label className={labelClass}>Title</label>
@@ -306,20 +307,50 @@ export function TicketDetailPage({ ticket, accounts, allTickets, agents }: Ticke
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className={inputClass}
+                            className={`w-full px-3 py-2 rounded-lg text-lg font-semibold ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`}
                         />
                     </div>
 
                     <div>
-                        <label className={labelClass}>Body</label>
-                        <textarea
-                            value={body}
-                            onChange={(e) => setBody(e.target.value)}
-                            rows={4}
-                            className={inputClass}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                            <label className={`${labelClass} mb-0`}>Description</label>
+                            <button
+                                onClick={() => setBodyEditing((v) => !v)}
+                                className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${isLight ? 'text-slate-500 hover:bg-slate-100' : 'text-gray-400 hover:bg-white/10'}`}
+                            >
+                                {bodyEditing
+                                    ? (<><Eye className="w-3.5 h-3.5" /> Preview</>)
+                                    : (<><Pencil className="w-3.5 h-3.5" /> Edit</>)}
+                            </button>
+                        </div>
+                        {bodyEditing ? (
+                            <textarea
+                                value={body}
+                                onChange={(e) => setBody(e.target.value)}
+                                rows={10}
+                                placeholder="Describe the ticket… Markdown is supported."
+                                className={`w-full px-3 py-2 rounded-lg font-mono text-sm leading-relaxed ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`}
+                            />
+                        ) : (
+                            <div className={`rounded-lg px-4 py-3 min-h-[8rem] ${isLight ? 'bg-slate-50 text-slate-800' : 'bg-white/5 text-gray-200'}`}>
+                                {body.trim() ? (
+                                    <MarkdownBody>{body}</MarkdownBody>
+                                ) : (
+                                    <span className={`text-sm italic ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                        No description yet. Click Edit to add one.
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
+                </div>
 
+                {/* Main grid: conversation (left, wide) + editing rail (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                {/* Editing rail — fields + create sub-ticket (sticky on lg) */}
+                <div className="lg:col-span-1 lg:order-2 space-y-6 lg:sticky lg:top-4 self-start">
+                {/* Fields section */}
+                <div className={`rounded-xl border p-6 space-y-5 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     <div>
                         <label className={labelClass}>Status</label>
                         <select
