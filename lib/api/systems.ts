@@ -108,25 +108,50 @@ export async function getTaskKeys(): Promise<TaskKeyInfo[]> {
 }
 
 // ── Usage metrics ─────────────────────────────────────────────────────────────
-export async function getUsage(params?: {
+export interface UsageFilters {
   task_key?: string;
   model_name?: string;
+  status?: string;
   window_hours?: number;
-  limit?: number;
-}): Promise<LLMUsage[]> {
+  created_from?: string;
+  created_to?: string;
+}
+
+function usageQs(f?: UsageFilters): URLSearchParams {
   const qs = new URLSearchParams();
-  if (params?.task_key) qs.set('task_key', params.task_key);
-  if (params?.model_name) qs.set('model_name', params.model_name);
-  if (params?.window_hours) qs.set('window_hours', String(params.window_hours));
+  if (f?.task_key) qs.set('task_key', f.task_key);
+  if (f?.model_name) qs.set('model_name', f.model_name);
+  if (f?.status) qs.set('status', f.status);
+  if (f?.window_hours) qs.set('window_hours', String(f.window_hours));
+  if (f?.created_from) qs.set('created_from', f.created_from);
+  if (f?.created_to) qs.set('created_to', f.created_to);
+  return qs;
+}
+
+export async function getUsage(params?: UsageFilters & { limit?: number }): Promise<LLMUsage[]> {
+  const qs = usageQs(params);
   qs.set('limit', String(params?.limit ?? 100));
   return (await fetchApi<ListEnvelope<LLMUsage>>(`${BASE}/usage?${qs.toString()}`)).items;
 }
 
-export async function getUsageAggregate(windowHours?: number): Promise<LLMUsageAggregateRow[]> {
-  const qs = windowHours ? `?window_hours=${windowHours}` : '';
+/** Count usage rows matching the filters (reads the list envelope `total`). */
+export async function getUsageCount(params?: UsageFilters): Promise<number> {
+  const qs = usageQs(params);
+  qs.set('limit', '1');
+  return (await fetchApi<ListEnvelope<LLMUsage>>(`${BASE}/usage?${qs.toString()}`)).total;
+}
+
+export async function getUsageAggregate(params?: UsageFilters): Promise<LLMUsageAggregateRow[]> {
+  const s = usageQs(params).toString();
   return (
-    await fetchApi<{ rows: LLMUsageAggregateRow[] }>(`${BASE}/usage/aggregate${qs}`)
+    await fetchApi<{ rows: LLMUsageAggregateRow[] }>(`${BASE}/usage/aggregate${s ? `?${s}` : ''}`)
   ).rows;
+}
+
+/** Delete usage rows matching the filters; no filters → clear all. */
+export async function clearUsage(params?: UsageFilters): Promise<{ deleted: number }> {
+  const s = usageQs(params).toString();
+  return fetchApi<{ deleted: number }>(`${BASE}/usage${s ? `?${s}` : ''}`, { method: 'DELETE' });
 }
 
 // ── Airflow (read-only DAG monitoring) ───────────────────────────────────────
