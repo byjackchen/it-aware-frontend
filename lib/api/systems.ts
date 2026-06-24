@@ -150,7 +150,10 @@ export async function getUsageAggregate(params?: UsageFilters): Promise<LLMUsage
 
 /** Delete usage rows matching the filters; no filters → clear all. */
 export async function clearUsage(params?: UsageFilters): Promise<{ deleted: number }> {
-  const s = usageQs(params).toString();
+  const qs = usageQs(params);
+  // The backend refuses an unfiltered (whole-table) clear unless confirm=all.
+  if ([...qs.keys()].length === 0) qs.set('confirm', 'all');
+  const s = qs.toString();
   return fetchApi<{ deleted: number }>(`${BASE}/usage${s ? `?${s}` : ''}`, { method: 'DELETE' });
 }
 
