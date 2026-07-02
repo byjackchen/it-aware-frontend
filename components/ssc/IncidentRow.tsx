@@ -95,7 +95,7 @@ function ToggleButton({
 // ---------------------------------------------------------------------------
 
 export const INCIDENT_GRID_COLS =
-    'grid-cols-[40px_90px_90px_1fr_90px_80px_75px_80px_70px_70px_50px_60px_120px_60px_140px_60px]';
+    'grid-cols-[40px_90px_90px_80px_1fr_90px_80px_75px_80px_70px_70px_50px_60px_120px_60px_140px_60px]';
 
 // ---------------------------------------------------------------------------
 // Main row component
@@ -229,7 +229,12 @@ export function IncidentRow({
                 </a>
             </div>
 
-            {/* 4. Summary (editable — review_summary > fact > title display, edits go to review_summary) */}
+            {/* 4. SN Tags — read-only */}
+            <div className={cellClass} title={incident.sys_tags ?? ''}>
+                {incident.sys_tags ?? '—'}
+            </div>
+
+            {/* 5. Summary (editable — review_summary > fact > title display, edits go to review_summary) */}
             <div className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`} title={summaryDisplay}>
                 <InlineText
                     value={draft.review_summary || summaryDisplay}

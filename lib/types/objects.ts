@@ -790,6 +790,7 @@ export interface Incident {
     problem_sn_id?: string | null;
     probable_cause?: string | null;
     knowledge_sn_id?: string | null;
+    sys_tags?: string | null;
 }
 
 export interface Request {
