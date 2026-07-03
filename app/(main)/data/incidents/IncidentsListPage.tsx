@@ -25,6 +25,7 @@ export function IncidentsListPage() {
     const isLight = theme === 'light';
     const timezone = detectLocalTimezone();
     const [searchQuery, setSearchQuery] = useState('');
+    const [sysTagFilter, setSysTagFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
     const [remotePage, setRemotePage] = useState<{ page: number; items: Incident[] } | null>(null);
@@ -39,6 +40,7 @@ export function IncidentsListPage() {
         reload,
     } = useInfiniteResource<Incident, IncidentListResponse>('incidents', {
         pageSize: 500,
+        query: useMemo(() => ({ sys_tags: sysTagFilter || undefined }), [sysTagFilter]),
         auto: true,
         extractItems: (response) => response.items,
         extractTotal: (response) => response.total,
@@ -84,7 +86,8 @@ export function IncidentsListPage() {
         setIsPageLoading(true);
 
         const skip = (page - 1) * pageSize;
-        fetch(`/api/objects/incidents?skip=${skip}&limit=${pageSize}`, {
+        const tagParam = sysTagFilter ? `&sys_tags=${encodeURIComponent(sysTagFilter)}` : '';
+        fetch(`/api/objects/incidents?skip=${skip}&limit=${pageSize}${tagParam}`, {
             cache: 'no-store',
             signal: controller.signal,
         })
@@ -99,7 +102,7 @@ export function IncidentsListPage() {
                 if (e instanceof DOMException && e.name === 'AbortError') return;
                 setIsPageLoading(false);
             });
-    }, [pageSize]);
+    }, [pageSize, sysTagFilter]);
 
     useEffect(() => {
         if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
@@ -107,7 +110,16 @@ export function IncidentsListPage() {
         }
     }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
-    useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [searchQuery, pageSize]);
+    useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [searchQuery, pageSize, sysTagFilter]);
+
+    // Tag options for the filter dropdown, derived from loaded rows so the
+    // list stays in sync with whatever tags actually exist in the data.
+    const sysTagOptions = useMemo(() => {
+        const tags = new Set<string>();
+        incidents.forEach((incident) => incident.sys_tags?.forEach((t) => tags.add(t)));
+        if (sysTagFilter) tags.add(sysTagFilter);
+        return Array.from(tags).sort();
+    }, [incidents, sysTagFilter]);
 
     const handleRefresh = () => {
         setCurrentPage(1);
@@ -166,6 +178,18 @@ export function IncidentsListPage() {
                         <span className="mx-1.5">·</span>
                         <span>{assignedGroup}</span>
                     </div>
+                    {(incident.sys_tags?.length ?? 0) > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {incident.sys_tags!.map((tag) => (
+                                <span
+                                    key={tag}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-400'}`}
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full capitalize ${style.bg} ${style.text}`}>
                     {incident.priority || 'No Priority'}
@@ -210,6 +234,17 @@ export function IncidentsListPage() {
                             className={`w-full pl-10 pr-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-red-500/50`}
                         />
                     </div>
+                    <select
+                        value={sysTagFilter}
+                        onChange={(e) => setSysTagFilter(e.target.value)}
+                        title="Filter by ServiceNow tag"
+                        className={`px-3 py-2 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'} focus:outline-none focus:ring-2 focus:ring-red-500/50`}
+                    >
+                        <option value="">All SN Tags</option>
+                        {sysTagOptions.map((tag) => (
+                            <option key={tag} value={tag}>{tag}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Server search results */}

@@ -327,6 +327,7 @@ export function IncidentsPanel({
                 <div className={columnHeaderClass}></div>
                 <div className={columnHeaderClass}>{t('headers.time')}</div>
                 <div className={columnHeaderClass}>{t('headers.ticketId')}</div>
+                <div className={columnHeaderClass}>SN Tags</div>
                 <div className={columnHeaderClass}>{t('headers.summary')}</div>
                 <div className={columnHeaderClass}>{t('headers.category')}</div>
                 <div className={columnHeaderClass}>{t('headers.user')}</div>
