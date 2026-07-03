@@ -230,8 +230,8 @@ export function IncidentRow({
             </div>
 
             {/* 4. SN Tags — read-only */}
-            <div className={cellClass} title={incident.sys_tags ?? ''}>
-                {incident.sys_tags ?? '—'}
+            <div className={cellClass} title={incident.sys_tags?.join(', ') ?? ''}>
+                {incident.sys_tags?.length ? incident.sys_tags.join(', ') : '—'}
             </div>
 
             {/* 5. Summary (editable — review_summary > fact > title display, edits go to review_summary) */}

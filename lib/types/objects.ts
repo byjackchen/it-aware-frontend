@@ -790,7 +790,8 @@ export interface Incident {
     problem_sn_id?: string | null;
     probable_cause?: string | null;
     knowledge_sn_id?: string | null;
-    sys_tags?: string | null;
+    // ServiceNow tags as an array of tag names (backend stores JSONB).
+    sys_tags?: string[] | null;
 }
 
 export interface Request {
