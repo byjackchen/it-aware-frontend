@@ -420,6 +420,25 @@ export function IncidentDetailPage({ incident, edges, organizations, workers, se
                         </div>
                     </div>
 
+                    {/* SN Tags — synced from ServiceNow, read-only */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>SN Tags</label>
+                        {incident.sys_tags?.length ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {incident.sys_tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className={`text-xs px-2 py-0.5 rounded-full ${isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-gray-300'}`}
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>—</div>
+                        )}
+                    </div>
+
                     {/* SN ID / Caller Name / Assigned To Name */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>

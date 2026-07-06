@@ -16,6 +16,7 @@ import type {
   LLMRouteCreate,
   LLMRouteUpdate,
 } from '@/lib/types/systems';
+import type { UsageFilters } from '@/lib/api/systems';
 
 type Result<T> = { success: true; data: T } | { error: string };
 
@@ -68,4 +69,14 @@ export async function updateRoute(oid: string, data: LLMRouteUpdate) {
 }
 export async function deleteRoute(oid: string) {
   return run('Systems:deleteRoute', () => api.deleteRoute(oid), '/systems/llm_proxy/routes');
+}
+
+// ── Usage ───────────────────────────────────────────────────────────────────
+export async function clearUsage(filters?: UsageFilters) {
+  return run('Systems:clearUsage', () => api.clearUsage(filters), '/systems/llm_proxy/usage');
+}
+
+// Read-only count for the clear-modal preview; no revalidate (don't bust the page cache).
+export async function countUsage(filters?: UsageFilters) {
+  return run('Systems:countUsage', () => api.getUsageCount(filters));
 }
