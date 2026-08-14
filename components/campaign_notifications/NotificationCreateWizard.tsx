@@ -16,7 +16,7 @@ import { NotificationContentBlocksEditor } from './NotificationContentBlocksEdit
 import { NotificationDirectSpreadsheetCreate } from './NotificationDirectSpreadsheetCreate';
 import { upsertNotificationsInBatches, type NotificationBatchWriteProgress } from './detailBatchWriter';
 import { cloneContentBlocks, createEmptyBlock } from './utils';
-import type { CreateEntryMode } from './types';
+import { MANUAL_EXTERNAL_SOURCE, type CreateEntryMode } from './types';
 import { useAllActiveWorkers } from './useAllActiveWorkers';
 
 function hasInvalidContentBlocks(blocks: NotificationContentBlock[]): boolean {
@@ -81,10 +81,15 @@ export function NotificationCreateWizard() {
             }
 
             const notificationBatchOid = createResult.data.oid;
+            // Receivers the worker list could not match are flagged so the backend may store
+            // them unlinked instead of rejecting the whole write. The flag is a permission,
+            // not an assertion: the backend still links anyone it can resolve (the list only
+            // covers *active* workers, so an inactive one arrives flagged but resolves fine).
             const notifications: NotificationCreate[] = selectedReceiverStableIds.map((stableId) => ({
                 receiver_stable_id: stableId,
                 content_blocks: cloneContentBlocks(contentBlocks),
                 status: 'created',
+                ...(workerStableIdSet.has(stableId) ? {} : { external_source: MANUAL_EXTERNAL_SOURCE }),
             }));
 
             const upsertResult = await upsertNotificationsInBatches(notificationBatchOid, notifications, setBatchProgress);
