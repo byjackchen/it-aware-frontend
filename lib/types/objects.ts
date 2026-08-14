@@ -1272,6 +1272,7 @@ export interface Notification {
     notification_batch_oid: string;
     receiver_stable_id: string;
     receiver_oid: string | null;
+    external_source: string | null;
     content_blocks: NotificationContentBlock[];
     status: NotificationStatus;
     scheduled_at: string | null;
@@ -1283,6 +1284,13 @@ export interface Notification {
 export interface NotificationCreate {
     receiver_stable_id: string;
     receiver_oid?: string | null;
+    /**
+     * Marks a receiver the caller knows may not exist in the worker table, granting the
+     * backend permission to store a null receiver_oid. Delivery only needs the stable id
+     * (it is the WeCom user_id), so such a receiver is still notifiable. Without this,
+     * an unresolvable receiver is rejected with 422 so typos cannot slip through.
+     */
+    external_source?: string | null;
     content_blocks: NotificationContentBlock[];
     status?: NotificationStatus;
     scheduled_at?: string | null;

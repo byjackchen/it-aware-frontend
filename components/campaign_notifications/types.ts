@@ -9,6 +9,13 @@ import type {
 
 export type CreateEntryMode = 'guided' | 'excel_direct';
 
+/**
+ * external_source value sent for receivers a user added by hand that the worker list could
+ * not match. It lets the backend store them with a null receiver_oid rather than rejecting
+ * the write, while keeping intentional external receivers distinguishable from typos.
+ */
+export const MANUAL_EXTERNAL_SOURCE = 'manual';
+
 export interface WorkerFilters {
     locationOids: string[];
     workerTypes: string[];
