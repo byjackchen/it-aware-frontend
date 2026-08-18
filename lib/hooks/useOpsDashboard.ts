@@ -36,6 +36,18 @@ const CACHE_TTL_MS = 60_000;
 /** Default hard cap on pages when `fetchAll: true` — 20 pages * 1000 rows = 20k. */
 const FETCH_ALL_PAGE_CAP = 20;
 
+/**
+ * Delay before a params change actually reaches the network.
+ *
+ * A native `<input type="date">` emits an `onChange` per edited segment, so
+ * typing `01/01/2026` into the Opened filter fires eight distinct param sets —
+ * including `""` (which drops `source_created_at_from` entirely) and the
+ * half-typed years `0002` / `0020` / `0202`, each of which matches every row in
+ * the table. Undebounced, one date edit starts eight concurrent `fetchAll`
+ * loops, six of them full-table scans.
+ */
+const FETCH_DEBOUNCE_MS = 300;
+
 const cache = new Map<string, CacheEntry<unknown>>();
 const promiseCache = new Map<string, Promise<unknown>>();
 
@@ -144,18 +156,37 @@ function useListResource<TParams extends { skip?: number; limit?: number }, TRow
     const paramsRef = useRef(params);
     paramsRef.current = params;
 
+    /**
+     * Monotonic request counter. Each `load()` claims the next value and only
+     * writes state back while it still holds it.
+     *
+     * Without the guard a slow request whose params the user has already moved
+     * on from still reaches `setData` and clobbers the newer, correct result.
+     * On the Incidents dashboard that surfaced as: edit the Opened date, watch
+     * the filtered numbers render, then watch them jump to whole-table values
+     * ~10s later, because the unfiltered 18-page scan started mid-edit resolved
+     * last. Bumped on effect cleanup too, so a params change or an unmount also
+     * invalidates whatever is still in flight.
+     */
+    const requestSeqRef = useRef(0);
+
     const load = useCallback(
         async (force: boolean): Promise<void> => {
+            const seq = (requestSeqRef.current += 1);
+            const isCurrent = () => requestSeqRef.current === seq;
+
             if (!enabled) {
-                setLoading(false);
+                if (isCurrent()) setLoading(false);
                 return;
             }
 
             const cached = cache.get(cacheKey) as CacheEntry<TRow> | undefined;
             if (!force && isCacheFresh(cached)) {
-                setData(cached.data);
-                setError(null);
-                setLoading(false);
+                if (isCurrent()) {
+                    setData(cached.data);
+                    setError(null);
+                    setLoading(false);
+                }
                 return;
             }
 
@@ -165,12 +196,14 @@ function useListResource<TParams extends { skip?: number; limit?: number }, TRow
             if (existingPromise) {
                 try {
                     const result = await existingPromise;
-                    setData(result);
-                    setError(null);
+                    if (isCurrent()) {
+                        setData(result);
+                        setError(null);
+                    }
                 } catch (e) {
-                    setError(e instanceof Error ? e.message : 'Failed to fetch');
+                    if (isCurrent()) setError(e instanceof Error ? e.message : 'Failed to fetch');
                 } finally {
-                    setLoading(false);
+                    if (isCurrent()) setLoading(false);
                 }
                 return;
             }
@@ -184,6 +217,9 @@ function useListResource<TParams extends { skip?: number; limit?: number }, TRow
                     : fetcher(paramsRef.current)
             )
                 .then((result) => {
+                    // Cached unconditionally: the result is correct for
+                    // `cacheKey` even when this consumer has moved on, and the
+                    // promise is shared with other consumers via `promiseCache`.
                     cache.set(cacheKey, {
                         data: result as unknown as ListResponse<unknown>,
                         expiresAt: Date.now() + CACHE_TTL_MS,
@@ -198,12 +234,14 @@ function useListResource<TParams extends { skip?: number; limit?: number }, TRow
 
             try {
                 const result = await fetchPromise;
-                setData(result);
-                setError(null);
+                if (isCurrent()) {
+                    setData(result);
+                    setError(null);
+                }
             } catch (e) {
-                setError(e instanceof Error ? e.message : 'Failed to fetch');
+                if (isCurrent()) setError(e instanceof Error ? e.message : 'Failed to fetch');
             } finally {
-                setLoading(false);
+                if (isCurrent()) setLoading(false);
             }
         },
         [cacheKey, enabled, fetchAll, fetcher],
@@ -215,7 +253,17 @@ function useListResource<TParams extends { skip?: number; limit?: number }, TRow
     }, [cacheKey, load]);
 
     useEffect(() => {
-        void load(false);
+        // Debounced so a burst of param changes collapses into a single fetch
+        // instead of one table scan per intermediate value.
+        const timer = setTimeout(() => {
+            void load(false);
+        }, FETCH_DEBOUNCE_MS);
+        return () => {
+            clearTimeout(timer);
+            // Invalidate anything this effect run already put in flight so it
+            // can no longer write stale rows into `data`.
+            requestSeqRef.current += 1;
+        };
     }, [load]);
 
     return { data, loading, error, refetch };
