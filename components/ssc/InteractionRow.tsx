@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition, useEffect, useMemo } from 'react';
+import { useState, useTransition, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
@@ -42,6 +43,9 @@ function formatShortTime(dateStr: string, timezone: string): string {
 // The full hash always leaves via the cell's copy button.
 const FAQ_HASH_DISPLAY_CHARS = 8;
 
+// Below this much room under the row, the hover panel flips above it.
+const TOOLTIP_FLIP_PX = 120;
+
 /**
  * Referenced-FAQ cell — shows the title Ohla cited (a hash prefix when the
  * citation carries no title) and copies the full 32-char hash on click.
@@ -51,6 +55,26 @@ const FAQ_HASH_DISPLAY_CHARS = 8;
 function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: boolean }) {
     const t = useTranslations('SSCDashboard');
     const [copied, setCopied] = useState(false);
+    // Native `title` waits ~1s and cannot be selected. This is a portalled
+    // fixed-position panel instead: the row sits inside two overflow
+    // containers, so anything absolutely positioned in the cell gets clipped.
+    const [tip, setTip] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+    const cellRef = useRef<HTMLDivElement>(null);
+
+    const showTip = () => {
+        const el = cellRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        // Flip above the row when the panel would run off the bottom. Anchor
+        // by the edge nearest the row so the panel grows away from it.
+        const below = window.innerHeight - r.bottom > TOOLTIP_FLIP_PX;
+        setTip({
+            ...(below
+                ? { top: r.bottom + 4 }
+                : { bottom: window.innerHeight - r.top + 4 }),
+            right: Math.max(8, window.innerWidth - r.right),
+        });
+    };
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(faqs.map(f => f.hash).join(', '));
@@ -62,12 +86,14 @@ function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: 
 
     const [first, ...rest] = faqs;
     const label = first.title || first.hash.slice(0, FAQ_HASH_DISPLAY_CHARS);
-    const tooltip = faqs
-        .map(f => (f.title ? `${f.title}\n${f.hash}` : f.hash))
-        .join('\n\n');
 
     return (
-        <div className="flex h-full items-baseline gap-0.5" title={tooltip}>
+        <div
+            ref={cellRef}
+            className="flex h-full items-baseline gap-0.5"
+            onMouseEnter={showTip}
+            onMouseLeave={() => setTip(null)}
+        >
             <span className={`truncate ${first.title ? '' : 'font-mono'}`}>{label}</span>
             {rest.length > 0 && <span className="shrink-0 opacity-60">+{rest.length}</span>}
             <button
@@ -82,6 +108,24 @@ function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: 
             >
                 {copied ? '✓' : '⧉'}
             </button>
+            {tip && createPortal(
+                <div
+                    className={`fixed z-[60] max-w-[420px] pointer-events-none rounded-lg border shadow-lg px-3 py-2 text-xs leading-relaxed ${
+                        isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-800 border-white/15 text-gray-200'
+                    }`}
+                    style={{ top: tip.top, bottom: tip.bottom, right: tip.right }}
+                >
+                    {faqs.map((f, i) => (
+                        <div key={f.hash} className={i > 0 ? 'mt-2' : undefined}>
+                            {f.title && <div className="font-medium">{f.title}</div>}
+                            <div className={`font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                {f.hash}
+                            </div>
+                        </div>
+                    ))}
+                </div>,
+                document.body,
+            )}
         </div>
     );
 }
