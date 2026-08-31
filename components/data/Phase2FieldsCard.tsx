@@ -80,6 +80,14 @@ type SourceSlice = {
     problem_sn_id?: string | null;
     probable_cause?: string | null;
     knowledge_sn_id?: string | null;
+    classification?: string | null;
+    caller_location?: string | null;
+    caller_department?: string | null;
+    caller_region?: string | null;
+    first_category?: string | null;
+    second_category?: string | null;
+    third_category?: string | null;
+    fourth_category?: string | null;
 
     // Request-only.
     contact_type?: string | null;
@@ -238,6 +246,34 @@ export function Phase2FieldsCard({ data, variant }: Phase2FieldsCardProps) {
                     <Field label="Location">{formatText(data.location)}</Field>
                     <Field label="Department">{formatText(data.department)}</Field>
                     <Field label="Company">{formatText(data.company)}</Field>
+                </div>
+            </div>
+
+            {/* Caller-anchored dimensions — dot-walked from Caller in SN.
+                Distinct from the ticket-anchored block above, which SN
+                leaves empty on nearly every ticket. */}
+            <div className={`pt-4 border-t border-dashed ${dividerCls}`}>
+                <SectionHeader>Location &amp; Organization (caller-anchored)</SectionHeader>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Field label="Caller Region">{formatText(data.caller_region)}</Field>
+                    <Field label="Caller Location">{formatText(data.caller_location)}</Field>
+                    <Field label="Caller Department">{formatText(data.caller_department)}</Field>
+                </div>
+            </div>
+
+            {/* Classification — SN's own taxonomy. The four-level cascade is
+                what drives service-catalog resolution; the raw strings are
+                kept so a failed match stays traceable. */}
+            <div className={`pt-4 border-t border-dashed ${dividerCls}`}>
+                <SectionHeader>Classification (ServiceNow)</SectionHeader>
+                <div className="grid grid-cols-1 gap-4">
+                    <Field label="Classification">{formatText(data.classification)}</Field>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                    <Field label="Category L1">{formatText(data.first_category)}</Field>
+                    <Field label="Category L2">{formatText(data.second_category)}</Field>
+                    <Field label="Category L3">{formatText(data.third_category)}</Field>
+                    <Field label="Category L4">{formatText(data.fourth_category)}</Field>
                 </div>
             </div>
 
