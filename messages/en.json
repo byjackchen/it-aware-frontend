@@ -2440,6 +2440,7 @@
       "needsOptimization": "Optimize?",
       "optimizationNotes": "Notes",
       "completed": "Done",
+      "faqRef": "FAQ Ref",
       "ticketId": "Ticket ID",
       "summary": "Summary",
       "category": "Category",
@@ -2463,7 +2464,9 @@
       "kbWithCount": "Open {count} related KB article(s)",
       "kbEmpty": "No related KB articles",
       "downloadXlsx": "Download Excel",
-      "align": "Align"
+      "align": "Align",
+      "copyFaqHash": "Copy full FAQ hash",
+      "copiedFaqHash": "Copied"
     },
     "messages": {
       "saveError": "Save failed — please retry",

@@ -2118,6 +2118,7 @@
       "needsOptimization": "是否需要优化？",
       "optimizationNotes": "需优化部分",
       "completed": "完成",
+      "faqRef": "引用FAQ",
       "ticketId": "工单ID",
       "summary": "总结",
       "category": "分类CI(SN)",
@@ -2141,7 +2142,9 @@
       "kbWithCount": "打开 {count} 篇关联 KB 文章",
       "kbEmpty": "无关联 KB 文章",
       "downloadXlsx": "下载 Excel",
-      "align": "对齐"
+      "align": "对齐",
+      "copyFaqHash": "复制完整 FAQ Hash",
+      "copiedFaqHash": "已复制"
     },
     "messages": {
       "saveError": "保存失败 — 请重试",

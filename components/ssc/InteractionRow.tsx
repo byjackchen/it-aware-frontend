@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { updateInteractionReview } from '@/lib/api/exports';
 import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
+import { extractReferencedFaqs, type ReferencedFaq } from '@/lib/ohla/decode';
 import {
     SERVICE_CATALOG_LEAF_DEPTH,
     SERVICE_TYPE_LEAF_DEPTH,
@@ -35,6 +36,56 @@ function formatShortTime(dateStr: string, timezone: string): string {
         timeZone: timezone,
     });
 }
+
+// Fallback only: when a citation carries no faq_title we show this many
+// chars of the 32-char MD5 hex, which is far too wide for the grid cell.
+// The full hash always leaves via the cell's copy button.
+const FAQ_HASH_DISPLAY_CHARS = 8;
+
+/**
+ * Referenced-FAQ cell — shows the title Ohla cited (a hash prefix when the
+ * citation carries no title) and copies the full 32-char hash on click.
+ * Extra citations collapse to "+N"; the copy button takes all of them,
+ * comma-joined, matching the ``引用FAQ Hash(Ohla)`` column of the xlsx export.
+ */
+function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: boolean }) {
+    const t = useTranslations('SSCDashboard');
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(faqs.map(f => f.hash).join(', '));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+
+    if (faqs.length === 0) return <>—</>;
+
+    const [first, ...rest] = faqs;
+    const label = first.title || first.hash.slice(0, FAQ_HASH_DISPLAY_CHARS);
+    const tooltip = faqs
+        .map(f => (f.title ? `${f.title}\n${f.hash}` : f.hash))
+        .join('\n\n');
+
+    return (
+        <div className="flex h-full items-baseline gap-0.5" title={tooltip}>
+            <span className={`truncate ${first.title ? '' : 'font-mono'}`}>{label}</span>
+            {rest.length > 0 && <span className="shrink-0 opacity-60">+{rest.length}</span>}
+            <button
+                type="button"
+                onClick={handleCopy}
+                title={copied ? t('buttons.copiedFaqHash') : t('buttons.copyFaqHash')}
+                className={`shrink-0 px-0.5 transition-colors ${
+                    copied
+                        ? isLight ? 'text-green-600' : 'text-green-400'
+                        : isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'
+                }`}
+            >
+                {copied ? '✓' : '⧉'}
+            </button>
+        </div>
+    );
+}
+
 
 function renderHelpfulScore(score: number | null | undefined): string {
     if (score === null || score === undefined) return '—';
@@ -138,9 +189,9 @@ function ToggleButton({
 
 // Order: time, user, region, country, dept, question, reply, SC(AI),
 // SC(override), ST(AI), ST(override), helpful, code(AI), code(override),
-// optimize?, notes, done.
+// optimize?, notes, done, faq ref.
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px_110px]';
 
 interface InteractionRowProps {
     interaction: Interaction;
@@ -180,6 +231,12 @@ export function InteractionRow({
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
 
+    // FAQ entries Ohla cited when answering — decoded from the raw response
+    // JSON the list endpoint already ships (view=full). Read-only.
+    const referencedFaqs = useMemo(
+        () => extractReferencedFaqs(interaction),
+        [interaction],
+    );
     // Sync draft when the underlying interaction changes (e.g. parent reloaded)
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- controlled sync of external prop
@@ -395,9 +452,14 @@ export function InteractionRow({
                 </button>
             </div>
 
+            {/* 18. Referenced FAQ (Ohla) — read-only title(s) the answer cited */}
+            <div className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                <ReferencedFaqCell faqs={referencedFaqs} isLight={isLight} />
+            </div>
+
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-17 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-18 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}

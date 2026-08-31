@@ -25,7 +25,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px]';
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px_110px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -810,6 +810,7 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.needsOptimization')}</div>
                 <div className={columnHeaderClass}>{t('headers.optimizationNotes')}</div>
                 <div className={columnHeaderClass}>{t('headers.completed')}</div>
+                <div className={columnHeaderClass}>{t('headers.faqRef')}</div>
             </div>
 
             {/* Scrollable Rows */}

@@ -178,3 +178,37 @@ export function decodeInteraction(
         isVip: worker?.is_vip ?? null,
     }
 }
+
+/** One FAQ the bot grounded its answer on. */
+export interface ReferencedFaq {
+    hash: string
+    title: string | null
+}
+
+/**
+ * FAQ entries Ohla actually *cited* when answering — the
+ * `template_data.recommendations` carried by each response entry
+ * (the post-2025-11 structured signal; see classifyAskBehaviour case 3).
+ * Deduplicated by faq_hash, source order preserved.
+ *
+ * Deliberately NOT `record.shown_faqs`: that is the FAQ menu pushed at the
+ * user, which the answer may never have used.
+ */
+export function extractReferencedFaqs(row: Interaction): ReferencedFaq[] {
+    const out: ReferencedFaq[] = []
+    const seen = new Set<string>()
+    for (const r of extractResponses(row.response_raw)) {
+        const recs = r.template_data?.recommendations
+        if (!Array.isArray(recs)) continue
+        for (const rec of recs) {
+            const hash = typeof rec?.faq_hash === 'string' ? rec.faq_hash.trim() : ''
+            if (!hash || seen.has(hash)) continue
+            seen.add(hash)
+            out.push({
+                hash,
+                title: typeof rec?.faq_title === 'string' ? rec.faq_title : null,
+            })
+        }
+    }
+    return out
+}
