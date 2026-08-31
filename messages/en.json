@@ -2441,6 +2441,7 @@
       "optimizationNotes": "Notes",
       "completed": "Done",
       "faqRef": "FAQ Ref",
+      "articleRef": "Article Ref",
       "ticketId": "Ticket ID",
       "summary": "Summary",
       "category": "Category",
@@ -2466,7 +2467,8 @@
       "downloadXlsx": "Download Excel",
       "align": "Align",
       "copyFaqHash": "Copy full FAQ hash",
-      "copiedFaqHash": "Copied"
+      "copyArticleRef": "Copy cited articles",
+      "copiedCitation": "Copied"
     },
     "messages": {
       "saveError": "Save failed — please retry",

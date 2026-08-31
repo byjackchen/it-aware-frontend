@@ -9,7 +9,7 @@ import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
-import { InteractionRow } from '@/components/ssc/InteractionRow';
+import { GRID_COLS, InteractionRow } from '@/components/ssc/InteractionRow';
 import {
     REVIEW_CODES,
     REVIEW_CODE_LABELS,
@@ -19,13 +19,6 @@ import {
     type ServiceCatalog,
     type WorkerContext,
 } from '@/lib/types/objects';
-
-// ---------------------------------------------------------------------------
-// Column template (shared between header + rows via InteractionRow)
-// ---------------------------------------------------------------------------
-
-const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px_110px]';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -811,6 +804,7 @@ export function InteractionsPanel({
                 <div className={columnHeaderClass}>{t('headers.optimizationNotes')}</div>
                 <div className={columnHeaderClass}>{t('headers.completed')}</div>
                 <div className={columnHeaderClass}>{t('headers.faqRef')}</div>
+                <div className={columnHeaderClass}>{t('headers.articleRef')}</div>
             </div>
 
             {/* Scrollable Rows */}

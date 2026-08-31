@@ -212,3 +212,53 @@ export function extractReferencedFaqs(row: Interaction): ReferencedFaq[] {
     }
     return out
 }
+
+/** A ServiceNow KB article Ohla cited. */
+export interface ReferencedArticle {
+    /** KB number parsed out of the citation url, e.g. "KB0013830". */
+    kb: string | null
+    title: string
+}
+
+// KB numbers reach us embedded in the citation url as
+// `...&sysparm_article=KB0013830`. Case-sensitive on purpose: the same url
+// also contains the lowercase literal `id=kb_article`, so a case-insensitive
+// match would be a coin flip on which one it hits first.
+const KB_NUMBER_RE = /KB\d+/
+
+/**
+ * ServiceNow KB articles Ohla cited when answering — the `type: 'article'`
+ * siblings of the faq entries `extractReferencedFaqs` reads, from the same
+ * `template_data.recommendations` array.
+ *
+ * Note the shape inverts against `ReferencedFaq`: every article carries a
+ * title but a handful carry no resolvable KB number, where a faq always has
+ * a hash and may have no title.
+ *
+ * Deduplicated by KB number (falling back to title for the url-less few),
+ * source order preserved.
+ */
+export function extractReferencedArticles(row: Interaction): ReferencedArticle[] {
+    const out: ReferencedArticle[] = []
+    const seen = new Set<string>()
+    for (const r of extractResponses(row.response_raw)) {
+        const recs = r.template_data?.recommendations
+        if (!Array.isArray(recs)) continue
+        for (const rec of recs) {
+            // The `type` gate is the whole filter — matching on "has a title"
+            // would sweep in the tool entries, and on "has a url" the
+            // retrieval chunks.
+            if (rec?.type !== 'article') continue
+            const title = typeof rec.title === 'string' ? rec.title.trim() : ''
+            if (!title) continue
+            const kb = (typeof rec.url === 'string' ? rec.url.match(KB_NUMBER_RE)?.[0] : null) ?? null
+            // Fall back to the title so two different url-less articles both
+            // survive rather than collapsing into one.
+            const key = kb ?? `title:${title}`
+            if (seen.has(key)) continue
+            seen.add(key)
+            out.push({ kb, title })
+        }
+    }
+    return out
+}

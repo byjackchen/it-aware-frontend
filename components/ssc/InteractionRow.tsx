@@ -7,7 +7,12 @@ import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { updateInteractionReview } from '@/lib/api/exports';
 import { CatalogReviewPicker } from '@/components/ssc/CatalogReviewPicker';
-import { extractReferencedFaqs, type ReferencedFaq } from '@/lib/ohla/decode';
+import {
+    extractReferencedArticles,
+    extractReferencedFaqs,
+    type ReferencedArticle,
+    type ReferencedFaq,
+} from '@/lib/ohla/decode';
 import {
     SERVICE_CATALOG_LEAF_DEPTH,
     SERVICE_TYPE_LEAF_DEPTH,
@@ -46,18 +51,19 @@ const FAQ_HASH_DISPLAY_CHARS = 8;
 // Below this much room under the row, the hover panel flips above it.
 const TOOLTIP_FLIP_PX = 120;
 
+// Panel chrome shared by the two citation cells.
+const HOVER_PANEL_CLASS =
+    'fixed z-[60] max-w-[420px] pointer-events-none rounded-lg border shadow-lg px-3 py-2 text-xs leading-relaxed';
+
 /**
- * Referenced-FAQ cell — shows the title Ohla cited (a hash prefix when the
- * citation carries no title) and copies the full 32-char hash on click.
- * Extra citations collapse to "+N"; the copy button takes all of them,
- * comma-joined, matching the ``引用FAQ Hash(Ohla)`` column of the xlsx export.
+ * Anchors a portalled hover panel to a cell.
+ *
+ * A native `title` waits about a second and cannot be selected, and an
+ * absolutely-positioned child would be clipped by the two overflow containers
+ * the row sits inside. So: measure the cell on enter and render the panel
+ * fixed, out in `document.body`.
  */
-function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: boolean }) {
-    const t = useTranslations('SSCDashboard');
-    const [copied, setCopied] = useState(false);
-    // Native `title` waits ~1s and cannot be selected. This is a portalled
-    // fixed-position panel instead: the row sits inside two overflow
-    // containers, so anything absolutely positioned in the cell gets clipped.
+function useHoverPanel() {
     const [tip, setTip] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
     const cellRef = useRef<HTMLDivElement>(null);
 
@@ -76,11 +82,49 @@ function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: 
         });
     };
 
+    return { cellRef, tip, showTip, hideTip: () => setTip(null) };
+}
+
+/**
+ * Copy affordance shared by the two citation cells. Both copy the same text
+ * their column contributes to the xlsx export, so what a reviewer pastes out
+ * of the page matches what they get out of the spreadsheet.
+ */
+function CitationCopyButton({ text, label, isLight }: { text: string; label: string; isLight: boolean }) {
+    const t = useTranslations('SSCDashboard');
+    const [copied, setCopied] = useState(false);
+
     const handleCopy = async () => {
-        await navigator.clipboard.writeText(faqs.map(f => f.hash).join(', '));
+        await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
+
+    return (
+        <button
+            type="button"
+            onClick={handleCopy}
+            title={copied ? t('buttons.copiedCitation') : label}
+            className={`shrink-0 px-0.5 transition-colors ${
+                copied
+                    ? isLight ? 'text-green-600' : 'text-green-400'
+                    : isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'
+            }`}
+        >
+            {copied ? '✓' : '⧉'}
+        </button>
+    );
+}
+
+/**
+ * Referenced-FAQ cell — shows the title Ohla cited (a hash prefix when the
+ * citation carries no title) and copies the full 32-char hash on click.
+ * Extra citations collapse to "+N"; the copy button takes all of them,
+ * comma-joined, matching the ``引用FAQ Hash(Ohla)`` column of the xlsx export.
+ */
+function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: boolean }) {
+    const t = useTranslations('SSCDashboard');
+    const { cellRef, tip, showTip, hideTip } = useHoverPanel();
 
     if (faqs.length === 0) return <>—</>;
 
@@ -92,25 +136,18 @@ function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: 
             ref={cellRef}
             className="flex h-full items-baseline gap-0.5"
             onMouseEnter={showTip}
-            onMouseLeave={() => setTip(null)}
+            onMouseLeave={hideTip}
         >
             <span className={`truncate ${first.title ? '' : 'font-mono'}`}>{label}</span>
             {rest.length > 0 && <span className="shrink-0 opacity-60">+{rest.length}</span>}
-            <button
-                type="button"
-                onClick={handleCopy}
-                title={copied ? t('buttons.copiedFaqHash') : t('buttons.copyFaqHash')}
-                className={`shrink-0 px-0.5 transition-colors ${
-                    copied
-                        ? isLight ? 'text-green-600' : 'text-green-400'
-                        : isLight ? 'text-blue-600 hover:text-blue-700' : 'text-blue-400 hover:text-blue-300'
-                }`}
-            >
-                {copied ? '✓' : '⧉'}
-            </button>
+            <CitationCopyButton
+                text={faqs.map(f => f.hash).join(', ')}
+                label={t('buttons.copyFaqHash')}
+                isLight={isLight}
+            />
             {tip && createPortal(
                 <div
-                    className={`fixed z-[60] max-w-[420px] pointer-events-none rounded-lg border shadow-lg px-3 py-2 text-xs leading-relaxed ${
+                    className={`${HOVER_PANEL_CLASS} ${
                         isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-800 border-white/15 text-gray-200'
                     }`}
                     style={{ top: tip.top, bottom: tip.bottom, right: tip.right }}
@@ -121,6 +158,61 @@ function ReferencedFaqCell({ faqs, isLight }: { faqs: ReferencedFaq[]; isLight: 
                             <div className={`font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                 {f.hash}
                             </div>
+                        </div>
+                    ))}
+                </div>,
+                document.body,
+            )}
+        </div>
+    );
+}
+
+
+/**
+ * Referenced-article cell — the ServiceNow KB article(s) Ohla cited.
+ *
+ * Deliberately not a link: turning a KB number into either a ServiceNow url
+ * or an internal article page needs a lookup this table does not do. Title in
+ * the cell, KB number on hover, extras collapse to "+N", and the copy button
+ * yields the same "KB0013830 Title | ..." string the xlsx column carries.
+ */
+function ReferencedArticleCell({ articles, isLight }: { articles: ReferencedArticle[]; isLight: boolean }) {
+    const t = useTranslations('SSCDashboard');
+    const { cellRef, tip, showTip, hideTip } = useHoverPanel();
+
+    if (articles.length === 0) return <>—</>;
+
+    const [first, ...rest] = articles;
+
+    return (
+        <div
+            ref={cellRef}
+            className="flex h-full items-baseline gap-0.5"
+            onMouseEnter={showTip}
+            onMouseLeave={hideTip}
+        >
+            <span className="truncate">{first.title}</span>
+            {rest.length > 0 && <span className="shrink-0 opacity-60">+{rest.length}</span>}
+            <CitationCopyButton
+                text={articles.map(a => (a.kb ? `${a.kb} ${a.title}` : a.title)).join(' | ')}
+                label={t('buttons.copyArticleRef')}
+                isLight={isLight}
+            />
+            {tip && createPortal(
+                <div
+                    className={`${HOVER_PANEL_CLASS} ${
+                        isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-800 border-white/15 text-gray-200'
+                    }`}
+                    style={{ top: tip.top, bottom: tip.bottom, right: tip.right }}
+                >
+                    {articles.map((a, i) => (
+                        <div key={a.kb ?? a.title} className={i > 0 ? 'mt-2' : undefined}>
+                            <div className="font-medium">{a.title}</div>
+                            {a.kb && (
+                                <div className={`font-mono ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                                    {a.kb}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>,
@@ -233,9 +325,12 @@ function ToggleButton({
 
 // Order: time, user, region, country, dept, question, reply, SC(AI),
 // SC(override), ST(AI), ST(override), helpful, code(AI), code(override),
-// optimize?, notes, done, faq ref.
-const GRID_COLS =
-    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px_110px]';
+// optimize?, notes, done, faq ref, article ref.
+// Exported so the header row in InteractionsPanel stays in lockstep — it used
+// to carry its own copy, and the two silently drifting is a bug waiting to
+// happen every time a column is added.
+export const GRID_COLS =
+    'grid-cols-[100px_90px_70px_70px_100px_1fr_1fr_160px_160px_90px_130px_60px_70px_70px_60px_140px_60px_110px_130px]';
 
 interface InteractionRowProps {
     interaction: Interaction;
@@ -279,6 +374,10 @@ export function InteractionRow({
     // JSON the list endpoint already ships (view=full). Read-only.
     const referencedFaqs = useMemo(
         () => extractReferencedFaqs(interaction),
+        [interaction],
+    );
+    const referencedArticles = useMemo(
+        () => extractReferencedArticles(interaction),
         [interaction],
     );
     // Sync draft when the underlying interaction changes (e.g. parent reloaded)
@@ -501,9 +600,14 @@ export function InteractionRow({
                 <ReferencedFaqCell faqs={referencedFaqs} isLight={isLight} />
             </div>
 
+            {/* 19. Referenced KB article (Ohla) — read-only title(s) the answer cited */}
+            <div className={`text-xs ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                <ReferencedArticleCell articles={referencedArticles} isLight={isLight} />
+            </div>
+
             {/* Inline error indicator */}
             {error && (
-                <div className="col-span-18 text-[10px] text-red-500 px-1 truncate" title={error}>
+                <div className="col-span-19 text-[10px] text-red-500 px-1 truncate" title={error}>
                     {error}
                 </div>
             )}
