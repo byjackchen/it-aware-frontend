@@ -30,6 +30,25 @@ export interface OhlaRecord {
     request_time?: string | null;
 }
 
+/**
+ * One `template_data.recommendations` entry. Four shapes coexist in prod and
+ * they are NOT a clean discriminated union — the RAG-chunk shape carries no
+ * `type` at all — so this stays a wide bag of optional fields and consumers
+ * gate on `type` themselves:
+ *   type='article' → title + url (the cited ServiceNow KB article)
+ *   type='faq'     → faq_hash + faq_title
+ *   type='tool' | 'tool_usage'
+ *   no `type`      → an index/value/confidence retrieval chunk, deliberately
+ *                    left untyped so nothing is tempted to render it
+ */
+export interface OhlaRecommendation {
+    type?: string;
+    faq_hash?: string;
+    faq_title?: string;
+    title?: string;
+    url?: string;
+}
+
 export interface OhlaResponseEntry {
     sent_to?: string;
     timestamp?: string;
@@ -38,7 +57,7 @@ export interface OhlaResponseEntry {
     template_data?: {
         lang?: string;
         text?: string;
-        recommendations?: Array<{ type?: string; faq_hash?: string; faq_title?: string }>;
+        recommendations?: OhlaRecommendation[];
     } | null;
     rendered_text?: string | null;
 }
