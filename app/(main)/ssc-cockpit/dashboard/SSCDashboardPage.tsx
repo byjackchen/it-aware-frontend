@@ -225,12 +225,19 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                 />
             </div>
 
-            {/* Split Panels */}
-            <div className={`flex-1 flex mx-4 mb-0 rounded-t-xl overflow-hidden border ${
+            {/* Stacked Panels — interactions above, incidents below.
+                Stacked rather than side by side because the interactions grid
+                carries 19 columns and has no horizontal scroller: side by side
+                it only ever got a fraction of the viewport and the two 1fr
+                columns (question / reply) absorbed the whole overflow.
+                `min-h-0` on both children is load-bearing — a flex child
+                defaults to min-height:auto, which would stop each panel's
+                inner overflow-y-auto from ever scrolling. */}
+            <div className={`flex-1 flex flex-col mx-4 mb-0 rounded-t-xl overflow-hidden border ${
                 isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'
             }`}>
-                {/* Left: Interactions (flex 3) */}
-                <div className={`flex-[3] border-r ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+                {/* Top: Interactions */}
+                <div className={`flex-1 min-h-0 border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
                     <InteractionsPanel
                         dateFrom={interactionDateFrom}
                         dateTo={interactionDateTo}
@@ -244,8 +251,8 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                     />
                 </div>
 
-                {/* Right: Incidents (flex 2) */}
-                <div className="flex-[2]">
+                {/* Bottom: Incidents */}
+                <div className="flex-1 min-h-0">
                     <IncidentsPanel
                         dateFrom={appliedDateFrom}
                         dateTo={appliedDateTo}
