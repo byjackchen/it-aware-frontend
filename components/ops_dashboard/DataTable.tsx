@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Download } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Download, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { downloadCsv, type CsvColumn } from '@/lib/ops_dashboard/csv_export';
 
@@ -244,9 +244,10 @@ export function DataTable<T extends Record<string, unknown>>({
             {/* Loading / partial / error banners */}
             {loading && !partial && (
                 <div
-                    className={`rounded-xl border p-3 mb-3 text-xs ${isLight ? 'border-slate-200 bg-white text-slate-500' : 'border-white/10 bg-white/5 text-gray-400'}`}
+                    className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-slate-200 bg-white text-slate-500' : 'border-white/10 bg-white/5 text-gray-400'}`}
                 >
-                    {loadingText}
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" aria-hidden />
+                    <span>{loadingText}</span>
                 </div>
             )}
             {partial && (
@@ -331,7 +332,14 @@ export function DataTable<T extends Record<string, unknown>>({
                                     colSpan={cols.length}
                                     className={`px-3 py-8 text-center ${isLight ? 'text-slate-400' : 'text-gray-500'}`}
                                 >
-                                    {loading ? loadingText : emptyText}
+                                    {loading ? (
+                                        <span className="inline-flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                                            {loadingText}
+                                        </span>
+                                    ) : (
+                                        emptyText
+                                    )}
                                 </td>
                             </tr>
                         )}
