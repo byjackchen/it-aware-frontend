@@ -20,7 +20,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { BarChart3, ChevronDown, RefreshCw } from 'lucide-react';
+import { BarChart3, ChevronDown, Loader2, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useIncidents, useRequests } from '@/lib/hooks/useOpsDashboard';
@@ -196,6 +196,16 @@ export function OpsDashboardHub() {
         }
         await Promise.all(tasks);
     };
+
+    // The Detail table owns its own lazy fetch, so it needs its own status.
+    // Without these the table renders the same "no records" cell whether the
+    // two `fetchAll` scans are still paginating or the request failed — and an
+    // unfiltered scan of both tables takes long enough that the empty cell
+    // reads as "there is no data" rather than "still working".
+    const detailLoading = incidentQuery.loading || requestQuery.loading;
+    const detailPartial =
+        incidentQuery.data?.partial === true || requestQuery.data?.partial === true;
+    const detailError = incidentQuery.error ?? requestQuery.error;
 
     // Stable clock for the Detail table's aging math.
     const [now] = useState<number>(() => Date.now());
@@ -591,8 +601,13 @@ export function OpsDashboardHub() {
                             />
                             {t('tables.detailTitle')}
                         </span>
-                        <span className={`text-xs ${textMuted}`}>
-                            {t('pages.unassignedRecords', { count: detailTotal.toLocaleString() })}
+                        <span className={`text-xs flex items-center gap-1.5 ${textMuted}`}>
+                            {detailOpen && detailLoading && (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                            )}
+                            {detailOpen && detailLoading
+                                ? t('empty.loading')
+                                : t('pages.unassignedRecords', { count: detailTotal.toLocaleString() })}
                         </span>
                     </summary>
                     {detailOpen && (
@@ -605,6 +620,13 @@ export function OpsDashboardHub() {
                                 skip={effectiveSkip}
                                 limit={detailPage.limit}
                                 onPageChange={(next) => setDetailPage(next)}
+                                loading={detailLoading}
+                                partial={detailPartial}
+                                error={detailError}
+                                onRetry={() => void refetchAll()}
+                                emptyText={t('empty.noData')}
+                                loadingText={t('empty.loading')}
+                                partialText={t('empty.partialResult')}
                                 csvRows={detailRows}
                                 csvFilename="active_monitoring_tickets"
                             />
