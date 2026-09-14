@@ -344,6 +344,72 @@ class IncidentReviewUpdate(BaseModel):
 
 Use `GET /objects/activities/incidents/{oid}` for exact OID lookup.
 
+### `GET /dashboards/itopsdashboard/incident-sla-monthly` — Incident SLA Monthly Report (ITOps Dashboard)
+
+Months-as-rows SLA compliance report for one calendar year, aggregated from `activities.incident_slas` joined to `activities.incidents` (ABAC enforced — same scope as the incidents list endpoint). Permission: `objects:incidents:read`.
+
+Semantics (validated cell-for-cell against the upstream oitops report):
+
+- A **sample** is an `incident_slas` row with `stage = 'Completed'`, bucketed by the **UTC** calendar month of `start_time`.
+- **Met** = `has_breached IS FALSE` (`made_sla` is TRUE on every synced row and is not used).
+- Columns are classified from `sla_name`: `%response%` → response; `%resolution%` + `%priority N%` → P1–P4. Unmatched names are excluded.
+- The 10min/30min/23h/5d/7d thresholds shown in the UI are display labels only — ServiceNow computed the breach verdict against its own schedule.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `year` | integer | current UTC year | Calendar year (UTC), `>= 2020`, not in the future |
+
+**Response schema:** `IncidentSlaMonthlyReport`
+
+```python
+class SlaCell(BaseModel):
+    met: int
+    total: int
+    pct: Optional[float]  # None when total == 0
+
+class SlaMonthRow(BaseModel):
+    month: str            # "2026-08"; "2026" for the cumulative row
+    is_partial: bool      # True for the current in-progress month
+    response: SlaCell
+    p1: SlaCell
+    p2: SlaCell
+    p3: SlaCell
+    p4: SlaCell
+    resolution_subtotal: SlaCell
+    all_sla: SlaCell      # all_sla.total is the row's total sample count
+
+class IncidentSlaMonthlyReport(BaseModel):
+    year: int
+    months: List[SlaMonthRow]  # Jan..current month (or Dec for past years)
+    cumulative: SlaMonthRow
+    generated_at: datetime
+```
+
+### `GET /dashboards/itopsdashboard/overview` — ITOps Dashboard Overview (海外IT运营看板)
+
+The whole landing page in one payload: 4 domains × 2 metrics, 3 capability cards with their metrics and improvement items, and a `details` map keyed by metric code that backs the metric drawer. No query parameters.
+
+**Permission:** `objects:incidents:read` — the only data on the page that is not static editorial content is incident-derived. There is deliberately **no dedicated dashboard permission**: it would mean a row in `auth.permissions` plus a grant to every group that should see the page, to gate content that carries no access risk of its own.
+
+**No database.** The curated content — domain and capability cards, all 25 metric definitions with thresholds, calculation rules and owners, plus projects, issues, improvement items and the hand-entered weekly values — is a checked-in file, `app/dashboards/itopsdashboard/overview/content.json`, parsed and cached on first use. Nothing writes to it at runtime and nothing else references it, so it is versioned configuration rather than a table; storing it in Postgres would cost a migration, ten tables and a post-deploy seed step and buy nothing. If a weekly editing UI is ever built, `overview/content.py` is the module to replace with real tables.
+
+**ABAC applies to the SLA family only.** `sla`, `overall_sla` and `response_sla` carry a `cumulative` object computed live by `compute_incident_sla_monthly` under the caller's incident scope — the same helper and therefore the same figures as `incident-sla-monthly` for that account. Every other metric is a global hand-entered number with nothing to scope; those omit `cumulative` and fall back to the file's `cumulativeLabel` (「累计值：待接入」), as does a caller whose scope holds no completed SLA rows this year.
+
+```python
+class MetricCumulative(BaseModel):   # camelCase on the wire
+    pct: float
+    total: int
+    year: int
+```
+
+**camelCase exception.** This is the only endpoint family in the backend emitting camelCase, so the ported React components can read the payload verbatim and stay comparable to the original dashboard. Rationale is in `overview/schemas.py`'s docstring.
+
+**No status field.** Metric/capability health is resolved in the frontend from `value` + `definition`, keeping the threshold rules in one language (`lib/itopsdashboard/domain/status.ts`).
+
+**Not cached in Redis.** The content is already in memory and the one live query is per-caller, so a scope-hashed cache key would add contention for no gain.
+
 ### ABAC Filtering
 
 - **Unconstrained**: Sees all incidents.

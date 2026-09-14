@@ -2,7 +2,7 @@
 
 import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench, Cpu, Bot } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench, Cpu, Bot } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -91,6 +91,14 @@ export function TopBar() {
       ]),
     },
     {
+      href: '/itopsdashboard',
+      label: t('itopsDashboard'),
+      icon: Gauge,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
+      ]),
+    },
+    {
       href: '/chatbot',
       label: t('chatbot'),
       icon: Bot,
@@ -104,22 +112,6 @@ export function TopBar() {
       icon: Headset,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_SSC,
-      ]),
-    },
-    {
-      href: '/operation-teams',
-      label: t('operationTeams'),
-      icon: Wrench,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-      ]),
-    },
-    {
-      href: '/agent-ops',
-      label: t('agentOps'),
-      icon: KanbanSquare,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
       ]),
     },
     {
@@ -138,8 +130,26 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
+        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
       ]),
       children: [
+        {
+          href: '/operation-teams',
+          label: t('operationTeams'),
+          icon: Wrench,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_OPERATION,
+          ]),
+        },
+        {
+          href: '/agent-ops',
+          label: t('agentOps'),
+          icon: KanbanSquare,
+          permissions: requireAnyPermission([
+            PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
+          ]),
+        },
         {
           href: '/dashboard/data-overview',
           label: t('dashboard'),
