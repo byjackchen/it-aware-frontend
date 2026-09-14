@@ -1709,7 +1709,9 @@
     "llmKeys": "API 密钥",
     "llmUsage": "用量统计",
     "airflow": "Airflow 调度",
-    "airflowDags": "DAG 监控"
+    "airflowDags": "DAG 监控",
+    "itopsOverview": "运营总览",
+    "itopsServiceExperience": "服务交付与体验"
   },
   "OpsDashboard": {
     "title": "运维仪表盘",
@@ -2271,11 +2273,42 @@
     "knowledge": "知识库",
     "persona": "用户画像",
     "campaign": "运营活动",
+    "itopsDashboard": "ITOps 看板",
     "sscCockpit": "SSC 团队",
     "operationTeams": "运维团队",
     "chatbot": "Ohla Chatbot",
     "agentOps": "AgentOps",
     "systems": "系统"
+  },
+  "ItopsDashboard": {
+    "title": "事件 SLA 月度报表",
+    "subtitle": "{year} 年事件 SLA 月度表现",
+    "error": {
+      "title": "事件 SLA 报表加载失败",
+      "loading": "报表加载中…"
+    },
+    "asOfDay": "(截至{day}日)",
+    "yearCumulative": "{year} 全年累计",
+    "columns": {
+      "month": "月份",
+      "responseSla": "响应SLA(10分钟)",
+      "sample": "样本",
+      "p1": "P1(30分钟)",
+      "p2": "P2(23小时)",
+      "p3": "P3(5天)",
+      "p4": "P4(7天)",
+      "resolutionSubtotal": "解决类小计",
+      "allSla": "全部SLA合计",
+      "totalSamples": "总样本"
+    },
+    "domainTitle": "服务交付与体验",
+    "domainSubtitle": "{year} 年服务交付表现（年初至今）",
+    "kpi": {
+      "allSla": "全部SLA（累计）",
+      "responseSla": "响应SLA（累计）",
+      "resolutionSla": "解决类SLA（累计）",
+      "samples": "{total} 样本"
+    }
   },
   "SSCFAQReport": {
     "title": "FAQ 分析报告",
@@ -2808,6 +2841,37 @@
       "active": "启用",
       "noRun": "无运行记录",
       "importError": "DAG 存在导入错误"
+    }
+  },
+  "ItopsOverview": {
+    "status": {
+      "GREEN": "健康",
+      "YELLOW": "关注",
+      "RED": "风险",
+      "PENDING": "待接入"
+    },
+    "module": {
+      "goalStatus": "运营目标状态",
+      "coreMetrics": "核心指标",
+      "coreOffices": "核心办公室",
+      "current": "当前值",
+      "target": "目标值",
+      "status": "状态",
+      "green": "{n}绿",
+      "yellow": "{n}黄",
+      "red": "{n}红",
+      "pending": "{n}待接入"
+    },
+    "office": {
+      "healthy": "健康办公室",
+      "note": "点击办公室查看4项健康规则；办公室最终状态取四项中的最差状态。"
+    },
+    "projects": {
+      "title": "关键项目",
+      "name": "项目名称",
+      "status": "状态",
+      "progress": "进展",
+      "none": "暂无关键项目"
     }
   }
 }

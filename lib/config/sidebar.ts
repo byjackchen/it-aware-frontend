@@ -409,6 +409,26 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
+    '/itopsdashboard': {
+        items: [
+            {
+                href: '/itopsdashboard/overview',
+                labelKey: 'itopsOverview',
+                icon: LayoutDashboard,
+                permissions: requireAnyPermission([
+                    PERMISSIONS.UI.NAVIGATION_OPERATION,
+                ]),
+            },
+            {
+                href: '/itopsdashboard/service-experience',
+                labelKey: 'itopsServiceExperience',
+                icon: Timer,
+                permissions: requireAnyPermission([
+                    PERMISSIONS.UI.NAVIGATION_OPERATION,
+                ]),
+            },
+        ],
+    },
     '/ssc-cockpit': {
         items: [
             {
