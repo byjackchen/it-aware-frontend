@@ -1014,3 +1014,10 @@ export async function getIncidentMonthlyReport(
     const qs = params.toString();
     return fetchApi(`${DASHBOARDS_BASE}/ssc/incident-monthly${qs ? `?${qs}` : ''}`);
 }
+
+export async function getIncidentSlaMonthlyReport(
+    year?: number,
+): Promise<import('@/lib/types/objects').IncidentSlaMonthlyReportData> {
+    const qs = year ? `?year=${year}` : '';
+    return fetchApi(`${DASHBOARDS_BASE}/itopsdashboard/incident-sla-monthly${qs}`);
+}

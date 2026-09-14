@@ -7,6 +7,9 @@ import Image from 'next/image';
 import { ClipboardCheck, Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDateTime } from '@/lib/utils/datetime';
+import { formatSurveyIntro } from '@/lib/utils/survey-datetime';
 import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import type {
@@ -56,13 +59,6 @@ interface SurveyChildListResponse {
 
 const LIST_PAGE_SIZE = 300;
 const DETAILS_PAGE_SIZE = 500;
-
-function formatDateTime(value: string | null): string {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString();
-}
 
 function inferMimeTypeFromDataUrl(value: string | null): string | null {
     if (!value) return null;
@@ -195,6 +191,7 @@ function normalizeSurveyAnswerPayload(
 export function SurveysModule() {
     const t = useTranslations('CampaignSurvey');
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const isLight = theme === 'light';
     const router = useTransitionRouter();
     const pathname = usePathname();
@@ -1020,7 +1017,7 @@ export function SurveysModule() {
                                                     {t('details.fields.creator')}: {item.creator_account || '—'}
                                                 </p>
                                                 <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                    {t('details.fields.updatedAt')}: {formatDateTime(item.updated_at)}
+                                                    {t('details.fields.updatedAt')}: {formatDateTime(item.updated_at, timezone)}
                                                 </p>
                                             </button>
                                         );
@@ -1266,11 +1263,11 @@ export function SurveysModule() {
                                                 </div>
                                                 <div>
                                                     <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
-                                                    <p className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedSurveyBatch.created_at)}</p>
+                                                    <p className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedSurveyBatch.created_at, timezone)}</p>
                                                 </div>
                                                 <div>
                                                     <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
-                                                    <p className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedSurveyBatch.updated_at)}</p>
+                                                    <p className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(selectedSurveyBatch.updated_at, timezone)}</p>
                                                 </div>
                                             </div>
 
@@ -1427,7 +1424,7 @@ export function SurveysModule() {
                                                 <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('details.rowEditor.fields.submittedAt')}</label>
                                                 <p className={`w-full px-2 py-1.5 rounded-md border text-sm ${isLight ? 'border-slate-300 text-slate-900 bg-slate-50' : 'border-white/10 bg-slate-900/80 text-white'}`}>
                                                     {rowEditorMode === 'edit' && editingSurveyOid
-                                                        ? formatDateTime(details.find((item) => item.oid === editingSurveyOid)?.submitted_at ?? null)
+                                                        ? formatDateTime(details.find((item) => item.oid === editingSurveyOid)?.submitted_at ?? null, timezone)
                                                         : '—'}
                                                 </p>
                                             </div>
@@ -1437,11 +1434,11 @@ export function SurveysModule() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                                 <div>
                                                     <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.createdAt')}</p>
-                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowCreatedAt)}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowCreatedAt, timezone)}</p>
                                                 </div>
                                                 <div>
                                                     <p className={`${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('details.fields.updatedAt')}</p>
-                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowUpdatedAt)}</p>
+                                                    <p className={`${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{formatDateTime(rowUpdatedAt, timezone)}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -1460,7 +1457,7 @@ export function SurveysModule() {
                                                 <section className={`rounded-xl border p-4 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                                                     {rowSurveyQuestions.intro.trim().length > 0 && (
                                                         <div className={`rounded-md border p-3 text-sm whitespace-pre-wrap ${isLight ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-white/10 bg-slate-900/60 text-gray-200'}`}>
-                                                            {rowSurveyQuestions.intro}
+                                                            {formatSurveyIntro(rowSurveyQuestions.intro, timezone)}
                                                         </div>
                                                     )}
 
@@ -1654,7 +1651,7 @@ export function SurveysModule() {
                                                                 </span>
                                                             </div>
                                                             <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                                                                {t('details.fields.submittedAt')}: {formatDateTime(detail.submitted_at)}
+                                                                {t('details.fields.submittedAt')}: {formatDateTime(detail.submitted_at, timezone)}
                                                             </p>
                                                             <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                                                                 {t('details.fields.questions')}: {detail.survey_questions.questions.length}

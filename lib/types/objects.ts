@@ -2146,3 +2146,30 @@ export interface IncidentMonthlyReportData {
     chatbot_escalation: ChatbotEscalationStats | null;
     chatbot_escalation_previous: ChatbotEscalationStats | null;
 }
+
+// ITOps Dashboard — /dashboards/itopsdashboard/incident-sla-monthly
+
+export interface IncidentSlaCell {
+    met: number;
+    total: number;
+    pct: number | null; // null when total === 0 (renders as an em dash)
+}
+
+export interface IncidentSlaMonthRow {
+    month: string; // "2026-08"; "2026" for the cumulative row
+    is_partial: boolean;
+    response: IncidentSlaCell;
+    p1: IncidentSlaCell;
+    p2: IncidentSlaCell;
+    p3: IncidentSlaCell;
+    p4: IncidentSlaCell;
+    resolution_subtotal: IncidentSlaCell;
+    all_sla: IncidentSlaCell;
+}
+
+export interface IncidentSlaMonthlyReportData {
+    year: number;
+    months: IncidentSlaMonthRow[];
+    cumulative: IncidentSlaMonthRow;
+    generated_at: string;
+}

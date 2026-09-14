@@ -16,6 +16,7 @@ import {
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
+import { formatSurveyIntro } from '@/lib/utils/survey-datetime';
 import type { Survey, SurveyBatch, Worker, SurveyAnswer } from '@/lib/types/objects';
 
 interface SurveyDetailPageProps {
@@ -248,7 +249,7 @@ export function SurveyDetailPage({ survey, surveyBatch, workers }: SurveyDetailP
 
                     {survey.survey_questions.intro && (
                         <div className={`p-3 rounded-lg italic ${isLight ? 'bg-slate-50 text-slate-600' : 'bg-white/5 text-gray-400'}`}>
-                            {survey.survey_questions.intro}
+                            {formatSurveyIntro(survey.survey_questions.intro, timezone)}
                         </div>
                     )}
 

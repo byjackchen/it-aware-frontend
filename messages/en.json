@@ -2031,7 +2031,9 @@
     "llmKeys": "API Keys",
     "llmUsage": "Usage Metrics",
     "airflow": "Airflow",
-    "airflowDags": "DAGs"
+    "airflowDags": "DAGs",
+    "itopsOverview": "Operations Overview",
+    "itopsServiceExperience": "Service Delivery & Experience"
   },
   "OpsDashboard": {
     "title": "Ops Dashboard",
@@ -2593,11 +2595,42 @@
     "knowledge": "Knowledge",
     "persona": "Persona",
     "campaign": "Campaign",
+    "itopsDashboard": "ITOps Dashboard",
     "sscCockpit": "SSC Team",
     "operationTeams": "Ops Team",
     "chatbot": "Ohla Chatbot",
     "agentOps": "AgentOps",
     "systems": "Systems"
+  },
+  "ItopsDashboard": {
+    "title": "Incident SLA Monthly",
+    "subtitle": "{year} monthly incident SLA performance",
+    "error": {
+      "title": "Failed to load the incident SLA report",
+      "loading": "Loading report…"
+    },
+    "asOfDay": "(as of {day})",
+    "yearCumulative": "{year} Full-Year Cumulative",
+    "columns": {
+      "month": "Month",
+      "responseSla": "Response SLA (10 min)",
+      "sample": "Samples",
+      "p1": "P1 (30 min)",
+      "p2": "P2 (23 h)",
+      "p3": "P3 (5 days)",
+      "p4": "P4 (7 days)",
+      "resolutionSubtotal": "Resolution Subtotal",
+      "allSla": "All SLA Total",
+      "totalSamples": "Total Samples"
+    },
+    "domainTitle": "Service Delivery & Experience",
+    "domainSubtitle": "{year} year-to-date service delivery performance",
+    "kpi": {
+      "allSla": "All SLA (YTD)",
+      "responseSla": "Response SLA (YTD)",
+      "resolutionSla": "Resolution SLA (YTD)",
+      "samples": "{total} samples"
+    }
   },
   "SSCFAQReport": {
     "title": "FAQ Analyst Report",
@@ -3130,6 +3163,37 @@
       "active": "Active",
       "noRun": "No runs",
       "importError": "DAG has import errors"
+    }
+  },
+  "ItopsOverview": {
+    "status": {
+      "GREEN": "Healthy",
+      "YELLOW": "Watch",
+      "RED": "At Risk",
+      "PENDING": "Not Connected"
+    },
+    "module": {
+      "goalStatus": "Operating Goal Status",
+      "coreMetrics": "Core Metrics",
+      "coreOffices": "Core Offices",
+      "current": "Current",
+      "target": "Target",
+      "status": "Status",
+      "green": "{n} green",
+      "yellow": "{n} amber",
+      "red": "{n} red",
+      "pending": "{n} pending"
+    },
+    "office": {
+      "healthy": "Healthy offices",
+      "note": "Click an office for its four health rules; an office takes the worst of the four."
+    },
+    "projects": {
+      "title": "Key Projects",
+      "name": "Project",
+      "status": "Status",
+      "progress": "Progress",
+      "none": "No key projects"
     }
   }
 }

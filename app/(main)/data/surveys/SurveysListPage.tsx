@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { FileSearch, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { formatDate } from '@/lib/utils/datetime';
 import { OverlaySpinner } from '@/components/layout/skeletons';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { useAllActiveWorkers } from '@/components/campaign_surveys/useAllActiveWorkers';
@@ -22,6 +24,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 export function SurveysListPage() {
     const { theme } = useTheme();
+    const { timezone } = useTimezone();
     const router = useTransitionRouter();
     const isLight = theme === 'light';
     const [searchQuery, setSearchQuery] = useState('');
@@ -327,7 +330,7 @@ export function SurveysListPage() {
                                 const geo = survey.receiver_oid ? workerGeoMap.get(survey.receiver_oid) : undefined;
                                 const locationLabel = geo?.location ?? '—';
                                 const submittedLabel = survey.submitted_at
-                                    ? `Submitted ${new Date(survey.submitted_at).toLocaleDateString()}`
+                                    ? `Submitted ${formatDate(survey.submitted_at, timezone)}`
                                     : 'Not submitted';
                                 return (
                                     <button
