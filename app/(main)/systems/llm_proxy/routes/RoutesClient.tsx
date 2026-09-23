@@ -32,9 +32,9 @@ interface Props {
   taskKeys: TaskKeyInfo[];
 }
 
-/** A model is actually routable only if it is active AND has ≥1 active key.
- * Routing to anything else silently falls back to the legacy model at runtime. */
-const isUsable = (m: LLMModel) => m.is_active && m.active_key_count > 0;
+/** Only active models are routable: a route to an inactive model is skipped at
+ * runtime and the task runs on the default model through ohla-router. */
+const isUsable = (m: LLMModel) => m.is_active;
 
 const numOrNull = (v: FormDataEntryValue | null): number | null => {
   const s = (v as string)?.trim();
@@ -59,8 +59,8 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
   } | null>(null);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<LLMModelTestResult | null>(null);
-  // The switch is only allowed once the target model has actually answered via v2.
-  const testPassed = testResult?.ok === true && testResult.source === 'v2';
+  // The switch is only allowed once the target model has actually answered via the router.
+  const testPassed = testResult?.ok === true && testResult.source === 'router';
 
   const usableModels = models.filter(isUsable);
   const modelByOid = new Map(models.map((m) => [m.oid, m]));
@@ -100,7 +100,6 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
             ok: false,
             model_name: '',
             source: 'error',
-            key_label: null,
             content: null,
             latency_ms: null,
             http_status: null,
@@ -116,9 +115,7 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
   if (currentModel && !isUsable(currentModel)) optionModels.unshift(currentModel);
 
   const modelLabel = (m: LLMModel) =>
-    isUsable(m)
-      ? `${m.display_name || m.name} ${t('routes.modelMeta', { qpm: m.total_qpm, keys: m.active_key_count })}`
-      : `${m.display_name || m.name} ${t('routes.noKeys')}`;
+    isUsable(m) ? m.display_name || m.name : `${m.display_name || m.name} ${t('routes.inactiveModel')}`;
 
   // Only include override fields that carry a value (empty = inherit from model).
   const collectOverrides = (fd: FormData): Partial<LLMRouteCreate> => {
@@ -244,7 +241,7 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
                         <span className="inline-flex items-center gap-1.5">
                           {r.model_name ?? t('common.none')}
                           {broken && (
-                            <span title={t('routes.unusableWarn')} className="text-amber-400">
+                            <span title={t('routes.inactiveWarn')} className="text-amber-400">
                               <AlertTriangle className="h-3.5 w-3.5" />
                             </span>
                           )}
@@ -310,7 +307,7 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
             <Field label={t('routes.model')}>
               {usableModels.length === 0 && !selectedUnusable ? (
                 <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
-                  {t('routes.noUsableModels')}
+                  {t('routes.noActiveModels')}
                 </p>
               ) : (
                 <select
@@ -334,7 +331,7 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
             {selectedUnusable && (
               <p className="mb-3 flex items-center gap-1.5 text-sm text-amber-400">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
-                {t('routes.unusableWarn')}
+                {t('routes.inactiveWarn')}
               </p>
             )}
             <Field label={t('routes.description')}>
@@ -410,14 +407,8 @@ export function RoutesClient({ routes, models, taskKeys }: Props) {
                       {t('routes.testOk')}
                       {testResult.latency_ms != null &&
                         ` · ${t('routes.testLatency', { ms: testResult.latency_ms })}`}
-                      {testResult.key_label && ` · ${testResult.key_label}`}
                       {testResult.content && ` · ${t('routes.testReply')}: ${testResult.content.slice(0, 40)}`}
                     </span>
-                  </p>
-                ) : testResult.ok ? (
-                  <p className="flex items-start gap-1.5 text-sm text-amber-400">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{t('routes.testFellBack')}</span>
                   </p>
                 ) : (
                   <p className="flex items-start gap-1.5 text-sm text-red-400">
