@@ -37,7 +37,6 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
     const payload = {
       name: fd.get('name') as string,
       display_name: (fd.get('display_name') as string) || null,
-      api_domain: (fd.get('api_domain') as string) || null,
       max_tokens: numOrNull(fd.get('max_tokens')),
       temperature: numOrNull(fd.get('temperature')),
       top_p: numOrNull(fd.get('top_p')),
@@ -91,8 +90,6 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
               <thead className="sticky top-0 bg-inherit">
                 <tr className="border-b border-white/10 text-left text-sm text-gray-400">
                   <th className="px-4 py-3 font-medium">{t('models.name')}</th>
-                  <th className="px-4 py-3 font-medium">{t('models.totalQpm')}</th>
-                  <th className="px-4 py-3 font-medium">{t('models.activeKeys')}</th>
                   <th className="px-4 py-3 font-medium">{t('common.status')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('common.actions')}</th>
                 </tr>
@@ -104,8 +101,6 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
                       <div className="text-white">{m.display_name || m.name}</div>
                       <div className="font-mono text-xs text-gray-500">{m.name}</div>
                     </td>
-                    <td className="px-4 py-3 text-white">{m.total_qpm}</td>
-                    <td className="px-4 py-3 text-white">{m.active_key_count}</td>
                     <td className="px-4 py-3 text-sm">
                       {m.is_active ? (
                         <span className="text-green-400">{t('common.active')}</span>
@@ -147,14 +142,6 @@ export function ModelsClient({ models }: { models: LLMModel[] }) {
             </Field>
             <Field label={t('models.displayName')}>
               <input name="display_name" defaultValue={editing?.display_name ?? ''} className={inputClass} />
-            </Field>
-            <Field label={t('models.apiDomain')}>
-              <input
-                name="api_domain"
-                defaultValue={editing?.api_domain ?? ''}
-                placeholder={t('models.apiDomainPlaceholder')}
-                className={inputClass}
-              />
             </Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label={t('models.maxTokens')}>
