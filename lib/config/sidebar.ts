@@ -727,18 +727,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         icon: Cpu,
                         permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
                     },
-                    {
-                        href: '/systems/llm_proxy/keys',
-                        labelKey: 'llmKeys',
-                        icon: Lock,
-                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
-                    },
-                    {
-                        href: '/systems/llm_proxy/usage',
-                        labelKey: 'llmUsage',
-                        icon: BarChart3,
-                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
-                    },
                 ],
             },
             {
