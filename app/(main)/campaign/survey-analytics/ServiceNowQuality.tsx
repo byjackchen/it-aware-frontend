@@ -5,12 +5,14 @@ import { createPortal } from 'react-dom';
 import { CalendarDays, MessageCircle, Star, ThumbsDown } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  Bar, CartesianGrid, ComposedChart, LabelList, ResponsiveContainer,
+  Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from 'recharts';
+import type { TooltipContentProps } from 'recharts';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import { formatMonthLabel, isValidMonthSelection } from '@/lib/survey-quality';
-import type { ServiceNowQualityReport } from '@/lib/types/survey-analytics';
+import type { ServiceNowQualityMonth, ServiceNowQualityReport } from '@/lib/types/survey-analytics';
+import { ServiceNowMonthDetails } from './ServiceNowMonthDetails';
 
 interface Props {
   batchOid: string;
@@ -25,6 +27,55 @@ const HELP_KEYS = {
   poorRate: { definition: 'poorRateDefinition', formula: 'poorRateFormula' },
   feedbackRate: { definition: 'feedbackRateDefinition', formula: 'feedbackRateFormula' },
 } as const;
+
+function QualityBarTooltip({ active, payload }: TooltipContentProps) {
+  const t = useTranslations('SurveyAnalytics.serviceQuality');
+  if (!active || !payload?.length) return null;
+
+  const point = payload[0];
+  const row = point.payload as ServiceNowQualityMonth & { label: string };
+  const metric = point.dataKey;
+  let label: string;
+  let numerator: number;
+  let denominator: number;
+  let numeratorLabel: string;
+  let denominatorLabel: string;
+  let formula: string;
+
+  if (metric === 'csat') {
+    label = t('csat');
+    numerator = row.rating_sum;
+    denominator = row.rating_count;
+    numeratorLabel = t('ratingPoints');
+    denominatorLabel = t('validRatings');
+    formula = `${numerator} ÷ ${denominator} = ${row.csat?.toFixed(2) ?? '—'} / 5`;
+  } else if (metric === 'poor_rate') {
+    label = t('poorRate');
+    numerator = row.poor_count;
+    denominator = row.ticket_count;
+    numeratorLabel = t('poorTickets');
+    denominatorLabel = t('closedTickets');
+    formula = `${numerator} ÷ ${denominator} × 100% = ${row.poor_rate?.toFixed(2) ?? '—'}%`;
+  } else if (metric === 'feedback_rate') {
+    label = t('feedbackRate');
+    numerator = row.feedback_count;
+    denominator = row.ticket_count;
+    numeratorLabel = t('feedbackTickets');
+    denominatorLabel = t('closedTickets');
+    formula = `${numerator} ÷ ${denominator} × 100% = ${row.feedback_rate?.toFixed(2) ?? '—'}%`;
+  } else {
+    return null;
+  }
+
+  return (
+    <div role="tooltip" className="min-w-56 rounded-lg border border-[#dbe4f4] bg-white p-3 text-xs text-[#263b68] shadow-lg">
+      <p className="font-bold text-[#132968]">{row.label} · {label}</p>
+      <p className="mt-2">{numeratorLabel}: <strong>{numerator}</strong></p>
+      <p>{denominatorLabel}: <strong>{denominator}</strong></p>
+      <p className="mt-2 border-t border-[#e7ebf3] pt-2 font-bold">{formula}</p>
+    </div>
+  );
+}
 
 function MetricHelp({ metric, label }: { metric: QualityMetric; label: string }) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
@@ -142,13 +193,13 @@ export function ServiceNowQuality({ batchOid }: Props) {
 
           <div className="mt-3 h-[340px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={monthRows} margin={{ top: 30, right: 8, bottom: 5, left: -18 }} barGap={4}>
+              <BarChart data={monthRows} margin={{ top: 30, right: 8, bottom: 5, left: -18 }} barGap={4}>
                 <CartesianGrid stroke="#e7ebf3" strokeDasharray="4 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: '#1c326b', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#cbd3e2' }} tickLine={false} />
                 <YAxis yAxisId="score" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} tick={{ fill: '#2456d5', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis yAxisId="percent" orientation="right" domain={[0, 50]} ticks={[0, 10, 20, 30, 40, 50]} tickFormatter={(value: number) => `${value}%`} tick={{ fill: '#e97527', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(value, name) => [typeof value === 'number' ? `${value.toFixed(2)}${name === t('csat') ? '' : '%'}` : '—', name]} contentStyle={{ borderRadius: 10, borderColor: '#dbe4f4' }} />
-                <Bar yAxisId="percent" name={t('poorRate')} dataKey="poor_rate" fill={COLORS.poor} maxBarSize={28}>
+                <Tooltip shared={false} content={(props) => <QualityBarTooltip {...props} />} />
+                <Bar yAxisId="percent" name={t('poorRate')} dataKey="poor_rate" fill={COLORS.poor} maxBarSize={28} minPointSize={3}>
                   <LabelList dataKey="poor_rate" position="top" formatter={(value: unknown) => typeof value === 'number' ? `${value.toFixed(2)}%` : ''} style={{ fill: '#1e3065', fontSize: 11, fontWeight: 700 }} />
                 </Bar>
                 <Bar yAxisId="score" name={t('csat')} dataKey="csat" fill={COLORS.csat} maxBarSize={36}>
@@ -157,7 +208,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
                 <Bar yAxisId="percent" name={t('feedbackRate')} dataKey="feedback_rate" fill={COLORS.feedback} maxBarSize={36}>
                   <LabelList dataKey="feedback_rate" position="top" formatter={(value: unknown) => typeof value === 'number' ? `${value.toFixed(2)}%` : ''} style={{ fill: '#1e3065', fontSize: 11, fontWeight: 700 }} />
                 </Bar>
-              </ComposedChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
 
@@ -186,6 +237,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
             </table>
           </div>
           <p className="mt-3 text-right text-xs text-[#60729a]">{t('sourceNote')}</p>
+          <ServiceNowMonthDetails batchOid={batchOid} months={monthRows.map(({ month, label }) => ({ month, label }))} />
         </>
       )}
     </section>

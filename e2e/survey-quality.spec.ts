@@ -52,3 +52,62 @@ test('metric help in cards and table shows the same definition and formula', asy
     }
   }
 });
+
+test('single-month details load raw tickets and assessments for the selected month', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: {
+      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
+      months: ['2026-01', '2026-07'].map((month) => ({ month, ticket_count: 1, feedback_count: 1, rating_count: 1, poor_count: 0, csat: 5, poor_rate: 0, feedback_rate: 100 })),
+      averages: { csat: 5, poor_rate: 0, feedback_rate: 100 },
+    },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const month = new URL(route.request().url()).searchParams.get('month');
+    const isJuly = month === '2026-07';
+    return route.fulfill({ json: {
+      month, ticket_count: 1, assessment_count: isJuly ? 1 : 0,
+      tickets: [{
+        oid: 'ticket', stable_id: isJuly ? 'INC-JUL' : 'INC-JAN', title: 'Raw ticket', state: 'Closed',
+        source_closed_at: `${month}-05T12:00:00+00:00`, caller_name: 'Alice', assigned_group: 'IT',
+        assessments: isJuly ? [{ oid: 'assessment', external_id: 'A-1', submitted_at: `${month}-05T12:00:00+00:00`, rating: 5, survey_questions: { questions: [{ title: 'Rate service' }] }, survey_answer: { answers: [{ type: 'text', text: 'Helpful' }] } }] : [],
+      }],
+    } });
+  });
+  await page.goto('/campaign/survey-analytics');
+
+  await expect(page.getByRole('heading', { name: 'Single-month details' })).toBeVisible();
+  await expect(page.getByText('INC-JUL')).toBeVisible();
+  await page.getByText('View raw assessment').click();
+  await expect(page.getByText(/Helpful/)).toBeVisible();
+  await expect(page.getByText(/Rate service/)).toBeVisible();
+
+  await page.getByLabel('Detail month').selectOption('2026-01');
+  await expect(page.getByText('INC-JAN')).toBeVisible();
+  await expect(page.getByText('INC-JUL')).toHaveCount(0);
+});
+
+test('hovering each chart bar shows that metric’s numerator and denominator', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: {
+      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
+      months: [{ month: '2026-01', ticket_count: 20, feedback_count: 10, rating_count: 10, rating_sum: 49, poor_count: 1, csat: 4.9, poor_rate: 5, feedback_rate: 50 }],
+      averages: { csat: 4.9, poor_rate: 5, feedback_rate: 50 },
+    },
+  }));
+  await page.goto('/campaign/survey-analytics');
+  const bars = page.locator('.recharts-bar');
+  await expect(bars).toHaveCount(3);
+
+  await bars.nth(0).locator('.recharts-rectangle').first().hover();
+  await expect(page.getByRole('tooltip')).toContainText('1 ÷ 20 × 100% = 5.00%');
+  await bars.nth(1).locator('.recharts-rectangle').first().hover();
+  await expect(page.getByRole('tooltip')).toContainText('49 ÷ 10 = 4.90 / 5');
+  await bars.nth(2).locator('.recharts-rectangle').first().hover();
+  await expect(page.getByRole('tooltip')).toContainText('10 ÷ 20 × 100% = 50.00%');
+});
