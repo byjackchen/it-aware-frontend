@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Filter, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-interface SurveyBatchItem {
+export interface SurveyBatchItem {
     oid: string;
     name: string;
     status: string;
@@ -13,7 +13,7 @@ interface SurveyBatchItem {
 
 interface BatchSelectorProps {
     selectedBatchOid: string;
-    onBatchChange: (oid: string) => void;
+    onBatchChange: (batch: SurveyBatchItem) => void;
     isLight: boolean;
 }
 
@@ -31,7 +31,7 @@ export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: Batc
                 const items: SurveyBatchItem[] = data.items || [];
                 setBatches(items);
                 if (!selectedBatchOid && items.length > 0) {
-                    onBatchChange(items[0].oid);
+                    onBatchChange(items[0]);
                 }
             } catch { /* ignore */ }
             finally { setIsLoading(false); }
@@ -60,7 +60,10 @@ export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: Batc
             <Filter className={`w-4 h-4 ${isLight ? 'text-slate-500' : 'text-gray-500'}`} />
             <select
                 value={selectedBatchOid}
-                onChange={(e) => onBatchChange(e.target.value)}
+                onChange={(e) => {
+                    const batch = batches.find((item) => item.oid === e.target.value);
+                    if (batch) onBatchChange(batch);
+                }}
                 className={`px-3 py-2 rounded-lg text-sm font-medium ${isLight
                     ? 'bg-white border border-slate-200 text-slate-800'
                     : 'bg-white/10 border border-white/10 text-white'

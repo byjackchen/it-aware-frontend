@@ -2,6 +2,27 @@
  * TypeScript interfaces for Survey Analytics Dashboard API responses.
  */
 
+export interface ServiceNowQualityMonth {
+    month: string;
+    ticket_count: number;
+    feedback_count: number;
+    rating_count: number;
+    poor_count: number;
+    csat: number | null;
+    poor_rate: number | null;
+    feedback_rate: number | null;
+}
+
+export interface ServiceNowQualityReport {
+    batch_oid: string;
+    months: ServiceNowQualityMonth[];
+    averages: {
+        csat: number | null;
+        poor_rate: number | null;
+        feedback_rate: number | null;
+    };
+}
+
 // ==================== Submission Overview ====================
 
 export interface SubmissionOverviewBatch {
