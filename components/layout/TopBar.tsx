@@ -317,7 +317,7 @@ export function TopBar() {
             </button>
 
             {/* Dropdown Menu */}
-            <div className="absolute right-0 top-full mt-2 w-64 glass-dark rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right">
+            <div className={`absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right ${isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23] border-white/10'}`}>
               <div className={`px-4 py-3 border-b ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
                 <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                   {user?.worker?.full_name || user?.account?.username || '\u00A0'}

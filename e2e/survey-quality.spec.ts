@@ -89,6 +89,65 @@ test('single-month details load raw tickets and assessments for the selected mon
   await expect(page.getByText('INC-JUL')).toHaveCount(0);
 });
 
+test('single-month details filter tickets with ratings and by selected score', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 3 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: {
+      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
+      months: [{ month: '2026-07', ticket_count: 3, feedback_count: 2, rating_count: 3, rating_sum: 9, poor_count: 2, csat: 3, poor_rate: 66.67, feedback_rate: 66.67 }],
+      averages: { csat: 3, poor_rate: 66.67, feedback_rate: 66.67 },
+    },
+  }));
+  const assessment = (oid: string, rating: number) => ({
+    oid, external_id: oid, submitted_at: '2026-07-05T12:00:00+00:00', rating,
+    survey_questions: { questions: [{ question_id: 'q2', type: 'single_select', title: 'Rate service' }] },
+    survey_answer: { answers: [{ question_id: 'q2', type: 'single_select', selected_option_id: String(rating) }] },
+  });
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => route.fulfill({ json: {
+    month: '2026-07', ticket_count: 3, assessment_count: 3,
+    tickets: [
+      { oid: 'one', stable_id: 'INC-ONE', title: 'One', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A1', 1), assessment('A5', 5)] },
+      { oid: 'three', stable_id: 'INC-THREE', title: 'Three', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A3', 3)] },
+      { oid: 'none', stable_id: 'INC-NONE', title: 'None', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [] },
+    ],
+  } }));
+  await page.goto('/campaign/survey-analytics');
+
+  await expect(page.getByText('INC-NONE')).toBeVisible();
+  const filteredCount = page.getByRole('status').filter({ hasText: 'Showing' });
+  await expect(filteredCount).toHaveText('Showing 3 tickets');
+  await page.getByLabel('Only rated tickets').check();
+  await expect(filteredCount).toHaveText('Showing 3 tickets');
+  await expect(page.getByText('INC-NONE')).toBeVisible();
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(filteredCount).toHaveText('Showing 2 tickets');
+  await expect(page.getByText('INC-NONE')).toHaveCount(0);
+  await expect(page.getByText('INC-ONE')).toBeVisible();
+  await expect(page.getByText('INC-THREE')).toBeVisible();
+
+  await expect(page.getByRole('checkbox', { name: '5', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Rating', exact: true }).click();
+  await page.getByRole('checkbox', { name: '5', exact: true }).check();
+  await expect(filteredCount).toHaveText('Showing 2 tickets');
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(filteredCount).toHaveText('Showing 1 ticket');
+  await expect(page.getByText('INC-ONE')).toBeVisible();
+  await expect(page.getByText('INC-THREE')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Rating', exact: true }).click();
+  await page.getByRole('checkbox', { name: '5', exact: true }).uncheck();
+  for (const rating of ['1', '2', '3']) {
+    await page.getByRole('checkbox', { name: rating, exact: true }).check();
+  }
+  await expect(page.getByRole('button', { name: 'Rating', exact: true })).toContainText('1, 2, 3');
+  await expect(page.getByText('INC-ONE')).toBeVisible();
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(filteredCount).toHaveText('Showing 2 tickets');
+  await expect(page.getByText('INC-ONE')).toBeVisible();
+  await expect(page.getByText('INC-THREE')).toBeVisible();
+});
+
 test('hovering each chart bar shows that metric’s numerator and denominator', async ({ page }) => {
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
     json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
