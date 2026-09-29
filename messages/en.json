@@ -2545,7 +2545,7 @@
       "detailLoadFailed": "Failed to load month details",
       "detailCounts": "{tickets} closed tickets · {assessments} submitted assessments",
       "detailTicket": "Ticket",
-      "detailClosedAt": "Closed at (UTC)",
+      "detailClosedAt": "Closed at ({timezone})",
       "detailSummary": "Summary",
       "detailCaller": "Caller",
       "detailGroup": "Assigned group",

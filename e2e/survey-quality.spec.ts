@@ -27,6 +27,7 @@ test('switching timezone reloads CSAT month totals and matching ticket details',
   await profile.getByRole('button', { name: /UTC UTC\+0/ }).click();
   await profile.getByRole('button', { name: /Los Angeles/ }).click();
   await expect(page.getByText('INC-JULY')).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: 'Closed at (America/Los_Angeles)' })).toBeVisible();
   expect(qualityZones).toContain('America/Los_Angeles');
   expect(detailZones).toContain('America/Los_Angeles');
 });

@@ -110,7 +110,7 @@ function offsetAt(instant: Date, timezone: string): number {
  */
 export function localEndOfDayIso(yyyyMmDd: string, timezone: string): string {
   if (!yyyyMmDd) return yyyyMmDd;
-  return localDateTimeToIso(`${yyyyMmDd}T23:59:59`, timezone);
+  return localDateTimeToIso(`${yyyyMmDd}T23:59:59`, timezone, 'later');
 }
 
 /**
@@ -145,7 +145,7 @@ export function formatLocalDateTime(value: DateInput, timezone: string): string 
  * datetime backend filter accepts (pydantic + ensure_utc normalize the
  * offset to UTC server-side).
  */
-export function localDateTimeToIso(localDateTime: string, timezone: string): string {
+export function localDateTimeToIso(localDateTime: string, timezone: string, ambiguous: 'earlier' | 'later' = 'earlier'): string {
   if (!localDateTime) return localDateTime;
   // Normalize the local input to YYYY-MM-DDTHH:MM:SS (some inputs emit
   // without seconds when step=60).
@@ -162,7 +162,7 @@ export function localDateTimeToIso(localDateTime: string, timezone: string): str
     .filter((instant) => formatLocalDateTime(new Date(instant), zone) === wallTime)
     .sort((a, b) => a - b);
   if (!instants.length) throw new RangeError(`Nonexistent local datetime: ${wallTime} (${zone})`);
-  const minutes = offsetAt(new Date(instants[0]), zone);
+  const minutes = offsetAt(new Date(ambiguous === 'later' ? instants[instants.length - 1] : instants[0]), zone);
   const sign = minutes >= 0 ? '+' : '-';
   const magnitude = Math.abs(minutes);
   return `${wallTime}${sign}${String(Math.floor(magnitude / 60)).padStart(2, '0')}:${String(magnitude % 60).padStart(2, '0')}`;

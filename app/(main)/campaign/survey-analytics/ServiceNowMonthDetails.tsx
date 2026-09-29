@@ -126,7 +126,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
             <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
               <thead className="bg-[#142f82] text-white"><tr>
                 <th className="px-3 py-3">{t('detailTicket')}</th>
-                <th className="px-3 py-3">{t('detailClosedAt')}</th>
+                <th className="px-3 py-3">{t('detailClosedAt', { timezone })}</th>
                 <th className="px-3 py-3">{t('detailSummary')}</th>
                 <th className="px-3 py-3">{t('detailCaller')}</th>
                 <th className="px-3 py-3">{t('detailGroup')}</th>

@@ -76,7 +76,7 @@ export function IncidentsPanel({
 
     const query = useMemo(() => ({
         ...(dateFrom ? { effective_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
-        ...(dateTo ? { effective_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
+        ...(dateTo ? { effective_at_to: localDateTimeToIso(dateTo, timezone, 'later') } : {}),
     }), [dateFrom, dateTo, timezone]);
 
     const {
@@ -152,7 +152,7 @@ export function IncidentsPanel({
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
         if (dateFrom) params.set('effective_at_from', localDateTimeToIso(dateFrom, timezone));
-        if (dateTo) params.set('effective_at_to', localDateTimeToIso(dateTo, timezone));
+        if (dateTo) params.set('effective_at_to', localDateTimeToIso(dateTo, timezone, 'later'));
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -198,7 +198,7 @@ export function IncidentsPanel({
                 {
                     timezone,
                     effective_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
-                    effective_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
+                    effective_at_to: dateTo ? localDateTimeToIso(dateTo, timezone, 'later') : undefined,
                 },
                 `ssc_ticket_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );

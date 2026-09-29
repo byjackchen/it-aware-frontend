@@ -95,6 +95,11 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasLoaded, setHasLoaded] = useState(Boolean(cached));
+    const [stateKey, setStateKey] = useState(cacheKey);
+    const stateMatchesQuery = stateKey === cacheKey;
+    const visibleItems = stateMatchesQuery ? items : (cached?.items as TItem[] | undefined) ?? [];
+    const visibleHasMore = stateMatchesQuery ? hasMore : cached?.hasMore ?? true;
+    const visibleHasLoaded = stateMatchesQuery ? hasLoaded : Boolean(cached);
 
     const inFlightRef = useRef<{ key: string; controller: AbortController } | null>(null);
     const currentCacheKeyRef = useRef(cacheKey);
@@ -238,9 +243,9 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     }, [cacheKey, dedupeItems, getHasMore, getHeaderTotal, getItems, getTotal, pageSize, queryString, resource]);
 
     const loadMore = useCallback(async () => {
-        if (!hasMore || inFlightRef.current?.key === cacheKey) return;
-        await fetchPage(items.length, false);
-    }, [cacheKey, fetchPage, hasMore, items.length]);
+        if (!visibleHasMore || inFlightRef.current?.key === cacheKey) return;
+        await fetchPage(visibleItems.length, false);
+    }, [cacheKey, fetchPage, visibleHasMore, visibleItems.length]);
 
     const reload = useCallback(async () => {
         infiniteCache.delete(cacheKey);
@@ -254,6 +259,7 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     useEffect(() => {
         if (inFlightRef.current?.key !== cacheKey) inFlightRef.current?.controller.abort();
         const cache = infiniteCache.get(cacheKey);
+        setStateKey(cacheKey);
         if (cache) {
             setItems(cache.items as TItem[]);
             setHasMore(cache.hasMore);
@@ -276,13 +282,13 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     }, [auto, cacheKey, fetchPage, hasLoaded]);
 
     return {
-        items,
-        total,
-        isInitialLoading,
-        isLoadingMore,
-        error,
-        hasMore,
-        hasLoaded,
+        items: visibleItems,
+        total: stateMatchesQuery ? total : cached?.total ?? null,
+        isInitialLoading: stateMatchesQuery ? isInitialLoading : !cached,
+        isLoadingMore: stateMatchesQuery ? isLoadingMore : false,
+        error: stateMatchesQuery ? error : null,
+        hasMore: visibleHasMore,
+        hasLoaded: visibleHasLoaded,
         loadMore,
         reload,
     };

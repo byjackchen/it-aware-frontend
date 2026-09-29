@@ -2223,7 +2223,7 @@
       "detailLoadFailed": "加载单月明细失败",
       "detailCounts": "{tickets} 个已关闭工单 · {assessments} 条已提交 assessment",
       "detailTicket": "工单",
-      "detailClosedAt": "关闭时间（UTC）",
+      "detailClosedAt": "关闭时间（{timezone}）",
       "detailSummary": "工单标题",
       "detailCaller": "报障人",
       "detailGroup": "处理组",

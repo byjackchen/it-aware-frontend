@@ -14,6 +14,11 @@ describe('localDateTimeToIso', () => {
       .toBe('2026-11-01T01:30:00-04:00');
   });
 
+  it('uses the later instant for an inclusive end in the repeated hour', () => {
+    expect(localDateTimeToIso('2026-11-01T01:30:00', 'America/New_York', 'later'))
+      .toBe('2026-11-01T01:30:00-05:00');
+  });
+
   it('keeps an empty optional end date empty', () => {
     expect(localEndOfDayIso('', 'America/New_York')).toBe('');
   });
