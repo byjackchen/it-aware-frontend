@@ -304,7 +304,7 @@ export function InteractionsPanel({
                     setIsPageLoading(false);
                 });
         },
-        [pageSize, dateFrom, dateTo, workerFilter, selectedAiCodes],
+        [pageSize, dateFrom, dateTo, workerFilter, selectedAiCodes, timezone],
     );
 
     useEffect(() => {
@@ -315,9 +315,10 @@ export function InteractionsPanel({
 
     // Reset pagination when filters or pageSize change
     useEffect(() => {
+        abortRef.current?.abort();
         setCurrentPage(1);
         setRemotePage(null);
-    }, [pageSize, dateFrom, dateTo, workerFilter, localUserFilter, selectedAiCodes, selectedRegions, selectedCountries, selectedDepts]);
+    }, [pageSize, dateFrom, dateTo, workerFilter, localUserFilter, selectedAiCodes, selectedRegions, selectedCountries, selectedDepts, timezone]);
 
     // When alignedRowOid changes, switch to the page that contains it (if found in loaded data)
     useEffect(() => {
@@ -382,6 +383,7 @@ export function InteractionsPanel({
             await downloadDashboardXlsx(
                 'interactions',
                 {
+                    timezone,
                     created_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
                     created_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
                     actor_stable_id: workerFilter,

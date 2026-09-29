@@ -86,27 +86,22 @@ export function formatLocalDate(value: DateInput, timezone: string): string {
  */
 export function localMidnightIso(yyyyMmDd: string, timezone: string): string {
   if (!yyyyMmDd) return yyyyMmDd;
-  const resolvedTimezone = resolveTimezone(timezone);
-  // Compute the UTC offset of yyyyMmDd 12:00 local in `timezone`, then
-  // build the ISO offset string. Using noon avoids DST-edge ambiguity.
-  const noonLocal = new Date(`${yyyyMmDd}T12:00:00Z`);
+  return localDateTimeToIso(`${yyyyMmDd}T00:00:00`, timezone);
+}
+
+function offsetAt(instant: Date, timezone: string): number {
   const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: resolvedTimezone,
+    timeZone: timezone,
     timeZoneName: 'shortOffset',
     hour: '2-digit',
   });
-  const parts = fmt.formatToParts(noonLocal);
+  const parts = fmt.formatToParts(instant);
   const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
-  // shortOffset emits values like "GMT-5", "GMT+8", "GMT" (UTC), "GMT-05:30"
   const match = tzPart.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/);
-  let offset = '+00:00';
-  if (match) {
-    const hours = parseInt(match[1], 10);
-    const minutes = match[2] ? parseInt(match[2], 10) : 0;
-    const sign = hours >= 0 ? '+' : '-';
-    offset = `${sign}${String(Math.abs(hours)).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  }
-  return `${yyyyMmDd}T00:00:00${offset}`;
+  if (!match) return 0;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] ?? 0);
+  return hours * 60 + Math.sign(hours) * minutes;
 }
 
 /**
@@ -114,9 +109,8 @@ export function localMidnightIso(yyyyMmDd: string, timezone: string): string {
  * `localMidnightIso` for `<= :end` SQL semantics.
  */
 export function localEndOfDayIso(yyyyMmDd: string, timezone: string): string {
-  const start = localMidnightIso(yyyyMmDd, timezone);
-  // Replace the time portion only; the offset suffix is preserved.
-  return start.replace('T00:00:00', 'T23:59:59');
+  if (!yyyyMmDd) return yyyyMmDd;
+  return localDateTimeToIso(`${yyyyMmDd}T23:59:59`, timezone);
 }
 
 /**
@@ -158,13 +152,20 @@ export function localDateTimeToIso(localDateTime: string, timezone: string): str
   const datePart = localDateTime.slice(0, 10);
   let timePart = localDateTime.slice(11);
   if (/^\d{2}:\d{2}$/.test(timePart)) timePart = `${timePart}:00`;
-  // Reuse the offset that localMidnightIso computes for this date in
-  // this timezone — the offset depends on the date for DST zones, so
-  // anchor on the chosen day rather than "now".
-  const baseIso = localMidnightIso(datePart, timezone);
-  const offsetMatch = baseIso.match(/([+-]\d{2}:\d{2})$/);
-  const offset = offsetMatch ? offsetMatch[1] : '+00:00';
-  return `${datePart}T${timePart}${offset}`;
+  const wallTime = `${datePart}T${timePart}`;
+  const zone = resolveTimezone(timezone);
+  const wallUtc = Date.parse(`${wallTime}Z`);
+  if (!Number.isFinite(wallUtc)) throw new RangeError(`Invalid local datetime: ${wallTime}`);
+  const offsets = new Set([-1, 0, 1].map((days) => offsetAt(new Date(wallUtc + days * 86400000), zone)));
+  const instants = [...offsets]
+    .map((minutes) => wallUtc - minutes * 60000)
+    .filter((instant) => formatLocalDateTime(new Date(instant), zone) === wallTime)
+    .sort((a, b) => a - b);
+  if (!instants.length) throw new RangeError(`Nonexistent local datetime: ${wallTime} (${zone})`);
+  const minutes = offsetAt(new Date(instants[0]), zone);
+  const sign = minutes >= 0 ? '+' : '-';
+  const magnitude = Math.abs(minutes);
+  return `${wallTime}${sign}${String(Math.floor(magnitude / 60)).padStart(2, '0')}:${String(magnitude % 60).padStart(2, '0')}`;
 }
 
 /**
@@ -173,13 +174,11 @@ export function localDateTimeToIso(localDateTime: string, timezone: string): str
  */
 export function formatTzBadge(timezone: string): string {
   const resolvedTimezone = resolveTimezone(timezone);
-  // Re-use the same offset detection as localMidnightIso, anchored on
-  // today so DST is reflected correctly.
-  const today = new Date().toISOString().slice(0, 10);
-  const iso = localMidnightIso(today, resolvedTimezone);
-  const offsetMatch = iso.match(/([+-]\d{2}:\d{2})$/);
-  const offset = offsetMatch ? `GMT${offsetMatch[1]}` : 'GMT';
-  return `${resolvedTimezone} (${offset})`;
+  const minutes = offsetAt(new Date(), resolvedTimezone);
+  const sign = minutes >= 0 ? '+' : '-';
+  const magnitude = Math.abs(minutes);
+  const offset = `${sign}${String(Math.floor(magnitude / 60)).padStart(2, '0')}:${String(magnitude % 60).padStart(2, '0')}`;
+  return `${resolvedTimezone} (GMT${offset})`;
 }
 
 /**

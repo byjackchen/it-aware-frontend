@@ -1,5 +1,36 @@
 import { test, expect } from '@playwright/test';
 
+test('switching timezone reloads CSAT month totals and matching ticket details', async ({ page, context }) => {
+  await page.setViewportSize({ width: 2048, height: 1000 });
+  await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({ json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 1 }] } }));
+  const qualityZones: string[] = [];
+  const detailZones: string[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => {
+    const zone = new URL(route.request().url()).searchParams.get('timezone') ?? 'missing';
+    qualityZones.push(zone);
+    const ticketCount = zone === 'America/Los_Angeles' ? 0 : 1;
+    return route.fulfill({ json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [{ month: '2026-07', ticket_count: ticketCount, feedback_count: ticketCount, rating_count: ticketCount, rating_sum: ticketCount * 5, poor_count: 0, csat: ticketCount ? 5 : null, poor_rate: ticketCount ? 0 : null, feedback_rate: ticketCount ? 100 : null }], averages: { csat: ticketCount ? 5 : null, poor_rate: ticketCount ? 0 : null, feedback_rate: ticketCount ? 100 : null } } });
+  });
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const zone = new URL(route.request().url()).searchParams.get('timezone') ?? 'missing';
+    detailZones.push(zone);
+    const tickets = zone === 'America/Los_Angeles' ? [] : [{ oid: 'july-ticket', stable_id: 'INC-JULY', title: 'Boundary ticket', state: 'Closed', source_closed_at: '2026-07-01T02:00:00Z', caller_name: null, assigned_group: null, assessments: [] }];
+    return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length, assessment_count: 0, tickets } });
+  });
+  await page.goto('/campaign/survey-analytics');
+  await expect(page.getByText('INC-JULY')).toBeVisible();
+  expect(qualityZones).toContain('UTC');
+  expect(detailZones).toContain('UTC');
+  const profile = page.locator('div.relative.group').filter({ hasText: 'Times shown in' }).last();
+  await profile.hover();
+  await profile.getByRole('button', { name: /UTC UTC\+0/ }).click();
+  await profile.getByRole('button', { name: /Los Angeles/ }).click();
+  await expect(page.getByText('INC-JULY')).toHaveCount(0);
+  expect(qualityZones).toContain('America/Los_Angeles');
+  expect(detailZones).toContain('America/Los_Angeles');
+});
+
 test('ServiceNow quality chart shows monthly metrics and month selection', async ({ page }) => {
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
     json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },

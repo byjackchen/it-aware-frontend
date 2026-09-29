@@ -6,6 +6,7 @@ import { readUserDataCookie, updateUserPreferences } from '@/lib/utils/user-data
 
 interface TimezoneContextType {
   timezone: string;
+  ready: boolean;
   setTimezone: (timezone: string) => void;
 }
 
@@ -13,17 +14,17 @@ const TimezoneContext = createContext<TimezoneContextType | undefined>(undefined
 
 export function TimezoneProvider({ children }: { children: React.ReactNode }) {
   const [timezone, setTimezoneState] = useState<string>(DEFAULT_TIMEZONE);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const cookieData = readUserDataCookie();
-    const preferredTimezone = cookieData?.preferences?.timezone;
-    if (preferredTimezone) {
-      setTimezoneState(resolveTimezone(preferredTimezone));
-      return;
-    }
-
-    const localTimezone = detectLocalTimezone();
-    setTimezoneState(resolveTimezone(localTimezone));
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const preferredTimezone = readUserDataCookie()?.preferences?.timezone;
+      setTimezoneState(resolveTimezone(preferredTimezone || detectLocalTimezone()));
+      setReady(true);
+    });
+    return () => { active = false; };
   }, []);
 
   const setTimezone = useCallback((nextTimezone: string) => {
@@ -32,7 +33,7 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
     updateUserPreferences({ timezone: resolved });
   }, []);
 
-  const value = useMemo<TimezoneContextType>(() => ({ timezone, setTimezone }), [timezone, setTimezone]);
+  const value = useMemo<TimezoneContextType>(() => ({ timezone, ready, setTimezone }), [timezone, ready, setTimezone]);
 
   return <TimezoneContext.Provider value={value}>{children}</TimezoneContext.Provider>;
 }

@@ -8,7 +8,7 @@ import { InteractionsPanel } from '@/components/ssc/InteractionsPanel';
 import { IncidentsPanel } from '@/components/ssc/IncidentsPanel';
 import { AlignmentStatusBar } from '@/components/ssc/AlignmentStatusBar';
 import type { WorkerContext, Incident, Interaction } from '@/lib/types/objects';
-import { formatLocalDateTime } from '@/lib/utils/datetime';
+import { formatLocalDateTime, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface SSCDashboardPageProps {
@@ -23,10 +23,10 @@ const ALIGN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 // `<input type="datetime-local">`: `YYYY-MM-DDTHH:MM:SS`. The dashboard
 // composes ISO-with-offset at submission time via `localDateTimeToIso`.
 function getDefaultDateFrom(timezone: string): string {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    // Start of the day 7 days ago in the analyst's calendar.
-    const dayPart = formatLocalDateTime(d, timezone).slice(0, 10);
+    const today = formatLocalDateTime(new Date(), timezone).slice(0, 10);
+    const d = new Date(`${today}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 7);
+    const dayPart = d.toISOString().slice(0, 10);
     return `${dayPart}T00:00:00`;
 }
 
@@ -67,7 +67,7 @@ function findClosestInteraction(
     return bestOid;
 }
 
-export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDashboardPageProps) {
+function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboardPageProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
@@ -90,6 +90,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
     const [appliedDateTo, setAppliedDateTo] = useState(() => getDefaultDateTo(timezone));
     const [workerFilter, setWorkerFilter] = useState('');
     const [appliedWorkerFilter, setAppliedWorkerFilter] = useState('');
+    const [filterError, setFilterError] = useState<string | null>(null);
 
     // Alignment state
     const [alignedIncidentOid, setAlignedIncidentOid] = useState<string | null>(null);
@@ -107,6 +108,18 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
 
     // Focused interaction OIDs — driven by the Pre-FAQ button in IncidentsPanel
     const [focusedInteractionOids, setFocusedInteractionOids] = useState<Set<string> | null>(null);
+
+    useEffect(() => {
+        setAlignedIncidentOid(null);
+        setAlignedWorkerStableId(null);
+        setHighlightWindow(null);
+        setAlignedRowOid(null);
+        setFocusedInteractionOids(null);
+        setInteractionDateFrom(appliedDateFrom);
+        setInteractionDateTo(appliedDateTo);
+        // The wall-clock filter remains selected; timezone alone changes the UTC window.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timezone]);
 
     const handleFocusInteractions = useCallback((oids: string[]) => {
         setFocusedInteractionOids(new Set(oids));
@@ -132,6 +145,14 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
     }, [interactionsRef, highlightWindow, alignedRowOid, alignedWorkerStableId]);
 
     const handleApplyFilters = useCallback(() => {
+        try {
+            if (dateFrom) localDateTimeToIso(dateFrom, timezone);
+            if (dateTo) localDateTimeToIso(dateTo, timezone);
+        } catch {
+            setFilterError(`Selected local time does not exist in ${timezone}.`);
+            return;
+        }
+        setFilterError(null);
         setAppliedDateFrom(dateFrom);
         setAppliedDateTo(dateTo);
         setAppliedWorkerFilter(workerFilter);
@@ -142,7 +163,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
         setAlignedWorkerStableId(null);
         setHighlightWindow(null);
         setAlignedRowOid(null);
-    }, [dateFrom, dateTo, workerFilter]);
+    }, [dateFrom, dateTo, workerFilter, timezone]);
 
     const handleAlign = useCallback((incident: Incident) => {
         const incidentTs = new Date(incident.effective_at).getTime();
@@ -190,6 +211,17 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
         setInteractionDateTo(appliedDateTo);
     }, [appliedDateFrom, appliedDateTo]);
 
+    // A wall-clock value can be valid in one zone and disappear in another
+    // during the spring DST change. Keep the filter controls available while
+    // preventing either panel from converting an impossible applied range.
+    let appliedRangeError: string | null = null;
+    try {
+        if (appliedDateFrom) localDateTimeToIso(appliedDateFrom, timezone);
+        if (appliedDateTo) localDateTimeToIso(appliedDateTo, timezone);
+    } catch {
+        appliedRangeError = `Selected local time does not exist in ${timezone}. Choose another time and apply filters.`;
+    }
+
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
             {/* Header */}
@@ -223,6 +255,7 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                     onWorkerFilterChange={setWorkerFilter}
                     onApply={handleApplyFilters}
                 />
+                {filterError && <p role="alert" className="mb-3 text-sm text-red-400">{filterError}</p>}
             </div>
 
             {/* Stacked Panels — interactions above, incidents below.
@@ -233,7 +266,9 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                 `min-h-0` on both children is load-bearing — a flex child
                 defaults to min-height:auto, which would stop each panel's
                 inner overflow-y-auto from ever scrolling. */}
-            <div className={`flex-1 flex flex-col mx-4 mb-0 rounded-t-xl overflow-hidden border ${
+            {appliedRangeError ? (
+                <p role="alert" className="mx-4 text-sm text-red-400">{appliedRangeError}</p>
+            ) : <div className={`flex-1 flex flex-col mx-4 mb-0 rounded-t-xl overflow-hidden border ${
                 isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'
             }`}>
                 {/* Top: Interactions */}
@@ -264,10 +299,10 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
                         onFocusInteractions={handleFocusInteractions}
                     />
                 </div>
-            </div>
+            </div>}
 
             {/* Alignment Status Bar */}
-            {highlightWindow && (
+            {!appliedRangeError && highlightWindow && (
                 <div className="mx-4 mb-4">
                     <AlignmentStatusBar
                         incidentStableId={alignedIncidentStableId}
@@ -279,4 +314,10 @@ export function SSCDashboardPage({ initialWorkerMap, initialCatalogMap }: SSCDas
             )}
         </div>
     );
+}
+
+export function SSCDashboardPage(props: SSCDashboardPageProps) {
+    const { ready } = useTimezone();
+    if (!ready) return <div role="status">Loading timezone...</div>;
+    return <SSCDashboardContent {...props} />;
 }

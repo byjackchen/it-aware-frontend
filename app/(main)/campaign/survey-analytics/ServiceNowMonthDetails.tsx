@@ -7,11 +7,12 @@ import type { ServiceNowMonthDetails } from '@/lib/types/survey-analytics';
 interface Props {
   batchOid: string;
   months: Array<{ month: string; label: string }>;
+  timezone: string;
 }
 
 const PAGE_SIZE = 50;
 
-export function ServiceNowMonthDetails({ batchOid, months }: Props) {
+export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   const [requestedMonth, setRequestedMonth] = useState('2026-07');
@@ -24,7 +25,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   const [appliedFilters, setAppliedFilters] = useState({ ratedOnly: false, ratings: [] as number[] });
   const selectedMonth = months.some((item) => item.month === requestedMonth)
     ? requestedMonth : months.at(-1)?.month;
-  const requestKey = `${batchOid}:${selectedMonth}`;
+  const requestKey = `${batchOid}:${selectedMonth}:${timezone}`;
   const details = loaded?.key === requestKey ? loaded.data : null;
   const error = failed?.key === requestKey ? failed.message : null;
   const loading = !!selectedMonth && !details && !error;
@@ -32,7 +33,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   useEffect(() => {
     if (!selectedMonth) return;
     const controller = new AbortController();
-    const params = new URLSearchParams({ batch_oid: batchOid, month: selectedMonth });
+    const params = new URLSearchParams({ batch_oid: batchOid, month: selectedMonth, timezone });
     fetch(`/api/dashboard/survey-analytics/servicenow-month-details?${params}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error(t('detailLoadFailed'));
@@ -43,7 +44,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
         if (!controller.signal.aborted) setFailed({ key: requestKey, message: cause instanceof Error ? cause.message : t('detailLoadFailed') });
       });
     return () => controller.abort();
-  }, [batchOid, selectedMonth, requestKey, t]);
+  }, [batchOid, selectedMonth, timezone, requestKey, t]);
 
   const tickets = details?.tickets ?? [];
   const filteredTickets = tickets.filter((ticket) => {
@@ -55,7 +56,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   const currentPage = Math.min(page, pages);
   const visible = filteredTickets.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const dateFormat = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: timezone,
   });
 
   return (

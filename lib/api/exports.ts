@@ -63,6 +63,7 @@ export async function updateIncidentReview(
 // ============================================================================
 
 export interface ExportFilters {
+  timezone?: string;
   created_at_from?: string;
   created_at_to?: string;
   effective_at_from?: string;

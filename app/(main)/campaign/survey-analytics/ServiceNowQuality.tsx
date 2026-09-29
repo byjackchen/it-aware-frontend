@@ -13,6 +13,7 @@ import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
 import { formatMonthLabel, isValidMonthSelection } from '@/lib/survey-quality';
 import type { ServiceNowQualityMonth, ServiceNowQualityReport } from '@/lib/types/survey-analytics';
 import { ServiceNowMonthDetails } from './ServiceNowMonthDetails';
+import { useTimezone } from '@/lib/contexts/timezone-context';
 
 interface Props {
   batchOid: string;
@@ -122,12 +123,13 @@ function MetricHelp({ metric, label }: { metric: QualityMetric; label: string })
 export function ServiceNowQuality({ batchOid }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
+  const { timezone, ready } = useTimezone();
   const [startMonth, setStartMonth] = useState('2026-01');
   const [endMonth, setEndMonth] = useState('2026-07');
   const validRange = isValidMonthSelection(startMonth, endMonth);
-  const params = new URLSearchParams({ batch_oid: batchOid, start_month: startMonth, end_month: endMonth });
+  const params = new URLSearchParams({ batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone });
   const { data, isLoading, error } = useSurveyAnalytics<ServiceNowQualityReport>(
-    validRange ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
+    validRange && ready ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
   );
 
   const monthRows = data?.months.map((row) => ({ ...row, label: formatMonthLabel(row.month, locale) })) ?? [];
@@ -237,7 +239,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
             </table>
           </div>
           <p className="mt-3 text-right text-xs text-[#60729a]">{t('sourceNote')}</p>
-          <ServiceNowMonthDetails batchOid={batchOid} months={monthRows.map(({ month, label }) => ({ month, label }))} />
+          <ServiceNowMonthDetails batchOid={batchOid} months={monthRows.map(({ month, label }) => ({ month, label }))} timezone={timezone} />
         </>
       )}
     </section>
