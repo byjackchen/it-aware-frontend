@@ -139,33 +139,56 @@ export function formatLocalDateTime(value: DateInput, timezone: string): string 
 }
 
 /**
- * Take a local `YYYY-MM-DDTHH:MM[:SS]` value out of a datetime-local
+ * Take a local `YYYY-MM-DDTHH:MM[:SS[.sss]]` value out of a datetime-local
  * input and return a full ISO-8601 datetime with the timezone's offset
  * appended, e.g. `2026-05-11T13:45:00-05:00`. The wire format every
  * datetime backend filter accepts (pydantic + ensure_utc normalize the
  * offset to UTC server-side).
+ *
+ * `ambiguous` picks the occurrence of a wall time repeated by a fall-back
+ * change. A wall time skipped by a spring-forward change (e.g. midnight in
+ * America/Santiago on its DST day) is moved past the gap by default, the
+ * way the backend's ZoneInfo resolves it; pass `nonexistent: 'reject'` to
+ * get a RangeError instead. Only `'reject'` throws: unparseable input is
+ * returned unchanged, so render paths that call this cannot crash.
  */
-export function localDateTimeToIso(localDateTime: string, timezone: string, ambiguous: 'earlier' | 'later' = 'earlier'): string {
+export function localDateTimeToIso(
+  localDateTime: string,
+  timezone: string,
+  ambiguous: 'earlier' | 'later' = 'earlier',
+  nonexistent: 'shift' | 'reject' = 'shift',
+): string {
   if (!localDateTime) return localDateTime;
   // Normalize the local input to YYYY-MM-DDTHH:MM:SS (some inputs emit
-  // without seconds when step=60).
+  // without seconds when step=60); keep any fraction to put back after.
   const datePart = localDateTime.slice(0, 10);
-  let timePart = localDateTime.slice(11);
-  if (/^\d{2}:\d{2}$/.test(timePart)) timePart = `${timePart}:00`;
+  const [clock, fraction] = localDateTime.slice(11).split('.');
+  const timePart = /^\d{2}:\d{2}$/.test(clock) ? `${clock}:00` : clock;
   const wallTime = `${datePart}T${timePart}`;
   const zone = resolveTimezone(timezone);
-  const wallUtc = Date.parse(`${wallTime}Z`);
-  if (!Number.isFinite(wallUtc)) throw new RangeError(`Invalid local datetime: ${wallTime}`);
+  const wallUtc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(wallTime) ? Date.parse(`${wallTime}Z`) : NaN;
+  if (!Number.isFinite(wallUtc) || (fraction !== undefined && !/^\d{1,3}$/.test(fraction))) {
+    if (nonexistent === 'reject') throw new RangeError(`Invalid local datetime: ${localDateTime}`);
+    return localDateTime;
+  }
   const offsets = new Set([-1, 0, 1].map((days) => offsetAt(new Date(wallUtc + days * 86400000), zone)));
-  const instants = [...offsets]
-    .map((minutes) => wallUtc - minutes * 60000)
-    .filter((instant) => formatLocalDateTime(new Date(instant), zone) === wallTime)
-    .sort((a, b) => a - b);
-  if (!instants.length) throw new RangeError(`Nonexistent local datetime: ${wallTime} (${zone})`);
-  const minutes = offsetAt(new Date(ambiguous === 'later' ? instants[instants.length - 1] : instants[0]), zone);
+  const candidates = [...offsets].map((minutes) => wallUtc - minutes * 60000).sort((a, b) => a - b);
+  const instants = candidates.filter((instant) => formatLocalDateTime(new Date(instant), zone) === wallTime);
+  let instant: number;
+  if (instants.length) {
+    instant = ambiguous === 'later' ? instants[instants.length - 1] : instants[0];
+  } else if (nonexistent === 'reject') {
+    throw new RangeError(`Nonexistent local datetime: ${wallTime} (${zone})`);
+  } else {
+    // Inside a gap: read the wall time with the offset in force before the
+    // change, which lands just past the gap.
+    instant = candidates[candidates.length - 1];
+  }
+  const minutes = offsetAt(new Date(instant), zone);
   const sign = minutes >= 0 ? '+' : '-';
   const magnitude = Math.abs(minutes);
-  return `${wallTime}${sign}${String(Math.floor(magnitude / 60)).padStart(2, '0')}:${String(magnitude % 60).padStart(2, '0')}`;
+  const wall = formatLocalDateTime(new Date(instant), zone);
+  return `${wall}${fraction !== undefined ? `.${fraction}` : ''}${sign}${String(Math.floor(magnitude / 60)).padStart(2, '0')}:${String(magnitude % 60).padStart(2, '0')}`;
 }
 
 /**

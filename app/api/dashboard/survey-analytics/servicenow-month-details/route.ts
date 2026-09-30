@@ -30,7 +30,16 @@ export async function GET(request: Request) {
       cache: 'no-store',
       signal: AbortSignal.timeout(15_000),
     });
-    const payload = await response.json();
+    // A gateway error page is not JSON; keep its status instead of turning
+    // every such failure into a 502.
+    const body = await response.text();
+    let payload: unknown;
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      payload = { error: response.ok ? 'Invalid response from backend' : `Backend returned ${response.status}` };
+      if (response.ok) return NextResponse.json(payload, { status: 502 });
+    }
     return NextResponse.json(payload, { status: response.status });
   } catch (error) {
     console.error('[survey-analytics/servicenow-month-details]', error);

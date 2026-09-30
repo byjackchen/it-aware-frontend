@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+// The dashboard defaults to January..current month; the mocks below are July 2026 data.
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-07-15T12:00:00Z'));
+});
+
 test('switching timezone reloads CSAT month totals and matching ticket details', async ({ page, context }) => {
   await page.setViewportSize({ width: 2048, height: 1000 });
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);

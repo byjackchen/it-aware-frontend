@@ -2151,7 +2151,10 @@
     "messages": {
       "saveError": "保存失败 — 请重试",
       "downloadError": "下载失败",
-      "downloadTooLarge": "数据条数过多 — 请缩小筛选范围"
+      "downloadTooLarge": "数据条数过多 — 请缩小筛选范围",
+      "nonexistentTime": "所选本地时间在 {timezone} 中不存在。",
+      "nonexistentAppliedTime": "所选本地时间在 {timezone} 中不存在，请选择其他时间后重新应用筛选。",
+      "loadingTimezone": "正在加载时区…"
     },
     "panels": {
       "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
@@ -2182,6 +2185,7 @@
     "noBatches": "未找到问卷批次",
     "recipients": "位接收人",
     "serviceQuality": {
+      "noIncidentAccess": "查看 ServiceNow 服务质量需要工单读取权限。",
       "title": "工单服务质量表现（{start} – {end}）",
       "formula": "评分基于5分制；差评率 = 1–3分的工单数 / 关闭工单数；反馈率 = 收到反馈的工单数 / 关闭工单数",
       "startMonth": "开始月份",

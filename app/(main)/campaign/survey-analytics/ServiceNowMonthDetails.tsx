@@ -15,7 +15,8 @@ const PAGE_SIZE = 50;
 export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
-  const [requestedMonth, setRequestedMonth] = useState('2026-07');
+  // Empty until the user picks one: the latest month in the range is shown.
+  const [requestedMonth, setRequestedMonth] = useState('');
   const [loaded, setLoaded] = useState<{ key: string; data: ServiceNowMonthDetails } | null>(null);
   const [failed, setFailed] = useState<{ key: string; message: string } | null>(null);
   const [paging, setPaging] = useState({ key: '', page: 1 });
@@ -51,10 +52,15 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
           setPaging({ key: selectionKey, page: lastPage });
           return;
         }
+        // A refetch of a key that failed before (month switched back, Apply
+        // pressed again) is a retry: its outcome replaces the earlier one.
         setLoaded({ key: requestKey, data: result });
+        setFailed((current) => (current?.key === requestKey ? null : current));
       })
       .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setFailed({ key: requestKey, message: cause instanceof Error ? cause.message : t('detailLoadFailed') });
+        if (controller.signal.aborted) return;
+        setFailed({ key: requestKey, message: cause instanceof Error ? cause.message : t('detailLoadFailed') });
+        setLoaded((current) => (current?.key === requestKey ? null : current));
       });
     return () => controller.abort();
   }, [batchOid, selectedMonth, timezone, page, appliedFilters, requestKey, selectionKey, t]);

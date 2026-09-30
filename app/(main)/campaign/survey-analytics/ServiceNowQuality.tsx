@@ -10,10 +10,12 @@ import {
 } from 'recharts';
 import type { TooltipContentProps } from 'recharts';
 import { useSurveyAnalytics } from '@/lib/hooks/useSurveyAnalytics';
-import { formatMonthLabel, isValidMonthSelection } from '@/lib/survey-quality';
+import { defaultMonthRange, formatMonthLabel, isValidMonthSelection, monthsBetween } from '@/lib/survey-quality';
 import type { ServiceNowQualityMonth, ServiceNowQualityReport } from '@/lib/types/survey-analytics';
 import { ServiceNowMonthDetails } from './ServiceNowMonthDetails';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { usePermissions } from '@/lib/contexts/user-context';
+import { PERMISSIONS } from '@/lib/config/permissions';
 
 interface Props {
   batchOid: string;
@@ -124,18 +126,29 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   const { timezone, ready } = useTimezone();
-  const [startMonth, setStartMonth] = useState('2026-01');
-  const [endMonth, setEndMonth] = useState('2026-07');
+  const { hasPermission } = usePermissions();
+  // The backend also requires incident read: the metrics are built from tickets.
+  const canReadIncidents = hasPermission(PERMISSIONS.OBJECTS.INCIDENTS_READ);
+  const [initialRange] = useState(() => defaultMonthRange(new Date(), timezone));
+  const [startMonth, setStartMonth] = useState(initialRange.start);
+  const [endMonth, setEndMonth] = useState(initialRange.end);
   const validRange = isValidMonthSelection(startMonth, endMonth);
   const params = new URLSearchParams({ batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone });
   const { data, isLoading, error } = useSurveyAnalytics<ServiceNowQualityReport>(
-    validRange && ready ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
+    validRange && ready && canReadIncidents ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
   );
+  // Built from the selection, not the report, so the details section (and its
+  // month, filters and page) stays mounted while the report reloads.
+  const detailMonths = monthsBetween(startMonth, endMonth).map((month) => ({ month, label: formatMonthLabel(month, locale) }));
 
   const monthRows = data?.months.map((row) => ({ ...row, label: formatMonthLabel(row.month, locale) })) ?? [];
   const average = data?.averages;
   const scoreText = (value: number | null | undefined) => value == null ? '—' : value.toFixed(2);
   const percentText = (value: number | null | undefined) => value == null ? '—' : `${value.toFixed(2)}%`;
+  // Right axis: 0–50% unless a month goes higher, then the next round 10%.
+  const percentMax = Math.max(0, ...monthRows.map((row) => Math.max(row.poor_rate ?? 0, row.feedback_rate ?? 0)));
+  const percentTop = Math.max(50, Math.ceil(percentMax / 10) * 10);
+  const percentTicks = [0, 1, 2, 3, 4, 5].map((step) => (percentTop / 5) * step);
 
   return (
     <section className="rounded-2xl border border-[#dbe4f4] bg-white p-4 text-[#132968] shadow-sm md:p-7">
@@ -163,7 +176,8 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </div>
       </div>
 
-      {!validRange && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('invalidRange')}</p>}
+      {!canReadIncidents && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('noIncidentAccess')}</p>}
+      {canReadIncidents && !validRange && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('invalidRange')}</p>}
       {validRange && isLoading && <p className="rounded-lg bg-[#f4f7fd] p-8 text-center text-sm">{t('loading')}</p>}
       {validRange && error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {validRange && !isLoading && !error && data && (
@@ -199,7 +213,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
                 <CartesianGrid stroke="#e7ebf3" strokeDasharray="4 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: '#1c326b', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#cbd3e2' }} tickLine={false} />
                 <YAxis yAxisId="score" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} tick={{ fill: '#2456d5', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="percent" orientation="right" domain={[0, 50]} ticks={[0, 10, 20, 30, 40, 50]} tickFormatter={(value: number) => `${value}%`} tick={{ fill: '#e97527', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="percent" orientation="right" domain={[0, percentTop]} ticks={percentTicks} tickFormatter={(value: number) => `${value}%`} tick={{ fill: '#e97527', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip shared={false} content={(props) => <QualityBarTooltip {...props} />} />
                 <Bar yAxisId="percent" name={t('poorRate')} dataKey="poor_rate" fill={COLORS.poor} maxBarSize={28} minPointSize={3}>
                   <LabelList dataKey="poor_rate" position="top" formatter={(value: unknown) => typeof value === 'number' ? `${value.toFixed(2)}%` : ''} style={{ fill: '#1e3065', fontSize: 11, fontWeight: 700 }} />
@@ -239,8 +253,10 @@ export function ServiceNowQuality({ batchOid }: Props) {
             </table>
           </div>
           <p className="mt-3 text-right text-xs text-[#60729a]">{t('sourceNote')}</p>
-          <ServiceNowMonthDetails batchOid={batchOid} months={monthRows.map(({ month, label }) => ({ month, label }))} timezone={timezone} />
         </>
+      )}
+      {canReadIncidents && validRange && ready && !error && (
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} />
       )}
     </section>
   );

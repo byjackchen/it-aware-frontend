@@ -20,3 +20,22 @@ export function isValidMonthSelection(start: string, end: string): boolean {
   const months = endIndex - startIndex + 1;
   return months >= 1 && months <= 24;
 }
+
+/** Every `YYYY-MM` from `start` to `end`, inclusive; empty for an invalid selection. */
+export function monthsBetween(start: string, end: string): string[] {
+  if (!isValidMonthSelection(start, end)) return [];
+  const first = Number(start.slice(0, 4)) * 12 + Number(start.slice(5, 7)) - 1;
+  const last = Number(end.slice(0, 4)) * 12 + Number(end.slice(5, 7)) - 1;
+  return Array.from({ length: last - first + 1 }, (_, offset) => {
+    const index = first + offset;
+    return `${String(Math.floor(index / 12)).padStart(4, '0')}-${String((index % 12) + 1).padStart(2, '0')}`;
+  });
+}
+
+/** January through the current month of the current year, in `timezone`'s calendar. */
+export function defaultMonthRange(now: Date, timezone: string): { start: string; end: string } {
+  const end = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit' })
+    .format(now)
+    .slice(0, 7);
+  return { start: `${end.slice(0, 4)}-01`, end };
+}

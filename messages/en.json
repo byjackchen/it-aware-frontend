@@ -2473,7 +2473,10 @@
     "messages": {
       "saveError": "Save failed — please retry",
       "downloadError": "Download failed",
-      "downloadTooLarge": "Too many rows — narrow your filter"
+      "downloadTooLarge": "Too many rows — narrow your filter",
+      "nonexistentTime": "Selected local time does not exist in {timezone}.",
+      "nonexistentAppliedTime": "Selected local time does not exist in {timezone}. Choose another time and apply filters.",
+      "loadingTimezone": "Loading timezone…"
     },
     "panels": {
       "faqTitle": "FAQ Dashboard (Chatbot Interactions)",
@@ -2504,6 +2507,7 @@
     "noBatches": "No survey batches found",
     "recipients": "recipients",
     "serviceQuality": {
+      "noIncidentAccess": "Viewing ServiceNow quality needs incident read permission.",
       "title": "Service Quality Performance ({start} – {end})",
       "formula": "Five-point ratings · Poor: 1–3 stars / closed tickets · Feedback: tickets with assessments / closed tickets",
       "startMonth": "Start month",

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { LayoutDashboard } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { SSCFilterBar } from '@/components/ssc/SSCFilterBar';
@@ -27,7 +28,8 @@ function getDefaultDateFrom(timezone: string): string {
     const d = new Date(`${today}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() - 7);
     const dayPart = d.toISOString().slice(0, 10);
-    return `${dayPart}T00:00:00`;
+    // The day's first real instant: 01:00 where DST skips midnight.
+    return formatLocalDateTime(new Date(localDateTimeToIso(`${dayPart}T00:00:00`, timezone)), timezone);
 }
 
 function getDefaultDateTo(timezone: string): string {
@@ -69,6 +71,7 @@ function findClosestInteraction(
 
 function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboardPageProps) {
     const { theme } = useTheme();
+    const t = useTranslations('SSCDashboard');
     const isLight = theme === 'light';
 
     // Lookup maps from server-side props
@@ -146,10 +149,10 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
 
     const handleApplyFilters = useCallback(() => {
         try {
-            if (dateFrom) localDateTimeToIso(dateFrom, timezone);
-            if (dateTo) localDateTimeToIso(dateTo, timezone);
+            if (dateFrom) localDateTimeToIso(dateFrom, timezone, 'earlier', 'reject');
+            if (dateTo) localDateTimeToIso(dateTo, timezone, 'later', 'reject');
         } catch {
-            setFilterError(`Selected local time does not exist in ${timezone}.`);
+            setFilterError(t('messages.nonexistentTime', { timezone }));
             return;
         }
         setFilterError(null);
@@ -163,7 +166,7 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
         setAlignedWorkerStableId(null);
         setHighlightWindow(null);
         setAlignedRowOid(null);
-    }, [dateFrom, dateTo, workerFilter, timezone]);
+    }, [dateFrom, dateTo, workerFilter, timezone, t]);
 
     const handleAlign = useCallback((incident: Incident) => {
         const incidentTs = new Date(incident.effective_at).getTime();
@@ -216,10 +219,10 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
     // preventing either panel from converting an impossible applied range.
     let appliedRangeError: string | null = null;
     try {
-        if (appliedDateFrom) localDateTimeToIso(appliedDateFrom, timezone);
-        if (appliedDateTo) localDateTimeToIso(appliedDateTo, timezone);
+        if (appliedDateFrom) localDateTimeToIso(appliedDateFrom, timezone, 'earlier', 'reject');
+        if (appliedDateTo) localDateTimeToIso(appliedDateTo, timezone, 'later', 'reject');
     } catch {
-        appliedRangeError = `Selected local time does not exist in ${timezone}. Choose another time and apply filters.`;
+        appliedRangeError = t('messages.nonexistentAppliedTime', { timezone });
     }
 
     return (
@@ -318,6 +321,7 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
 
 export function SSCDashboardPage(props: SSCDashboardPageProps) {
     const { ready } = useTimezone();
-    if (!ready) return <div role="status">Loading timezone...</div>;
+    const t = useTranslations('SSCDashboard');
+    if (!ready) return <div role="status">{t('messages.loadingTimezone')}</div>;
     return <SSCDashboardContent {...props} />;
 }
