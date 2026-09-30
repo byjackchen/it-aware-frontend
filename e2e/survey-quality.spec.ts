@@ -16,7 +16,7 @@ test('switching timezone reloads CSAT month totals and matching ticket details',
     const zone = new URL(route.request().url()).searchParams.get('timezone') ?? 'missing';
     detailZones.push(zone);
     const tickets = zone === 'America/Los_Angeles' ? [] : [{ oid: 'july-ticket', stable_id: 'INC-JULY', title: 'Boundary ticket', state: 'Closed', source_closed_at: '2026-07-01T02:00:00Z', caller_name: null, assigned_group: null, assessments: [] }];
-    return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length, assessment_count: 0, tickets } });
+    return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length, assessment_count: 0, filtered_ticket_count: tickets.length, tickets } });
   });
   await page.goto('/campaign/survey-analytics');
   await expect(page.getByText('INC-JULY')).toBeVisible();
@@ -100,7 +100,7 @@ test('single-month details load raw tickets and assessments for the selected mon
     const month = new URL(route.request().url()).searchParams.get('month');
     const isJuly = month === '2026-07';
     return route.fulfill({ json: {
-      month, ticket_count: 1, assessment_count: isJuly ? 1 : 0,
+      month, ticket_count: 1, assessment_count: isJuly ? 1 : 0, filtered_ticket_count: 1,
       tickets: [{
         oid: 'ticket', stable_id: isJuly ? 'INC-JUL' : 'INC-JAN', title: 'Raw ticket', state: 'Closed',
         source_closed_at: `${month}-05T12:00:00+00:00`, caller_name: 'Alice', assigned_group: 'IT',
@@ -137,14 +137,22 @@ test('single-month details filter tickets with ratings and by selected score', a
     survey_questions: { questions: [{ question_id: 'q2', type: 'single_select', title: 'Rate service' }] },
     survey_answer: { answers: [{ question_id: 'q2', type: 'single_select', selected_option_id: String(rating) }] },
   });
-  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => route.fulfill({ json: {
-    month: '2026-07', ticket_count: 3, assessment_count: 3,
-    tickets: [
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    const allTickets = [
       { oid: 'one', stable_id: 'INC-ONE', title: 'One', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A1', 1), assessment('A5', 5)] },
       { oid: 'three', stable_id: 'INC-THREE', title: 'Three', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A3', 3)] },
       { oid: 'none', stable_id: 'INC-NONE', title: 'None', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [] },
-    ],
-  } }));
+    ];
+    const ratings = params.getAll('ratings').map(Number);
+    const tickets = allTickets.filter((ticket) =>
+      (!ratings.length && params.get('rated_only') !== 'true' || ticket.assessments.some((item) =>
+        ratings.length ? ratings.includes(item.rating) : item.rating !== null)));
+    return route.fulfill({ json: {
+      month: '2026-07', ticket_count: 3, assessment_count: 3,
+      filtered_ticket_count: tickets.length, tickets,
+    } });
+  });
   await page.goto('/campaign/survey-analytics');
 
   await expect(page.getByText('INC-NONE')).toBeVisible();
@@ -178,6 +186,39 @@ test('single-month details filter tickets with ratings and by selected score', a
   await expect(filteredCount).toHaveText('Showing 2 tickets');
   await expect(page.getByText('INC-ONE')).toBeVisible();
   await expect(page.getByText('INC-THREE')).toBeVisible();
+});
+
+test('single-month details requests the next server page while keeping the full count', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 51 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [{ month: '2026-07', ticket_count: 51, feedback_count: 0, rating_count: 0, rating_sum: 0, poor_count: 0, csat: null, poor_rate: 0, feedback_rate: 0 }], averages: { csat: null, poor_rate: 0, feedback_rate: 0 } },
+  }));
+  const requestedPages: string[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    const requestedPage = params.get('page') ?? 'missing';
+    requestedPages.push(requestedPage);
+    const filtered = params.get('rated_only') === 'true';
+    const tickets = (filtered ? [1] : requestedPage === '2' ? [51] : Array.from({ length: 50 }, (_, index) => index + 1))
+      .map((number) => ({ oid: `ticket-${number}`, stable_id: `INC-${number}`, title: 'Ticket', state: 'Closed', source_closed_at: '2026-07-05T12:00:00Z', caller_name: null, assigned_group: null,
+        assessments: number === 1 ? [{ oid: 'assessment-1', external_id: 'A-1', submitted_at: '2026-07-05T12:00:00Z', rating: 5, survey_questions: { questions: [] }, survey_answer: { answers: [{ type: 'single_select', selected_option_id: '5' }] } }] : [] }));
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0, filtered_ticket_count: filtered ? 1 : 51, tickets } });
+  });
+
+  await page.goto('/campaign/survey-analytics');
+  await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 51 tickets');
+  await expect(page.getByText('INC-1', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByText('INC-51', { exact: true })).toBeVisible();
+  await expect(page.getByText('INC-1', { exact: true })).toHaveCount(0);
+  expect(requestedPages).toContain('2');
+  await page.getByLabel('Only rated tickets').check();
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 1 ticket');
+  await expect(page.getByText('INC-1', { exact: true })).toBeVisible();
+  expect(requestedPages.at(-1)).toBe('1');
 });
 
 test('hovering each chart bar shows that metric’s numerator and denominator', async ({ page }) => {

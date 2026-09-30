@@ -48,6 +48,7 @@ export interface ServiceNowMonthDetails {
     month: string;
     ticket_count: number;
     assessment_count: number;
+    filtered_ticket_count: number;
     tickets: ServiceNowTicketDetail[];
 }
 
