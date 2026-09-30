@@ -2,6 +2,56 @@
  * TypeScript interfaces for Survey Analytics Dashboard API responses.
  */
 
+export interface ServiceNowQualityMonth {
+    month: string;
+    ticket_count: number;
+    feedback_count: number;
+    rating_count: number;
+    rating_sum: number;
+    poor_count: number;
+    csat: number | null;
+    poor_rate: number | null;
+    feedback_rate: number | null;
+}
+
+export interface ServiceNowQualityReport {
+    batch_oid: string;
+    months: ServiceNowQualityMonth[];
+    averages: {
+        csat: number | null;
+        poor_rate: number | null;
+        feedback_rate: number | null;
+    };
+}
+
+export interface ServiceNowAssessmentDetail {
+    oid: string;
+    external_id: string | null;
+    submitted_at: string;
+    rating: number | null;
+    survey_questions: Record<string, unknown>;
+    survey_answer: Record<string, unknown>;
+}
+
+export interface ServiceNowTicketDetail {
+    oid: string;
+    stable_id: string;
+    title: string;
+    state: string;
+    source_closed_at: string;
+    caller_name: string | null;
+    assigned_group: string | null;
+    assessments: ServiceNowAssessmentDetail[];
+}
+
+export interface ServiceNowMonthDetails {
+    month: string;
+    ticket_count: number;
+    assessment_count: number;
+    filtered_ticket_count: number;
+    tickets: ServiceNowTicketDetail[];
+}
+
 // ==================== Submission Overview ====================
 
 export interface SubmissionOverviewBatch {

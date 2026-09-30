@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface CacheEntry<T> {
     data: T;
@@ -38,21 +38,25 @@ async function fetchEndpoint<T>(url: string): Promise<T> {
 }
 
 export function useSurveyAnalytics<T>(url: string | null): UseSurveyAnalyticsResult<T> {
-    const [data, setData] = useState<T | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<{ url: string; data: T | null; error: string | null } | null>(null);
+    const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+    const currentUrl = useRef(url);
+    currentUrl.current = url;
 
     const load = useCallback(async (force = false): Promise<void> => {
         if (!url) {
-            setIsLoading(false);
+            setLoadingUrl(null);
             return;
         }
 
+        const isCurrent = () => currentUrl.current === url;
+
         const cached = cache.get(url) as CacheEntry<T> | undefined;
         if (!force && isCacheFresh(cached)) {
-            setData(cached.data);
-            setError(null);
-            setIsLoading(false);
+            if (isCurrent()) {
+                setResult({ url, data: cached.data, error: null });
+                setLoadingUrl(null);
+            }
             return;
         }
 
@@ -60,18 +64,16 @@ export function useSurveyAnalytics<T>(url: string | null): UseSurveyAnalyticsRes
         if (existingPromise) {
             try {
                 const result = await existingPromise as T;
-                setData(result);
-                setError(null);
+                if (isCurrent()) setResult({ url, data: result, error: null });
             } catch (e) {
-                setError(e instanceof Error ? e.message : 'Failed to fetch');
+                if (isCurrent()) setResult({ url, data: null, error: e instanceof Error ? e.message : 'Failed to fetch' });
             } finally {
-                setIsLoading(false);
+                if (isCurrent()) setLoadingUrl(null);
             }
             return;
         }
 
-        setIsLoading(true);
-        setError(null);
+        setLoadingUrl(url);
 
         const fetchPromise = fetchEndpoint<T>(url)
             .then((result) => {
@@ -86,12 +88,11 @@ export function useSurveyAnalytics<T>(url: string | null): UseSurveyAnalyticsRes
 
         try {
             const result = await fetchPromise;
-            setData(result);
-            setError(null);
+            if (isCurrent()) setResult({ url, data: result, error: null });
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Failed to fetch');
+            if (isCurrent()) setResult({ url, data: null, error: e instanceof Error ? e.message : 'Failed to fetch' });
         } finally {
-            setIsLoading(false);
+            if (isCurrent()) setLoadingUrl(null);
         }
     }, [url]);
 
@@ -104,5 +105,11 @@ export function useSurveyAnalytics<T>(url: string | null): UseSurveyAnalyticsRes
         void load(false);
     }, [load]);
 
-    return { data, isLoading, error, refresh };
+    const visible = result?.url === url ? result : null;
+    return {
+        data: visible?.data ?? null,
+        isLoading: !!url && (loadingUrl === url || !visible),
+        error: visible?.error ?? null,
+        refresh,
+    };
 }

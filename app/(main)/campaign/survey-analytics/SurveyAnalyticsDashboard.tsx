@@ -4,17 +4,18 @@ import { useState } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { BatchSelector } from './BatchSelector';
+import { BatchSelector, type SurveyBatchItem } from './BatchSelector';
 import { SubmissionOverview } from './SubmissionOverview';
 import { AnalysisClassification } from './AnalysisClassification';
 import { NegativeFeedbackSection } from './NegativeFeedbackSection';
 import { KeywordHeatmap } from './KeywordHeatmap';
+import { ServiceNowQuality } from './ServiceNowQuality';
 
 export function SurveyAnalyticsDashboard() {
     const { theme } = useTheme();
     const isLight = theme === 'light';
     const t = useTranslations('SurveyAnalytics');
-    const [selectedBatchOid, setSelectedBatchOid] = useState('');
+    const [selectedBatch, setSelectedBatch] = useState<SurveyBatchItem | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const handleRefresh = () => {
@@ -42,8 +43,8 @@ export function SurveyAnalyticsDashboard() {
 
                     <div className="flex items-center gap-3">
                         <BatchSelector
-                            selectedBatchOid={selectedBatchOid}
-                            onBatchChange={setSelectedBatchOid}
+                            selectedBatchOid={selectedBatch?.oid ?? ''}
+                            onBatchChange={setSelectedBatch}
                             isLight={isLight}
                         />
                         <button
@@ -60,13 +61,17 @@ export function SurveyAnalyticsDashboard() {
                 </div>
 
                 {/* Dashboard Sections - each loads independently */}
-                {selectedBatchOid ? (
-                    <div key={refreshKey} className="space-y-8">
-                        <SubmissionOverview batchOid={selectedBatchOid} isLight={isLight} />
-                        <AnalysisClassification batchOid={selectedBatchOid} isLight={isLight} />
-                        <NegativeFeedbackSection batchOid={selectedBatchOid} isLight={isLight} />
-                        <KeywordHeatmap batchOid={selectedBatchOid} isLight={isLight} />
-                    </div>
+                {selectedBatch ? (
+                    selectedBatch.name === 'ServiceNow Assessments' ? (
+                        <ServiceNowQuality key={`${selectedBatch.oid}-${refreshKey}`} batchOid={selectedBatch.oid} />
+                    ) : (
+                        <div key={refreshKey} className="space-y-8">
+                            <SubmissionOverview batchOid={selectedBatch.oid} isLight={isLight} />
+                            <AnalysisClassification batchOid={selectedBatch.oid} isLight={isLight} />
+                            <NegativeFeedbackSection batchOid={selectedBatch.oid} isLight={isLight} />
+                            <KeywordHeatmap batchOid={selectedBatch.oid} isLight={isLight} />
+                        </div>
+                    )
                 ) : (
                     <div className={`rounded-xl border p-12 text-center ${isLight ? 'border-slate-200 bg-white text-slate-500' : 'border-white/10 bg-white/5 text-gray-400'}`}>
                         <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-30" />
