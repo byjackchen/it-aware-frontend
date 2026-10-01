@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CalendarDays, MessageCircle, Star, ThumbsDown } from 'lucide-react';
+import { CalendarDays, MessageCircle, Settings2, Star, ThumbsDown } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer,
@@ -24,6 +24,7 @@ interface Props {
 const COLORS = { csat: '#4f7fe9', poor: '#9da0a7', feedback: '#ea792b' };
 
 type QualityMetric = 'csat' | 'poorRate' | 'feedbackRate';
+type NumeratorBasis = 'opened' | 'closed' | 'taken_on';
 
 const HELP_KEYS = {
   csat: { definition: 'csatDefinition', formula: 'csatFormula' },
@@ -55,16 +56,16 @@ function QualityBarTooltip({ active, payload }: TooltipContentProps) {
   } else if (metric === 'poor_rate') {
     label = t('poorRate');
     numerator = row.poor_count;
-    denominator = row.ticket_count;
+    denominator = row.poor_ticket_count ?? row.ticket_count;
     numeratorLabel = t('poorTickets');
-    denominatorLabel = t('closedTickets');
+    denominatorLabel = t('monthlyTickets');
     formula = `${numerator} ÷ ${denominator} × 100% = ${row.poor_rate?.toFixed(2) ?? '—'}%`;
   } else if (metric === 'feedback_rate') {
     label = t('feedbackRate');
     numerator = row.feedback_count;
-    denominator = row.ticket_count;
+    denominator = row.feedback_ticket_count ?? row.ticket_count;
     numeratorLabel = t('feedbackTickets');
-    denominatorLabel = t('closedTickets');
+    denominatorLabel = t('monthlyTickets');
     formula = `${numerator} ÷ ${denominator} × 100% = ${row.feedback_rate?.toFixed(2) ?? '—'}%`;
   } else {
     return null;
@@ -122,6 +123,25 @@ function MetricHelp({ metric, label }: { metric: QualityMetric; label: string })
   );
 }
 
+function DateBasisSelect({ label, value, onChange, allowTakenOn = true, allowClosed = true }: {
+  label: string;
+  value: NumeratorBasis;
+  onChange: (value: NumeratorBasis) => void;
+  allowTakenOn?: boolean;
+  allowClosed?: boolean;
+}) {
+  const t = useTranslations('SurveyAnalytics.serviceQuality');
+  return <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
+    {label}
+    <select value={value} onChange={(event) => onChange(event.target.value as NumeratorBasis)}
+      className="w-full rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm text-[#142960]">
+      <option value="opened">{t('dateOpened')}</option>
+      {allowClosed && <option value="closed">{t('dateClosed')}</option>}
+      {allowTakenOn && <option value="taken_on">{t('dateTakenOn')}</option>}
+    </select>
+  </label>;
+}
+
 export function ServiceNowQuality({ batchOid }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
@@ -132,8 +152,19 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const [initialRange] = useState(() => defaultMonthRange(new Date(), timezone));
   const [startMonth, setStartMonth] = useState(initialRange.start);
   const [endMonth, setEndMonth] = useState(initialRange.end);
+  const [csatNumeratorDate, setCsatNumeratorDate] = useState<NumeratorBasis>('opened');
+  const [csatDenominatorDate, setCsatDenominatorDate] = useState<NumeratorBasis>('opened');
+  const [poorNumeratorDate, setPoorNumeratorDate] = useState<NumeratorBasis>('taken_on');
+  const [feedbackNumeratorDate, setFeedbackNumeratorDate] = useState<NumeratorBasis>('opened');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showFormula, setShowFormula] = useState(false);
   const validRange = isValidMonthSelection(startMonth, endMonth);
-  const params = new URLSearchParams({ batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone });
+  const params = new URLSearchParams({
+    batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone,
+    csat_numerator_date: csatNumeratorDate, csat_denominator_date: csatDenominatorDate,
+    poor_numerator_date: poorNumeratorDate, poor_denominator_date: 'opened',
+    feedback_numerator_date: feedbackNumeratorDate, feedback_denominator_date: 'opened',
+  });
   const { data, isLoading, error } = useSurveyAnalytics<ServiceNowQualityReport>(
     validRange && ready && canReadIncidents ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
   );
@@ -149,6 +180,11 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const percentMax = Math.max(0, ...monthRows.map((row) => Math.max(row.poor_rate ?? 0, row.feedback_rate ?? 0)));
   const percentTop = Math.max(50, Math.ceil(percentMax / 10) * 10);
   const percentTicks = [0, 1, 2, 3, 4, 5].map((step) => (percentTop / 5) * step);
+  const scoreTop = Math.max(5, Math.ceil(Math.max(0, ...monthRows.map((row) => row.csat ?? 0))));
+  const scoreTicks = [0, 1, 2, 3, 4, 5].map((step) => (scoreTop / 5) * step);
+  const formulaCell = (row: ServiceNowQualityMonth, key: 'csat' | 'poor_rate' | 'feedback_rate') => key === 'csat'
+    ? `${row.rating_sum} ÷ ${row.rating_count} = ${scoreText(row.csat)}`
+    : `${key === 'poor_rate' ? row.poor_count : row.feedback_count} ÷ ${key === 'poor_rate' ? (row.poor_ticket_count ?? row.ticket_count) : (row.feedback_ticket_count ?? row.ticket_count)} × 100% = ${percentText(row[key])}`;
 
   return (
     <section className="rounded-2xl border border-[#dbe4f4] bg-white p-4 text-[#132968] shadow-sm md:p-7">
@@ -173,8 +209,26 @@ export function ServiceNowQuality({ batchOid }: Props) {
               onChange={(event) => setEndMonth(event.target.value)}
               className="rounded-md border border-[#cad6eb] bg-white px-2 py-1.5 text-sm text-[#142960]" />
           </label>
+          <button type="button" aria-label={t('settings')} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((open) => !open)}
+            className="rounded-md border border-[#cad6eb] bg-white p-2 text-[#2455d4]" title={t('settings')}><Settings2 className="h-5 w-5" /></button>
         </div>
       </div>
+      {settingsOpen && <div className="mb-5 grid gap-3 rounded-xl border border-[#dce5f5] bg-[#f7f9fe] p-4 text-sm lg:grid-cols-3">
+        <div className="space-y-3 rounded-lg border border-[#d9e3fb] bg-white p-3">
+          <h3 className="font-bold text-[#2455d4]">{t('csat')}</h3>
+          <DateBasisSelect label={t('csatNumeratorDate')} value={csatNumeratorDate} onChange={setCsatNumeratorDate} allowClosed={false} />
+          <DateBasisSelect label={t('csatDenominatorDate')} value={csatDenominatorDate} onChange={setCsatDenominatorDate} allowClosed={false} />
+        </div>
+        <div className="space-y-3 rounded-lg border border-[#f4dfd2] bg-white p-3">
+          <h3 className="font-bold text-[#df6228]">{t('poorRate')}</h3>
+          <DateBasisSelect label={t('poorNumeratorDate')} value={poorNumeratorDate} onChange={setPoorNumeratorDate} />
+        </div>
+        <div className="space-y-3 rounded-lg border border-[#d7e9e1] bg-white p-3">
+          <h3 className="font-bold text-[#339261]">{t('feedbackRate')}</h3>
+          <DateBasisSelect label={t('feedbackNumeratorDate')} value={feedbackNumeratorDate} onChange={setFeedbackNumeratorDate} />
+        </div>
+        <p className="text-xs text-[#60729a] lg:col-span-3">{t('selectionNote')}</p>
+      </div>}
 
       {!canReadIncidents && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('noIncidentAccess')}</p>}
       {canReadIncidents && !validRange && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('invalidRange')}</p>}
@@ -212,7 +266,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
               <BarChart data={monthRows} margin={{ top: 30, right: 8, bottom: 5, left: -18 }} barGap={4}>
                 <CartesianGrid stroke="#e7ebf3" strokeDasharray="4 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: '#1c326b', fontSize: 12, fontWeight: 600 }} axisLine={{ stroke: '#cbd3e2' }} tickLine={false} />
-                <YAxis yAxisId="score" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} tick={{ fill: '#2456d5', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="score" domain={[0, scoreTop]} ticks={scoreTicks} tick={{ fill: '#2456d5', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis yAxisId="percent" orientation="right" domain={[0, percentTop]} ticks={percentTicks} tickFormatter={(value: number) => `${value}%`} tick={{ fill: '#e97527', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip shared={false} content={(props) => <QualityBarTooltip {...props} />} />
                 <Bar yAxisId="percent" name={t('poorRate')} dataKey="poor_rate" fill={COLORS.poor} maxBarSize={28} minPointSize={3}>
@@ -228,11 +282,14 @@ export function ServiceNowQuality({ batchOid }: Props) {
             </ResponsiveContainer>
           </div>
 
-          <div className="mt-5 overflow-x-auto rounded-xl border border-[#dbe4f4]">
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+            <button type="button" onClick={() => setShowFormula((value) => !value)} className="rounded-md border border-[#cad6eb] px-3 py-2 text-sm font-semibold">{showFormula ? t('showValues') : t('showCalculation')}</button>
+          </div>
+          <div className="mt-2 overflow-x-auto rounded-xl border border-[#dbe4f4]">
             <table className="min-w-[760px] w-full border-collapse text-center text-sm">
               <thead className="bg-[#142f82] text-white"><tr>
                 <th className="min-w-48 border-r border-white/30 px-3 py-3">{t('metric')}</th>
-                {monthRows.map((row) => <th key={row.month} className="min-w-24 border-r border-white/30 px-2 py-3">{row.label}</th>)}
+                {monthRows.map((row) => <th key={row.month} className={`${showFormula ? 'min-w-56' : 'min-w-24'} border-r border-white/30 px-2 py-3`}>{row.label}</th>)}
                 <th className="min-w-32 px-3 py-3">{t('monthlyAverage')}</th>
               </tr></thead>
               <tbody>
@@ -245,18 +302,19 @@ export function ServiceNowQuality({ batchOid }: Props) {
                     <th className="border-r border-[#dce5f2] bg-[#fbfcff] px-4 py-3 text-left font-semibold">
                       <i className="mr-3 inline-block h-3 w-3" style={{ backgroundColor: metric.color }} />{metric.label}<MetricHelp metric={metric.helpKey} label={metric.label} />
                     </th>
-                    {monthRows.map((row) => <td key={row.month} className="border-r border-[#dce5f2] px-2 py-3 font-semibold">{metric.format(row[metric.key])}</td>)}
+                    {monthRows.map((row) => <td key={row.month} className="whitespace-nowrap border-r border-[#dce5f2] px-2 py-3 font-semibold">{showFormula ? formulaCell(row, metric.key) : metric.format(row[metric.key])}</td>)}
                     <td className="px-3 py-3 font-bold" style={{ color: metric.color }}>{metric.format(average?.[metric.key])}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-right text-xs text-[#60729a]">{t('sourceNote')}</p>
+          <p className="mt-3 text-right text-xs text-[#60729a]">{showFormula ? t('formulaNote') : t('sourceNote')}</p>
         </>
       )}
       {canReadIncidents && validRange && ready && !error && (
-        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} />
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} csatNumeratorDate={csatNumeratorDate} csatDenominatorDate={csatDenominatorDate}
+          poorNumeratorDate={poorNumeratorDate} feedbackNumeratorDate={feedbackNumeratorDate} />
       )}
     </section>
   );

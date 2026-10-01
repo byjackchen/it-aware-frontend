@@ -7,7 +7,13 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const incoming = new URL(request.url);
   const upstream = new URL(`${RUNTIME_CONFIG.backend.domain}/dashboards/survey-analytics/servicenow-quality`);
-  for (const key of ['batch_oid', 'start_month', 'end_month', 'timezone']) {
+  for (const key of [
+    'batch_oid', 'start_month', 'end_month', 'timezone',
+    'numerator_date', 'denominator_date', 'csat_date',
+    'csat_numerator_date', 'csat_denominator_date',
+    'poor_numerator_date', 'poor_denominator_date',
+    'feedback_numerator_date', 'feedback_denominator_date',
+  ]) {
     const value = incoming.searchParams.get(key);
     if (value) upstream.searchParams.set(key, value);
   }
