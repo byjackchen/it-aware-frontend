@@ -1,8 +1,101 @@
 import { test, expect } from '@playwright/test';
+import { readFile, utils as xlsxUtils } from 'xlsx';
 
 // The dashboard defaults to January..current month; the mocks below are July 2026 data.
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-07-15T12:00:00Z'));
+});
+
+test('CSAT numerator and denominator dates are independent while rate denominators stay on opened tickets', async ({ page, context }) => {
+  await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
+  }));
+  const qualityQueries: URLSearchParams[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => {
+    qualityQueries.push(new URL(route.request().url()).searchParams);
+    return route.fulfill({ json: {
+      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
+      months: [{ month: '2026-07', ticket_count: 200, poor_ticket_count: 100, feedback_ticket_count: 200,
+        feedback_count: 20, rating_count: 20, rating_sum: 98, poor_count: 1,
+        csat: 4.9, poor_rate: 1, feedback_rate: 10 }],
+      averages: { csat: 4.9, poor_rate: 1, feedback_rate: 10 },
+    } });
+  });
+  const detailQueries: URLSearchParams[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    detailQueries.push(new URL(route.request().url()).searchParams);
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 0, assessment_count: 0, filtered_ticket_count: 0, tickets: [] } });
+  });
+  await page.goto('/campaign/survey-analytics');
+  await page.getByRole('button', { name: 'Date settings' }).click();
+  await expect(page.getByLabel('CSAT rating points month')).toHaveValue('opened');
+  await expect(page.getByLabel('Valid ratings month')).toHaveValue('opened');
+  await expect(page.getByLabel('CSAT rating points month').locator('option')).toHaveCount(2);
+  await expect(page.getByLabel('Poor-rated tickets month')).toBeVisible();
+  await expect(page.getByLabel('Poor rate ticket denominator month')).toHaveCount(0);
+  await expect(page.getByLabel('Tickets with feedback month')).toBeVisible();
+  await expect(page.getByLabel('Feedback rate ticket denominator month')).toHaveCount(0);
+  await expect(page.getByLabel('Tickets with feedback month')).toHaveValue('opened');
+  await expect.poll(() => qualityQueries.at(-1)?.get('poor_denominator_date')).toBe('opened');
+  expect(qualityQueries.at(-1)?.get('feedback_numerator_date')).toBe('opened');
+  expect(qualityQueries.at(-1)?.get('feedback_denominator_date')).toBe('opened');
+  expect(qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('opened');
+  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
+  await page.getByLabel('CSAT rating points month').selectOption('taken_on');
+  await expect.poll(() => qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('taken_on');
+  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
+  await page.getByLabel('Valid ratings month').selectOption('taken_on');
+  await expect.poll(() => qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
+  await page.getByLabel('View metric range').selectOption('csat');
+  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('taken_on');
+  await page.getByRole('button', { name: 'Show calculation' }).click();
+  await expect(page.getByRole('cell', { name: '98 ÷ 20 = 4.90' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '1 ÷ 100 × 100% = 1.00%' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: '20 ÷ 200 × 100% = 10.00%' })).toBeVisible();
+});
+
+test('month details defaults to all tickets and exports every filtered page', async ({ page, context }) => {
+  await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [{ month: '2026-07', ticket_count: 51,
+      poor_ticket_count: 51, feedback_ticket_count: 51, feedback_count: 1,
+      rating_count: 1, rating_sum: 5, poor_count: 0, csat: 5, poor_rate: 0, feedback_rate: 1.96 }],
+      averages: { csat: 5, poor_rate: 0, feedback_rate: 1.96 } },
+  }));
+  const detailQueries: URLSearchParams[] = [];
+  const tickets = Array.from({ length: 51 }, (_, index) => ({
+    oid: `ticket-${index}`, stable_id: `INC-${index + 1}`, title: `Ticket ${index + 1}`,
+    state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
+    caller_name: 'User', assigned_group: 'OIT SSC', assessments: [],
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    detailQueries.push(query);
+    const pageNumber = Number(query.get('page') || '1');
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0,
+      filtered_ticket_count: 51, tickets: tickets.slice((pageNumber - 1) * 50, pageNumber * 50) } });
+  });
+  await page.goto('/campaign/survey-analytics');
+  await expect(page.getByLabel('View metric range')).toHaveValue('all');
+  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('closed');
+  await page.getByLabel('View metric range').selectOption('csat');
+  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('csat');
+  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('opened');
+  await page.getByLabel('View metric range').selectOption('all');
+  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('all');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Excel' }).click();
+  const download = await downloadPromise;
+  const workbook = readFile((await download.path())!);
+  const rows = xlsxUtils.sheet_to_json<(string | number)[]>(workbook.Sheets['ServiceNow tickets'], { header: 1 });
+  expect(rows).toHaveLength(52);
+  expect(rows[1]).toContain('INC-1');
+  expect(rows.at(-1)).toContain('INC-51');
+  expect(detailQueries.some((query) => query.get('page') === '2')).toBe(true);
 });
 
 test('switching timezone reloads CSAT month totals and matching ticket details', async ({ page, context }) => {
@@ -126,71 +219,162 @@ test('single-month details load raw tickets and assessments for the selected mon
   await expect(page.getByText('INC-JUL')).toHaveCount(0);
 });
 
-test('single-month details filter tickets with ratings and by selected score', async ({ page }) => {
+test('metric details show denominator or numerator tickets and export the selected cohort', async ({ page }) => {
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
     json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 3 }] },
   }));
   await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
-    json: {
-      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
-      months: [{ month: '2026-07', ticket_count: 3, feedback_count: 2, rating_count: 3, rating_sum: 9, poor_count: 2, csat: 3, poor_rate: 66.67, feedback_rate: 66.67 }],
-      averages: { csat: 3, poor_rate: 66.67, feedback_rate: 66.67 },
-    },
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [{ month: '2026-07', ticket_count: 2,
+      poor_ticket_count: 2, feedback_ticket_count: 2, feedback_count: 1,
+      rating_count: 1, rating_sum: 2, poor_count: 1, csat: 2, poor_rate: 50, feedback_rate: 50 }],
+      averages: { csat: 2, poor_rate: 50, feedback_rate: 50 } },
   }));
-  const assessment = (oid: string, rating: number) => ({
-    oid, external_id: oid, submitted_at: '2026-07-05T12:00:00+00:00', rating,
-    survey_questions: { questions: [{ question_id: 'q2', type: 'single_select', title: 'Rate service' }] },
-    survey_answer: { answers: [{ question_id: 'q2', type: 'single_select', selected_option_id: String(rating) }] },
+  const assessment = { oid: 'assessment', external_id: 'A-1', submitted_at: '2026-07-05T12:00:00Z',
+    source_taken_on: '2026-07-05T12:00:00Z', rating: 2, survey_questions: {}, survey_answer: {} };
+  const ticket = (id: string, withAssessment = false) => ({
+    oid: id, stable_id: id, title: `Ticket ${id}`, state: 'Closed',
+    source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-05T12:00:00Z',
+    caller_name: null, assigned_group: 'OIT SSC', assessments: withAssessment ? [assessment] : [],
   });
+  const detailQueries: URLSearchParams[] = [];
   await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
     const params = new URL(route.request().url()).searchParams;
-    const allTickets = [
-      { oid: 'one', stable_id: 'INC-ONE', title: 'One', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A1', 1), assessment('A5', 5)] },
-      { oid: 'three', stable_id: 'INC-THREE', title: 'Three', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [assessment('A3', 3)] },
-      { oid: 'none', stable_id: 'INC-NONE', title: 'None', state: 'Closed', source_closed_at: '2026-07-05T12:00:00+00:00', caller_name: null, assigned_group: null, assessments: [] },
-    ];
-    const ratings = params.getAll('ratings').map(Number);
-    const tickets = allTickets.filter((ticket) =>
-      (!ratings.length && params.get('rated_only') !== 'true' || ticket.assessments.some((item) =>
-        ratings.length ? ratings.includes(item.rating) : item.rating !== null)));
-    return route.fulfill({ json: {
-      month: '2026-07', ticket_count: 3, assessment_count: 3,
-      filtered_ticket_count: tickets.length, tickets,
-    } });
+    detailQueries.push(params);
+    const scope = params.get('scope');
+    const numerator = params.get('part') === 'numerator';
+    const tickets = scope === 'all' ? [ticket('INC-ALL')]
+      : scope === 'csat' ? [ticket('INC-CSAT', true)]
+        : scope === 'poor' ? numerator ? [ticket('INC-POOR', true)] : [ticket('INC-BASE-1'), ticket('INC-BASE-2')]
+          : numerator ? [ticket('INC-FEEDBACK', true)] : [ticket('INC-BASE-1'), ticket('INC-BASE-2')];
+    return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length,
+      assessment_count: numerator || scope === 'csat' ? 1 : 0,
+      filtered_ticket_count: tickets.length, tickets } });
   });
   await page.goto('/campaign/survey-analytics');
+  const scope = page.getByLabel('View metric range');
+  const part = page.getByRole('group', { name: 'View numerator or denominator' });
+  await expect(scope).toHaveValue('all');
+  await expect(part).toHaveCount(0);
+  await expect(page.getByLabel('Only rated tickets')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Rating', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeVisible();
+  await expect(page.getByText('INC-ALL', { exact: true })).toBeVisible();
 
-  await expect(page.getByText('INC-NONE')).toBeVisible();
-  const filteredCount = page.getByRole('status').filter({ hasText: 'Showing' });
-  await expect(filteredCount).toHaveText('Showing 3 tickets');
+  await scope.selectOption('csat');
+  await expect(part).toHaveCount(0);
+  await expect(page.getByLabel('Only rated tickets')).toHaveCount(0);
+  await expect(page.getByText('INC-CSAT', { exact: true })).toBeVisible();
+
+  await scope.selectOption('poor');
+  await expect(page.getByLabel('Only rated tickets')).toHaveCount(0);
+  await expect(part.getByRole('button', { name: 'View denominator' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('INC-BASE-1', { exact: true })).toBeVisible();
+  expect(detailQueries.at(-1)?.get('denominator_date')).toBe('opened');
+  await part.getByRole('button', { name: 'View numerator' }).click();
+  await expect(page.getByText('INC-POOR', { exact: true })).toBeVisible();
+  await expect(page.getByText('INC-BASE-1', { exact: true })).toHaveCount(0);
+  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('taken_on');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Excel' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain('_poor_numerator.xlsx');
+  const workbook = readFile((await download.path())!);
+  const rows = xlsxUtils.sheet_to_json<(string | number)[]>(workbook.Sheets['ServiceNow tickets'], { header: 1 });
+  expect(rows).toHaveLength(2);
+  expect(rows[1]).toContain('INC-POOR');
+
+  await scope.selectOption('feedback');
+  await expect(page.getByRole('button', { name: 'Rating', exact: true })).toHaveCount(0);
+  await expect(part.getByRole('button', { name: 'View denominator' })).toHaveAttribute('aria-pressed', 'true');
+  await part.getByRole('button', { name: 'View numerator' }).click();
+  await expect(page.getByText('INC-FEEDBACK', { exact: true })).toBeVisible();
+  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('opened');
+});
+
+test('all tickets keeps rated and score filters for its list and Excel export', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 3 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [], averages: { csat: null, poor_rate: null, feedback_rate: null } },
+  }));
+  const assessment = (rating: number) => ({ oid: `a-${rating}`, external_id: `a-${rating}`,
+    submitted_at: '2026-07-05T12:00:00Z', source_taken_on: null, rating,
+    survey_questions: {}, survey_answer: {} });
+  const tickets = [
+    { oid: 'one', stable_id: 'INC-ONE', title: 'First', assessments: [assessment(5)] },
+    { oid: 'two', stable_id: 'INC-TWO', title: 'Second', assessments: [assessment(3)] },
+    { oid: 'none', stable_id: 'INC-NONE', title: 'Third', assessments: [] },
+  ].map((item) => ({ ...item, state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z',
+    source_closed_at: '2026-07-05T12:00:00Z', caller_name: null, assigned_group: 'OIT SSC' }));
+  const queries: URLSearchParams[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    queries.push(params);
+    const ratings = params.getAll('ratings').map(Number);
+    const selected = tickets.filter((ticket) => !ratings.length && params.get('rated_only') !== 'true'
+      || ticket.assessments.some((item) => ratings.length ? ratings.includes(item.rating) : item.rating != null));
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 3, assessment_count: 2,
+      filtered_ticket_count: selected.length, tickets: selected } });
+  });
+  await page.goto('/campaign/survey-analytics');
+  await expect(page.getByText('INC-NONE', { exact: true })).toBeVisible();
   await page.getByLabel('Only rated tickets').check();
-  await expect(filteredCount).toHaveText('Showing 3 tickets');
-  await expect(page.getByText('INC-NONE')).toBeVisible();
-  await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(filteredCount).toHaveText('Showing 2 tickets');
-  await expect(page.getByText('INC-NONE')).toHaveCount(0);
-  await expect(page.getByText('INC-ONE')).toBeVisible();
-  await expect(page.getByText('INC-THREE')).toBeVisible();
-
-  await expect(page.getByRole('checkbox', { name: '5', exact: true })).toHaveCount(0);
+  await expect(page.getByText('INC-NONE', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByText('INC-NONE', { exact: true })).toHaveCount(0);
+  expect(queries.at(-1)?.get('rated_only')).toBe('true');
   await page.getByRole('button', { name: 'Rating', exact: true }).click();
   await page.getByRole('checkbox', { name: '5', exact: true }).check();
-  await expect(filteredCount).toHaveText('Showing 2 tickets');
-  await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(filteredCount).toHaveText('Showing 1 ticket');
-  await expect(page.getByText('INC-ONE')).toBeVisible();
-  await expect(page.getByText('INC-THREE')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByText('INC-TWO', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('INC-ONE', { exact: true })).toBeVisible();
+  expect(queries.at(-1)?.getAll('ratings')).toEqual(['5']);
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Excel' }).click();
+  const workbook = readFile((await (await downloadPromise).path())!);
+  const rows = xlsxUtils.sheet_to_json<(string | number)[]>(workbook.Sheets['ServiceNow tickets'], { header: 1 });
+  expect(rows).toHaveLength(2);
+  expect(rows[1]).toContain('INC-ONE');
+});
+
+test('Excel export follows the applied score filter across all detail pages', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 52 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [], averages: { csat: null, poor_rate: null, feedback_rate: null } },
+  }));
+  const queries: URLSearchParams[] = [];
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    queries.push(query);
+    const filtered = query.getAll('ratings').includes('5');
+    const ids = filtered ? Array.from({ length: 51 }, (_, index) => index + 1)
+      : Array.from({ length: 52 }, (_, index) => index + 1);
+    const pageNumber = Number(query.get('page') || '1');
+    const tickets = ids.slice((pageNumber - 1) * 50, pageNumber * 50).map((id) => ({
+      oid: `ticket-${id}`, stable_id: `INC-${id}`, title: `Ticket ${id}`, state: 'Closed',
+      source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
+      caller_name: null, assigned_group: 'OIT SSC', assessments: [],
+    }));
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 52, assessment_count: 0,
+      filtered_ticket_count: ids.length, tickets } });
+  });
+  await page.goto('/campaign/survey-analytics');
   await page.getByRole('button', { name: 'Rating', exact: true }).click();
-  await page.getByRole('checkbox', { name: '5', exact: true }).uncheck();
-  for (const rating of ['1', '2', '3']) {
-    await page.getByRole('checkbox', { name: rating, exact: true }).check();
-  }
-  await expect(page.getByRole('button', { name: 'Rating', exact: true })).toContainText('1, 2, 3');
-  await expect(page.getByText('INC-ONE')).toBeVisible();
-  await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(filteredCount).toHaveText('Showing 2 tickets');
-  await expect(page.getByText('INC-ONE')).toBeVisible();
-  await expect(page.getByText('INC-THREE')).toBeVisible();
+  await page.getByRole('checkbox', { name: '5', exact: true }).check();
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 51 tickets');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Excel' }).click();
+  const workbook = readFile((await (await downloadPromise).path())!);
+  const rows = xlsxUtils.sheet_to_json<(string | number)[]>(workbook.Sheets['ServiceNow tickets'], { header: 1 });
+  expect(rows).toHaveLength(52);
+  expect(rows[1]).toContain('INC-1');
+  expect(rows.at(-1)).toContain('INC-51');
+  expect(rows.flat()).not.toContain('INC-52');
+  expect(queries.some((query) => query.get('page') === '2' && query.getAll('ratings').includes('5'))).toBe(true);
 });
 
 test('single-month details requests the next server page while keeping the full count', async ({ page }) => {
@@ -205,11 +389,10 @@ test('single-month details requests the next server page while keeping the full 
     const params = new URL(route.request().url()).searchParams;
     const requestedPage = params.get('page') ?? 'missing';
     requestedPages.push(requestedPage);
-    const filtered = params.get('rated_only') === 'true';
-    const tickets = (filtered ? [1] : requestedPage === '2' ? [51] : Array.from({ length: 50 }, (_, index) => index + 1))
+    const tickets = (requestedPage === '2' ? [51] : Array.from({ length: 50 }, (_, index) => index + 1))
       .map((number) => ({ oid: `ticket-${number}`, stable_id: `INC-${number}`, title: 'Ticket', state: 'Closed', source_closed_at: '2026-07-05T12:00:00Z', caller_name: null, assigned_group: null,
         assessments: number === 1 ? [{ oid: 'assessment-1', external_id: 'A-1', submitted_at: '2026-07-05T12:00:00Z', rating: 5, survey_questions: { questions: [] }, survey_answer: { answers: [{ type: 'single_select', selected_option_id: '5' }] } }] : [] }));
-    return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0, filtered_ticket_count: filtered ? 1 : 51, tickets } });
+    return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0, filtered_ticket_count: 51, tickets } });
   });
 
   await page.goto('/campaign/survey-analytics');
@@ -219,11 +402,6 @@ test('single-month details requests the next server page while keeping the full 
   await expect(page.getByText('INC-51', { exact: true })).toBeVisible();
   await expect(page.getByText('INC-1', { exact: true })).toHaveCount(0);
   expect(requestedPages).toContain('2');
-  await page.getByLabel('Only rated tickets').check();
-  await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 1 ticket');
-  await expect(page.getByText('INC-1', { exact: true })).toBeVisible();
-  expect(requestedPages.at(-1)).toBe('1');
 });
 
 test('hovering each chart bar shows that metric’s numerator and denominator', async ({ page }) => {
