@@ -429,6 +429,26 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
             },
         ],
     },
+    '/ohla-journey': {
+        items: [
+            { href: '/ohla-journey/headline', labelKey: 'journeyHeadline', icon: LayoutDashboard,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/resolution', labelKey: 'journeyResolution', icon: TicketCheck,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/gaps', labelKey: 'journeyGaps', icon: AlertCircle,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/journey', labelKey: 'journeyJourney', icon: Route,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/timeline', labelKey: 'journeyTimeline', icon: Timer,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/persona', labelKey: 'journeyPersona', icon: Users,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/patterns', labelKey: 'journeyPatterns', icon: Activity,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+            { href: '/ohla-journey/audit', labelKey: 'journeyAudit', icon: ClipboardCheck,
+              permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_OPERATION]) },
+        ],
+    },
     '/ssc-cockpit': {
         items: [
             {

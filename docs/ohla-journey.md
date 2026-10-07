@@ -1,0 +1,7 @@
+# Ohla Journey dashboard
+
+The Operation navigation includes Ohla Journey with eight native pages: Headline, Resolution, Gaps, Journey, Timeline, Persona, Patterns and Audit. Chinese and English labels follow the application's existing language switch. A version selection is kept in browser session storage, so it affects only the viewer's tab. The native pages read the backend's versioned section endpoints through `/api/ohla-journey/[...path]`; entity tables use paged reads and full detail reads. The proxy forwards the existing `it_aware_access` cookie and does not expose a browser upload route.
+
+Journey and Persona show first-contact channel, journey region, topic and persona filters. Resolution and Timeline show topic and persona filters; channel and region stay hidden there. `channel` is the first contact channel. `region` is the first known ticket caller region, falling back to the user's work region. The frontend sends the same active filters to the section summary and entity list; filtered counts and detail totals must match. Gaps, Patterns, Audit and Headline show their published aggregates without filters.
+
+The backend import is a separate service-account-only API. Local Chrome testing on 2026-10-07 showed all eight sidebar entries, the version selector, Chinese switching and matching filtered totals for the r069 report. This was against an isolated local database and not a cloud deployment.
