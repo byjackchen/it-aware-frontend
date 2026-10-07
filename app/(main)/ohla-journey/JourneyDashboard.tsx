@@ -81,6 +81,10 @@ function timelineBuckets(rows: JsonObject[], period: 'day' | 'week' | 'month', s
   }
   return grouped;
 }
+function periodLabel(value: number, unit: 'day' | 'week' | 'month', zh: boolean): string {
+  const name = zh ? { day: '天', week: '周', month: '月' }[unit] : { day: 'Day', week: 'Week', month: 'Month' }[unit];
+  return zh ? `第 ${value} ${name}` : `${name} ${value}`;
+}
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`/api/ohla-journey/${path}`, { cache: 'no-store' });
@@ -253,7 +257,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
   const [groupBy, setGroupBy] = useState('topic');
   const [gapFamily, setGapFamily] = useState('all');
   const [timelinePeriod, setTimelinePeriod] = useState<'day' | 'week' | 'month'>('day');
-  const [timelineView, setTimelineView] = useState<'overall' | 'topic' | 'persona'>('overall');
+  const [timelineView, setTimelineView] = useState<'overall' | 'topic' | 'persona' | 'user'>('overall');
   const [drill, setDrill] = useState<Drill | null>(null);
 
   useEffect(() => {
@@ -267,7 +271,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
   }, []);
   const activeFilters = Object.fromEntries((SECTION_FILTERS[section] ?? []).map((name) => [name, filters[name] ?? '']));
   const filterKey = JSON.stringify(activeFilters);
-  const responseKey = `${round}|${section}|${filterKey}|${section === 'resolution' ? groupBy : ''}`;
+  const responseKey = `${round}|${section}|${filterKey}|${section === 'resolution' ? groupBy : ''}|${section === 'timeline' && timelineView === 'user' ? 'user' : ''}`;
   const payload = response?.key === responseKey ? response.data : null;
   useEffect(() => {
     if (!round) return;
@@ -276,11 +280,12 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     let active = true;
     const query = new URLSearchParams(Object.entries(JSON.parse(filterKey) as Record<string, string>).filter(([, v]) => v));
     if (section === 'resolution') query.set('group_by', groupBy);
+    if (section === 'timeline' && timelineView === 'user') query.set('timeline_group', 'user');
     fetchJson<JsonObject>(`reports/${encodeURIComponent(round)}/sections/${section}?${query}`).then((result) => {
       if (active) { setResponse({ key: responseKey, data: result }); setError(false); }
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [round, section, filterKey, responseKey, groupBy, filters]);
+  }, [round, section, filterKey, responseKey, groupBy, timelineView, filters]);
 
   const meta = versions.find((item) => item.round_id === round);
   const options = object(payload?.filter_options);
@@ -392,19 +397,21 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       const bursts = list(object(payload.timeline).bursts).map(object);
       const start = new Date(new Date(meta?.window[0] ?? '2026-04-01T00:00:00+08:00').getTime() + 8 * 3600000);
       const grouped = timelineBuckets(daily, timelinePeriod, start);
-      const series = list(object(payload.grouped_daily)[timelineView]).map(object);
+      const people = object(payload.people);
+      const series = list(timelineView === 'user' ? people.rows : object(payload.grouped_daily)[timelineView]).map(object);
       return <><p className={styles.lede}>{zh ? '观察旅程数量随时间变化；异常波峰显示高于基线的主题。' : 'See how journey volume changes over time and which topics exceed the baseline.'}</p>
         <ReportPanel title={zh ? { day: '每日旅程', week: '每周旅程', month: '每月旅程' }[timelinePeriod] : { day: 'Daily journeys', week: 'Weekly journeys', month: 'Monthly journeys' }[timelinePeriod]}><div className={styles.inlineControls}><div className={styles.segmented}>{(['day', 'week', 'month'] as const).map((period) => <button key={period} className={timelinePeriod === period ? styles.activeSegment : ''} onClick={() => setTimelinePeriod(period)}>
           {zh ? { day: '日', week: '周', month: '月' }[period] : period[0].toUpperCase() + period.slice(1)}</button>)}</div>
-          <div className={styles.segmented}>{(['overall', 'topic', 'persona'] as const).map((view) => <button key={view} className={timelineView === view ? styles.activeSegment : ''} onClick={() => setTimelineView(view)}>
-            {zh ? { overall: '全部', topic: '按主题', persona: '按画像' }[view] : { overall: 'Overall', topic: 'By topic', persona: 'By persona' }[view]}</button>)}</div><span>UTC+08:00</span></div>
+          <div className={styles.segmented}>{(['overall', 'topic', 'persona', 'user'] as const).map((view) => <button key={view} className={timelineView === view ? styles.activeSegment : ''} onClick={() => setTimelineView(view)}>
+            {zh ? { overall: '全部', topic: '按主题', persona: '按画像', user: '按个人' }[view] : { overall: 'Overall', topic: 'By topic', persona: 'By persona', user: 'By person' }[view]}</button>)}</div><span>UTC+08:00</span></div>
           {timelineView === 'overall' ? <TimeSeries rows={[...grouped].map(([day, value]) => ({ day, journeys: value.journeys }))} zh={zh} unit={timelinePeriod}
-            onSelect={(period) => { const bounds = grouped.get(period); if (bounds) openJourneys(`${timelinePeriod} ${period}`, { day_from: String(bounds.from), day_to: String(bounds.to) }); }} />
-            : <div className={styles.timelineGroups}>{series.slice(0, 8).map((row) => { const values = timelineBuckets(list(row.daily).map(object), timelinePeriod, start); const group = text(row.group); return <div key={group} className={styles.timelineGroup}>
-              <button onClick={() => updateFilter(timelineView, group)}><strong>{group}</strong><span>{Number(row.total).toLocaleString()} {zh ? '条旅程' : 'journeys'} →</span></button>
+            onSelect={(period) => { const bounds = grouped.get(period); if (bounds) openJourneys(periodLabel(period, timelinePeriod, zh), { day_from: String(bounds.from), day_to: String(bounds.to) }); }} />
+            : <>{timelineView === 'user' && <p className={styles.note}>{zh ? `按旅程数显示前 ${series.length} 位用户，共 ${Number(people.total_people ?? 0).toLocaleString()} 位；点击用户可查看完整明细。` : `Showing the top ${series.length} people by journeys, out of ${Number(people.total_people ?? 0).toLocaleString()}. Open a person for full details.`}</p>}
+            <div className={styles.timelineGroups}>{series.slice(0, timelineView === 'user' ? 12 : 8).map((row) => { const values = timelineBuckets(list(row.daily).map(object), timelinePeriod, start); const group = text(row.group); return <div key={group} className={styles.timelineGroup}>
+              <button onClick={() => timelineView === 'user' ? open('users', group, undefined, group) : updateFilter(timelineView, group)}><strong>{group}</strong><span>{Number(row.total).toLocaleString()} {zh ? '条旅程' : 'journeys'} →</span></button>
               <TimeSeries rows={[...values].map(([day, value]) => ({ day, journeys: value.journeys }))} zh={zh} unit={timelinePeriod}
-                onSelect={(period) => { const bounds = values.get(period); if (bounds) openJourneys(`${group} · ${timelinePeriod} ${period}`, { [timelineView]: group, day_from: String(bounds.from), day_to: String(bounds.to) }); }} />
-            </div>; })}</div>}
+                onSelect={(period) => { const bounds = values.get(period); if (bounds) openJourneys(`${group} · ${periodLabel(period, timelinePeriod, zh)}`, { [timelineView === 'user' ? 'user_id' : timelineView]: group, day_from: String(bounds.from), day_to: String(bounds.to) }); }} />
+            </div>; })}</div></>}
         </ReportPanel>
         {bursts.length > 0 && <ReportPanel title={zh ? '异常波峰' : 'Bursts'}><RankedBars rows={bursts.map((row) => ({ key: `${text(row.topic)}|${text(row.day)}`, label: `${text(row.topic)} · ${zh ? '第' : 'day '}${text(row.day)}${zh ? '天' : ''}`, value: Number(row.n) }))}
           zh={zh} color="#df9f39" onSelect={(row) => { const [topic, day] = text(row.key).split('|'); openJourneys(row.label, { topic, day }); }} /></ReportPanel>}
