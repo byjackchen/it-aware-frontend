@@ -92,24 +92,26 @@ export function Funnel({ stages, zh, onSelect }: { stages: unknown[]; zh: boolea
   </div>)}</div>;
 }
 
-export function TimeSeries({ rows, zh, onSelect }: { rows: Array<{ day: number; journeys: number }>; zh: boolean; onSelect?: (day: number) => void }) {
+export function TimeSeries({ rows, zh, onSelect, unit = 'day' }: { rows: Array<{ day: number; journeys: number }>; zh: boolean; onSelect?: (day: number) => void; unit?: 'day' | 'week' | 'month' }) {
   const values = [...rows].sort((a, b) => a.day - b.day);
   if (!values.length) return <p>{zh ? '没有时间线数据' : 'No timeline data'}</p>;
   const max = Math.max(1, ...values.map((row) => row.journeys));
   const width = 900; const height = 210; const left = 34; const right = 8; const top = 10; const bottom = 26;
   const x = (index: number) => left + index * (width - left - right) / Math.max(1, values.length - 1);
   const y = (n: number) => top + (1 - n / max) * (height - top - bottom);
-  return <div className={styles.timeWrap}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={zh ? '每日旅程数量趋势' : 'Daily journey trend'}>
+  const unitLabel = zh ? { day: '天', week: '周', month: '月' }[unit] : { day: 'Day', week: 'Week', month: 'Month' }[unit];
+  const label = (value: number) => zh ? `第 ${value} ${unitLabel}` : `${unitLabel} ${value}`;
+  return <div className={styles.timeWrap}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={zh ? '旅程数量趋势' : 'Journey trend'}>
     {[0, .5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width-right} y1={y(max*fraction)} y2={y(max*fraction)} stroke="#e3e6ea" />
       <text x={left-6} y={y(max*fraction)+4} textAnchor="end" fill="#667080" fontSize="11">{Math.round(max*fraction)}</text></g>)}
     <polyline fill="none" stroke="#2f5fc4" strokeWidth="2" strokeLinejoin="round" points={values.map((row,i) => `${x(i)},${y(row.journeys)}`).join(' ')} />
     {values.map((row,i) => <circle key={row.day} cx={x(i)} cy={y(row.journeys)} r={onSelect ? '4' : '2'} fill="#2f5fc4"
       className={onSelect ? styles.chartPoint : ''} tabIndex={onSelect ? 0 : undefined} role={onSelect ? 'button' : undefined}
-      aria-label={onSelect ? `${zh ? '第' : 'Day '}${row.day}${zh ? '天' : ''}: ${row.journeys} ${zh ? '条旅程' : 'journeys'}` : undefined}
+      aria-label={onSelect ? `${label(row.day)}: ${row.journeys} ${zh ? '条旅程' : 'journeys'}` : undefined}
       onClick={() => onSelect?.(row.day)} onKeyDown={(event) => { if (onSelect && (event.key === 'Enter' || event.key === ' ')) onSelect(row.day); }}>
-      <title>{zh ? '第' : 'Day '}{row.day}{zh ? '天' : ''}: {row.journeys}</title></circle>)}
-    <text x={left} y={height-5} fill="#667080" fontSize="11">{zh ? '第 0 天' : 'Day 0'}</text>
-    <text x={width-right} y={height-5} textAnchor="end" fill="#667080" fontSize="11">{zh ? `第 ${values.at(-1)?.day} 天` : `Day ${values.at(-1)?.day}`}</text>
+      <title>{label(row.day)}: {row.journeys}</title></circle>)}
+    <text x={left} y={height-5} fill="#667080" fontSize="11">{label(values[0].day)}</text>
+    <text x={width-right} y={height-5} textAnchor="end" fill="#667080" fontSize="11">{label(values.at(-1)?.day ?? 0)}</text>
   </svg></div>;
 }
 
