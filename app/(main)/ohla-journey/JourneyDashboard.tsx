@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DataDisclosure, FlowSummary, Funnel, JourneySankey, Lineage, Metric, MetricGrid, OutcomeLegend, RankedBars, ReportPanel, StackedBar, TimeSeries } from './ReportVisuals';
 import DrilldownDrawer, { type Drill } from './DrilldownDrawer';
+import PatternsReport from './PatternsReport';
+import AuditReport from './AuditReport';
 import styles from './JourneyDashboard.module.css';
 
 type Section = 'headline' | 'resolution' | 'gaps' | 'journey' | 'timeline' | 'persona' | 'patterns' | 'audit';
@@ -63,6 +65,21 @@ function object(value: unknown): JsonObject { return value && typeof value === '
 function list(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
 function text(value: unknown): string { return value === null || value === undefined ? '—' : String(value); }
 function pct(value: unknown): string { return typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : '—'; }
+function personaCriterionValue(row: JsonObject, zh: boolean): string {
+  if (Array.isArray(row.values)) return row.values.map((value) => typeof value === 'number' ? pct(value) : value === true ? (zh ? '是' : 'Yes') : (zh ? '否' : 'No')).join(' · ');
+  const values = object(row.values);
+  if (row.id === 'baseline') return ['persistence', 'gain_to_human', 'gain_ai_solved'].map((key) => {
+    const label = ({ persistence: zh ? '稳定性' : 'Persistence', gain_to_human: zh ? '预测转人工' : 'Predict human', gain_ai_solved: zh ? '预测 AI 解决' : 'Predict AI' })[key];
+    return `${label}: ${list(values[key]).map(pct).join(' / ')}`;
+  }).join(' · ');
+  if (row.id === 'reformation') return `${zh ? '组数' : 'Groups'} ${list(values.groups).map(text).join(' / ')} · ${zh ? '一致性' : 'Agreement'} ${pct(values.agreement)} · ${zh ? '共同用户' : 'Shared users'} ${text(values.users)}`;
+  return '—';
+}
+const PERSONA_THRESHOLDS_ZH: Record<string, string> = {
+  persistence: '每个月至少 75%', to_human: '每个月优于统一基线，平均至少提升 5%',
+  ai_solved: '每个月优于统一基线', order: '每个月顺序相同',
+  baseline: '稳定性与两项预测的均值不低于旧版', reformation: '组数相同，至少 70% 的共同用户仍在对应组',
+};
 function dimensionLabel(key: string, zh: boolean): string { return DIMENSION_LABELS[key]?.[zh ? 1 : 0] ?? key; }
 function displayKey(key: string, zh: boolean): string { return zh ? LABELS_ZH[key] ?? key.replaceAll('_', ' ') : key.replaceAll('_', ' '); }
 function windowDate(value: string): string {
@@ -237,6 +254,15 @@ function ResolutionMatrix({ rows, groupBy, zh, onOpen }: {
             <strong>{pct(n ? Number(row[key] ?? 0) / n : 0)}</strong><span>{Number(row[key] ?? 0).toLocaleString()} / {n.toLocaleString()}</span></button></td>)}
           <td><button className={styles.cellButton} onClick={() => open(row)}><strong>{duration(time.median_sec)}</strong><span>n={text(time.n)}</span></button></td>
         </tr>{expanded.includes(group) && <tr className={styles.matrixDetail}><td colSpan={9}>
+          {groupBy === 'topic' && list(row.children).length > 0 && <div className={styles.childWrap}><strong>{zh ? '子主题' : 'Subtopics'}</strong><table className={styles.childTable}><thead><tr>
+            <th>{zh ? '子主题' : 'Subtopic'}</th><th>{zh ? '旅程' : 'Journeys'}</th><th>{zh ? '端到端' : 'End-to-end'}</th><th>AI</th><th>{zh ? '人工' : 'Human'}</th><th>{zh ? '其他' : 'Other'}</th><th>{zh ? '转人工' : 'Escalation'}</th><th>{zh ? '再次联系' : 'Recontact'}</th>
+          </tr></thead><tbody>{list(row.children).map(object).map((child) => { const n=Number(child.n ?? 0); const query={topic:group,subtopic:text(child.group)};const childOpen=(detail:Record<string,string>={})=>onOpen(`${group} · ${text(child.group)}`,{...query,...detail});return <tr key={text(child.group)}>
+            <td><button onClick={() => childOpen()}>{text(child.group)}</button></td><td><button onClick={() => childOpen()}>{n.toLocaleString()}</button></td>
+            {(['end_to_end','ai','human'] as const).map((key) => <td key={key}><button onClick={() => childOpen({resolution:key,category:'resolved'})}>{pct(n ? (Number(object(child[key]).c ?? 0)+Number(object(child[key]).d ?? 0))/n : 0)}</button></td>)}
+            <td><button onClick={() => childOpen({outcome:'elsewhere'})}>{Number(object(child.outcomes).elsewhere ?? 0).toLocaleString()}</button></td>
+            <td><button onClick={() => childOpen({escalated:'1'})}>{Number(child.escalated ?? 0).toLocaleString()}</button></td>
+            <td><button onClick={() => childOpen({recontacted:'1'})}>{Number(child.recontacted ?? 0).toLocaleString()}</button></td>
+          </tr>; })}</tbody></table></div>}
           <div className={styles.matrixDetailGrid}>
             {Object.entries(object(row.times)).map(([metric, item]) => { const values = object(item); return <div key={metric}><strong>{metric}</strong><span>n={text(values.n)} · {zh ? '中位数' : 'median'} {duration(values.median_sec)} · P75 {duration(values.p75_sec)} · P90 {duration(values.p90_sec)}</span></div>; })}
           </div><div className={styles.outcomeChips}>{Object.entries(object(row.outcomes)).map(([key, value]) => <button key={key} onClick={() => open(row, { outcome: key })}>{outcomeLabel(key, zh)} · {Number(value).toLocaleString()}</button>)}</div>
@@ -256,6 +282,8 @@ export default function JourneyDashboard({ section }: { section: Section }) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [groupBy, setGroupBy] = useState('topic');
   const [gapFamily, setGapFamily] = useState('all');
+  const [gapTopic, setGapTopic] = useState('all');
+  const [showAllGaps, setShowAllGaps] = useState(false);
   const [timelinePeriod, setTimelinePeriod] = useState<'day' | 'week' | 'month'>('day');
   const [timelineView, setTimelineView] = useState<'overall' | 'topic' | 'persona' | 'user'>('overall');
   const [drill, setDrill] = useState<Drill | null>(null);
@@ -317,6 +345,19 @@ export default function JourneyDashboard({ section }: { section: Section }) {
             else openJourneys(label, { resolution: index === 0 ? 'ai' : index === 1 ? 'human' : 'end_to_end', category: 'resolved' });
           })}
         <p className={styles.note}>{zh ? `共分析 ${Number(lineage.journeys ?? 0).toLocaleString()} 条旅程；结果仍可能变化的旅程 ${Number(object(payload.settled).pending ?? 0).toLocaleString()} 条。` : `${Number(lineage.journeys ?? 0).toLocaleString()} journeys analysed; ${Number(object(payload.settled).pending ?? 0).toLocaleString()} outcomes remain pending.`}</p>
+        <ReportPanel title={zh ? '术语' : 'Terms'} description={zh ? '这些数字分别在数什么；解决率以旅程为分母。' : 'What each number counts; resolution rates use journeys as their denominator.'}>
+          <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '术语' : 'Term'}</th><th>{zh ? '定义' : 'Meaning'}</th><th>{zh ? '本版本' : 'This version'}</th></tr></thead><tbody>{[
+            [zh ? '单元' : 'Unit', zh ? '一次机器人活动段或一张工单；一个单元可包含多个诉求。' : 'One bot activity segment or one ticket; a unit may contain several requests.', lineage.units],
+            [zh ? '诉求' : 'Request', zh ? '用户在单元中提出的一件具体事情。' : 'One distinct thing the user asked for in a unit.', lineage.requests],
+            [zh ? '旅程' : 'Journey', zh ? '同一用户的一项问题，可能跨越多个活动段或工单。' : 'One problem of one user, linked across segments or tickets.', lineage.journeys],
+            [zh ? '用户' : 'User', zh ? '旅程背后的一位用户；一人可能有多条旅程。' : 'The person behind one or more journeys.', lineage.users],
+            [zh ? '画像' : 'Persona', zh ? '求助习惯相近的一组用户。' : 'A group of users with similar support habits.', meta?.counts?.personas],
+            [zh ? '已证实解决' : 'Confirmed resolution', zh ? '有明确证据证明问题解决。' : 'Evidence confirms that the problem was solved.', '—'],
+            [zh ? '已交付但未证实' : 'Delivered, unconfirmed', zh ? '已提供答案或处理，但没有足够证据确认结果。' : 'An answer or action was delivered, without confirmation of the outcome.', '—'],
+            [zh ? '无法判断' : 'Cannot tell', zh ? '现有证据不能确定是否解决；与明确未解决不同。' : 'The evidence cannot determine whether it was solved.', '—'],
+            [zh ? '复发' : 'Recontact', zh ? '用户就同一问题再次开启会话或工单。' : 'The user returned about the same problem in a new contact.', '—'],
+          ].map(([name, meaning, value]) => <tr key={String(name)}><td><strong>{String(name)}</strong></td><td>{String(meaning)}</td><td>{typeof value === 'number' ? value.toLocaleString() : String(value ?? '—')}</td></tr>)}</tbody></table></div>
+        </ReportPanel>
         {treePanel(t('source'), payload.scope)}{treePanel(zh ? '已稳定与待观察' : 'Settled and pending', payload.settled)}
         {treePanel(zh ? '比率分母' : 'Rate denominators', payload.rate_denominators)}
         {treePanel(t('auditNote'), payload.limits)}
@@ -358,26 +399,42 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     if (section === 'gaps') {
       const summary = object(payload.summary);
       const items = list(payload.items).map(object);
-      const visible = gapFamily === 'all' ? items : items.filter((item) => item.gap_family === gapFamily);
+      const visible = items.filter((item) => (gapFamily === 'all' || item.gap_family === gapFamily)
+        && (gapTopic === 'all' || item.topic === gapTopic));
+      const topics = [...new Set(items.map((item) => text(item.topic)))].sort();
+      const topicCounts = topics.map((topic) => ({ key: topic, label: topic, value: items.filter((item) => item.topic === topic).length }));
+      const families: Array<[string, string, number, string]> = [
+        ['knowledge', zh ? '知识缺口' : 'Knowledge gap', Number(summary.family_knowledge ?? 0), '#3269ae'],
+        ['action', zh ? '执行缺口' : 'Action gap', Number(summary.family_action ?? 0), '#ad7d39'],
+        ['both', zh ? '两者皆有' : 'Both', Number(summary.family_both ?? 0), '#8560a8'],
+        ['none', zh ? '无缺口' : 'No gap', Number(summary.family_none ?? 0), '#9aa3ae'],
+        ['undetermined', zh ? '未定' : 'Undetermined', Number(summary.family_undetermined ?? 0), '#d3d7dc'],
+      ];
       return <><p className={styles.lede}>{zh ? '知识缺口与自动化缺口按预计影响排序。点击下方缺口明细可查看判断依据和建议。' : 'Knowledge and automation gaps ranked by estimated impact. Open an item below for evidence and recommendations.'}</p>
         <MetricGrid><Metric label={t('gapItems')} value={items.length} tone="amber" onClick={() => open('gap_items', t('gapItems'), {})} />
-          <Metric label={zh ? '知识缺口候选' : 'Knowledge candidates'} value={Number(summary.family_knowledge ?? 0).toLocaleString()} />
-          <Metric label={zh ? '自动化缺口候选' : 'Automation candidates'} value={Number(summary.family_action ?? 0).toLocaleString()} /></MetricGrid>
-        <ReportPanel title={zh ? '优先处理的缺口' : 'Priority gaps'} description={zh ? '按覆盖旅程排序；点击条形或表格行查看证据和建议。' : 'Ranked by journeys covered. Open a bar or table row for evidence and recommendations.'}>
+          <Metric label={zh ? '可转化旅程' : 'Convertible journeys'} value={`${text(summary.journeys_lower)}–${text(summary.journeys_upper)}`} note={zh ? '上下界；重叠旅程仅计一次' : 'Lower–upper bound; overlaps counted once'} />
+          <Metric label={zh ? '可避免工单下界' : 'Tickets deflectable, lower'} value={Number(summary.tickets_deflectable_lower ?? 0).toLocaleString()} /></MetricGrid>
+        <ReportPanel title={zh ? '候选问题的判断结果' : 'Judgment of gap candidates'} description={zh ? '按候选诉求统计；与下方 159 个已整理的缺口项不是同一分母。' : 'Counts candidate requests; the 159 consolidated gap items below have a different denominator.'}>
+          <div className={styles.gapFamilies}>{families.map(([key,label,value,color]) => <div key={key}><span style={{ background: color }} /><strong>{label}</strong><b>{value.toLocaleString()}</b><small>{pct(Number(summary.candidates) ? value / Number(summary.candidates) : null)}</small></div>)}</div>
+        </ReportPanel>
+        <ReportPanel title={zh ? '各主题缺口项' : 'Gap items by topic'}><RankedBars rows={topicCounts} zh={zh} color="#6c5ad6" onSelect={(row) => setGapTopic(row.key ?? row.label)} /></ReportPanel>
+        <ReportPanel title={zh ? '缺口项排名' : 'Ranked gap items'} description={zh ? '按可转化旅程下界排序；点击条形或表格行查看判断依据和建议。' : 'Ranked by lower bound of convertible journeys. Open a bar or row for evidence and recommendations.'}>
           <div className={styles.inlineControls}><label>{zh ? '缺口类型' : 'Gap family'} <select className={styles.select} value={gapFamily} onChange={(event) => setGapFamily(event.target.value)}>
             <option value="all">{t('all')}</option><option value="knowledge">{zh ? '知识缺口' : 'Knowledge'}</option><option value="action">{zh ? '自动化缺口' : 'Automation'}</option>
-          </select></label><span>{visible.length.toLocaleString()} {zh ? '项' : 'items'}</span></div>
-          <RankedBars rows={visible.slice(0, 20).map((row) => ({ key: text(row.gap_id), label: text((zh ? row.title_zh : row.title_en) ?? row.key), value: Number(object(row.volume).journeys ?? 0), note: text(row.gap_family) }))}
+          </select></label><label>{zh ? '主题' : 'Topic'} <select className={styles.select} value={gapTopic} onChange={(event) => setGapTopic(event.target.value)}><option value="all">{t('all')}</option>{topics.map((topic) => <option key={topic} value={topic}>{topic}</option>)}</select></label>
+          <span>{visible.length.toLocaleString()} {zh ? '项' : 'items'}</span></div>
+          <RankedBars rows={visible.slice(0, 20).map((row) => ({ key: text(row.gap_id), label: text((zh ? row.title_zh : row.title_en) ?? row.key), value: Number(object(object(row.conversion).lower).journeys ?? 0), note: text(row.gap_family) }))}
             zh={zh} color="#6c5ad6" onSelect={(row) => open('gap_items', row.label, undefined, row.key)} />
           <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr>
-            <th>{zh ? '排名 / 缺口' : 'Rank / gap'}</th><th>{zh ? '类型' : 'Family'}</th><th>{zh ? '旅程' : 'Journeys'}</th><th>{zh ? '工单' : 'Tickets'}</th><th>{zh ? '可转化旅程区间' : 'Convertible journeys'}</th><th>{zh ? '验证状态' : 'Verification'}</th>
-          </tr></thead><tbody>{visible.map((row) => { const volume = object(row.volume); const conversion = object(row.conversion); return <tr key={text(row.gap_id)} className={styles.clickRow} role="button" tabIndex={0}
+            <th>{zh ? '排名 / 缺口' : 'Rank / gap'}</th><th>{zh ? '类型' : 'Family'}</th><th>{zh ? '旅程' : 'Journeys'}</th><th>{zh ? '可转化旅程' : 'Convertible'}</th><th>{zh ? '可避免工单' : 'Tickets deflectable'}</th><th>{zh ? '节省等待' : 'Wait avoided'}</th><th>{zh ? '验证状态' : 'Verification'}</th>
+          </tr></thead><tbody>{(showAllGaps ? visible : visible.slice(0,20)).map((row) => { const volume = object(row.volume); const conversion = object(row.conversion); const lower=object(conversion.lower);const upper=object(conversion.upper);return <tr key={text(row.gap_id)} className={styles.clickRow} role="button" tabIndex={0}
             onClick={() => open('gap_items', text((zh ? row.title_zh : row.title_en) ?? row.key), undefined, text(row.gap_id))}
             onKeyDown={(event) => { if (event.key === 'Enter') open('gap_items', text((zh ? row.title_zh : row.title_en) ?? row.key), undefined, text(row.gap_id)); }}>
             <td><strong>#{text(row.priority_rank)}</strong> {text((zh ? row.title_zh : row.title_en) ?? row.key)}</td><td>{row.gap_family === 'knowledge' ? (zh ? '知识' : 'Knowledge') : row.gap_family === 'action' ? (zh ? '自动化' : 'Automation') : text(row.gap_family)}</td>
-            <td>{Number(volume.journeys ?? 0).toLocaleString()}</td><td>{Number(volume.tickets ?? 0).toLocaleString()}</td>
-            <td>{text(object(conversion.lower).journeys)}–{text(object(conversion.upper).journeys)}</td><td>{text(row.verification_status)}</td>
+            <td>{Number(volume.journeys ?? 0).toLocaleString()}</td><td>{text(lower.journeys)}–{text(upper.journeys)}</td>
+            <td>{text(lower.tickets_deflected)}–{text(upper.tickets_deflected)}</td><td>{duration(lower.time_saved_sec)}–{duration(upper.time_saved_sec)}</td><td>{text(row.verification_status)}</td>
           </tr>; })}</tbody></table></div>
+          {visible.length > 20 && <button className={styles.moreButton} onClick={() => setShowAllGaps(!showAllGaps)}>{showAllGaps ? (zh ? '收起' : 'Show less') : (zh ? `显示全部 ${visible.length} 项` : `Show all ${visible.length} items`)}</button>}
         </ReportPanel>
         {treePanel(zh ? '缺口计算口径' : 'Gap calculations', payload.summary)}
       </>;
@@ -423,6 +480,11 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       const selectedPersona = filters.persona ?? '';
       const pattern = object(object(personaData.patterns)[selectedPersona]);
       const patternMatchesFilter = Object.keys(selectedFilters).every((name) => name === 'persona');
+      const criteria = list(object(object(payload.validation).previous).criteria).map(object);
+      const model = object(personaData.model);
+      const habitRows = list(model.habit_table).map(object).sort((a, b) => Number(b.agreement ?? 0) - Number(a.agreement ?? 0));
+      const criterionZh: Record<string, string> = { persistence: '画像是否稳定', to_human: '能否预测转人工', ai_solved: '能否预测 AI 解决',
+        order: '画像顺序是否稳定', baseline: '是否优于之前的画像', reformation: '重新形成是否一致' };
       return <>{!personas.length && treePanel(zh ? '画像暂不可用' : 'Personas unavailable', payload.unavailable)}
         <p className={styles.lede}>{zh ? '每张画像是一组有共同求助习惯的用户。点击画像，下面的用户明细会自动筛选。' : 'Each persona groups users with similar support habits. Select one to filter the users below.'}</p>
         <div className={styles.personaGrid}>{personas.map((persona) => <button key={text(persona.persona_id)}
@@ -441,6 +503,18 @@ export default function JourneyDashboard({ section }: { section: Section }) {
           <ReportPanel title={zh ? '画像特征与用户属性' : 'Features and attributes'}><Tree value={{ features: pattern.features, attributes: pattern.attributes, rules: personas.find((item) => item.persona_id === selectedPersona)?.rules }} zh={zh} /></ReportPanel>
           <ReportPanel title={zh ? '每周活跃' : 'Weekly activity'}><div className={styles.weekBars}>{list(object(pattern.weekly).journeys).map((value, i) => <div key={i} title={`${zh ? '第' : 'Week '}${i + 1}${zh ? '周' : ''}: ${text(value)}`} style={{ height: `${Math.max(3, Number(value) / Math.max(1, ...list(object(pattern.weekly).journeys).map(Number)) * 100)}%` }} />)}</div></ReportPanel>
         </div>}
+        {habitRows.length > 0 && <ReportPanel title={zh ? '哪些特征是习惯' : 'Which features are habits'} description={zh ? `比较同一用户奇数次与偶数次旅程中特征出现的比例；一致性达到 ${pct(object(model.habit_params).min_habit)} 算习惯。` : `Compare feature shares in each user's odd and even journeys. Agreement of at least ${pct(object(model.habit_params).min_habit)} counts as a habit.`}>
+          <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '特征' : 'Feature'}</th><th>{zh ? '类别' : 'Kind'}</th><th>{zh ? '旅程占比' : 'Journey share'}</th><th>{zh ? '一致性' : 'Agreement'}</th><th>{zh ? '使用情况' : 'Use'}</th></tr></thead><tbody>{habitRows.map((row) => <tr key={text(row.feature)}>
+            <td>{text(row.feature)}</td><td>{row.role === 'how' ? (zh ? '求助方式' : 'How') : (zh ? '诉求内容' : 'What')}</td><td>{pct(row.share_of_journeys)}</td><td>{pct(row.agreement)}</td>
+            <td>{row.kept ? (zh ? '用于画像模型' : 'Used in persona model') : row.copy_of ? `${zh ? '重复于' : 'Copy of'} ${text(row.copy_of)}` : (zh ? '未用于画像模型' : 'Not used in persona model')}</td>
+          </tr>)}</tbody></table></div>
+        </ReportPanel>}
+        {criteria.length > 0 && <ReportPanel title={zh ? '画像检验' : 'Persona validation'} description={zh ? '整份报告的画像模型检验；当前筛选不会改变这些模型级结果。' : 'Model-level checks for the full report; filters do not change these results.'}>
+          <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '检验' : 'Criterion'}</th><th>{zh ? '观测结果' : 'Observed'}</th><th>{zh ? '门槛' : 'Threshold'}</th><th>{zh ? '判定' : 'Verdict'}</th></tr></thead><tbody>{criteria.map((row) => <tr key={text(row.id)}>
+            <td>{zh ? criterionZh[text(row.id)] ?? text(row.id) : text(row.statement)}</td>
+            <td>{personaCriterionValue(row, zh)}</td>
+            <td>{zh ? PERSONA_THRESHOLDS_ZH[text(row.id)] ?? text(row.threshold) : text(row.threshold)}</td><td>{row.verdict === 'pass' ? (zh ? '通过' : 'Pass') : (zh ? '未通过' : 'Fail')}</td>
+          </tr>)}</tbody></table></div></ReportPanel>}
         {treePanel(zh ? '画像模型' : 'Persona model', personaData.model)}
         {treePanel(zh ? '画像验证' : 'Persona validation', payload.validation)}
         <EntityBrowser key={`users-${round}-${filterKey}-${selectedPersona}`} kind="users" round={round} zh={zh} title={t('users')} filters={activeFilters}
@@ -450,24 +524,13 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     }
     if (section === 'patterns') {
       const patterns = object(payload.patterns);
-      const candidates = object(patterns.candidates);
-      const rules = list(patterns.rules).map(object);
-      return <><p className={styles.lede}>{zh ? '查看重复需求、回访风险和已验证的规律；规则的验证结果与适用范围可在明细中检查。' : 'Explore repeated needs, return risk and verified patterns. Review evidence and scope in the full details.'}</p>
-        <MetricGrid><Metric label={zh ? '触达建议' : 'Suggested pushes'} value={Number(candidates.pushes ?? 0).toLocaleString()} tone="blue" />
-          <Metric label={t('users')} value={Number(candidates.users ?? 0).toLocaleString()} /><Metric label={zh ? '规则' : 'Rules'} value={rules.length} /></MetricGrid>
-        <ReportPanel title={zh ? '建议来源' : 'Suggestion sources'}><RankedBars rows={Object.entries(object(candidates.by_generator)).map(([label, value]) => ({ label, value: Number(value) }))} zh={zh} /></ReportPanel>
-        <ReportPanel title={zh ? '已发现的规律' : 'Discovered patterns'}><div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '条件' : 'Condition'}</th><th>{zh ? '生成方式' : 'Generator'}</th><th>{zh ? '验证结果' : 'Verdict'}</th><th>{zh ? '验证用户' : 'Confirmed users'}</th><th>{zh ? '回访率' : 'Return rate'}</th></tr></thead>
-          <tbody>{rules.map((rule, i) => <tr key={`${text(rule.condition)}-${i}`}><td>{text(rule.condition)}</td><td>{text(rule.generator)}</td><td>{text(rule.verdict)}</td><td>{text(object(rule.confirm).users)}</td><td>{pct(object(rule.confirm).rate)}</td></tr>)}</tbody></table></div></ReportPanel>
-        {treePanel(t('patterns'), payload.patterns)}</>;
+      return <><PatternsReport data={patterns} zh={zh} />{treePanel(t('patterns'), payload.patterns)}</>;
     }
-    return <><p className={styles.lede}>{zh ? '这里记录报告的校验结果、样本边界和解释限制，便于核对每个结论是否可靠。' : 'Review validation, coverage and interpretation limits behind each conclusion.'}</p>
-      <MetricGrid><Metric label={zh ? '审核类别' : 'Audit groups'} value={Object.keys(object(payload.quality)).length} />
-        <Metric label={zh ? '小样本阈值' : 'Small sample threshold'} value={Number(payload.small_sample_min ?? 0)} />
-        <Metric label={zh ? '渠道映射' : 'Channel mappings'} value={Object.keys(object(payload.channel_groups)).length} /></MetricGrid>
-      <ReportPanel title={zh ? '解释边界' : 'Interpretation limits'}><ol className={styles.limits}>{list(payload.limits).map((item, i) => <li key={i}>{text(item)}</li>)}</ol></ReportPanel>
+    return <><AuditReport data={payload} zh={zh} personaCount={Number(meta?.counts?.personas ?? 0)} gapCount={Number(meta?.counts?.gap_items ?? 0)} />
+      {treePanel(zh ? '完整范围数据' : 'Full scope data', payload.scope)}
+      {treePanel(zh ? '完整画像验证' : 'Full persona validation', payload.persona_validation)}
       {treePanel(t('auditNote'), payload.quality)}{treePanel(zh ? '门槛' : 'Thresholds', payload.thresholds)}
       {treePanel(zh ? '一致性' : 'Agreement', payload.agreement)}{treePanel(zh ? '工作量' : 'Workload', payload.workload)}
-      {treePanel(zh ? '解释边界' : 'Interpretation limits', payload.limits)}
       {treePanel(zh ? '目录' : 'Catalog', payload.catalog)}
       {treePanel(zh ? '渠道归并' : 'Channel grouping', payload.channel_groups)}
       {treePanel(zh ? '比率计数' : 'Rate counts', payload.rate_counts)}
