@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { DataDisclosure, FlowSummary, Funnel, JourneySankey, Lineage, Metric, MetricGrid, OutcomeLegend, RankedBars, ReportPanel, StackedBar, TimeSeries } from './ReportVisuals';
+import DrilldownDrawer, { type Drill } from './DrilldownDrawer';
 import styles from './JourneyDashboard.module.css';
 
 type Section = 'headline' | 'resolution' | 'gaps' | 'journey' | 'timeline' | 'persona' | 'patterns' | 'audit';
@@ -53,21 +54,23 @@ async function fetchJson<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function Card({ label, value, note }: { label: string; value: string | number; note?: string }) {
-  return <Metric label={label} value={value} note={note} />;
+function Card({ label, value, note, onClick }: { label: string; value: string | number; note?: string; onClick?: () => void }) {
+  return <Metric label={label} value={value} note={note} onClick={onClick} />;
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return <ReportPanel title={title}>{children}</ReportPanel>;
 }
 
-function CountTable({ title, rows, keyField, valueField, zh }: {
-  title: string; rows: JsonObject[]; keyField: string; valueField: string; zh: boolean;
+function CountTable({ title, rows, keyField, valueField, zh, onRow }: {
+  title: string; rows: JsonObject[]; keyField: string; valueField: string; zh: boolean; onRow?: (row: JsonObject) => void;
 }) {
   return <Panel title={title}><div className="overflow-x-auto"><table className="w-full text-left text-sm">
     <thead><tr className="border-b border-slate-200 text-xs text-slate-500 dark:border-slate-700"><th className="py-2">{zh ? '类型' : 'Type'}</th><th className="py-2 text-right">{zh ? '数量' : 'Count'}</th></tr></thead>
     <tbody>{rows.map((row, i) => { const code = text(row[keyField]); const names = JOURNEY_NAMES[code];
-      return <tr key={`${code}-${i}`} className="border-b border-slate-100 dark:border-slate-800">
+      return <tr key={`${code}-${i}`} className={`border-b border-slate-100 dark:border-slate-800 ${onRow ? styles.clickRow : ''}`}
+        onClick={() => onRow?.(row)} onKeyDown={(event) => { if (onRow && (event.key === 'Enter' || event.key === ' ')) onRow(row); }}
+        role={onRow ? 'button' : undefined} tabIndex={onRow ? 0 : undefined}>
         <td className="py-2" title={code}>{names ? names[zh ? 1 : 0] : code}</td>
         <td className="py-2 text-right font-semibold tabular-nums">{Number(row[valueField] ?? 0).toLocaleString()}</td>
       </tr>; })}</tbody></table></div></Panel>;
@@ -100,13 +103,13 @@ function Tree({ value, zh, level = 0 }: { value: unknown; zh: boolean; level?: n
     </div>)}</dl>;
 }
 
-function EntityBrowser({ kind, round, zh, title, relation, filters }: {
+function EntityBrowser({ kind, round, zh, title, relation, filters, onOpen }: {
   kind: Kind; round: string; zh: boolean; title: string; relation?: { key: string; value: string }; filters?: Record<string, string>;
+  onOpen: (drill: Drill) => void;
 }) {
   const t = useTranslations('OhlaJourney');
   const [page, setPage] = useState(0);
   const [data, setData] = useState<EntityPage | null>(null);
-  const [selected, setSelected] = useState<JsonObject | null>(null);
   const [pending, setPending] = useState(true);
   const relationKey = relation?.key;
   const relationValue = relation?.value;
@@ -123,11 +126,7 @@ function EntityBrowser({ kind, round, zh, title, relation, filters }: {
   }, [round, kind, page, relationKey, relationValue, filterKey]);
   const rows = data?.rows ?? [];
   const idField = ID_FIELD[kind];
-  const open = async (row: JsonObject) => {
-    const id = String(row[idField]);
-    try { setSelected(await fetchJson<JsonObject>(`reports/${encodeURIComponent(round)}/entities/${kind}/${encodeURIComponent(id)}`)); }
-    catch { setSelected(row); }
-  };
+  const open = (row: JsonObject) => onOpen({ kind, title: text(row.summary ?? row.title_zh ?? row.name_zh ?? row.topic ?? row[idField]), id: String(row[idField]) });
   return <Panel title={`${title}${data ? ` · ${data.total.toLocaleString()}` : ''}`}>
     {pending && <p className="text-sm text-slate-500">{t('loading')}</p>}
     {!pending && !rows.length && <p className="text-sm text-slate-500">{t('none')}</p>}
@@ -144,11 +143,6 @@ function EntityBrowser({ kind, round, zh, title, relation, filters }: {
       <span>{page + 1} / {Math.ceil(data.total / 25)}</span>
       <button disabled={(page + 1) * 25 >= data.total} onClick={() => setPage(page + 1)} className="rounded border px-3 py-1 disabled:opacity-40">{t('next')}</button>
     </div>}
-    {selected && <div className="mt-5 rounded-lg border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900 dark:bg-indigo-950/20">
-      <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">{t('details')} · {text(selected[idField])}</h3>
-        <button onClick={() => setSelected(null)} aria-label="Close details" className="rounded px-2 py-1 text-sm hover:bg-slate-200 dark:hover:bg-slate-800">×</button></div>
-      <Tree value={selected} zh={zh} />
-    </div>}
   </Panel>;
 }
 
@@ -162,6 +156,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
   const [error, setError] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [personaId, setPersonaId] = useState('');
+  const [drill, setDrill] = useState<Drill | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('ohla-journey-round');
@@ -191,8 +186,12 @@ export default function JourneyDashboard({ section }: { section: Section }) {
   const meta = versions.find((item) => item.round_id === round);
   const options = object(payload?.filter_options);
   const updateFilter = (key: string, value: string) => setFilters((current) => ({ ...current, [key]: value }));
-  const cards = (items: Array<[string, string | number, string?]>) => <MetricGrid columns={items.length === 6 ? 3 : 4}>
-    {items.map(([label, value, note]) => <Card key={label} label={label} value={value} note={note} />)}</MetricGrid>;
+  const open = (kind: Kind, title: string, query?: Record<string, string>, id?: string) => setDrill({ kind, title, query, id });
+  const selectedFilters = Object.fromEntries(Object.entries(activeFilters).filter(([, value]) => value));
+  const openJourneys = (title: string, detail: Record<string, string> = {}) => open('journeys', title, { ...selectedFilters, ...detail });
+  const openRequests = (title: string, detail: Record<string, string> = {}) => open('requests', title, { ...selectedFilters, ...detail });
+  const cards = (items: Array<[string, string | number, string?]>, onClick?: (index: number, label: string) => void) => <MetricGrid columns={items.length === 6 ? 3 : 4}>
+    {items.map(([label, value, note], index) => <Card key={label} label={label} value={value} note={note} onClick={onClick ? () => onClick(index, label) : undefined} />)}</MetricGrid>;
   const treePanel = (title: string, value: unknown) => value === undefined || value === null ? null :
     <DataDisclosure title={`${title} · ${zh ? '完整数据' : 'Full data'}`}><Tree value={value} zh={zh} /></DataDisclosure>;
 
@@ -203,9 +202,16 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       const headline = list(payload.headline);
       return <>
         <p className={styles.lede}>{zh ? '从原始活动段到用户画像，每一步都能追溯；点击侧栏查看各环节的结果与明细。' : 'Trace the analysis from activity segments to personas, then open each section for results and details.'}</p>
-        <Lineage scope={object(payload.scope)} zh={zh} personaCount={Number(meta?.counts?.personas ?? 0)} />
+        <Lineage scope={object(payload.scope)} zh={zh} personaCount={Number(meta?.counts?.personas ?? 0)}
+          onOpen={(kind) => open(kind, ({ requests: t('requests'), journeys: t('journeys'), users: t('users'), personas: t('personas') })[kind], {})} />
         {cards(headline.map((item) => { const row = list(item); const names = text(row[0]).split(' / ');
-          return [names[zh ? 1 : 0] ?? names[0], text(row[1]), row[2] ? headlineNote(text(row[2]), zh) : undefined]; }))}
+          return [names[zh ? 1 : 0] ?? names[0], text(row[1]), row[2] ? headlineNote(text(row[2]), zh) : undefined]; }),
+          (index, label) => {
+            if (index === 5) open('gap_items', label, {});
+            else if (index === 3) openJourneys(label, { escalated: '1' });
+            else if (index === 4) openJourneys(label, { recontacted: '1' });
+            else openJourneys(label, { resolution: index === 0 ? 'ai' : index === 1 ? 'human' : 'end_to_end', category: 'resolved' });
+          })}
         <p className={styles.note}>{zh ? `共分析 ${Number(lineage.journeys ?? 0).toLocaleString()} 条旅程；结果仍可能变化的旅程 ${Number(object(payload.settled).pending ?? 0).toLocaleString()} 条。` : `${Number(lineage.journeys ?? 0).toLocaleString()} journeys analysed; ${Number(object(payload.settled).pending ?? 0).toLocaleString()} outcomes remain pending.`}</p>
         {treePanel(t('source'), payload.scope)}{treePanel(zh ? '已稳定与待观察' : 'Settled and pending', payload.settled)}
         {treePanel(zh ? '比率分母' : 'Rate denominators', payload.rate_denominators)}
@@ -221,7 +227,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         <MetricGrid>{(['ai', 'human', 'end_to_end'] as const).map((key) => { const value = object(rates[key]);
           return <Metric key={key} label={key === 'end_to_end' ? t('endToEnd') : t(key)} value={pct(value.upper)}
             note={`${t('confirmed')}: ${pct(value.lower)} · ${text(value.denominator)} ${t('journeys')}`}
-            tone={key === 'human' ? 'green' : 'blue'} />; })}</MetricGrid>
+            tone={key === 'human' ? 'green' : 'blue'} onClick={() => openJourneys(key === 'end_to_end' ? t('endToEnd') : t(key), { resolution: key, category: 'resolved' })} />; })}</MetricGrid>
         <ReportPanel title={zh ? '解决结果构成' : 'Resolution composition'}><OutcomeLegend zh={zh} />
           <div className={styles.rateRows}>{(['ai', 'human', 'end_to_end'] as const).map((key) => { const value = object(rates[key]);
             const prefix = key === 'human' ? 'human' : 'ai';
@@ -231,45 +237,52 @@ export default function JourneyDashboard({ section }: { section: Section }) {
                 { key: 'delivered', value: Number(value.delivered ?? 0), color: prefix === 'human' ? '#8fd1a8' : '#86b6ef', label: zh ? '未证实' : 'Unconfirmed' },
                 { key: 'unknown', value: Number(value.unknown ?? 0), color: '#d6dae0', label: zh ? '无法判断' : 'Unknown' },
                 { key: 'unresolved', value: Number(value.unresolved ?? 0), color: '#b64a3c', label: zh ? '未解决' : 'Unresolved' },
-              ]} /><span>{pct(value.upper)}</span></div>; })}</div></ReportPanel>
+              ]} onPart={(part) => openJourneys(`${key === 'end_to_end' ? t('endToEnd') : t(key)} · ${part}`, { resolution: key, category: ({ confirmed: 'c', delivered: 'd', unknown: 'u', unresolved: 'x' })[part] ?? 'u' })} />
+              <span>{pct(value.upper)}</span></div>; })}</div></ReportPanel>
         <ReportPanel title={t('timing')} description={zh ? '日历时间；中位数与分位数只在有记录的样本上计算。' : 'Calendar time; percentiles use recorded observations.'}>
           <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '耗时指标' : 'Metric'}</th><th>{zh ? '样本' : 'N'}</th><th>{zh ? '中位数' : 'Median'}</th><th>P75</th><th>P90</th></tr></thead>
             <tbody>{timing.map((row) => <tr key={text(row.metric)}><td>{text(row.metric)}</td><td>{text(row.n)}</td><td>{text(row.median_sec)}s</td><td>{text(row.p75_sec)}s</td><td>{text(row.p90_sec)}s</td></tr>)}</tbody></table></div>
         </ReportPanel>
-        <ReportPanel title={zh ? '诉求结果' : 'Request outcomes'}><RankedBars rows={Object.entries(outcomes).map(([label, value]) => ({ label, value: Number(value) }))} zh={zh} /></ReportPanel>
+        <ReportPanel title={zh ? '诉求结果' : 'Request outcomes'}><RankedBars rows={Object.entries(outcomes).map(([label, value]) => ({ label, value: Number(value) }))} zh={zh}
+          onSelect={(row) => openRequests(`${zh ? '诉求结果' : 'Request outcome'} · ${row.label}`, { category: row.label })} /></ReportPanel>
         {treePanel(zh ? '已发布解决率明细' : 'Published resolution detail', payload.published_rates)}
         {treePanel(zh ? '已发布耗时明细' : 'Published timing detail', payload.published_time_stats)}
-        <EntityBrowser key={`requests-${round}-${filterKey}`} kind="requests" round={round} zh={zh} title={t('requests')} filters={activeFilters} />
+        <EntityBrowser key={`requests-${round}-${filterKey}`} kind="requests" round={round} zh={zh} title={t('requests')} filters={activeFilters} onOpen={setDrill} />
       </>;
     }
     if (section === 'gaps') {
       const summary = object(payload.summary);
       const items = list(payload.items).map(object);
       return <><p className={styles.lede}>{zh ? '知识缺口与自动化缺口按预计影响排序。点击下方缺口明细可查看判断依据和建议。' : 'Knowledge and automation gaps ranked by estimated impact. Open an item below for evidence and recommendations.'}</p>
-        <MetricGrid><Metric label={t('gapItems')} value={items.length} tone="amber" />
+        <MetricGrid><Metric label={t('gapItems')} value={items.length} tone="amber" onClick={() => open('gap_items', t('gapItems'), {})} />
           <Metric label={zh ? '知识缺口候选' : 'Knowledge candidates'} value={Number(summary.family_knowledge ?? 0).toLocaleString()} />
           <Metric label={zh ? '自动化缺口候选' : 'Automation candidates'} value={Number(summary.family_action ?? 0).toLocaleString()} /></MetricGrid>
         <ReportPanel title={zh ? '优先处理的缺口' : 'Priority gaps'} description={zh ? '条形长度表示覆盖旅程数；完整建议见下方明细。' : 'Bars show journeys covered; open the detail below for recommendations.'}>
-          <RankedBars rows={items.map((row) => ({ label: text((zh ? row.title_zh : row.title_en) ?? row.key), value: Number(object(row.volume).journeys ?? 0), note: text(row.gap_family) }))} zh={zh} color="#6c5ad6" />
+          <RankedBars rows={items.map((row) => ({ key: text(row.gap_id), label: text((zh ? row.title_zh : row.title_en) ?? row.key), value: Number(object(row.volume).journeys ?? 0), note: text(row.gap_family) }))}
+            zh={zh} color="#6c5ad6" onSelect={(row) => open('gap_items', row.label, undefined, row.key)} />
         </ReportPanel>
         {treePanel(zh ? '缺口计算口径' : 'Gap calculations', payload.summary)}
-        <EntityBrowser kind="gap_items" round={round} zh={zh} title={t('gapItems')} />
+        <EntityBrowser kind="gap_items" round={round} zh={zh} title={t('gapItems')} onOpen={setDrill} />
       </>;
     }
     if (section === 'journey') return <><p className={styles.lede}>{zh ? '从入口到路径再到结果，色彩对应解决结果。每条旅程只计入一条路径。' : 'From entry through path to outcome. Colours indicate resolution; each journey has one path.'}</p>
-      {payload.flow ? <ReportPanel title={t('flow')}><JourneySankey flow={payload.flow} zh={zh} />
+      {payload.flow ? <ReportPanel title={t('flow')}><JourneySankey flow={payload.flow} zh={zh}
+        onSelect={(query, title) => openJourneys(title, query)} />
         <DataDisclosure title={zh ? '按路径查看流量' : 'Flow by path'}><FlowSummary flow={payload.flow} zh={zh} /></DataDisclosure></ReportPanel> : null}
-      <CountTable title={zh ? '旅程类型' : 'Journey types'} rows={list(payload.types).map(object)} keyField="journey_type" valueField="n" zh={zh} />
+      <CountTable title={zh ? '旅程类型' : 'Journey types'} rows={list(payload.types).map(object)} keyField="journey_type" valueField="n" zh={zh}
+        onRow={(row) => openJourneys(text(JOURNEY_NAMES[text(row.journey_type)]?.[zh ? 1 : 0] ?? row.journey_type), { path: text(row.journey_type) })} />
       {list(payload.funnels).map((item) => { const funnel = object(item); return <ReportPanel key={text(funnel.funnel_id)} title={`${zh ? '旅程漏斗' : 'Journey funnel'} · ${text(funnel.funnel_id)}`}>
         <Funnel stages={list(funnel.stages)} zh={zh} /></ReportPanel>; })}
-      <EntityBrowser key={`journeys-${round}-${filterKey}`} kind="journeys" round={round} zh={zh} title={t('journeys')} filters={activeFilters} />
-      <EntityBrowser key={`units-${round}-${filterKey}`} kind="units" round={round} zh={zh} title={t('units')} filters={activeFilters} /></>;
+      <EntityBrowser key={`journeys-${round}-${filterKey}`} kind="journeys" round={round} zh={zh} title={t('journeys')} filters={activeFilters} onOpen={setDrill} />
+      <EntityBrowser key={`units-${round}-${filterKey}`} kind="units" round={round} zh={zh} title={t('units')} filters={activeFilters} onOpen={setDrill} /></>;
     if (section === 'timeline') {
       const daily = list(payload.daily).map(object);
       const bursts = list(object(payload.timeline).bursts).map(object);
       return <><p className={styles.lede}>{zh ? '观察旅程数量随时间变化；异常波峰显示高于基线的主题。' : 'See how journey volume changes over time and which topics exceed the baseline.'}</p>
-        <ReportPanel title={t('daily')}><TimeSeries rows={daily.map((row) => ({ day: Number(row.day), journeys: Number(row.journeys) }))} zh={zh} /></ReportPanel>
-        {bursts.length > 0 && <ReportPanel title={zh ? '异常波峰' : 'Bursts'}><RankedBars rows={bursts.map((row) => ({ label: `${text(row.topic)} · ${zh ? '第' : 'day '}${text(row.day)}${zh ? '天' : ''}`, value: Number(row.n) }))} zh={zh} color="#df9f39" /></ReportPanel>}
+        <ReportPanel title={t('daily')}><TimeSeries rows={daily.map((row) => ({ day: Number(row.day), journeys: Number(row.journeys) }))} zh={zh}
+          onSelect={(day) => openJourneys(`${zh ? '第' : 'Day '}${day}${zh ? '天' : ''}`, { day: String(day) })} /></ReportPanel>
+        {bursts.length > 0 && <ReportPanel title={zh ? '异常波峰' : 'Bursts'}><RankedBars rows={bursts.map((row) => ({ key: `${text(row.topic)}|${text(row.day)}`, label: `${text(row.topic)} · ${zh ? '第' : 'day '}${text(row.day)}${zh ? '天' : ''}`, value: Number(row.n) }))}
+          zh={zh} color="#df9f39" onSelect={(row) => { const [topic, day] = text(row.key).split('|'); openJourneys(row.label, { topic, day }); }} /></ReportPanel>}
         {treePanel(t('timing'), payload.timing)}</>;
     }
     if (section === 'persona') {
@@ -278,7 +291,8 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       return <>{!personas.length && treePanel(zh ? '画像暂不可用' : 'Personas unavailable', payload.unavailable)}
         <p className={styles.lede}>{zh ? '每张画像是一组有共同求助习惯的用户。点击画像，下面的用户明细会自动筛选。' : 'Each persona groups users with similar support habits. Select one to filter the users below.'}</p>
         <div className={styles.personaGrid}>{personas.map((persona) => <button key={text(persona.persona_id)}
-          onClick={() => setPersonaId(text(persona.persona_id))}
+          onClick={() => { const id = text(persona.persona_id); setPersonaId(id); updateFilter('persona', id);
+            open('users', text(zh ? persona.name_zh : persona.name_en), { ...selectedFilters, persona: id, persona_id: id }); }}
           className={`${styles.personaCard} ${personaId === persona.persona_id ? styles.selected : ''}`}>
           <span className={styles.personaId}>{text(persona.persona_id)}</span><div className={styles.personaName}>{text(zh ? persona.name_zh : persona.name_en)}</div>
           <div className={styles.personaDescription}>{text(zh ? persona.description_zh : persona.description_en)}</div>
@@ -287,8 +301,8 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         {treePanel(zh ? '画像模型' : 'Persona model', personaData.model)}
         {treePanel(zh ? '画像验证' : 'Persona validation', payload.validation)}
         <EntityBrowser key={`users-${round}-${filterKey}-${personaId}`} kind="users" round={round} zh={zh} title={t('users')} filters={activeFilters}
-          relation={personaId ? { key: 'persona_id', value: personaId } : undefined} />
-        <EntityBrowser kind="personas" round={round} zh={zh} title={t('personas')} />
+          relation={personaId ? { key: 'persona_id', value: personaId } : undefined} onOpen={setDrill} />
+        <EntityBrowser kind="personas" round={round} zh={zh} title={t('personas')} onOpen={setDrill} />
       </>;
     }
     if (section === 'patterns') {
@@ -343,7 +357,10 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     </div>}
     {round && !payload && !error && <p>{t('loading')}</p>}
     {error && versions.length > 0 && <Panel title={t('title')}><p>{t('error')}</p></Panel>}
-    {payload && <>{section !== 'headline' && <div className={styles.selection}>{t('requests')} <strong>{Number(object(payload.selection).requests ?? 0).toLocaleString()}</strong>
-      <span>·</span>{t('journeys')} <strong>{Number(object(payload.selection).journeys ?? 0).toLocaleString()}</strong></div>}{renderSection()}</>}
+    {payload && <>{section !== 'headline' && <div className={styles.selection}>
+      <button onClick={() => openRequests(t('requests'))}>{t('requests')} <strong>{Number(object(payload.selection).requests ?? 0).toLocaleString()}</strong></button>
+      <span>·</span><button onClick={() => openJourneys(t('journeys'))}>{t('journeys')} <strong>{Number(object(payload.selection).journeys ?? 0).toLocaleString()}</strong></button>
+      </div>}{renderSection()}</>}
+    {drill && round && <DrilldownDrawer key={`${round}-${drill.kind}-${drill.id ?? ''}-${JSON.stringify(drill.query ?? {})}`} round={round} initial={drill} zh={zh} onClose={() => setDrill(null)} />}
   </main>;
 }

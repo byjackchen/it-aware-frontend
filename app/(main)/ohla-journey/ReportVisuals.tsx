@@ -13,9 +13,10 @@ export function ReportPanel({ title, description, children }: { title: string; d
   return <section className={styles.panel}><div className={styles.panelHead}><h2>{title}</h2>{description && <p>{description}</p>}</div>{children}</section>;
 }
 
-export function Metric({ label, value, note, tone }: { label: string; value: string | number; note?: string; tone?: 'blue' | 'green' | 'amber' | 'red' }) {
-  return <div className={`${styles.metric} ${tone ? styles[tone] : ''}`}><span className={styles.metricLabel}>{label}</span>
-    <strong>{value}</strong>{note && <small>{note}</small>}</div>;
+export function Metric({ label, value, note, tone, onClick }: { label: string; value: string | number; note?: string; tone?: 'blue' | 'green' | 'amber' | 'red'; onClick?: () => void }) {
+  const content = <><span className={styles.metricLabel}>{label}</span><strong>{value}</strong>{note && <small>{note}</small>}</>;
+  const className = `${styles.metric} ${tone ? styles[tone] : ''} ${onClick ? styles.clickable : ''}`;
+  return onClick ? <button type="button" className={className} onClick={onClick}>{content}</button> : <div className={className}>{content}</div>;
 }
 
 export function MetricGrid({ children, columns = 3 }: { children: React.ReactNode; columns?: 3 | 4 | 6 }) {
@@ -53,20 +54,25 @@ export function OutcomeLegend({ zh }: { zh: boolean }) {
     <i style={{ background: outcomeColors[key] }} />{names[zh ? 1 : 0]}</span>)}</div>;
 }
 
-export function StackedBar({ parts }: { parts: Array<{ key: string; value: number; color: string; label?: string }> }) {
+export function StackedBar({ parts, onPart }: { parts: Array<{ key: string; value: number; color: string; label?: string }>; onPart?: (key: string) => void }) {
   const total = parts.reduce((sum, part) => sum + part.value, 0);
   return <div className={styles.stack} role="img" aria-label={parts.map((part) => `${part.label ?? part.key}: ${formatted(part.value)}`).join(', ')}>
-    {parts.filter((part) => part.value > 0).map((part) => <span key={part.key} title={`${part.label ?? part.key}: ${formatted(part.value)}`}
+    {parts.filter((part) => part.value > 0).map((part) => onPart ? <button type="button" key={part.key} title={`${part.label ?? part.key}: ${formatted(part.value)}`}
+      aria-label={`${part.label ?? part.key}: ${formatted(part.value)}`} onClick={() => onPart(part.key)}
+      style={{ width: `${total ? 100 * part.value / total : 0}%`, background: part.color }} /> : <span key={part.key} title={`${part.label ?? part.key}: ${formatted(part.value)}`}
       style={{ width: `${total ? 100 * part.value / total : 0}%`, background: part.color }} />)}</div>;
 }
 
-export function RankedBars({ rows, zh, limit = 12, color = '#2f5fc4' }: {
-  rows: Array<{ label: string; value: number; note?: string }>; zh: boolean; limit?: number; color?: string;
+export function RankedBars({ rows, zh, limit = 12, color = '#2f5fc4', onSelect }: {
+  rows: Array<{ label: string; value: number; note?: string; key?: string }>; zh: boolean; limit?: number; color?: string;
+  onSelect?: (row: { label: string; value: number; note?: string; key?: string }, index: number) => void;
 }) {
   const [all, setAll] = React.useState(false);
   const sorted = [...rows].sort((a, b) => b.value - a.value);
   const max = Math.max(1, ...sorted.map((row) => row.value));
-  return <><div className={styles.ranks}>{(all ? sorted : sorted.slice(0, limit)).map((row, i) => <div className={styles.rank} key={`${row.label}-${i}`}>
+  return <><div className={styles.ranks}>{(all ? sorted : sorted.slice(0, limit)).map((row, i) => <div className={`${styles.rank} ${onSelect ? styles.clickable : ''}`} key={`${row.label}-${i}`}
+    role={onSelect ? 'button' : undefined} tabIndex={onSelect ? 0 : undefined} onClick={() => onSelect?.(row, i)}
+    onKeyDown={(event) => { if (onSelect && (event.key === 'Enter' || event.key === ' ')) onSelect(row, i); }}>
     <div className={styles.rankLabel} title={row.label}>{row.label}</div><div className={styles.rankTrack}>
       <div style={{ width: `${Math.max(1, row.value / max * 100)}%`, background: color }} /></div>
     <strong>{formatted(row.value)}</strong>{row.note && <small>{row.note}</small>}</div>)}</div>
@@ -74,17 +80,19 @@ export function RankedBars({ rows, zh, limit = 12, color = '#2f5fc4' }: {
   </>;
 }
 
-export function Funnel({ stages, zh }: { stages: unknown[]; zh: boolean }) {
+export function Funnel({ stages, zh, onSelect }: { stages: unknown[]; zh: boolean; onSelect?: (stage: RecordValue) => void }) {
   const rows = stages.map(asObject);
   const max = Math.max(1, ...rows.map((row) => number(row.n)));
-  return <div className={styles.funnel}>{rows.map((row, i) => <div className={styles.funnelRow} key={String(row.stage_id ?? i)}>
+  return <div className={styles.funnel}>{rows.map((row, i) => <div className={`${styles.funnelRow} ${onSelect ? styles.clickable : ''}`} key={String(row.stage_id ?? i)}
+    role={onSelect ? 'button' : undefined} tabIndex={onSelect ? 0 : undefined} onClick={() => onSelect?.(row)}
+    onKeyDown={(event) => { if (onSelect && (event.key === 'Enter' || event.key === ' ')) onSelect(row); }}>
     <span className={styles.stage}>{String((zh ? row.label_zh : row.label_en) ?? row.stage_id ?? '')}</span>
     <div className={styles.funnelTrack}><div style={{ width: `${Math.max(1, number(row.n) / max * 100)}%` }} /></div>
     <strong>{formatted(row.n)}</strong><small>{typeof row.pct === 'number' ? `${(row.pct * 100).toFixed(1)}%` : '—'}</small>
   </div>)}</div>;
 }
 
-export function TimeSeries({ rows, zh }: { rows: Array<{ day: number; journeys: number }>; zh: boolean }) {
+export function TimeSeries({ rows, zh, onSelect }: { rows: Array<{ day: number; journeys: number }>; zh: boolean; onSelect?: (day: number) => void }) {
   const values = [...rows].sort((a, b) => a.day - b.day);
   if (!values.length) return <p>{zh ? '没有时间线数据' : 'No timeline data'}</p>;
   const max = Math.max(1, ...values.map((row) => row.journeys));
@@ -95,7 +103,11 @@ export function TimeSeries({ rows, zh }: { rows: Array<{ day: number; journeys: 
     {[0, .5, 1].map((fraction) => <g key={fraction}><line x1={left} x2={width-right} y1={y(max*fraction)} y2={y(max*fraction)} stroke="#e3e6ea" />
       <text x={left-6} y={y(max*fraction)+4} textAnchor="end" fill="#667080" fontSize="11">{Math.round(max*fraction)}</text></g>)}
     <polyline fill="none" stroke="#2f5fc4" strokeWidth="2" strokeLinejoin="round" points={values.map((row,i) => `${x(i)},${y(row.journeys)}`).join(' ')} />
-    {values.map((row,i) => <circle key={row.day} cx={x(i)} cy={y(row.journeys)} r="2" fill="#2f5fc4"><title>{zh ? '第' : 'Day '}{row.day}{zh ? '天' : ''}: {row.journeys}</title></circle>)}
+    {values.map((row,i) => <circle key={row.day} cx={x(i)} cy={y(row.journeys)} r={onSelect ? '4' : '2'} fill="#2f5fc4"
+      className={onSelect ? styles.chartPoint : ''} tabIndex={onSelect ? 0 : undefined} role={onSelect ? 'button' : undefined}
+      aria-label={onSelect ? `${zh ? '第' : 'Day '}${row.day}${zh ? '天' : ''}: ${row.journeys} ${zh ? '条旅程' : 'journeys'}` : undefined}
+      onClick={() => onSelect?.(row.day)} onKeyDown={(event) => { if (onSelect && (event.key === 'Enter' || event.key === ' ')) onSelect(row.day); }}>
+      <title>{zh ? '第' : 'Day '}{row.day}{zh ? '天' : ''}: {row.journeys}</title></circle>)}
     <text x={left} y={height-5} fill="#667080" fontSize="11">{zh ? '第 0 天' : 'Day 0'}</text>
     <text x={width-right} y={height-5} textAnchor="end" fill="#667080" fontSize="11">{zh ? `第 ${values.at(-1)?.day} 天` : `Day ${values.at(-1)?.day}`}</text>
   </svg></div>;
@@ -127,7 +139,7 @@ const journeyNames: Record<string, [string, string]> = {
   MULTI_TICKET: ['Multiple tickets', '多次建单'],
 };
 
-export function JourneySankey({ flow, zh }: { flow: unknown; zh: boolean }) {
+export function JourneySankey({ flow, zh, onSelect }: { flow: unknown; zh: boolean; onSelect?: (query: Record<string, string>, title: string) => void }) {
   const [selected, setSelected] = React.useState('');
   const rows = asList(asObject(flow).flows).map(asObject).filter((row) => number(row.n) > 0);
   const total = rows.reduce((sum, row) => sum + number(row.n), 0);
@@ -172,8 +184,9 @@ export function JourneySankey({ flow, zh }: { flow: unknown; zh: boolean }) {
     };
     const outcome = String(row.outcome);
     const title = `${String(row.entry)} → ${journeyNames[String(row.path)]?.[zh ? 1 : 0] ?? row.path} → ${outcomeNames[outcome]?.[zh ? 1 : 0] ?? outcome}: ${formatted(row.n)}`;
+    const activate = () => { setSelected(title); onSelect?.({ entry: String(row.entry), path: String(row.path), outcome }, title); };
     return <g key={i} className={styles.ribbon} fill={outcomeColors[outcome] ?? '#8892a0'} tabIndex={0} role="button"
-      aria-label={title} onClick={() => setSelected(title)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelected(title); }}><title>{title}</title>
+      aria-label={title} onClick={activate} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') activate(); }}><title>{title}</title>
       <path d={shape(170, a, 450, b)} opacity={String(row.entry) === 'bot' && !outcome.startsWith('ai_') ? .48 : .72} />
       <path d={shape(460, b, 750, c)} opacity=".76" /></g>;
   });
@@ -181,7 +194,11 @@ export function JourneySankey({ flow, zh }: { flow: unknown; zh: boolean }) {
     const node = positions[stage].get(code); if (!node || !node.h) return null;
     const label = stage === 'entry' ? (code === 'bot' ? (zh ? '机器人入口' : 'Bot entry') : code === 'ticket_direct' ? (zh ? '直接建单' : 'Direct ticket') : code)
       : stage === 'path' ? journeyNames[code]?.[zh ? 1 : 0] ?? code : outcomeNames[code]?.[zh ? 1 : 0] ?? code;
-    return <g key={`${stage}-${code}`}><rect x={x} y={node.y} width="10" height={Math.max(.5,node.h)} rx="2" fill={stage === 'outcome' ? outcomeColors[code] : '#4a525c'} />
+    const filter: Record<string, string> = stage === 'entry' ? { entry: code } : stage === 'path' ? { path: code } : { outcome: code };
+    const activate = () => onSelect?.(filter, `${label} · ${formatted(byStage[stage].get(code))}`);
+    return <g key={`${stage}-${code}`} className={onSelect ? styles.nodeClick : ''} role={onSelect ? 'button' : undefined} tabIndex={onSelect ? 0 : undefined}
+      onClick={activate} onKeyDown={(event) => { if (onSelect && (event.key === 'Enter' || event.key === ' ')) activate(); }}>
+      <rect x={x} y={node.y} width="10" height={Math.max(.5,node.h)} rx="2" fill={stage === 'outcome' ? outcomeColors[code] : '#4a525c'} />
       <text x={stage === 'outcome' ? x+17 : x-8} y={node.y + Math.max(8,node.h/2)+4} textAnchor={stage === 'outcome' ? 'start' : 'end'} fontSize="12" fill="currentColor">{label} · {formatted(byStage[stage].get(code))}</text></g>;
   });
   return <><OutcomeLegend zh={zh} /><div className={styles.sankeyWrap}><svg viewBox={`0 0 1050 ${chartHeight}`} role="img" aria-label={zh ? '旅程从入口到路径再到结果的流向图' : 'Journey flow from entry through path to outcome'}>
