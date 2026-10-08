@@ -7,6 +7,9 @@
  */
 
 export const PERMISSIONS = {
+  DASHBOARDS: {
+    OHLA_JOURNEY_READ: 'dashboards:ohla_journey:read',
+  },
   // UI Navigation permissions
   UI: {
     NAVIGATION_DEFAULT: 'ui:navigation:default',
