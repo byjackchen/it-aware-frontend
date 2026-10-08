@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming } from './report-view';
+import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming, reportWindowDays } from './report-view';
 
 const catalog = {
   topics: [{ code: 'NET_CONNECTIVITY', name_en: 'Network › Network Issue', name_zh: '网络 › 网络问题' }],
@@ -27,8 +27,18 @@ describe('Ohla report display values', () => {
       { topic: 'A', gap_family: 'knowledge' }, { topic: 'A', gap_family: 'action' },
       { topic: 'A', gap_family: 'knowledge' }, { topic: 'B', gap_family: 'action' },
     ])).toEqual([
-      { topic: 'A', knowledge: 2, action: 1, total: 3 },
-      { topic: 'B', knowledge: 0, action: 1, total: 1 },
+      { topic: 'A', knowledge: 2, action: 1, other: 0, total: 3 },
+      { topic: 'B', knowledge: 0, action: 1, other: 0, total: 1 },
     ]);
+  });
+
+  it('keeps unclassified historical gap items visible in the topic total', () => {
+    expect(gapTopicCounts([{ topic: 'A', gap_family: 'knowledge' }, { topic: 'A', gap_family: 'legacy' }]))
+      .toEqual([{ topic: 'A', knowledge: 1, action: 0, other: 1, total: 2 }]);
+  });
+
+  it('derives timeline days from the selected report window, including short reports', () => {
+    expect(reportWindowDays('2026-04-01T00:00:00+08:00', '2026-04-08T00:00:00+08:00')).toBe(7);
+    expect(reportWindowDays('2026-04-01T00:00:00+08:00', '2026-04-02T00:00:00+08:00')).toBe(1);
   });
 });

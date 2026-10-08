@@ -112,6 +112,7 @@ export function TopBar() {
       icon: Gauge,
       permissions: requireAnyPermission([
         PERMISSIONS.UI.NAVIGATION_OPERATION,
+        PERMISSIONS.DASHBOARDS.OHLA_JOURNEY_READ,
       ]),
     },
     {
