@@ -40,6 +40,30 @@ function RecurrenceFigure({ rows, zh }: { rows: Obj[]; zh: boolean }) {
   </div>;
 }
 
+function RuleLiftFigure({ rules, zh }: { rules: Obj[]; zh: boolean }) {
+  const held = rules.filter((rule) => rule.verdict === 'held' && Number(obj(rule.derive).lift) > 0 && Number(obj(rule.confirm).lift) > 0);
+  const left=310, right=28, width=960, rowHeight=18, top=32, height=top+held.length*rowHeight+24;
+  const max=Math.max(20,...held.flatMap((rule)=>[Number(obj(rule.derive).lift),Number(obj(rule.confirm).lift)]));
+  const x=(value:number)=>left+(Math.log(Math.max(1,value))/Math.log(max))*(width-left-right);
+  return <div className={styles.chartScroll}><svg className={styles.liftChart} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={zh?'成立规律在发现期和复核期的提升倍数':'Held rules: lift at discovery and confirmation'}>
+    {[1,2,5,10,20].filter((tick)=>tick<=max).map((tick)=><g key={tick}><line x1={x(tick)} x2={x(tick)} y1={top-8} y2={height-10} stroke="#d9dee7" strokeOpacity=".35"/><text x={x(tick)} y="15" textAnchor="middle">×{tick}</text></g>)}
+    {held.map((rule,i)=>{const y=top+i*rowHeight;const derive=Number(obj(rule.derive).lift),confirm=Number(obj(rule.confirm).lift);
+      const label=`${name(rule.condition)} → ${name(rule.need)}`;return <g key={`${label}-${i}`}><title>{label} · ${zh?'发现':'found'} ×${derive.toFixed(1)} · ${zh?'复核':'checked'} ×${confirm.toFixed(1)}</title>
+        <text x="0" y={y+4}>{label.length>44?`${label.slice(0,41)}…`:label}</text><line x1={x(derive)} x2={x(confirm)} y1={y} y2={y} stroke="#7d94bb" strokeWidth="2"/>
+        <circle cx={x(derive)} cy={y} r="3.5" fill="#88aee4"/><circle cx={x(confirm)} cy={y} r="4" fill="#234f9b"/></g>;})}
+  </svg></div>;
+}
+
+function BacktestFigure({ backtest, zh }: { backtest: Obj; zh: boolean }) {
+  const objectives=obj(backtest.objectives);
+  const comparison=['50','200'].flatMap((size)=>['rate','value'].map((objective)=>({size,objective,row:obj(obj(obj(objectives[objective]).top_per_cutoff)[size])})));
+  return <div className={styles.backtestBars}>{comparison.map(({size,objective,row})=><div key={`${size}-${objective}`}>
+    <span>{zh?`每期前 ${size} 条 · ${objective==='rate'?'按应验率':'按可省人工'}`:`Top ${size} per cutoff · by ${objective==='rate'?'rate':'value'}`}</span>
+    <div className={styles.backtestTrack}><i style={{width:`${Math.max(0,Math.min(100,100*Number(row.precision??0)))}%`}}/></div>
+    <strong>{percent(row.precision)}</strong><small>{zh?'每百次人工':'Human / 100'} {name(row.human_per_100)} ({count(row.human_resolved)})</small>
+  </div>)}</div>;
+}
+
 export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean }) {
   const needs = obj(data.needs);
   const recurrence = arr(data.recurrence);
@@ -92,6 +116,8 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
     <ReportPanel title={zh ? '从数据中发现的规律' : 'Rules found in the data'} description={zh ? '按验证结果、规则来源筛选；展开每行查看训练与复核证据。' : 'Filter by verdict and generator; expand a row for derivation and confirmation evidence.'}>
       <div className={styles.pair}><div><strong>{zh ? '按来源：检验数量' : 'Tested by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).tested??0)}))} zh={zh} /></div>
         <div><strong>{zh ? '按来源：复核成立' : 'Held by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).held??0)}))} zh={zh} /></div></div>
+      <h3 className={styles.subheading}>{zh?'复核成立的规律 · 发现期与复核期提升倍数':'Rules that held · lift when found and checked'}</h3>
+      <RuleLiftFigure rules={rules} zh={zh} />
       <div className={styles.controls}><label>{zh ? '验证结果' : 'Verdict'} <select value={ruleVerdict} onChange={(event) => setRuleVerdict(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option><option value="held">{zh ? '成立' : 'Held'}</option><option value="not held">{zh ? '未成立' : 'Not held'}</option></select></label>
         <label>{zh ? '生成方式' : 'Generator'} <select value={ruleGenerator} onChange={(event) => setRuleGenerator(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option>
           {[...new Set(rules.map((row) => name(row.generator)))].sort().map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
@@ -113,6 +139,7 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
 
     <ReportPanel title={zh ? '两种排序的回测' : 'Two orders, backtested'} description={zh ? '按命中率或预期价值选择排序目标；每轮取前 50 / 200 条。' : 'Select precision or expected value as the ranking objective; compare top 50 and 200 per cutoff.'}>
       <div className={styles.controls}><label>{zh ? '排序目标' : 'Objective'} <select value={objective} onChange={(event) => setObjective(event.target.value)}><option value="rate">{zh ? '命中率' : 'Precision'}</option><option value="value">{zh ? '预期价值' : 'Expected value'}</option></select></label></div>
+      <BacktestFigure backtest={backtest} zh={zh} />
       <RankedBars rows={Object.entries(obj(test.top_per_cutoff)).map(([label,value])=>({label:`top ${label}`,value:Number(obj(value).came_true??0)}))} zh={zh} />
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '范围' : 'Scope'}</th><th>{zh ? '推送' : 'Pushes'}</th><th>{zh ? '实际再来' : 'Returned'}</th><th>{zh ? '命中率' : 'Precision'}</th><th>{zh ? '预计节省' : 'Expected saved'}</th><th>{zh ? '每百次人工' : 'Human / 100'}</th></tr></thead>
         <tbody>{[['all',test.all],...Object.entries(obj(test.top_per_cutoff)).map(([key,value]) => [`top ${key}`,value])].map(([label,value]) => { const row=obj(value);return <tr key={name(label)}><td>{name(label)}</td><td>{count(row.pushes)}</td><td>{count(row.came_true)}</td><td>{percent(row.precision)}</td><td>{name(row.expected_saved)}</td><td>{name(row.human_per_100)}</td></tr>; })}</tbody></table></div>
