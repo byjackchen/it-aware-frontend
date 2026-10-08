@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Metric, MetricGrid, RankedBars, ReportPanel } from './ReportVisuals';
+import { catalogText } from '@/lib/ohla-journey/report-view';
 import styles from './PatternsReport.module.css';
 
 type Obj = Record<string, unknown>;
@@ -40,7 +41,7 @@ function RecurrenceFigure({ rows, zh }: { rows: Obj[]; zh: boolean }) {
   </div>;
 }
 
-function RuleLiftFigure({ rules, zh }: { rules: Obj[]; zh: boolean }) {
+function RuleLiftFigure({ rules, catalog, zh }: { rules: Obj[]; catalog: Obj; zh: boolean }) {
   const held = rules.filter((rule) => rule.verdict === 'held' && Number(obj(rule.derive).lift) > 0 && Number(obj(rule.confirm).lift) > 0);
   const left=310, right=28, width=960, rowHeight=18, top=32, height=top+held.length*rowHeight+24;
   const max=Math.max(20,...held.flatMap((rule)=>[Number(obj(rule.derive).lift),Number(obj(rule.confirm).lift)]));
@@ -48,7 +49,7 @@ function RuleLiftFigure({ rules, zh }: { rules: Obj[]; zh: boolean }) {
   return <div className={styles.chartScroll}><svg className={styles.liftChart} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={zh?'成立规律在发现期和复核期的提升倍数':'Held rules: lift at discovery and confirmation'}>
     {[1,2,5,10,20].filter((tick)=>tick<=max).map((tick)=><g key={tick}><line x1={x(tick)} x2={x(tick)} y1={top-8} y2={height-10} stroke="#d9dee7" strokeOpacity=".35"/><text x={x(tick)} y="15" textAnchor="middle">×{tick}</text></g>)}
     {held.map((rule,i)=>{const y=top+i*rowHeight;const derive=Number(obj(rule.derive).lift),confirm=Number(obj(rule.confirm).lift);
-      const label=`${name(rule.condition)} → ${name(rule.need)}`;return <g key={`${label}-${i}`}><title>{label} · ${zh?'发现':'found'} ×${derive.toFixed(1)} · ${zh?'复核':'checked'} ×${confirm.toFixed(1)}</title>
+      const label=`${catalogText(rule.condition,catalog,zh)} → ${catalogText(rule.need,catalog,zh)}`;return <g key={`${label}-${i}`}><title>{label} · ${zh?'发现':'found'} ×${derive.toFixed(1)} · ${zh?'复核':'checked'} ×${confirm.toFixed(1)}</title>
         <text x="0" y={y+4}>{label.length>44?`${label.slice(0,41)}…`:label}</text><line x1={x(derive)} x2={x(confirm)} y1={y} y2={y} stroke="#7d94bb" strokeWidth="2"/>
         <circle cx={x(derive)} cy={y} r="3.5" fill="#88aee4"/><circle cx={x(confirm)} cy={y} r="4" fill="#234f9b"/></g>;})}
   </svg></div>;
@@ -64,7 +65,7 @@ function BacktestFigure({ backtest, zh }: { backtest: Obj; zh: boolean }) {
   </div>)}</div>;
 }
 
-export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean }) {
+export default function PatternsReport({ data, catalog, zh }: { data: Obj; catalog: Obj; zh: boolean }) {
   const needs = obj(data.needs);
   const recurrence = arr(data.recurrence);
   const rules = arr(data.rules);
@@ -80,10 +81,12 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
   const [objective, setObjective] = useState('rate');
   const filteredRules = useMemo(() => rules.filter((rule) => (ruleVerdict === 'all' || rule.verdict === ruleVerdict)
     && (ruleGenerator === 'all' || rule.generator === ruleGenerator)
-    && (name(rule.condition).toLowerCase().includes(ruleSearch.toLowerCase()) || name(rule.need).toLowerCase().includes(ruleSearch.toLowerCase()))),
-  [rules, ruleVerdict, ruleGenerator, ruleSearch]);
+    && ([name(rule.condition), name(rule.need), catalogText(rule.condition,catalog,zh), catalogText(rule.need,catalog,zh)]
+      .some((value)=>value.toLowerCase().includes(ruleSearch.toLowerCase())))),
+  [rules, ruleVerdict, ruleGenerator, ruleSearch, catalog, zh]);
   const needRows = recurrence.filter((row) => row.scope === 'need')
-    .filter((row) => name(row.subtopic).toLowerCase().includes(needSearch.toLowerCase()))
+    .filter((row) => [name(row.subtopic), catalogText(row.subtopic,catalog,zh)]
+      .some((value)=>value.toLowerCase().includes(needSearch.toLowerCase())))
     .sort((a,b) => Number(b.needs ?? 0) - Number(a.needs ?? 0));
   const test = obj(obj(backtest.objectives)[objective]);
   const generators = obj(test.by_generator);
@@ -98,17 +101,17 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
     <ReportPanel title={zh ? '同一需求再次出现' : 'The same need again'} description={zh ? 'Kaplan–Meier 估计：同一用户再次提出同一需求的比例。点击图例切换线条。' : 'Kaplan–Meier estimate of the same user returning with the same need. Toggle lines in the legend.'}>
       <RecurrenceFigure rows={recurrence} zh={zh} />
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '此前次数 / 需求' : 'Times before / need'}</th><th>{zh ? '需求' : 'Needs'}</th>{horizons.map((day) => <th key={day}>{day}{zh ? ' 天' : ' d'}</th>)}<th>{zh ? '规律用户' : 'Regular users'}</th></tr></thead>
-        <tbody>{[...recurrence.filter((row) => row.scope === 'times_before'), ...featuredNeeds].map((row) => <tr key={name(row.key)}><td>{row.scope === 'need' ? name(row.subtopic) : `${zh ? '第' : 'After '}${name(row.times)}${zh ? '次后' : ' times'}`}</td><td>{count(row.needs)}</td>
+        <tbody>{[...recurrence.filter((row) => row.scope === 'times_before'), ...featuredNeeds].map((row) => <tr key={name(row.key)}><td>{row.scope === 'need' ? catalogText(row.subtopic,catalog,zh) : `${zh ? '第' : 'After '}${name(row.times)}${zh ? '次后' : ' times'}`}</td><td>{count(row.needs)}</td>
           {horizons.map((day) => <td key={day}>{percent(obj(row.came_back)[day])}</td>)}<td>{row.scope === 'need' ? `${count(row.users_regular)} / ${count(row.users_4_or_more)}` : '—'}</td></tr>)}</tbody></table></div>
     </ReportPanel>
 
     <ReportPanel title={zh ? '哪些需求会复发' : 'Which needs come back'} description={zh ? '按需求量排序；表中显示 30 天复发率和常见间隔。' : 'Ordered by volume, with the 30-day return rate and typical interval.'}>
-      <div className={styles.pair}><div><strong>{zh ? '30 天内复发（%）' : 'Returned within 30 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:name(row.subtopic),value:Math.round(1000*Number(obj(row.came_back)['30']??0))/10}))} zh={zh} /></div>
-        <div><strong>{zh ? '90 天内复发（%）' : 'Returned within 90 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:name(row.subtopic),value:Math.round(1000*Number(obj(row.came_back)['90']??0))/10}))} zh={zh} /></div></div>
+      <div className={styles.pair}><div><strong>{zh ? '30 天内复发（%）' : 'Returned within 30 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:catalogText(row.subtopic,catalog,zh),value:Math.round(1000*Number(obj(row.came_back)['30']??0))/10}))} zh={zh} /></div>
+        <div><strong>{zh ? '90 天内复发（%）' : 'Returned within 90 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:catalogText(row.subtopic,catalog,zh),value:Math.round(1000*Number(obj(row.came_back)['90']??0))/10}))} zh={zh} /></div></div>
       <div className={styles.controls}><input aria-label={zh ? '搜索需求' : 'Search needs'} placeholder={zh ? '搜索需求' : 'Search needs'} value={needSearch} onChange={(event) => setNeedSearch(event.target.value)} />
         <span>{needRows.length} / {recurrence.filter((row) => row.scope === 'need').length}</span></div>
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '需求' : 'Need'}</th><th>{zh ? '数量' : 'Needs'}</th><th>30 {zh ? '天复发' : 'day return'}</th><th>{zh ? '再次出现中位天数' : 'Median days to return'}</th><th>{zh ? '规律用户' : 'Regular users'}</th></tr></thead>
-        <tbody>{(showAllNeeds ? needRows : needRows.slice(0,15)).map((row) => <tr key={name(row.key)}><td>{name(row.subtopic)}</td><td>{count(row.needs)}</td><td>{percent(obj(row.came_back)['30'])}</td>
+        <tbody>{(showAllNeeds ? needRows : needRows.slice(0,15)).map((row) => <tr key={name(row.key)}><td>{catalogText(row.subtopic,catalog,zh)}</td><td>{count(row.needs)}</td><td>{percent(obj(row.came_back)['30'])}</td>
           <td>{name(row.median_days_to_return)}</td><td>{count(row.users_regular)}</td></tr>)}</tbody></table></div>
       {needRows.length > 15 && <button className={styles.more} onClick={() => setShowAllNeeds(!showAllNeeds)}>{showAllNeeds ? (zh ? '收起' : 'Show less') : (zh ? `显示全部 ${needRows.length} 项` : `Show all ${needRows.length}`)}</button>}
     </ReportPanel>
@@ -117,16 +120,16 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
       <div className={styles.pair}><div><strong>{zh ? '按来源：检验数量' : 'Tested by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).tested??0)}))} zh={zh} /></div>
         <div><strong>{zh ? '按来源：复核成立' : 'Held by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).held??0)}))} zh={zh} /></div></div>
       <h3 className={styles.subheading}>{zh?'复核成立的规律 · 发现期与复核期提升倍数':'Rules that held · lift when found and checked'}</h3>
-      <RuleLiftFigure rules={rules} zh={zh} />
+      <RuleLiftFigure rules={rules} catalog={catalog} zh={zh} />
       <div className={styles.controls}><label>{zh ? '验证结果' : 'Verdict'} <select value={ruleVerdict} onChange={(event) => setRuleVerdict(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option><option value="held">{zh ? '成立' : 'Held'}</option><option value="not held">{zh ? '未成立' : 'Not held'}</option></select></label>
         <label>{zh ? '生成方式' : 'Generator'} <select value={ruleGenerator} onChange={(event) => setRuleGenerator(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option>
           {[...new Set(rules.map((row) => name(row.generator)))].sort().map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <input aria-label={zh ? '搜索规律' : 'Search rules'} placeholder={zh ? '搜索条件或需求' : 'Search condition or need'} value={ruleSearch} onChange={(event) => setRuleSearch(event.target.value)} />
         <span>{filteredRules.length} / {rules.length}</span></div>
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '条件' : 'Condition'}</th><th>{zh ? '需求' : 'Need'}</th><th>{zh ? '来源' : 'Generator'}</th><th>{zh ? '复核用户' : 'Confirmed users'}</th><th>{zh ? '复核率' : 'Confirm rate'}</th><th>{zh ? '提升' : 'Lift'}</th><th>{zh ? '结果' : 'Verdict'}</th></tr></thead>
-        <tbody>{(showAllRules ? filteredRules : filteredRules.slice(0,20)).map((rule,i) => { const confirm=obj(rule.confirm);const derive=obj(rule.derive);return <tr key={`${name(rule.condition)}-${i}`}><td><details><summary>{name(rule.condition)}</summary><div className={styles.ruleDetail}>
+        <tbody>{(showAllRules ? filteredRules : filteredRules.slice(0,20)).map((rule,i) => { const confirm=obj(rule.confirm);const derive=obj(rule.derive);return <tr key={`${name(rule.condition)}-${i}`}><td><details><summary>{catalogText(rule.condition,catalog,zh)}</summary><div className={styles.ruleDetail}>
           {[[zh ? '训练' : 'Derivation',derive],[zh ? '复核' : 'Confirmation',confirm]].map(([label,values]) => { const evidence=obj(values);return <p key={String(label)}><strong>{String(label)}</strong>: {count(evidence.came)} / {count(evidence.users)} {zh ? '用户再次提出需求' : 'users returned'} · {zh ? '观察比例' : 'rate'} {percent(evidence.rate)} · {zh ? '预期' : 'expected'} {name(evidence.expected)} · {zh ? '提升' : 'lift'} {typeof evidence.lift === 'number' ? `${evidence.lift.toFixed(2)}×` : '—'}</p>; })}
-        </div></details></td><td>{name(rule.need)}</td><td>{name(rule.generator)}</td><td>{count(confirm.users)}</td><td>{percent(confirm.rate)}</td><td>{typeof confirm.lift === 'number' ? `${confirm.lift.toFixed(2)}×` : '—'}</td><td>{rule.verdict === 'held' ? (zh ? '成立' : 'Held') : (zh ? '未成立' : 'Not held')}</td></tr>; })}</tbody></table></div>
+        </div></details></td><td>{catalogText(rule.need,catalog,zh)}</td><td>{name(rule.generator)}</td><td>{count(confirm.users)}</td><td>{percent(confirm.rate)}</td><td>{typeof confirm.lift === 'number' ? `${confirm.lift.toFixed(2)}×` : '—'}</td><td>{rule.verdict === 'held' ? (zh ? '成立' : 'Held') : (zh ? '未成立' : 'Not held')}</td></tr>; })}</tbody></table></div>
       {filteredRules.length > 20 && <button className={styles.more} onClick={() => setShowAllRules(!showAllRules)}>{showAllRules ? (zh ? '收起' : 'Show less') : (zh ? `显示全部 ${filteredRules.length} 条` : `Show all ${filteredRules.length}`)}</button>}
     </ReportPanel>
 
