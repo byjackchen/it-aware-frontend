@@ -7,6 +7,7 @@ import DrilldownDrawer, { type Drill } from './DrilldownDrawer';
 import PatternsReport from './PatternsReport';
 import AuditReport from './AuditReport';
 import TimelineReport from './TimelineReport';
+import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming } from '@/lib/ohla-journey/report-view';
 import styles from './JourneyDashboard.module.css';
 
 type Section = 'headline' | 'resolution' | 'gaps' | 'journey' | 'timeline' | 'persona' | 'patterns' | 'audit';
@@ -60,6 +61,10 @@ const OUTCOME_NAMES: Record<string, [string, string]> = {
   elsewhere: ['Resolved elsewhere', '其他方式解决'], unknown: ['Unknown', '无法判断'],
   unresolved: ['Unresolved', '未解决'],
 };
+const OUTCOME_COLORS: Record<string, string> = {
+  ai_confirmed: '#1c5cab', ai_unconfirmed: '#86b6ef', human_confirmed: '#177245',
+  human_unconfirmed: '#8fd1a8', elsewhere: '#6b7688', unknown: '#d6dae0', unresolved: '#b64a3c',
+};
 function outcomeLabel(key: string, zh: boolean): string { return OUTCOME_NAMES[key]?.[zh ? 1 : 0] ?? key.replaceAll('_', ' '); }
 
 function object(value: unknown): JsonObject { return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonObject : {}; }
@@ -77,11 +82,6 @@ function personaCriterionValue(row: JsonObject, zh: boolean): string {
   return '—';
 }
 function dimensionLabel(key: string, zh: boolean): string { return DIMENSION_LABELS[key]?.[zh ? 1 : 0] ?? key; }
-function catalogLabel(catalog: JsonObject, dimension: string, code: string, zh: boolean): string {
-  const entries = list(catalog[dimension === 'topic' ? 'topics' : dimension === 'subtopic' ? 'subtopics' : '']).map(object);
-  const entry = entries.find((row) => row.code === code);
-  return text((zh ? entry?.name_zh : entry?.name_en) ?? code);
-}
 function displayKey(key: string, zh: boolean): string { return zh ? LABELS_ZH[key] ?? key.replaceAll('_', ' ') : key.replaceAll('_', ' '); }
 function windowDate(value: string): string {
   const date = new Date(value);
@@ -188,12 +188,13 @@ function EntityBrowser({ kind, round, zh, title, relation, filters, onOpen }: {
 
 function duration(seconds: unknown): string {
   if (typeof seconds !== 'number') return '—';
+  if (seconds < 60) return `${Math.round(seconds)}s`;
   if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
   if (seconds < 86400) return `${(seconds / 3600).toFixed(1)}h`;
   return `${(seconds / 86400).toFixed(1)}d`;
 }
 
-function PersonaFeatureTable({ persona, pattern, model, zh }: { persona: JsonObject; pattern: JsonObject; model: JsonObject; zh: boolean }) {
+function PersonaFeatureTable({ persona, pattern, model, catalog, zh }: { persona: JsonObject; pattern: JsonObject; model: JsonObject; catalog: JsonObject; zh: boolean }) {
   const means = object(object(pattern.features).mean);
   const lifts = object(object(pattern.features).lift);
   const definitions = new Map(list(model.features).map(object).map((row) => [text(row.name), row]));
@@ -209,10 +210,49 @@ function PersonaFeatureTable({ persona, pattern, model, zh }: { persona: JsonObj
         const share = definition?.kind === 'share' || key.startsWith('topic:');
         const fmt = (value: number | null) => value === null ? '—' : share ? `${Math.round(value * 100)}%` : value.toFixed(1);
         const fallback = key.startsWith('topic:') ? (zh ? `${key.slice(6)} 主题旅程占比` : `Share of journeys on ${key.slice(6)}`) : key;
-        return <tr key={key}><td>{text((zh ? definition?.zh : definition?.en) ?? fallback)}</td><td>{fmt(own)}</td><td>{fmt(base)}</td></tr>; })}</tbody></table>
+        return <tr key={key}><td>{catalogText((zh ? definition?.zh : definition?.en) ?? fallback, catalog, zh)}</td><td>{fmt(own)}</td><td>{fmt(base)}</td></tr>; })}</tbody></table>
     {weekly.length > 1 && <svg className={styles.personaSparkline} viewBox="0 0 100 34" preserveAspectRatio="none" role="img" aria-label={zh ? '每周旅程趋势' : 'Weekly journey trend'}>
       <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.6" vectorEffect="non-scaling-stroke" /></svg>}
   </>;
+}
+
+function PersonaCardEvidence({ persona, pattern, model, catalog, zh }: {
+  persona: JsonObject; pattern: JsonObject; model: JsonObject; catalog: JsonObject; zh: boolean;
+}) {
+  const definitions = new Map(list(model.features).map(object).map((row) => [text(row.name), row]));
+  const rules = list(persona.rules).map(list);
+  const outcomes = object(object(pattern.outcomes).nodes);
+  const weeks = list(object(pattern.weekly).journeys).map(Number);
+  const maxWeek = Math.max(1, ...weeks);
+  const topics = list(object(pattern.topics).topics).map(object).slice(0, 3);
+  const attributes = list(object(pattern.attributes).who).map(object).slice(0, 3);
+  const attributeNames: Record<string, [string, string]> = {
+    country: ['Country / region', '国家/地区'], business_group: ['Business group', '事业群'],
+    worker_type: ['Worker type', '用工类型'], tenure: ['Tenure', '工龄'],
+  };
+  return <div className={styles.personaEvidence}>
+    <strong>{zh ? '分组规则' : 'Grouping rules'}</strong>
+    <div className={styles.personaRules}>{rules.map((path, index) => <p key={index}>
+      {rules.length > 1 && <b>{zh ? `条件 ${index + 1}：` : `Path ${index + 1}: `}</b>}
+      {path.map((condition) => { const row = object(condition); const feature = definitions.get(text(row.feature));
+        const label = catalogText((zh ? feature?.label_zh : feature?.label_en) ?? row.feature, catalog, zh);
+        return `${label} ${text(row.op)} ${(Number(row.value) * 100).toFixed(0)}%`; }).join(zh ? '；' : '; ')}
+    </p>)}</div>
+    <strong>{zh ? '旅程结果' : 'Journey outcomes'}</strong>
+    <StackedBar parts={Object.entries(OUTCOME_COLORS).map(([key, color]) => ({ key, color, label: outcomeLabel(key, zh), value: Number(outcomes[key] ?? 0) }))} />
+    <strong>{zh ? '每周新旅程' : 'New journeys by week'}</strong>
+    <div className={styles.personaWeekBars}>{weeks.map((value, index) => <i key={index}
+      style={{ height: `${Math.max(3, 100 * value / maxWeek)}%` }} title={`${zh ? '第' : 'Week '}${index + 1}${zh ? '周' : ''}: ${value}`} />)}</div>
+    <strong>{zh ? '主要主题' : 'Top topics'}</strong>
+    <div className={styles.personaTopRows}>{topics.map((row) => <div key={text(row.topic)}>
+      <span>{catalogLabel(catalog, 'topic', text(row.topic), zh)}</span><span>{pct(row.share)} · ×{Number(row.lift ?? 0).toFixed(1)}</span>
+    </div>)}</div>
+    <strong>{zh ? '用户属性' : 'User attributes'} <small>{text(object(pattern.attributes).known)} / {text(persona.users)}</small></strong>
+    <div className={styles.personaTopRows}>{attributes.map((row, index) => <div key={`${text(row.field)}-${index}`}>
+      <span>{attributeNames[text(row.field)]?.[zh ? 1 : 0] ?? text(row.field)}: {text(row.value)}</span>
+      <span>{pct(row.share)} · ×{Number(row.lift ?? 0).toFixed(1)}</span>
+    </div>)}</div>
+  </div>;
 }
 
 function PersonaValidationTable({ validation, zh }: { validation: JsonObject; zh: boolean }) {
@@ -243,8 +283,8 @@ function ResolutionMatrix({ rows, groupBy, catalog, zh, onOpen }: {
   const [expanded, setExpanded] = useState<string[]>([]);
   const ordered = [...rows].sort((a, b) => {
     const value = (row: JsonObject) => sort === 'n' ? Number(row.n ?? 0)
-      : sort === 'time' ? Number(object(object(row.times).T5_calendar).median_sec ?? 0)
-        : sort === 'other' ? Number(object(row.outcomes).elsewhere ?? 0) / Math.max(1, Number(row.n))
+      : sort === 'time' ? Number(preferredTiming(object(row.times))?.median_sec ?? 0)
+        : sort === 'other' ? otherOutcomeCount(object(row.outcomes)) / Math.max(1, Number(row.n))
         : sort === 'recontacted' || sort === 'escalated' ? Number(row[sort] ?? 0) / Math.max(1, Number(row.n))
           : (Number(object(row[sort]).c ?? 0) + Number(object(row[sort]).d ?? 0)) / Math.max(1, Number(row.n));
     return value(b) - value(a) || text(a.group).localeCompare(text(b.group));
@@ -258,13 +298,13 @@ function ResolutionMatrix({ rows, groupBy, catalog, zh, onOpen }: {
     ['n', zh ? '旅程' : 'Journeys'], ['end_to_end', zh ? '端到端' : 'End-to-end'],
     ['ai', 'AI'], ['human', zh ? '人工' : 'Human'], ['other', zh ? '其他' : 'Other'],
     ['escalated', zh ? '转人工' : 'Escalation'], ['recontacted', zh ? '再次联系' : 'Recontact'],
-    ['time', zh ? '总耗时中位数' : 'Total time median'],
+    ['time', zh ? 'T1 耗时中位数' : 'T1 median time'],
   ];
   return <ReportPanel title={zh ? '解决情况明细' : 'Resolution matrix'} description={zh ? '按选定维度分组。比率分母是该行旅程数；点击数字可查看旅程。' : 'Group by a dimension. Rates use the journeys in each row; click a value to inspect journeys.'}>
     <div className={styles.tableWrap}><table className={`${styles.dataTable} ${styles.matrix}`}>
       <thead><tr><th>{dimensionLabel(groupBy, zh)}</th>{headers.map(([key, label]) => <th key={key}><button className={styles.sortButton} onClick={() => setSort(key)} aria-label={`${zh ? '按' : 'Sort by '}${label}`}>
         {label}{sort === key ? ' ↓' : ''}</button></th>)}</tr></thead>
-      {ordered.map((row) => { const group = text(row.group); const n = Number(row.n ?? 0); const time = object(object(row.times).T5_calendar);
+      {ordered.map((row) => { const group = text(row.group); const n = Number(row.n ?? 0); const time = preferredTiming(object(row.times));
         return <tbody key={group} className={styles.matrixGroup}><tr>
           <td><button className={styles.groupButton} onClick={() => setExpanded((current) => current.includes(group) ? current.filter((item) => item !== group) : [...current, group])} aria-expanded={expanded.includes(group)}>
             <span>{expanded.includes(group) ? '▾' : '▸'}</span> {catalogLabel(catalog, groupBy, group, zh)}</button>
@@ -276,17 +316,17 @@ function ResolutionMatrix({ rows, groupBy, catalog, zh, onOpen }: {
           <td><button className={styles.cellButton} onClick={() => open(row)}>{n.toLocaleString()}</button></td>
           {(['end_to_end', 'ai', 'human'] as const).map((key) => <td key={key}><button className={styles.cellButton} onClick={() => open(row, { resolution: key, category: 'resolved' })}>
             <strong>{pct(rate(row, key))}</strong><span>{(Number(object(row[key]).c ?? 0) + Number(object(row[key]).d ?? 0)).toLocaleString()} / {n.toLocaleString()}</span></button></td>)}
-          <td><button className={styles.cellButton} onClick={() => open(row, { outcome: 'elsewhere' })}><strong>{pct(n ? Number(object(row.outcomes).elsewhere ?? 0) / n : 0)}</strong><span>{Number(object(row.outcomes).elsewhere ?? 0).toLocaleString()} / {n.toLocaleString()}</span></button></td>
+          <td><button className={styles.cellButton} onClick={() => open(row, { outcome_group: 'other' })}><strong>{pct(n ? otherOutcomeCount(object(row.outcomes)) / n : 0)}</strong><span>{otherOutcomeCount(object(row.outcomes)).toLocaleString()} / {n.toLocaleString()}</span></button></td>
           {(['escalated', 'recontacted'] as const).map((key) => <td key={key}><button className={styles.cellButton} onClick={() => open(row, { [key]: '1' })}>
             <strong>{pct(n ? Number(row[key] ?? 0) / n : 0)}</strong><span>{Number(row[key] ?? 0).toLocaleString()} / {n.toLocaleString()}</span></button></td>)}
-          <td><button className={styles.cellButton} onClick={() => open(row)}><strong>{duration(time.median_sec)}</strong><span>n={text(time.n)}</span></button></td>
+          <td><button className={styles.cellButton} onClick={() => setExpanded((current) => current.includes(group) ? current : [...current, group])}><strong>{duration(time?.median_sec)}</strong><span>n={text(time?.n)}</span></button></td>
         </tr>{expanded.includes(group) && <tr className={styles.matrixDetail}><td colSpan={9}>
           {groupBy === 'topic' && list(row.children).length > 0 && <div className={styles.childWrap}><strong>{zh ? '子主题' : 'Subtopics'}</strong><table className={styles.childTable}><thead><tr>
             <th>{zh ? '子主题' : 'Subtopic'}</th><th>{zh ? '旅程' : 'Journeys'}</th><th>{zh ? '端到端' : 'End-to-end'}</th><th>AI</th><th>{zh ? '人工' : 'Human'}</th><th>{zh ? '其他' : 'Other'}</th><th>{zh ? '转人工' : 'Escalation'}</th><th>{zh ? '再次联系' : 'Recontact'}</th>
           </tr></thead><tbody>{list(row.children).map(object).map((child) => { const n=Number(child.n ?? 0); const query={topic:group,subtopic:text(child.group)};const childOpen=(detail:Record<string,string>={})=>onOpen(`${catalogLabel(catalog, 'topic', group, zh)} · ${catalogLabel(catalog, 'subtopic', text(child.group), zh)}`,{...query,...detail});return <tr key={text(child.group)}>
             <td><button onClick={() => childOpen()}>{catalogLabel(catalog, 'subtopic', text(child.group), zh)}</button></td><td><button onClick={() => childOpen()}>{n.toLocaleString()}</button></td>
             {(['end_to_end','ai','human'] as const).map((key) => <td key={key}><button onClick={() => childOpen({resolution:key,category:'resolved'})}>{pct(n ? (Number(object(child[key]).c ?? 0)+Number(object(child[key]).d ?? 0))/n : 0)}</button></td>)}
-            <td><button onClick={() => childOpen({outcome:'elsewhere'})}>{Number(object(child.outcomes).elsewhere ?? 0).toLocaleString()}</button></td>
+            <td><button onClick={() => childOpen({outcome_group:'other'})}>{otherOutcomeCount(object(child.outcomes)).toLocaleString()}</button></td>
             <td><button onClick={() => childOpen({escalated:'1'})}>{Number(child.escalated ?? 0).toLocaleString()}</button></td>
             <td><button onClick={() => childOpen({recontacted:'1'})}>{Number(child.recontacted ?? 0).toLocaleString()}</button></td>
           </tr>; })}</tbody></table></div>}
@@ -431,7 +471,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       const visible = items.filter((item) => (gapFamily === 'all' || item.gap_family === gapFamily)
         && (gapTopic === 'all' || item.topic === gapTopic));
       const topics = [...new Set(items.map((item) => text(item.topic)))].sort();
-      const topicCounts = topics.map((topic) => ({ key: topic, label: catalogLabel(object(payload.catalog), 'topic', topic, zh), value: items.filter((item) => item.topic === topic).length }));
+      const topicCounts = gapTopicCounts(items);
       const families: Array<[string, string, number, string]> = [
         ['knowledge', zh ? '知识缺口' : 'Knowledge gap', Number(summary.family_knowledge ?? 0), '#3269ae'],
         ['action', zh ? '执行缺口' : 'Action gap', Number(summary.family_action ?? 0), '#ad7d39'],
@@ -440,13 +480,22 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         ['undetermined', zh ? '未定' : 'Undetermined', Number(summary.family_undetermined ?? 0), '#d3d7dc'],
       ];
       return <><p className={styles.lede}>{zh ? '知识缺口与自动化缺口按预计影响排序。点击下方缺口明细可查看判断依据和建议。' : 'Knowledge and automation gaps ranked by estimated impact. Open an item below for evidence and recommendations.'}</p>
-        <MetricGrid><Metric label={t('gapItems')} value={items.length} tone="amber" onClick={() => open('gap_items', t('gapItems'), {})} />
+        <MetricGrid columns={4}><Metric label={t('gapItems')} value={items.length} tone="amber" onClick={() => open('gap_items', t('gapItems'), {})} />
           <Metric label={zh ? '可转化旅程' : 'Convertible journeys'} value={`${text(summary.journeys_lower)}–${text(summary.journeys_upper)}`} note={zh ? '上下界；重叠旅程仅计一次' : 'Lower–upper bound; overlaps counted once'} />
-          <Metric label={zh ? '可避免工单下界' : 'Tickets deflectable, lower'} value={Number(summary.tickets_deflectable_lower ?? 0).toLocaleString()} /></MetricGrid>
-        <ReportPanel title={zh ? '候选问题的判断结果' : 'Judgment of gap candidates'} description={zh ? '按候选诉求统计；与下方 159 个已整理的缺口项不是同一分母。' : 'Counts candidate requests; the 159 consolidated gap items below have a different denominator.'}>
+          <Metric label={zh ? '可避免工单下界' : 'Tickets deflectable, lower'} value={Number(summary.tickets_deflectable_lower ?? 0).toLocaleString()} />
+          <Metric label={zh ? '已判定候选' : 'Candidates judged'} value={Number(summary.candidates ?? 0).toLocaleString()} note={zh ? '首次接触时 AI 未确认解决的诉求' : 'Requests the AI did not confirm resolved at first contact'} /></MetricGrid>
+        <ReportPanel title={zh ? '候选问题的判断结果' : 'Judgment of gap candidates'} description={zh ? `按候选诉求统计；与下方 ${items.length} 个已整理的缺口项不是同一分母。` : `Counts candidate requests; the ${items.length} consolidated gap items below have a different denominator.`}>
+          <StackedBar parts={families.map(([key, label, value, color]) => ({ key, label, value, color }))} />
           <div className={styles.gapFamilies}>{families.map(([key,label,value,color]) => <div key={key}><span style={{ background: color }} /><strong>{label}</strong><b>{value.toLocaleString()}</b><small>{pct(Number(summary.candidates) ? value / Number(summary.candidates) : null)}</small></div>)}</div>
         </ReportPanel>
-        <ReportPanel title={zh ? '各主题缺口项' : 'Gap items by topic'}><RankedBars rows={topicCounts} zh={zh} color="#6c5ad6" onSelect={(row) => setGapTopic(row.key ?? row.label)} /></ReportPanel>
+        <ReportPanel title={zh ? '各主题缺口项' : 'Gap items by topic'} description={zh ? '紫色是知识缺口，橙色是执行缺口；点击主题筛选下方清单。' : 'Purple denotes knowledge gaps, orange denotes action gaps. Select a topic to filter the list.'}>
+          <div className={styles.gapTopicRows}>{topicCounts.map((row) => <button key={row.topic} type="button" onClick={() => setGapTopic(row.topic)}
+            className={gapTopic === row.topic ? styles.selected : ''} aria-label={`${catalogLabel(object(payload.catalog), 'topic', row.topic, zh)}: ${row.total}`}>
+            <span>{catalogLabel(object(payload.catalog), 'topic', row.topic, zh)}</span>
+            <span className={styles.gapTopicTrack}><i style={{ width: `${100 * row.knowledge / Math.max(1, row.total)}%`, background: '#6c5ad6' }} />
+              <i style={{ width: `${100 * row.action / Math.max(1, row.total)}%`, background: '#e56e32' }} /></span>
+            <strong>{row.total}</strong></button>)}</div>
+        </ReportPanel>
         <ReportPanel title={zh ? '缺口项排名' : 'Ranked gap items'} description={zh ? '按可转化旅程下界排序；点击条形或表格行查看判断依据和建议。' : 'Ranked by lower bound of convertible journeys. Open a bar or row for evidence and recommendations.'}>
           <div className={styles.inlineControls}><label>{zh ? '缺口类型' : 'Gap family'} <select className={styles.select} value={gapFamily} onChange={(event) => setGapFamily(event.target.value)}>
             <option value="all">{t('all')}</option><option value="knowledge">{zh ? '知识缺口' : 'Knowledge'}</option><option value="action">{zh ? '自动化缺口' : 'Automation'}</option>
@@ -480,7 +529,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       <EntityBrowser key={`units-${round}-${filterKey}`} kind="units" round={round} zh={zh} title={t('units')} filters={activeFilters} onOpen={setDrill} /></>;
     if (section === 'timeline') {
       const bursts = list(object(payload.timeline).bursts).map(object);
-      return <><TimelineReport key={round} data={payload} catalog={object(payload.catalog)} zh={zh} windowStart={meta?.window[0] ?? '2026-04-01T00:00:00+08:00'}
+      return <><TimelineReport key={round} data={payload} catalog={object(payload.catalog)} zh={zh} windowStart={meta?.window[0] ?? text(list(payload.window)[0])}
         filters={activeFilters} onFilter={updateFilter} onJourneys={openJourneys}
         onUser={(id) => open('users', id, undefined, id)} />
         {bursts.length > 0 && <ReportPanel title={zh ? '异常波峰' : 'Bursts'}><RankedBars rows={bursts.map((row) => ({ key: `${text(row.topic)}|${text(row.day)}`, label: `${catalogLabel(object(payload.catalog), 'topic', text(row.topic), zh)} · ${zh ? '第' : 'day '}${text(row.day)}${zh ? '天' : ''}`, value: Number(row.n) }))}
@@ -496,15 +545,20 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       const model = object(personaData.model);
       const habitRows = list(model.habit_table).map(object).sort((a, b) => Number(b.agreement ?? 0) - Number(a.agreement ?? 0));
       return <>{!personas.length && treePanel(zh ? '画像暂不可用' : 'Personas unavailable', payload.unavailable)}
-        <p className={styles.lede}>{zh ? '每张画像是一组有共同求助习惯的用户。点击画像，下面的用户明细会自动筛选。' : 'Each persona groups users with similar support habits. Select one to filter the users below.'}</p>
-        <div className={styles.personaGrid}>{personas.map((persona) => <button key={text(persona.persona_id)}
+        <p className={styles.lede}>{zh
+          ? `有 ${personas.reduce((sum, item) => sum + Number(item.users ?? 0), 0).toLocaleString()} 位用户归入 ${personas.length} 类画像；点击画像，下面的用户明细会自动筛选。`
+          : `${personas.reduce((sum, item) => sum + Number(item.users ?? 0), 0).toLocaleString()} users are assigned to ${personas.length} personas. Select a card to filter the users below.`}</p>
+        <div className={styles.personaGrid}>{personas.map((persona) => <article key={text(persona.persona_id)} role="button" tabIndex={0}
           onClick={() => updateFilter('persona', text(persona.persona_id))}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') updateFilter('persona', text(persona.persona_id)); }}
+          aria-pressed={selectedPersona === persona.persona_id}
           className={`${styles.personaCard} ${selectedPersona === persona.persona_id ? styles.selected : ''}`}>
           <span className={styles.personaId}>{text(persona.persona_id)}</span><div className={styles.personaName}>{text(zh ? persona.name_zh : persona.name_en)}</div>
           <div className={styles.personaDescription}>{text(zh ? persona.description_zh : persona.description_en)}</div>
           <div className={styles.personaCount}><span>{Object.keys(selectedFilters).length ? (zh ? '全版本用户' : 'All-report users') : t('users')} <strong>{text(persona.users)}</strong></span><span>{selectedPersona && selectedPersona !== persona.persona_id ? (zh ? '全版本旅程' : 'All-report journeys') : t('journeys')} <strong>{text(selectedPersona && selectedPersona !== persona.persona_id ? persona.journeys_full ?? persona.journeys : persona.journeys)}</strong></span></div>
-          <PersonaFeatureTable persona={persona} pattern={object(object(personaData.patterns)[text(persona.persona_id)])} model={model} zh={zh} />
-        </button>)}</div>
+          <PersonaCardEvidence persona={persona} pattern={object(object(personaData.patterns)[text(persona.persona_id)])} model={model} catalog={object(payload.catalog)} zh={zh} />
+          <PersonaFeatureTable persona={persona} pattern={object(object(personaData.patterns)[text(persona.persona_id)])} model={model} catalog={object(payload.catalog)} zh={zh} />
+        </article>)}</div>
         {selectedPersona && <div className={styles.personaDetails}>
           {Object.keys(selectedFilters).length > 1 && <p className={styles.personaScope}>{zh ? '下方画像规律来自整份报告；上方旅程数量和用户列表使用当前筛选。' : 'The patterns below describe the full report; journey counts and the user list use the current filters.'}</p>}
           <ReportPanel title={zh ? '解决结果' : 'Resolution outcomes'}><RankedBars rows={Object.entries(object(object(pattern.outcomes).nodes)).map(([label, value]) => ({ label: outcomeLabel(label, zh), value: Number(value), key: label }))} zh={zh}
@@ -516,7 +570,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         </div>}
         {habitRows.length > 0 && <ReportPanel title={zh ? '哪些特征是习惯' : 'Which features are habits'} description={zh ? `比较同一用户奇数次与偶数次旅程中特征出现的比例；一致性达到 ${pct(object(model.habit_params).min_habit)} 算习惯。` : `Compare feature shares in each user's odd and even journeys. Agreement of at least ${pct(object(model.habit_params).min_habit)} counts as a habit.`}>
           <div className={styles.tableWrap}><table className={styles.dataTable}><thead><tr><th>{zh ? '特征' : 'Feature'}</th><th>{zh ? '类别' : 'Kind'}</th><th>{zh ? '旅程占比' : 'Journey share'}</th><th>{zh ? '一致性' : 'Agreement'}</th><th>{zh ? '使用情况' : 'Use'}</th></tr></thead><tbody>{habitRows.map((row) => <tr key={text(row.feature)}>
-            <td>{text(row.feature)}</td><td>{row.role === 'how' ? (zh ? '求助方式' : 'How') : (zh ? '诉求内容' : 'What')}</td><td>{pct(row.share_of_journeys)}</td><td>{pct(row.agreement)}</td>
+            <td>{catalogText(row.feature, object(payload.catalog), zh)}</td><td>{row.role === 'how' ? (zh ? '求助方式' : 'How') : (zh ? '诉求内容' : 'What')}</td><td>{pct(row.share_of_journeys)}</td><td>{pct(row.agreement)}</td>
             <td>{row.kept ? (zh ? '用于画像模型' : 'Used in persona model') : row.copy_of ? `${zh ? '重复于' : 'Copy of'} ${text(row.copy_of)}` : (zh ? '未用于画像模型' : 'Not used in persona model')}</td>
           </tr>)}</tbody></table></div>
         </ReportPanel>}
@@ -530,7 +584,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     }
     if (section === 'patterns') {
       const patterns = object(payload.patterns);
-      return <><PatternsReport data={patterns} zh={zh} />{treePanel(t('patterns'), payload.patterns)}</>;
+      return <><PatternsReport data={patterns} catalog={object(payload.catalog)} zh={zh} />{treePanel(t('patterns'), payload.patterns)}</>;
     }
     return <><AuditReport data={payload} zh={zh} personaCount={Number(meta?.counts?.personas ?? 0)} gapCount={Number(meta?.counts?.gap_items ?? 0)} />
       {treePanel(zh ? '完整范围数据' : 'Full scope data', payload.scope)}
