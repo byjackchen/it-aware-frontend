@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DataDisclosure } from './ReportVisuals';
+import { fetchOhlaJourney } from '@/lib/api/ohla_journey';
 import styles from './DrilldownDrawer.module.css';
 
 export type Kind = 'units' | 'requests' | 'journeys' | 'gap_items' | 'users' | 'personas';
@@ -23,12 +24,6 @@ const duration = (v: unknown) => {
   return n < 3600 ? `${Math.round(n / 60)} min` : n < 86400 ? `${(n / 3600).toFixed(1)} h` : `${(n / 86400).toFixed(1)} d`;
 };
 
-async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`/api/ohla-journey/${path}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json() as Promise<T>;
-}
-
 function Pairs({ rows }: { rows: Array<[string, unknown]> }) {
   return <dl className={styles.pairs}>{rows.filter(([, v]) => v !== null && v !== undefined && v !== '').map(([key, v]) =>
     <div key={key}><dt>{key}</dt><dd>{value(v)}</dd></div>)}</dl>;
@@ -43,7 +38,7 @@ function JourneyTimeline({ id, round, zh, navigate }: { id: string; round: strin
   const [error, setError] = useState(false);
   useEffect(() => {
     let alive = true;
-    get<Page>(`reports/${encodeURIComponent(round)}/entities/requests?journey_id=${encodeURIComponent(id)}&limit=500`)
+    fetchOhlaJourney<Page>(`reports/${encodeURIComponent(round)}/entities/requests?journey_id=${encodeURIComponent(id)}&limit=500`)
       .then((page) => { if (alive) setRequests(page.rows); })
       .catch(() => { if (alive) setError(true); });
     return () => { alive = false; };
@@ -134,7 +129,7 @@ export default function DrilldownDrawer({ round, initial, zh, onClose }: { round
     const query = new URLSearchParams({ limit: '25', offset: String(page * 25), ...JSON.parse(queryKey) as Record<string,string> });
     const base = `reports/${encodeURIComponent(round)}/entities/${current.kind}`;
     const path = current.id ? `${base}/${encodeURIComponent(current.id)}` : `${base}?${query}`;
-    get<Page | Row>(path).then((data) => { if (alive) setResult(data); }).catch((err) => { if (alive) setError(String(err)); })
+    fetchOhlaJourney<Page | Row>(path).then((data) => { if (alive) setResult(data); }).catch((err) => { if (alive) setError(String(err)); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [round, current.kind, current.id, queryKey, page]);
