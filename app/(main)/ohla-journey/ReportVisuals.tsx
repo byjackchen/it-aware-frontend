@@ -115,23 +115,26 @@ export function TimeSeries({ rows, zh, onSelect, unit = 'day' }: { rows: Array<{
   </svg></div>;
 }
 
-export function FlowSummary({ flow, zh }: { flow: unknown; zh: boolean }) {
+export function FlowSummary({ flow, zh, onSelect }: { flow: unknown; zh: boolean; onSelect?: (query: Record<string, string>, title: string) => void }) {
   const data = asObject(flow);
-  const rows = asList(data.flows).map(asObject);
-  const byPath = new Map<string, { n: number; outcomes: Map<string, number> }>();
-  for (const row of rows) {
-    const path = String(row.path ?? 'unknown'); const entry = String(row.entry ?? 'unknown'); const key = `${entry}|${path}`;
-    const item = byPath.get(key) ?? { n: 0, outcomes: new Map<string, number>() };
-    item.n += number(row.n); item.outcomes.set(String(row.outcome), (item.outcomes.get(String(row.outcome)) ?? 0) + number(row.n)); byPath.set(key, item);
-  }
-  return <><OutcomeLegend zh={zh} /><div className={styles.flowList}>{[...byPath.entries()].sort((a, b) => b[1].n - a[1].n).map(([key, item]) => {
-    const [entry, path] = key.split('|');
-    return <div className={styles.flowRow} key={key}><span className={styles.flowEntry}>{entry === 'bot' ? (zh ? '机器人' : 'Bot') : (zh ? '人工' : 'Human')}</span>
-      <span className={styles.flowArrow}>→</span><span className={styles.flowPath}>{path.replaceAll('_', ' ').toLowerCase()}</span>
-      <span className={styles.flowArrow}>→</span><div className={styles.flowOutcome}><StackedBar parts={[...item.outcomes].map(([outcome, value]) => ({
-        key: outcome, value, color: outcomeColors[outcome] ?? '#8892a0', label: outcomeNames[outcome]?.[zh ? 1 : 0] ?? outcome,
-      }))} /></div><strong>{formatted(item.n)}</strong></div>;
-  })}</div></>;
+  const pathOrder = ['BOT_RESOLVED_FIRST','BOT_DELIVERED_LEFT','RECONTACT','ESCALATED_SAME_SEGMENT','BOT_ASKED_HUMAN','MULTI_TICKET','TICKET_NO_BOT'];
+  const outcomeOrder = ['ai_confirmed','ai_unconfirmed','human_confirmed','human_unconfirmed','elsewhere','unknown','unresolved'];
+  const rank = (values: string[], value: unknown) => { const index=values.indexOf(String(value)); return index < 0 ? values.length : index; };
+  const rows = asList(data.flows).map(asObject).filter((row) => number(row.n) > 0).sort((a, b) =>
+    rank(['bot','ticket_direct'],a.entry)-rank(['bot','ticket_direct'],b.entry) || rank(pathOrder,a.path)-rank(pathOrder,b.path) ||
+    rank(outcomeOrder,a.outcome)-rank(outcomeOrder,b.outcome));
+  const total = number(data.total) || rows.reduce((sum, row) => sum + number(row.n), 0);
+  return <div className={styles.flowTableWrap}><table className={styles.flowTable}><thead><tr>
+    <th>{zh ? '入口' : 'Entry'}</th><th>{zh ? '路径' : 'Path'}</th><th>{zh ? '结果' : 'Outcome'}</th><th>{zh ? '旅程' : 'Journeys'}</th><th>{zh ? '占比' : 'Share'}</th>
+  </tr></thead><tbody>{rows.map((row, index) => { const entry=String(row.entry),path=String(row.path),outcome=String(row.outcome);
+    const title=`${entry} → ${journeyNames[path]?.[zh ? 1 : 0] ?? path} → ${outcomeNames[outcome]?.[zh ? 1 : 0] ?? outcome}`;
+    const activate=()=>onSelect?.({entry,path,outcome},title);
+    return <tr key={`${entry}-${path}-${outcome}-${index}`} className={onSelect ? styles.flowTableClick : undefined} role={onSelect ? 'button' : undefined} tabIndex={onSelect ? 0 : undefined}
+      onClick={activate} onKeyDown={(event)=>{if(onSelect&&(event.key==='Enter'||event.key===' '))activate();}}>
+      <td>{entry==='bot'?(zh?'机器人':'Bot'):(zh?'直接建单':'Direct ticket')}</td><td>{journeyNames[path]?.[zh ? 1 : 0] ?? path}</td>
+      <td><span className={styles.flowDot} style={{background:outcomeColors[outcome]??'#8892a0'}}/>{outcomeNames[outcome]?.[zh ? 1 : 0] ?? outcome}</td>
+      <td>{formatted(row.n)}</td><td>{total ? `${(100*number(row.n)/total).toFixed(1)}%` : '—'}</td>
+    </tr>;})}</tbody></table></div>;
 }
 
 const journeyNames: Record<string, [string, string]> = {
