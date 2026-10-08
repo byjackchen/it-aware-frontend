@@ -39,14 +39,20 @@ export function preferredTiming(times: Row): (Row & { metric: 'T1' }) | null {
   return typeof first.median_sec === 'number' ? { ...first, metric: 'T1' } : null;
 }
 
-export function gapTopicCounts(items: Row[]): Array<{ topic: string; knowledge: number; action: number; total: number }> {
-  const byTopic = new Map<string, { topic: string; knowledge: number; action: number; total: number }>();
+export function reportWindowDays(start: string, end: string): number {
+  const days = Math.ceil((Date.parse(end) - Date.parse(start)) / 86400000);
+  return Number.isFinite(days) && days > 0 ? days : 0;
+}
+
+export function gapTopicCounts(items: Row[]): Array<{ topic: string; knowledge: number; action: number; other: number; total: number }> {
+  const byTopic = new Map<string, { topic: string; knowledge: number; action: number; other: number; total: number }>();
   for (const item of items) {
     const topic = String(item.topic ?? 'unknown');
-    const row = byTopic.get(topic) ?? { topic, knowledge: 0, action: 0, total: 0 };
+    const row = byTopic.get(topic) ?? { topic, knowledge: 0, action: 0, other: 0, total: 0 };
     row.total += 1;
     if (item.gap_family === 'knowledge') row.knowledge += 1;
     if (item.gap_family === 'action') row.action += 1;
+    if (item.gap_family !== 'knowledge' && item.gap_family !== 'action') row.other += 1;
     byTopic.set(topic, row);
   }
   return [...byTopic.values()].sort((a, b) => b.total - a.total || a.topic.localeCompare(b.topic));

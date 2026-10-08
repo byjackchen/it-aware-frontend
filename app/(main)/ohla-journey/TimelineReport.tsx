@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { OutcomeLegend, ReportPanel } from './ReportVisuals';
+import { reportWindowDays } from '@/lib/ohla-journey/report-view';
 import styles from './TimelineReport.module.css';
 
 type Obj = Record<string, unknown>;
@@ -50,15 +51,15 @@ function Pie({ cell, max, zh }: {cell:PeriodCell;max:number;zh:boolean}) {
   })}</svg>;
 }
 
-export default function TimelineReport({ data, catalog, zh, windowStart, filters, onFilter, onJourneys, onUser }: {
-  data: Obj;catalog:Obj;zh:boolean;windowStart:string;filters:Record<string,string>;
+export default function TimelineReport({ data, catalog, zh, windowStart, windowEnd, filters, onFilter, onJourneys, onUser }: {
+  data: Obj;catalog:Obj;zh:boolean;windowStart:string;windowEnd:string;filters:Record<string,string>;
   onFilter:(name:string,value:string)=>void;onJourneys:(title:string,detail:Record<string,string>)=>void;onUser:(id:string)=>void;
 }) {
   const [gran,setGran]=useState<'day'|'week'|'month'>('week');
   const [view,setView]=useState<'topic'|'group'|'people'|'local'>('topic');
   const start=useMemo(()=>new Date(new Date(windowStart).getTime()+8*3600000),[windowStart]);
   const composition=obj(data.composition), grouped=obj(composition.grouped), local=obj(composition.local);
-  const overall=rows(composition.overall), days=Number(obj(data.timeline).days)||184;
+  const overall=rows(composition.overall), days=reportWindowDays(windowStart, windowEnd);
   const bounds=periodBounds(start,days,gran), totals=aggregate(overall,gran,start);
   const topicSelected=!!filters.topic,subtopicSelected=!!filters.subtopic;
   const dim=topicSelected?'subtopic':'topic';

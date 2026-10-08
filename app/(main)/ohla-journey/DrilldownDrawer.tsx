@@ -122,6 +122,7 @@ export default function DrilldownDrawer({ round, initial, zh, onClose }: { round
   const [result, setResult] = useState<Page | Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   const current = stack[stack.length - 1];
   const queryKey = JSON.stringify(current.query ?? {});
   useEffect(() => {
@@ -132,7 +133,7 @@ export default function DrilldownDrawer({ round, initial, zh, onClose }: { round
     fetchOhlaJourney<Page | Row>(path).then((data) => { if (alive) setResult(data); }).catch((err) => { if (alive) setError(String(err)); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [round, current.kind, current.id, queryKey, page]);
+  }, [round, current.kind, current.id, queryKey, page, attempt]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey); return () => document.removeEventListener('keydown', onKey);
@@ -145,7 +146,7 @@ export default function DrilldownDrawer({ round, initial, zh, onClose }: { round
     <aside className={styles.drawer} role="dialog" aria-modal="true" aria-label={current.title}>
       <header className={styles.header}><div><div className={styles.caption}>{zh ? '报告明细' : 'Report details'} · {round}</div><h2>{current.title}</h2></div>
         <div className={styles.headerActions}>{stack.length > 1 && <button onClick={back}>{zh ? '返回' : 'Back'}</button>}<button onClick={onClose} aria-label={zh ? '关闭' : 'Close'}>×</button></div></header>
-      <div className={styles.body}>{loading && <p>{zh ? '正在加载明细…' : 'Loading details…'}</p>}{error && <p className={styles.error}>{zh ? '读取失败' : 'Failed to load'}: {error}</p>}
+      <div className={styles.body}>{loading && <p>{zh ? '正在加载明细…' : 'Loading details…'}</p>}{error && <p role="alert" className={styles.error}>{zh ? '读取失败' : 'Failed to load'}: {error} <button type="button" onClick={() => { setError(''); setLoading(true); setAttempt((value) => value + 1); }}>{zh ? '重试' : 'Retry'}</button></p>}
         {!loading && !error && row && <EntityDetail row={row} kind={current.kind} round={round} zh={zh} navigate={navigate} />}
         {!loading && !error && list && <><p className={styles.total}>{zh ? '共' : 'Total'} <strong>{list.total.toLocaleString()}</strong> {zh ? '项' : 'items'}</p>
           <div className={styles.items}>{list.rows.map((item) => { const id = value(item[idFields[current.kind]]);

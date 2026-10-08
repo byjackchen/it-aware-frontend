@@ -146,25 +146,29 @@ function EntityBrowser({ kind, round, zh, title, relation, filters, onOpen }: {
   const [page, setPage] = useState(0);
   const [data, setData] = useState<EntityPage | null>(null);
   const [pending, setPending] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const relationKey = relation?.key;
   const relationValue = relation?.value;
   const filterKey = JSON.stringify(filters ?? {});
   useEffect(() => {
     let active = true;
+    Promise.resolve().then(() => { if (active) { setPending(true); setFailed(false); } });
     const query = new URLSearchParams({ limit: '25', offset: String(page * 25) });
     if (relationKey && relationValue) query.set(relationKey, relationValue);
     for (const [key, value] of Object.entries(JSON.parse(filterKey) as Record<string, string>)) if (value) query.set(key, value);
     fetchOhlaJourney<EntityPage>(`reports/${encodeURIComponent(round)}/entities/${kind}?${query}`).then((result) => {
       if (active) setData(result);
-    }).catch(() => { if (active) setData(null); }).finally(() => { if (active) setPending(false); });
+    }).catch(() => { if (active) { setData(null); setFailed(true); } }).finally(() => { if (active) setPending(false); });
     return () => { active = false; };
-  }, [round, kind, page, relationKey, relationValue, filterKey]);
+  }, [round, kind, page, relationKey, relationValue, filterKey, attempt]);
   const rows = data?.rows ?? [];
   const idField = ID_FIELD[kind];
   const open = (row: JsonObject) => onOpen({ kind, title: text(row.summary ?? row.title_zh ?? row.name_zh ?? row.topic ?? row[idField]), id: String(row[idField]) });
   return <Panel title={`${title}${data ? ` · ${data.total.toLocaleString()}` : ''}`}>
     {pending && <p className="text-sm text-slate-500">{t('loading')}</p>}
-    {!pending && !rows.length && <p className="text-sm text-slate-500">{t('none')}</p>}
+    {!pending && failed && <p role="alert" className="text-sm text-red-600">{t('error')} <button type="button" className="underline" onClick={() => setAttempt((value) => value + 1)}>{zh ? '重试' : 'Retry'}</button></p>}
+    {!pending && !failed && !rows.length && <p className="text-sm text-slate-500">{t('none')}</p>}
     {!!rows.length && <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-500 dark:border-slate-700">
       <th className="py-2 pr-4">ID</th><th className="py-2 pr-4">{zh ? '内容' : 'Summary'}</th><th className="py-2">{t('details')}</th>
     </tr></thead><tbody>{rows.map((row) => <tr key={String(row[idField])} className="border-b border-slate-100 dark:border-slate-800">
@@ -488,7 +492,8 @@ export default function JourneyDashboard({ section }: { section: Section }) {
             className={gapTopic === row.topic ? styles.selected : ''} aria-label={`${catalogLabel(object(payload.catalog), 'topic', row.topic, zh)}: ${row.total}`}>
             <span>{catalogLabel(object(payload.catalog), 'topic', row.topic, zh)}</span>
             <span className={styles.gapTopicTrack}><i style={{ width: `${100 * row.knowledge / Math.max(1, row.total)}%`, background: '#6c5ad6' }} />
-              <i style={{ width: `${100 * row.action / Math.max(1, row.total)}%`, background: '#e56e32' }} /></span>
+              <i style={{ width: `${100 * row.action / Math.max(1, row.total)}%`, background: '#e56e32' }} />
+              <i style={{ width: `${100 * row.other / Math.max(1, row.total)}%`, background: '#9aa3ae' }} title={zh ? '其他' : 'Other'} /></span>
             <strong>{row.total}</strong></button>)}</div>
         </ReportPanel>
         <ReportPanel title={zh ? '缺口项排名' : 'Ranked gap items'} description={zh ? '按可转化旅程下界排序；点击条形或表格行查看判断依据和建议。' : 'Ranked by lower bound of convertible journeys. Open a bar or row for evidence and recommendations.'}>
@@ -524,7 +529,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
       <EntityBrowser key={`units-${round}-${filterKey}`} kind="units" round={round} zh={zh} title={t('units')} filters={activeFilters} onOpen={setDrill} /></>;
     if (section === 'timeline') {
       const bursts = list(object(payload.timeline).bursts).map(object);
-      return <><TimelineReport key={round} data={payload} catalog={object(payload.catalog)} zh={zh} windowStart={meta?.window[0] ?? text(list(payload.window)[0])}
+      return <><TimelineReport key={round} data={payload} catalog={object(payload.catalog)} zh={zh} windowStart={meta?.window[0] ?? text(list(payload.window)[0])} windowEnd={meta?.window[1] ?? text(list(payload.window)[1])}
         filters={activeFilters} onFilter={updateFilter} onJourneys={openJourneys}
         onUser={(id) => open('users', id, undefined, id)} />
         {bursts.length > 0 && <ReportPanel title={zh ? '异常波峰' : 'Bursts'}><RankedBars rows={bursts.map((row) => ({ key: `${text(row.topic)}|${text(row.day)}`, label: `${catalogLabel(object(payload.catalog), 'topic', text(row.topic), zh)} · ${zh ? '第' : 'day '}${text(row.day)}${zh ? '天' : ''}`, value: Number(row.n) }))}
