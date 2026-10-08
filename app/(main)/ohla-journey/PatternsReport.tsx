@@ -46,6 +46,7 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
   const rules = arr(data.rules);
   const candidates = obj(data.candidates);
   const backtest = obj(data.backtest);
+  const generatorsSummary = obj(obj(data.mining).generators);
   const [ruleVerdict, setRuleVerdict] = useState('all');
   const [ruleGenerator, setRuleGenerator] = useState('all');
   const [ruleSearch, setRuleSearch] = useState('');
@@ -62,6 +63,8 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
     .sort((a,b) => Number(b.needs ?? 0) - Number(a.needs ?? 0));
   const test = obj(obj(backtest.objectives)[objective]);
   const generators = obj(test.by_generator);
+  const featuredNeeds = recurrence.filter((row) => row.scope === 'need' && Number(row.needs ?? 0) >= 25)
+    .sort((a, b) => Number(obj(b.came_back)['90'] ?? 0) - Number(obj(a.came_back)['90'] ?? 0)).slice(0, 15);
   return <div className={styles.report}>
     <p className={styles.lede}>{zh ? '观察同一需求是否复发、哪些规律经复核成立，以及按规律推送的回测表现。' : 'Explore repeated needs, confirmed rules and the backtested push strategy.'}</p>
     <MetricGrid columns={4}><Metric label={zh ? '需求' : 'Needs'} value={count(needs.needs)} note={zh ? '同一子主题三天内合并' : 'Same subtopic merged within three days'} />
@@ -70,12 +73,14 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
 
     <ReportPanel title={zh ? '同一需求再次出现' : 'The same need again'} description={zh ? 'Kaplan–Meier 估计：同一用户再次提出同一需求的比例。点击图例切换线条。' : 'Kaplan–Meier estimate of the same user returning with the same need. Toggle lines in the legend.'}>
       <RecurrenceFigure rows={recurrence} zh={zh} />
-      <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '此前次数' : 'Times before'}</th><th>{zh ? '需求' : 'Needs'}</th>{horizons.map((day) => <th key={day}>{day}{zh ? ' 天' : ' d'}</th>)}</tr></thead>
-        <tbody>{recurrence.filter((row) => row.scope === 'times_before' || row.scope === 'all').map((row) => <tr key={name(row.key)}><td>{row.scope === 'all' ? (zh ? '全部' : 'All') : name(row.times)}</td><td>{count(row.needs)}</td>
-          {horizons.map((day) => <td key={day}>{percent(obj(row.came_back)[day])}</td>)}</tr>)}</tbody></table></div>
+      <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '此前次数 / 需求' : 'Times before / need'}</th><th>{zh ? '需求' : 'Needs'}</th>{horizons.map((day) => <th key={day}>{day}{zh ? ' 天' : ' d'}</th>)}<th>{zh ? '规律用户' : 'Regular users'}</th></tr></thead>
+        <tbody>{[...recurrence.filter((row) => row.scope === 'times_before'), ...featuredNeeds].map((row) => <tr key={name(row.key)}><td>{row.scope === 'need' ? name(row.subtopic) : `${zh ? '第' : 'After '}${name(row.times)}${zh ? '次后' : ' times'}`}</td><td>{count(row.needs)}</td>
+          {horizons.map((day) => <td key={day}>{percent(obj(row.came_back)[day])}</td>)}<td>{row.scope === 'need' ? `${count(row.users_regular)} / ${count(row.users_4_or_more)}` : '—'}</td></tr>)}</tbody></table></div>
     </ReportPanel>
 
     <ReportPanel title={zh ? '哪些需求会复发' : 'Which needs come back'} description={zh ? '按需求量排序；表中显示 30 天复发率和常见间隔。' : 'Ordered by volume, with the 30-day return rate and typical interval.'}>
+      <div className={styles.pair}><div><strong>{zh ? '30 天内复发（%）' : 'Returned within 30 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:name(row.subtopic),value:Math.round(1000*Number(obj(row.came_back)['30']??0))/10}))} zh={zh} /></div>
+        <div><strong>{zh ? '90 天内复发（%）' : 'Returned within 90 days (%)'}</strong><RankedBars rows={featuredNeeds.slice(0,10).map((row)=>({label:name(row.subtopic),value:Math.round(1000*Number(obj(row.came_back)['90']??0))/10}))} zh={zh} /></div></div>
       <div className={styles.controls}><input aria-label={zh ? '搜索需求' : 'Search needs'} placeholder={zh ? '搜索需求' : 'Search needs'} value={needSearch} onChange={(event) => setNeedSearch(event.target.value)} />
         <span>{needRows.length} / {recurrence.filter((row) => row.scope === 'need').length}</span></div>
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '需求' : 'Need'}</th><th>{zh ? '数量' : 'Needs'}</th><th>30 {zh ? '天复发' : 'day return'}</th><th>{zh ? '再次出现中位天数' : 'Median days to return'}</th><th>{zh ? '规律用户' : 'Regular users'}</th></tr></thead>
@@ -85,6 +90,8 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
     </ReportPanel>
 
     <ReportPanel title={zh ? '从数据中发现的规律' : 'Rules found in the data'} description={zh ? '按验证结果、规则来源筛选；展开每行查看训练与复核证据。' : 'Filter by verdict and generator; expand a row for derivation and confirmation evidence.'}>
+      <div className={styles.pair}><div><strong>{zh ? '按来源：检验数量' : 'Tested by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).tested??0)}))} zh={zh} /></div>
+        <div><strong>{zh ? '按来源：复核成立' : 'Held by generator'}</strong><RankedBars rows={Object.entries(generatorsSummary).map(([label, values])=>({label,value:Number(obj(values).held??0)}))} zh={zh} /></div></div>
       <div className={styles.controls}><label>{zh ? '验证结果' : 'Verdict'} <select value={ruleVerdict} onChange={(event) => setRuleVerdict(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option><option value="held">{zh ? '成立' : 'Held'}</option><option value="not held">{zh ? '未成立' : 'Not held'}</option></select></label>
         <label>{zh ? '生成方式' : 'Generator'} <select value={ruleGenerator} onChange={(event) => setRuleGenerator(event.target.value)}><option value="all">{zh ? '全部' : 'All'}</option>
           {[...new Set(rules.map((row) => name(row.generator)))].sort().map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
@@ -106,8 +113,14 @@ export default function PatternsReport({ data, zh }: { data: Obj; zh: boolean })
 
     <ReportPanel title={zh ? '两种排序的回测' : 'Two orders, backtested'} description={zh ? '按命中率或预期价值选择排序目标；每轮取前 50 / 200 条。' : 'Select precision or expected value as the ranking objective; compare top 50 and 200 per cutoff.'}>
       <div className={styles.controls}><label>{zh ? '排序目标' : 'Objective'} <select value={objective} onChange={(event) => setObjective(event.target.value)}><option value="rate">{zh ? '命中率' : 'Precision'}</option><option value="value">{zh ? '预期价值' : 'Expected value'}</option></select></label></div>
+      <RankedBars rows={Object.entries(obj(test.top_per_cutoff)).map(([label,value])=>({label:`top ${label}`,value:Number(obj(value).came_true??0)}))} zh={zh} />
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '范围' : 'Scope'}</th><th>{zh ? '推送' : 'Pushes'}</th><th>{zh ? '实际再来' : 'Returned'}</th><th>{zh ? '命中率' : 'Precision'}</th><th>{zh ? '预计节省' : 'Expected saved'}</th><th>{zh ? '每百次人工' : 'Human / 100'}</th></tr></thead>
-        <tbody>{[['all',test.all],...Object.entries(obj(test.top_per_cutoff)).map(([key,value]) => [`top ${key}`,value]),...Object.entries(generators).map(([key,value]) => [key,value])].map(([label,value]) => { const row=obj(value);return <tr key={name(label)}><td>{name(label)}</td><td>{count(row.pushes)}</td><td>{count(row.came_true)}</td><td>{percent(row.precision)}</td><td>{name(row.expected_saved)}</td><td>{name(row.human_per_100)}</td></tr>; })}</tbody></table></div>
+        <tbody>{[['all',test.all],...Object.entries(obj(test.top_per_cutoff)).map(([key,value]) => [`top ${key}`,value])].map(([label,value]) => { const row=obj(value);return <tr key={name(label)}><td>{name(label)}</td><td>{count(row.pushes)}</td><td>{count(row.came_true)}</td><td>{percent(row.precision)}</td><td>{name(row.expected_saved)}</td><td>{name(row.human_per_100)}</td></tr>; })}</tbody></table></div>
+    </ReportPanel>
+    <ReportPanel title={zh ? '按规律类型（当前排序）' : 'By kind of rule, order in use'}>
+      <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '类型' : 'Kind'}</th><th>{zh ? '推送' : 'Pushes'}</th><th>{zh ? '实际再来' : 'Returned'}</th><th>{zh ? '命中率' : 'Precision'}</th><th>{zh ? '预计节省' : 'Expected saved'}</th><th>{zh ? '每百次人工' : 'Human / 100'}</th></tr></thead><tbody>
+        {Object.entries(generators).map(([label, value]) => { const row = obj(value); return <tr key={label}><td>{label}</td><td>{count(row.pushes)}</td><td>{count(row.came_true)}</td><td>{percent(row.precision)}</td><td>{name(row.expected_saved)}</td><td>{name(row.human_per_100)}</td></tr>; })}
+      </tbody></table></div>
     </ReportPanel>
   </div>;
 }
