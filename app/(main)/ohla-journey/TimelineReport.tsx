@@ -12,6 +12,11 @@ const names: Record<string, [string, string]> = { ai_confirmed: ['AI confirmed',
 const weekdays: [string, string][] = [['Monday','周一'],['Tuesday','周二'],['Wednesday','周三'],['Thursday','周四'],['Friday','周五'],['Saturday','周六'],['Sunday','周日']];
 function obj(value: unknown): Obj { return value && typeof value === 'object' && !Array.isArray(value) ? value as Obj : {}; }
 function rows(value: unknown): Obj[] { return Array.isArray(value) ? value.map(obj) : []; }
+function groupLabel(catalog: Obj, dimension: string, code: string, zh: boolean): string {
+  const entries=rows(catalog[dimension==='topic'?'topics':'subtopics']);
+  const item=entries.find((row)=>row.code===code);
+  return String((zh?item?.name_zh:item?.name_en)??code);
+}
 function dateAt(start: Date, day: number): Date { return new Date(start.getTime() + day * 86400000); }
 function dateText(start: Date, day: number): string { return dateAt(start, day).toISOString().slice(0, 10); }
 function monthIndex(start: Date, day: number): number { const d=dateAt(start,day);return (d.getUTCFullYear()-start.getUTCFullYear())*12+d.getUTCMonth()-start.getUTCMonth(); }
@@ -45,8 +50,8 @@ function Pie({ cell, max, zh }: {cell:PeriodCell;max:number;zh:boolean}) {
   })}</svg>;
 }
 
-export default function TimelineReport({ data, zh, windowStart, filters, onFilter, onJourneys, onUser }: {
-  data: Obj;zh:boolean;windowStart:string;filters:Record<string,string>;
+export default function TimelineReport({ data, catalog, zh, windowStart, filters, onFilter, onJourneys, onUser }: {
+  data: Obj;catalog:Obj;zh:boolean;windowStart:string;filters:Record<string,string>;
   onFilter:(name:string,value:string)=>void;onJourneys:(title:string,detail:Record<string,string>)=>void;onUser:(id:string)=>void;
 }) {
   const [gran,setGran]=useState<'day'|'week'|'month'>('week');
@@ -72,14 +77,14 @@ export default function TimelineReport({ data, zh, windowStart, filters, onFilte
     <div className={styles.controls}><div className={styles.segmented} aria-label={zh?'时间粒度':'Time granularity'}>{(['day','week','month'] as const).map((item)=><button key={item} className={gran===item?styles.active:''} onClick={()=>setGran(item)}>{zh?{day:'日',week:'周',month:'月'}[item]:{day:'Day',week:'Week',month:'Month'}[item]}</button>)}</div>
       <div className={styles.segmented} aria-label={zh?'时间线视图':'Timeline view'}>{(['topic','group','people','local'] as const).map((item)=><button key={item} className={view===item?styles.active:''} onClick={()=>setView(item)}>{zh?{topic:'按主题',group:'分组',people:'按个人',local:'本地时段'}[item]:{topic:'Topics',group:'Groups',people:'People',local:'Local time'}[item]}</button>)}</div><span>UTC+08:00</span></div>
     {(view==='topic'||view==='group')&&<OutcomeLegend zh={zh}/>}
-    {view==='topic'&&<><div className={styles.pieScroll}><div className={styles.pieGrid} style={{gridTemplateColumns:`190px repeat(${bounds.length}, ${cellWidth}px)`}}>
+    {view==='topic'&&<><div className={styles.pieScroll}><div className={styles.pieGrid} style={{gridTemplateColumns:`260px repeat(${bounds.length}, ${cellWidth}px)`}}>
       <div className={`${styles.label} ${styles.header}`}>{zh?'主题 / 期间':'Topic / period'}</div>
       {bounds.map((bound)=><div className={styles.periodHead} key={bound.period} title={`${dateText(start,bound.from)} → ${dateText(start,bound.to)}`}>{gran==='month'?dateText(start,bound.from).slice(0,7):dateText(start,bound.from).slice(5)}</div>)}
       {[{name:'*',total:overall.reduce((n,row)=>n+Number(row.journeys),0),periods:totals},...laneCells].map((lane)=><div className={styles.laneContents} key={lane.name} style={{display:'contents'}}>
         <div className={styles.label}>{lane.name==='*'?<button onClick={returnUp} disabled={!topicSelected} title={zh?'全部主题；点击返回上一层':'All topics; return to parent'}>{topicSelected?'↑ ':''}{zh?'全部主题':'All topics'} <b>{lane.total.toLocaleString()}</b></button>
-          :<button onClick={()=>onFilter(dim,lane.name)} disabled={subtopicSelected} title={zh?'点击查看下一层':'Open next level'}>{lane.name} <b>{lane.total.toLocaleString()}</b></button>}</div>
-        {bounds.map((bound)=>{const cell=lane.periods.get(bound.period);return <div className={styles.pieSlot} key={bound.period}>{cell&&<button className={styles.pieButton} onClick={()=>openCell(lane.name==='*'?(zh?'全部主题':'All topics'):lane.name,cell,lane.name==='*'?undefined:lane.name)}
-          aria-label={`${lane.name==='*'?(zh?'全部主题':'All topics'):lane.name} · ${dateText(start,bound.from)} · ${cell.journeys} ${zh?'条旅程':'journeys'}`}
+          :<button onClick={()=>onFilter(dim,lane.name)} disabled={subtopicSelected} title={`${groupLabel(catalog,dim,lane.name,zh)} (${lane.name})`}>{groupLabel(catalog,dim,lane.name,zh)} <b>{lane.total.toLocaleString()}</b></button>}</div>
+        {bounds.map((bound)=>{const cell=lane.periods.get(bound.period);const label=lane.name==='*'?(zh?'全部主题':'All topics'):groupLabel(catalog,dim,lane.name,zh);return <div className={styles.pieSlot} key={bound.period}>{cell&&<button className={styles.pieButton} onClick={()=>openCell(label,cell,lane.name==='*'?undefined:lane.name)}
+          aria-label={`${label} · ${dateText(start,bound.from)} · ${cell.journeys} ${zh?'条旅程':'journeys'}`}
           title={`${cell.journeys} ${zh?'条旅程':'journeys'} · ${outcomes.filter((key)=>cell.outcomes[key]).map((key)=>`${names[key][zh?1:0]} ${cell.outcomes[key]}`).join(' · ')}`}>
           <Pie cell={cell} max={lane.name==='*'?maxOverall:maxLane} zh={zh}/></button>}</div>;})}
       </div>)}
