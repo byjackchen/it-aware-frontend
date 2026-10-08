@@ -8,6 +8,7 @@ import PatternsReport from './PatternsReport';
 import AuditReport from './AuditReport';
 import TimelineReport from './TimelineReport';
 import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming } from '@/lib/ohla-journey/report-view';
+import { fetchOhlaJourney } from '@/lib/api/ohla_journey';
 import styles from './JourneyDashboard.module.css';
 
 type Section = 'headline' | 'resolution' | 'gaps' | 'journey' | 'timeline' | 'persona' | 'patterns' | 'audit';
@@ -88,12 +89,6 @@ function windowDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`/api/ohla-journey/${path}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json() as Promise<T>;
-}
-
 function Card({ label, value, note, onClick }: { label: string; value: string | number; note?: string; onClick?: () => void }) {
   return <Metric label={label} value={value} note={note} onClick={onClick} />;
 }
@@ -159,7 +154,7 @@ function EntityBrowser({ kind, round, zh, title, relation, filters, onOpen }: {
     const query = new URLSearchParams({ limit: '25', offset: String(page * 25) });
     if (relationKey && relationValue) query.set(relationKey, relationValue);
     for (const [key, value] of Object.entries(JSON.parse(filterKey) as Record<string, string>)) if (value) query.set(key, value);
-    fetchJson<EntityPage>(`reports/${encodeURIComponent(round)}/entities/${kind}?${query}`).then((result) => {
+    fetchOhlaJourney<EntityPage>(`reports/${encodeURIComponent(round)}/entities/${kind}?${query}`).then((result) => {
       if (active) setData(result);
     }).catch(() => { if (active) setData(null); }).finally(() => { if (active) setPending(false); });
     return () => { active = false; };
@@ -357,7 +352,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     const saved = sessionStorage.getItem('ohla-journey-round');
     const savedFilters = sessionStorage.getItem('ohla-journey-filters');
     if (savedFilters) { try { Promise.resolve().then(() => setFilters(JSON.parse(savedFilters) as Record<string, string>)); } catch { /* ignore stale preference */ } }
-    fetchJson<ReportMeta[]>('reports').then((items) => {
+    fetchOhlaJourney<ReportMeta[]>('reports').then((items) => {
       setVersions(items);
       setRound(items.find((item) => item.round_id === saved)?.round_id ?? items.find((item) => item.active)?.round_id ?? items[0]?.round_id ?? '');
     }).catch(() => setError(true)).finally(() => setLoaded(true));
@@ -374,7 +369,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
     const query = new URLSearchParams(Object.entries(JSON.parse(filterKey) as Record<string, string>).filter(([, v]) => v));
     if (section === 'resolution') query.set('group_by', groupBy);
     if (section === 'timeline') query.set('timeline_group', 'user');
-    fetchJson<JsonObject>(`reports/${encodeURIComponent(round)}/sections/${section}?${query}`).then((result) => {
+    fetchOhlaJourney<JsonObject>(`reports/${encodeURIComponent(round)}/sections/${section}?${query}`).then((result) => {
       if (active) { setResponse({ key: responseKey, data: result }); setError(false); }
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
