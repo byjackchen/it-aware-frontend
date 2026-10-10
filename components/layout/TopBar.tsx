@@ -107,6 +107,15 @@ export function TopBar() {
       ]),
     },
     {
+      href: '/ohla-journey',
+      label: t('ohlaJourney'),
+      icon: Gauge,
+      permissions: requireAnyPermission([
+        PERMISSIONS.UI.NAVIGATION_OPERATION,
+        PERMISSIONS.DASHBOARDS.OHLA_JOURNEY_READ,
+      ]),
+    },
+    {
       href: '/ssc-cockpit',
       label: t('sscCockpit'),
       icon: Headset,
