@@ -152,7 +152,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const [initialRange] = useState(() => defaultMonthRange(new Date(), timezone));
   const [startMonth, setStartMonth] = useState(initialRange.start);
   const [endMonth, setEndMonth] = useState(initialRange.end);
-  const [csatNumeratorDate, setCsatNumeratorDate] = useState<NumeratorBasis>('opened');
+  const [csatNumeratorDate, setCsatNumeratorDate] = useState<NumeratorBasis>('taken_on');
   const [csatDenominatorDate, setCsatDenominatorDate] = useState<NumeratorBasis>('opened');
   const [poorNumeratorDate, setPoorNumeratorDate] = useState<NumeratorBasis>('taken_on');
   const [feedbackNumeratorDate, setFeedbackNumeratorDate] = useState<NumeratorBasis>('opened');
@@ -313,7 +313,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </>
       )}
       {canReadIncidents && validRange && ready && !error && (
-        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} csatNumeratorDate={csatNumeratorDate} csatDenominatorDate={csatDenominatorDate}
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} csatNumeratorDate={csatNumeratorDate}
           poorNumeratorDate={poorNumeratorDate} feedbackNumeratorDate={feedbackNumeratorDate} />
       )}
     </section>

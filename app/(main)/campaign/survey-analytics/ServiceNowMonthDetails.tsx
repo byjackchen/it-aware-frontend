@@ -16,7 +16,6 @@ interface Props {
   months: Array<{ month: string; label: string }>;
   timezone: string;
   csatNumeratorDate: DateBasis;
-  csatDenominatorDate: DateBasis;
   poorNumeratorDate: DateBasis;
   feedbackNumeratorDate: DateBasis;
 }
@@ -35,14 +34,15 @@ function detailSearchParams(batchOid: string, month: string, timezone: string, s
   return params;
 }
 
-export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumeratorDate, csatDenominatorDate, poorNumeratorDate, feedbackNumeratorDate }: Props) {
+export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumeratorDate, poorNumeratorDate, feedbackNumeratorDate }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   // Empty until the user picks one: the latest month in the range is shown.
   const [requestedMonth, setRequestedMonth] = useState('');
   const [detailScope, setDetailScope] = useState<DetailScope>('all');
   const [detailPart, setDetailPart] = useState<DetailPart>('denominator');
-  const denominatorDate: DateBasis = detailScope === 'csat' ? csatDenominatorDate
+  const [csatDetailDate, setCsatDetailDate] = useState<'opened' | 'taken_on'>('taken_on');
+  const denominatorDate: DateBasis = detailScope === 'csat' ? csatDetailDate
     : detailScope === 'poor' || detailScope === 'feedback' ? 'opened' : 'closed';
   const numeratorDate: DateBasis = detailScope === 'poor' ? poorNumeratorDate
     : detailScope === 'feedback' ? feedbackNumeratorDate : csatNumeratorDate;
@@ -113,8 +113,9 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
     : detailScope === 'csat' ? 'detailScopeCsat'
       : detailScope === 'poor' ? 'detailScopePoor' : 'detailScopeFeedback');
   const partLabel = t(activePart === 'numerator' ? 'detailNumerator' : 'detailDenominator');
-  const exportScopeLabel = detailScope === 'poor' || detailScope === 'feedback'
-    ? `${scopeLabel} · ${partLabel}` : scopeLabel;
+  const exportScopeLabel = detailScope === 'csat'
+    ? `${scopeLabel} · ${t(csatDetailDate === 'taken_on' ? 'detailCsatTakenOnMonth' : 'detailCsatOpenedMonth')}`
+    : detailScope === 'poor' || detailScope === 'feedback' ? `${scopeLabel} · ${partLabel}` : scopeLabel;
 
   const downloadDetails = async () => {
     if (!details || !selectedMonth || exporting) return;
@@ -150,7 +151,8 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
         ticket.assessments.map((assessment) => JSON.stringify(assessment.survey_questions)).join('\n---\n'),
         ticket.assessments.map((assessment) => JSON.stringify(assessment.survey_answer)).join('\n---\n'),
       ]);
-      const partSuffix = detailScope === 'poor' || detailScope === 'feedback' ? `_${activePart}` : '';
+      const partSuffix = detailScope === 'csat' ? `_${csatDetailDate}`
+        : detailScope === 'poor' || detailScope === 'feedback' ? `_${activePart}` : '';
       downloadXlsx('ServiceNow tickets', headers, rows, `servicenow_tickets_${selectedMonth}_${detailScope}${partSuffix}.xlsx`);
     } catch {
       setExportError(t('detailExportFailed'));
@@ -185,6 +187,16 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
               {months.map((item) => <option key={item.month} value={item.month}>{item.label}</option>)}
             </select>
           </label>
+          {detailScope === 'csat' && (
+            <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
+              {t('detailCsatMonth')}
+              <select value={csatDetailDate} onChange={(event) => setCsatDetailDate(event.target.value as 'opened' | 'taken_on')}
+                className="min-w-40 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm text-[#142960]">
+                <option value="taken_on">{t('detailCsatTakenOnMonth')}</option>
+                <option value="opened">{t('detailCsatOpenedMonth')}</option>
+              </select>
+            </label>
+          )}
           {detailScope === 'all' && <>
             <label className="flex items-center gap-2 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm font-medium text-[#142960]">
               <input type="checkbox" checked={ratedOnly} onChange={(event) => setRatedOnly(event.target.checked)} />
