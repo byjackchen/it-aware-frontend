@@ -1,4 +1,5 @@
 import { Lineage, Metric, MetricGrid, ReportPanel } from './ReportVisuals';
+import { auditTaskCounts } from '@/lib/ohla-journey/report-view';
 import styles from './AuditReport.module.css';
 
 type Obj = Record<string, unknown>;
@@ -61,9 +62,9 @@ export default function AuditReport({ data, zh, personaCount, gapCount }: { data
 
     <ReportPanel title={zh ? '方法' : 'Method'} description={zh ? '本版本的阶段记录。继承表示该阶段复用上一轮的冻结结果。' : 'Stage record for this version. Inherited stages reuse a frozen result from an earlier round.'}>
       <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>{zh ? '阶段' : 'Stage'}</th><th>{zh ? '方法' : 'Method'}</th><th>{zh ? '本轮新跑' : 'New this round'}</th><th>{zh ? '累计任务' : 'Tasks in all'}</th><th>{zh ? '累计智能体耗时' : 'Agent time in all'}</th><th>{zh ? '本轮耗时' : 'Time this round'}</th></tr></thead>
-        <tbody>{rows(workload.steps).flatMap((step) => { const id=String(step.stage_id); const group=stageGroups[id.slice(0,3)]; return [
+        <tbody>{rows(workload.steps).flatMap((step) => { const id=String(step.stage_id); const group=stageGroups[id.slice(0,3)]; const tasks=auditTaskCounts(step); return [
           ...(group ? [<tr key={`${id}-group`}><th colSpan={6}>{group[zh?1:0]}</th></tr>] : []),
-          <tr key={id}><td>{formatted(step.stage_id)}</td><td>{Array.isArray(step.methods) ? step.methods.join(', ') : '—'}</td><td>{step.inherited_from ? (zh ? '复用' : 'Reused') : formatted(step.ran_in)}</td><td>{formatted(step.agents)}</td><td>{typeof step.agent_seconds === 'number' ? `${formatted(step.agent_seconds)} s` : '—'}</td><td>{typeof step.seconds === 'number' ? `${formatted(step.seconds)} s` : '—'}</td></tr>]; })}</tbody></table></div>
+          <tr key={id}><td>{formatted(step.stage_id)}</td><td>{Array.isArray(step.methods) ? step.methods.join(', ') : '—'}</td><td>{tasks.totalTasks ? formatted(tasks.newTasks) : '—'}</td><td>{tasks.totalTasks ? formatted(tasks.totalTasks) : '—'}</td><td>{typeof step.agent_seconds === 'number' ? `${formatted(step.agent_seconds)} s` : '—'}</td><td>{typeof step.seconds === 'number' ? `${formatted(step.seconds)} s` : '—'}</td></tr>]; })}</tbody></table></div>
     </ReportPanel>
 
     <ReportPanel title={zh ? '质量' : 'Quality'} description={zh ? '独立抽样审核的正确数与门槛；通过标记由数字计算，不依赖报告文字。' : 'Independent sample checks against gates; status is calculated from the values.'}>

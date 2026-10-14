@@ -34,6 +34,16 @@ export function otherOutcomeCount(outcomes: Row): number {
   return ['elsewhere', 'unknown', 'unresolved'].reduce((sum, key) => sum + Number(outcomes[key] ?? 0), 0);
 }
 
+export function escalationRate(row: Row): number | null {
+  const denominator = Number(row.bot_entry ?? 0);
+  return denominator > 0 ? Number(row.escalated ?? 0) / denominator : null;
+}
+
+export function auditTaskCounts(step: Row): { newTasks: number; totalTasks: number } {
+  const totalTasks = Number(step.agents ?? 0) + Number(step.models ?? 0);
+  return { newTasks: totalTasks - Number(step.reused ?? 0), totalTasks };
+}
+
 export function preferredTiming(times: Row): (Row & { metric: 'T1' }) | null {
   const first = object(times.T1_session ?? times.T1);
   return typeof first.median_sec === 'number' ? { ...first, metric: 'T1' } : null;
