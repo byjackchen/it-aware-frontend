@@ -1,5 +1,16 @@
 type Row = Record<string, unknown>;
 
+export const journeyOutcomeColors: Record<string, string> = {
+  ai_confirmed: '#1c5cab', ai_unconfirmed: '#86b6ef', human_confirmed: '#177245',
+  human_unconfirmed: '#8fd1a8', elsewhere: '#6b7688', unknown: '#d6dae0', unresolved: '#b64a3c',
+};
+
+export function journeyBandColors(entry: string, outcome: string): { entryToPath: string; pathToOutcome: string } {
+  const pathToOutcome = journeyOutcomeColors[outcome] ?? '#8892a0';
+  const botDidNotResolve = entry === 'bot' && outcome !== 'ai_confirmed' && outcome !== 'ai_unconfirmed';
+  return { entryToPath: botDidNotResolve ? journeyOutcomeColors.ai_unconfirmed : pathToOutcome, pathToOutcome };
+}
+
 function object(value: unknown): Row {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Row : {};
 }

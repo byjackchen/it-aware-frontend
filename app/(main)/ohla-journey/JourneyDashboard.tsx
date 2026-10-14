@@ -524,7 +524,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         {treePanel(zh ? '缺口计算口径' : 'Gap calculations', payload.summary)}
       </>;
     }
-    if (section === 'journey') return <><p className={styles.lede}>{zh ? '从入口到路径再到结果，色彩对应解决结果。每条旅程只计入一条路径。' : 'From entry through path to outcome. Colours indicate resolution; each journey has one path.'}</p>
+    if (section === 'journey') return <><p className={styles.lede}>{zh ? '从入口到路径再到结果。机器人先接触但未解决的旅程，入口到路径为浅蓝色，之后按最终结果着色；每条旅程只计入一条路径。' : 'From entry through path to outcome. When the bot took a journey first but did not resolve it, the entry-to-path band is light blue; the path-to-outcome band uses the final outcome color. Each journey has one path.'}</p>
       {payload.flow ? <ReportPanel title={t('flow')}><JourneySankey flow={payload.flow} zh={zh}
         onSelect={(query, title) => openJourneys(title, query)} />
         <FlowSummary flow={payload.flow} zh={zh} onSelect={(query, title) => openJourneys(title, query)} /></ReportPanel> : null}
