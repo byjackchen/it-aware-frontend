@@ -153,7 +153,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const [startMonth, setStartMonth] = useState(initialRange.start);
   const [endMonth, setEndMonth] = useState(initialRange.end);
   const [csatNumeratorDate, setCsatNumeratorDate] = useState<NumeratorBasis>('taken_on');
-  const [csatDenominatorDate, setCsatDenominatorDate] = useState<NumeratorBasis>('opened');
+  const [csatDenominatorDate, setCsatDenominatorDate] = useState<NumeratorBasis>('taken_on');
   const [poorNumeratorDate, setPoorNumeratorDate] = useState<NumeratorBasis>('taken_on');
   const [feedbackNumeratorDate, setFeedbackNumeratorDate] = useState<NumeratorBasis>('opened');
   const [settingsOpen, setSettingsOpen] = useState(false);
