@@ -71,7 +71,7 @@ test('CSAT numerator and denominator dates are independent while rate denominato
   await page.goto('/campaign/survey-analytics');
   await page.getByRole('button', { name: 'Date settings' }).click();
   await expect(page.getByLabel('CSAT rating points month')).toHaveValue('taken_on');
-  await expect(page.getByLabel('Valid ratings month')).toHaveValue('opened');
+  await expect(page.getByLabel('Valid ratings month')).toHaveValue('taken_on');
   await expect(page.getByLabel('CSAT rating points month').locator('option')).toHaveCount(2);
   await expect(page.getByLabel('Poor-rated tickets month')).toBeVisible();
   await expect(page.getByLabel('Poor rate ticket denominator month')).toHaveCount(0);
@@ -82,12 +82,12 @@ test('CSAT numerator and denominator dates are independent while rate denominato
   expect(qualityQueries.at(-1)?.get('feedback_numerator_date')).toBe('opened');
   expect(qualityQueries.at(-1)?.get('feedback_denominator_date')).toBe('opened');
   expect(qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('taken_on');
-  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
+  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
   await page.getByLabel('CSAT rating points month').selectOption('opened');
   await expect.poll(() => qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('opened');
-  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
-  await page.getByLabel('Valid ratings month').selectOption('taken_on');
-  await expect.poll(() => qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
+  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
+  await page.getByLabel('Valid ratings month').selectOption('opened');
+  await expect.poll(() => qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
   await page.getByLabel('View metric range').selectOption('csat');
   await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('taken_on');
   await expect(page.getByLabel('CSAT ticket month')).toHaveValue('taken_on');
