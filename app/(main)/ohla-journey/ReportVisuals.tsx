@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { journeyBandColors, journeyOutcomeColors } from '@/lib/ohla-journey/report-view';
 import styles from './ReportVisuals.module.css';
 
 export type RecordValue = Record<string, unknown>;
@@ -39,10 +40,7 @@ export function Lineage({ scope, zh, personaCount, onOpen }: { scope: RecordValu
     <small>{note}</small></li>)}</ol>;
 }
 
-const outcomeColors: Record<string, string> = {
-  ai_confirmed: '#1c5cab', ai_unconfirmed: '#86b6ef', human_confirmed: '#177245',
-  human_unconfirmed: '#8fd1a8', elsewhere: '#6b7688', unknown: '#d6dae0', unresolved: '#b64a3c',
-};
+const outcomeColors = journeyOutcomeColors;
 const outcomeNames: Record<string, [string, string]> = {
   ai_confirmed: ['AI · confirmed', 'AI · 已证实'], ai_unconfirmed: ['AI · unconfirmed', 'AI · 未证实'],
   human_confirmed: ['Human · confirmed', '人工 · 已证实'], human_unconfirmed: ['Human · unconfirmed', '人工 · 未证实'],
@@ -190,10 +188,11 @@ export function JourneySankey({ flow, zh, onSelect }: { flow: unknown; zh: boole
     const outcome = String(row.outcome);
     const title = `${String(row.entry)} → ${journeyNames[String(row.path)]?.[zh ? 1 : 0] ?? row.path} → ${outcomeNames[outcome]?.[zh ? 1 : 0] ?? outcome}: ${formatted(row.n)}`;
     const activate = () => { setSelected(title); onSelect?.({ entry: String(row.entry), path: String(row.path), outcome }, title); };
-    return <g key={i} className={styles.ribbon} fill={outcomeColors[outcome] ?? '#8892a0'} tabIndex={0} role="button"
+    const bandColors = journeyBandColors(String(row.entry), outcome);
+    return <g key={i} className={styles.ribbon} tabIndex={0} role="button"
       aria-label={title} onClick={activate} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') activate(); }}><title>{title}</title>
-      <path d={shape(170, a, 450, b)} opacity={String(row.entry) === 'bot' && !outcome.startsWith('ai_') ? .48 : .72} />
-      <path d={shape(460, b, 750, c)} opacity=".76" /></g>;
+      <path d={shape(170, a, 450, b)} fill={bandColors.entryToPath} />
+      <path d={shape(460, b, 750, c)} fill={bandColors.pathToOutcome} /></g>;
   });
   const labels = (stage: Stage, x: number) => nodeOrder[stage].map((code) => {
     const node = positions[stage].get(code); if (!node || !node.h) return null;
@@ -206,7 +205,7 @@ export function JourneySankey({ flow, zh, onSelect }: { flow: unknown; zh: boole
       <rect x={x} y={node.y} width="10" height={Math.max(.5,node.h)} rx="2" fill={stage === 'outcome' ? outcomeColors[code] : '#4a525c'} />
       <text x={stage === 'outcome' ? x+17 : x-8} y={node.y + Math.max(8,node.h/2)+4} textAnchor={stage === 'outcome' ? 'start' : 'end'} fontSize="12" fill="currentColor">{label} · {formatted(byStage[stage].get(code))}</text></g>;
   });
-  return <><OutcomeLegend zh={zh} /><div className={styles.sankeyWrap}><svg viewBox={`0 0 1050 ${chartHeight}`} role="img" aria-label={zh ? '旅程从入口到路径再到结果的流向图' : 'Journey flow from entry through path to outcome'}>
+  return <><div className={styles.legend}><span><i style={{ background: outcomeColors.ai_unconfirmed }} />{zh ? '机器人未解决的旅程中，机器人阶段' : 'Bot stage of a journey the bot did not resolve'}</span></div><OutcomeLegend zh={zh} /><div className={styles.sankeyWrap}><svg viewBox={`0 0 1050 ${chartHeight}`} role="img" aria-label={zh ? '旅程从入口到路径再到结果的流向图' : 'Journey flow from entry through path to outcome'}>
     <text x="170" y="23" textAnchor="end" fontSize="12" fontWeight="bold" fill="currentColor">{zh ? '入口' : 'Entry'}</text>
     <text x="455" y="23" textAnchor="middle" fontSize="12" fontWeight="bold" fill="currentColor">{zh ? '路径' : 'Path'}</text>
     <text x="750" y="23" fontSize="12" fontWeight="bold" fill="currentColor">{zh ? '结果' : 'Outcome'}</text>
