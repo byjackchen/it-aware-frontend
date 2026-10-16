@@ -95,8 +95,15 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasLoaded, setHasLoaded] = useState(Boolean(cached));
+    const [stateKey, setStateKey] = useState(cacheKey);
+    const stateMatchesQuery = stateKey === cacheKey;
+    const visibleItems = stateMatchesQuery ? items : (cached?.items as TItem[] | undefined) ?? [];
+    const visibleHasMore = stateMatchesQuery ? hasMore : cached?.hasMore ?? true;
+    const visibleHasLoaded = stateMatchesQuery ? hasLoaded : Boolean(cached);
 
-    const inFlightRef = useRef(false);
+    const inFlightRef = useRef<{ key: string; controller: AbortController } | null>(null);
+    const currentCacheKeyRef = useRef(cacheKey);
+    currentCacheKeyRef.current = cacheKey;
 
     const resolveItemKey = useCallback((item: TItem): string | null => {
         if (getItemKey) {
@@ -175,8 +182,10 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     }, []);
 
     const fetchPage = useCallback(async (skip: number, replace: boolean) => {
-        if (inFlightRef.current) return;
-        inFlightRef.current = true;
+        if (inFlightRef.current?.key === cacheKey) return;
+        inFlightRef.current?.controller.abort();
+        const controller = new AbortController();
+        inFlightRef.current = { key: cacheKey, controller };
 
         if (replace) {
             setIsInitialLoading(true);
@@ -192,6 +201,7 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
 
             const response = await fetch(`/api/objects/${resource}?${params.toString()}`, {
                 cache: 'no-store',
+                signal: controller.signal,
             });
 
             if (!response.ok) {
@@ -200,6 +210,7 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
 
             const headerTotal = getHeaderTotal(response);
             const payload = (await response.json()) as TResponse;
+            if (controller.signal.aborted || currentCacheKeyRef.current !== cacheKey) return;
             const pageItems = dedupeItems(getItems(payload));
             const pageTotal = getTotal(payload) ?? headerTotal;
 
@@ -219,19 +230,22 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
                 return next;
             });
         } catch (e) {
+            if (controller.signal.aborted || currentCacheKeyRef.current !== cacheKey) return;
             const message = e instanceof Error ? e.message : `Failed to fetch ${resource}`;
             setError(message);
         } finally {
-            inFlightRef.current = false;
-            setIsInitialLoading(false);
-            setIsLoadingMore(false);
+            if (inFlightRef.current?.controller === controller) {
+                inFlightRef.current = null;
+                setIsInitialLoading(false);
+                setIsLoadingMore(false);
+            }
         }
     }, [cacheKey, dedupeItems, getHasMore, getHeaderTotal, getItems, getTotal, pageSize, queryString, resource]);
 
     const loadMore = useCallback(async () => {
-        if (!hasMore || inFlightRef.current) return;
-        await fetchPage(items.length, false);
-    }, [fetchPage, hasMore, items.length]);
+        if (!visibleHasMore || inFlightRef.current?.key === cacheKey) return;
+        await fetchPage(visibleItems.length, false);
+    }, [cacheKey, fetchPage, visibleHasMore, visibleItems.length]);
 
     const reload = useCallback(async () => {
         infiniteCache.delete(cacheKey);
@@ -243,7 +257,9 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     }, [cacheKey, fetchPage]);
 
     useEffect(() => {
+        if (inFlightRef.current?.key !== cacheKey) inFlightRef.current?.controller.abort();
         const cache = infiniteCache.get(cacheKey);
+        setStateKey(cacheKey);
         if (cache) {
             setItems(cache.items as TItem[]);
             setHasMore(cache.hasMore);
@@ -261,18 +277,18 @@ export function useInfiniteResource<TItem, TResponse = TItem[]>(
     }, [cacheKey]);
 
     useEffect(() => {
-        if (!auto || hasLoaded || inFlightRef.current) return;
+        if (!auto || hasLoaded || inFlightRef.current?.key === cacheKey) return;
         void fetchPage(0, true);
-    }, [auto, fetchPage, hasLoaded]);
+    }, [auto, cacheKey, fetchPage, hasLoaded]);
 
     return {
-        items,
-        total,
-        isInitialLoading,
-        isLoadingMore,
-        error,
-        hasMore,
-        hasLoaded,
+        items: visibleItems,
+        total: stateMatchesQuery ? total : cached?.total ?? null,
+        isInitialLoading: stateMatchesQuery ? isInitialLoading : !cached,
+        isLoadingMore: stateMatchesQuery ? isLoadingMore : false,
+        error: stateMatchesQuery ? error : null,
+        hasMore: visibleHasMore,
+        hasLoaded: visibleHasLoaded,
         loadMore,
         reload,
     };

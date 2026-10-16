@@ -2,6 +2,68 @@
  * TypeScript interfaces for Survey Analytics Dashboard API responses.
  */
 
+export interface ServiceNowQualityMonth {
+    month: string;
+    ticket_count: number;
+    poor_ticket_count: number;
+    feedback_ticket_count: number;
+    feedback_count: number;
+    rating_count: number;
+    rating_sum: number;
+    poor_count: number;
+    csat: number | null;
+    poor_rate: number | null;
+    feedback_rate: number | null;
+}
+
+export interface ServiceNowQualityReport {
+    batch_oid: string;
+    numerator_date: 'opened' | 'closed' | 'taken_on';
+    denominator_date: 'opened' | 'closed';
+    csat_numerator_date: 'opened' | 'closed' | 'taken_on';
+    csat_denominator_date: 'opened' | 'closed' | 'taken_on';
+    poor_numerator_date: 'opened' | 'closed' | 'taken_on';
+    poor_denominator_date: 'opened' | 'closed';
+    feedback_numerator_date: 'opened' | 'closed' | 'taken_on';
+    feedback_denominator_date: 'opened' | 'closed';
+    months: ServiceNowQualityMonth[];
+    averages: {
+        csat: number | null;
+        poor_rate: number | null;
+        feedback_rate: number | null;
+    };
+}
+
+export interface ServiceNowAssessmentDetail {
+    oid: string;
+    external_id: string | null;
+    submitted_at: string;
+    source_taken_on: string | null;
+    rating: number | null;
+    survey_questions: Record<string, unknown>;
+    survey_answer: Record<string, unknown>;
+}
+
+export interface ServiceNowTicketDetail {
+    oid: string;
+    stable_id: string;
+    title: string;
+    state: string;
+    source_opened_at: string;
+    source_closed_at: string | null;
+    caller_name: string | null;
+    assigned_group: string | null;
+    assessments: ServiceNowAssessmentDetail[];
+}
+
+export interface ServiceNowMonthDetails {
+    month: string;
+    ticket_count: number;
+    assessment_count: number;
+    filtered_ticket_count: number;
+    tickets: ServiceNowTicketDetail[];
+}
+
 // ==================== Submission Overview ====================
 
 export interface SubmissionOverviewBatch {

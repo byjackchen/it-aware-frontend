@@ -7,7 +7,7 @@ import DrilldownDrawer, { type Drill } from './DrilldownDrawer';
 import PatternsReport from './PatternsReport';
 import AuditReport from './AuditReport';
 import TimelineReport from './TimelineReport';
-import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming } from '@/lib/ohla-journey/report-view';
+import { catalogLabel, catalogText, escalationRate, gapTopicCounts, otherOutcomeCount, preferredTiming } from '@/lib/ohla-journey/report-view';
 import { fetchOhlaJourney } from '@/lib/api/ohla_journey';
 import styles from './JourneyDashboard.module.css';
 
@@ -173,8 +173,12 @@ function EntityBrowser({ kind, round, zh, title, relation, filters, onOpen }: {
       <th className="py-2 pr-4">ID</th><th className="py-2 pr-4">{zh ? '内容' : 'Summary'}</th><th className="py-2">{t('details')}</th>
     </tr></thead><tbody>{rows.map((row) => <tr key={String(row[idField])} className="border-b border-slate-100 dark:border-slate-800">
       <td className="max-w-52 truncate py-2 pr-4 font-mono text-xs" title={String(row[idField])}>{text(row[idField])}</td>
-      <td className="max-w-xl truncate py-2 pr-4" title={text(row.summary ?? row.name_zh ?? row.title_zh ?? row.topic ?? row.flow ?? row.type)}>
-        {text(row.summary ?? (zh ? row.name_zh : row.name_en) ?? row.title_zh ?? row.topic ?? row.flow ?? row.type)}</td>
+      <td className="max-w-xl py-2 pr-4">{kind === 'journeys' ? <div className={styles.journeyPreview}>
+        <strong>{text(row.topic)} › {text(row.subtopic)}</strong>
+        <span>{text(row.entry)} → {text(row.path)} → {text(row.flow)}</span>
+        <small>{text(row.user_id)} · {text(row.first).slice(0, 10)}{row.last && row.last !== row.first ? ` → ${text(row.last).slice(0, 10)}` : ''} · {list(row.request_ids).length} {zh ? '项诉求' : 'requests'}</small>
+      </div> : <span className="truncate" title={text(row.summary ?? row.name_zh ?? row.title_zh ?? row.topic ?? row.flow ?? row.type)}>
+        {text(row.summary ?? (zh ? row.name_zh : row.name_en) ?? row.title_zh ?? row.topic ?? row.flow ?? row.type)}</span>}</td>
       <td className="py-2"><button className="text-indigo-600 hover:underline" onClick={() => open(row)}>{t('details')}</button></td>
     </tr>)}</tbody></table></div>}
     {data && data.total > 25 && <div className="mt-4 flex items-center gap-3 text-sm">
@@ -284,7 +288,8 @@ function ResolutionMatrix({ rows, groupBy, catalog, zh, onOpen }: {
     const value = (row: JsonObject) => sort === 'n' ? Number(row.n ?? 0)
       : sort === 'time' ? Number(preferredTiming(object(row.times))?.median_sec ?? 0)
         : sort === 'other' ? otherOutcomeCount(object(row.outcomes)) / Math.max(1, Number(row.n))
-        : sort === 'recontacted' || sort === 'escalated' ? Number(row[sort] ?? 0) / Math.max(1, Number(row.n))
+        : sort === 'escalated' ? escalationRate(row) ?? -1
+          : sort === 'recontacted' ? Number(row.recontacted ?? 0) / Math.max(1, Number(row.n))
           : (Number(object(row[sort]).c ?? 0) + Number(object(row[sort]).d ?? 0)) / Math.max(1, Number(row.n));
     return value(b) - value(a) || text(a.group).localeCompare(text(b.group));
   });
@@ -316,8 +321,10 @@ function ResolutionMatrix({ rows, groupBy, catalog, zh, onOpen }: {
           {(['end_to_end', 'ai', 'human'] as const).map((key) => <td key={key}><button className={styles.cellButton} onClick={() => open(row, { resolution: key, category: 'resolved' })}>
             <strong>{pct(rate(row, key))}</strong><span>{(Number(object(row[key]).c ?? 0) + Number(object(row[key]).d ?? 0)).toLocaleString()} / {n.toLocaleString()}</span></button></td>)}
           <td><button className={styles.cellButton} onClick={() => open(row, { outcome_group: 'other' })}><strong>{pct(n ? otherOutcomeCount(object(row.outcomes)) / n : 0)}</strong><span>{otherOutcomeCount(object(row.outcomes)).toLocaleString()} / {n.toLocaleString()}</span></button></td>
-          {(['escalated', 'recontacted'] as const).map((key) => <td key={key}><button className={styles.cellButton} onClick={() => open(row, { [key]: '1' })}>
-            <strong>{pct(n ? Number(row[key] ?? 0) / n : 0)}</strong><span>{Number(row[key] ?? 0).toLocaleString()} / {n.toLocaleString()}</span></button></td>)}
+          {(['escalated', 'recontacted'] as const).map((key) => { const denominator = key === 'escalated' ? Number(row.bot_entry ?? 0) : n;
+            const rate = key === 'escalated' ? escalationRate(row) : n ? Number(row.recontacted ?? 0) / n : null;
+            return <td key={key}><button className={styles.cellButton} onClick={() => open(row, { [key]: '1' })}>
+              <strong>{pct(rate)}</strong><span>{Number(row[key] ?? 0).toLocaleString()} / {denominator.toLocaleString()}</span></button></td>; })}
           <td><button className={styles.cellButton} onClick={() => setExpanded((current) => current.includes(group) ? current : [...current, group])}><strong>{duration(time?.median_sec)}</strong><span>n={text(time?.n)}</span></button></td>
         </tr>{expanded.includes(group) && <tr className={styles.matrixDetail}><td colSpan={9}>
           {groupBy === 'topic' && list(row.children).length > 0 && <div className={styles.childWrap}><strong>{zh ? '子主题' : 'Subtopics'}</strong><table className={styles.childTable}><thead><tr>
@@ -482,8 +489,8 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         <MetricGrid columns={4}><Metric label={t('gapItems')} value={items.length} tone="amber" onClick={() => open('gap_items', t('gapItems'), {})} />
           <Metric label={zh ? '可转化旅程' : 'Convertible journeys'} value={`${text(summary.journeys_lower)}–${text(summary.journeys_upper)}`} note={zh ? '上下界；重叠旅程仅计一次' : 'Lower–upper bound; overlaps counted once'} />
           <Metric label={zh ? '可避免工单下界' : 'Tickets deflectable, lower'} value={Number(summary.tickets_deflectable_lower ?? 0).toLocaleString()} />
-          <Metric label={zh ? '已判定候选' : 'Candidates judged'} value={Number(summary.candidates ?? 0).toLocaleString()} note={zh ? '首次接触时 AI 未确认解决的诉求' : 'Requests the AI did not confirm resolved at first contact'} /></MetricGrid>
-        <ReportPanel title={zh ? '候选问题的判断结果' : 'Judgment of gap candidates'} description={zh ? `按候选诉求统计；与下方 ${items.length} 个已整理的缺口项不是同一分母。` : `Counts candidate requests; the ${items.length} consolidated gap items below have a different denominator.`}>
+          <Metric label={zh ? '已判定候选' : 'Candidates judged'} value={Number(summary.candidates ?? 0).toLocaleString()} note={zh ? '首次接触时 AI 未确认解决的旅程' : 'Journeys the AI did not confirm resolved at first contact'} /></MetricGrid>
+        <ReportPanel title={zh ? '候选问题的判断结果' : 'Judgment of gap candidates'} description={zh ? `按已判定候选旅程统计；与下方 ${items.length} 个已整理的缺口项不是同一分母。` : `Counts judged candidate journeys; the ${items.length} consolidated gap items below have a different denominator.`}>
           <StackedBar parts={families.map(([key, label, value, color]) => ({ key, label, value, color }))} />
           <div className={styles.gapFamilies}>{families.map(([key,label,value,color]) => <div key={key}><span style={{ background: color }} /><strong>{label}</strong><b>{value.toLocaleString()}</b><small>{pct(Number(summary.candidates) ? value / Number(summary.candidates) : null)}</small></div>)}</div>
         </ReportPanel>
@@ -517,7 +524,7 @@ export default function JourneyDashboard({ section }: { section: Section }) {
         {treePanel(zh ? '缺口计算口径' : 'Gap calculations', payload.summary)}
       </>;
     }
-    if (section === 'journey') return <><p className={styles.lede}>{zh ? '从入口到路径再到结果，色彩对应解决结果。每条旅程只计入一条路径。' : 'From entry through path to outcome. Colours indicate resolution; each journey has one path.'}</p>
+    if (section === 'journey') return <><p className={styles.lede}>{zh ? '从入口到路径再到结果。机器人先接触但未解决的旅程，入口到路径为浅蓝色，之后按最终结果着色；每条旅程只计入一条路径。' : 'From entry through path to outcome. When the bot took a journey first but did not resolve it, the entry-to-path band is light blue; the path-to-outcome band uses the final outcome color. Each journey has one path.'}</p>
       {payload.flow ? <ReportPanel title={t('flow')}><JourneySankey flow={payload.flow} zh={zh}
         onSelect={(query, title) => openJourneys(title, query)} />
         <FlowSummary flow={payload.flow} zh={zh} onSelect={(query, title) => openJourneys(title, query)} /></ReportPanel> : null}

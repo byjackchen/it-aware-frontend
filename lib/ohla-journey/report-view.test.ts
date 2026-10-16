@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalogLabel, catalogText, gapTopicCounts, otherOutcomeCount, preferredTiming, reportWindowDays } from './report-view';
+import { auditTaskCounts, catalogLabel, catalogText, escalationRate, gapTopicCounts, journeyBandColors, otherOutcomeCount, preferredTiming, reportWindowDays } from './report-view';
 
 const catalog = {
   topics: [{ code: 'NET_CONNECTIVITY', name_en: 'Network › Network Issue', name_zh: '网络 › 网络问题' }],
@@ -40,5 +40,28 @@ describe('Ohla report display values', () => {
   it('derives timeline days from the selected report window, including short reports', () => {
     expect(reportWindowDays('2026-04-01T00:00:00+08:00', '2026-04-08T00:00:00+08:00')).toBe(7);
     expect(reportWindowDays('2026-04-01T00:00:00+08:00', '2026-04-02T00:00:00+08:00')).toBe(1);
+  });
+
+  it('uses bot-entry journeys as the escalation denominator', () => {
+    expect(escalationRate({ n: 7976, bot_entry: 6469, escalated: 2466 })).toBeCloseTo(2466 / 6469);
+    expect(escalationRate({ n: 50, bot_entry: 0, escalated: 0 })).toBeNull();
+  });
+
+  it('separates newly run tasks from cumulative tasks in the audit', () => {
+    expect(auditTaskCounts({ agents: 12, models: 3, reused: 5 })).toEqual({ newTasks: 10, totalTasks: 15 });
+    expect(auditTaskCounts({ agents: 0, models: 0, reused: 0 })).toEqual({ newTasks: 0, totalTasks: 0 });
+  });
+
+  it('shows the unresolved bot stage in blue before a human-confirmed outcome', () => {
+    expect(journeyBandColors('bot', 'human_confirmed')).toEqual({ entryToPath: '#86b6ef', pathToOutcome: '#177245' });
+  });
+
+  it('keeps AI-resolved and direct-ticket journeys in their outcome color throughout', () => {
+    expect(journeyBandColors('bot', 'ai_confirmed')).toEqual({ entryToPath: '#1c5cab', pathToOutcome: '#1c5cab' });
+    expect(journeyBandColors('ticket_direct', 'human_confirmed')).toEqual({ entryToPath: '#177245', pathToOutcome: '#177245' });
+  });
+
+  it('also shows an unresolved bot stage in blue before a non-resolution outcome', () => {
+    expect(journeyBandColors('bot', 'unresolved')).toEqual({ entryToPath: '#86b6ef', pathToOutcome: '#b64a3c' });
   });
 });

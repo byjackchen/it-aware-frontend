@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { downloadDashboardXlsx } from '@/lib/api/exports';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { localDateTimeToIso } from '@/lib/utils/datetime';
+import { formatLocalDate, localDateTimeToIso } from '@/lib/utils/datetime';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
 import { Pagination } from '@/components/data/Pagination';
 import { IncidentRow, INCIDENT_GRID_COLS } from '@/components/ssc/IncidentRow';
@@ -76,7 +76,7 @@ export function IncidentsPanel({
 
     const query = useMemo(() => ({
         ...(dateFrom ? { effective_at_from: localDateTimeToIso(dateFrom, timezone) } : {}),
-        ...(dateTo ? { effective_at_to: localDateTimeToIso(dateTo, timezone) } : {}),
+        ...(dateTo ? { effective_at_to: localDateTimeToIso(dateTo, timezone, 'later') } : {}),
     }), [dateFrom, dateTo, timezone]);
 
     const {
@@ -152,7 +152,7 @@ export function IncidentsPanel({
         const skip = (page - 1) * pageSize;
         const params = new URLSearchParams({ skip: String(skip), limit: String(pageSize) });
         if (dateFrom) params.set('effective_at_from', localDateTimeToIso(dateFrom, timezone));
-        if (dateTo) params.set('effective_at_to', localDateTimeToIso(dateTo, timezone));
+        if (dateTo) params.set('effective_at_to', localDateTimeToIso(dateTo, timezone, 'later'));
 
         fetch(`/api/objects/incidents?${params.toString()}`, {
             cache: 'no-store',
@@ -177,7 +177,7 @@ export function IncidentsPanel({
         }
     }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
-    useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [pageSize, workerFilter, selectedCategories]);
+    useEffect(() => { abortRef.current?.abort(); setCurrentPage(1); setRemotePage(null); }, [pageSize, dateFrom, dateTo, timezone, workerFilter, selectedCategories]);
 
     // Overlay map for optimistic inline-edit updates
     const [overlay, setOverlay] = useState<Map<string, Incident>>(new Map());
@@ -196,10 +196,11 @@ export function IncidentsPanel({
             await downloadDashboardXlsx(
                 'incidents',
                 {
+                    timezone,
                     effective_at_from: dateFrom ? localDateTimeToIso(dateFrom, timezone) : undefined,
-                    effective_at_to: dateTo ? localDateTimeToIso(dateTo, timezone) : undefined,
+                    effective_at_to: dateTo ? localDateTimeToIso(dateTo, timezone, 'later') : undefined,
                 },
-                `ssc_ticket_dashboard_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                `ssc_ticket_dashboard_${formatLocalDate(new Date(), timezone)}.xlsx`,
             );
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Download failed');
