@@ -111,7 +111,7 @@ test('month details defaults to all tickets and exports every filtered page', as
   const detailQueries: URLSearchParams[] = [];
   const tickets = Array.from({ length: 51 }, (_, index) => ({
     oid: `ticket-${index}`, stable_id: `INC-${index + 1}`, title: `Ticket ${index + 1}`,
-    state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
+    state: 'Closed', source_opened_at: index === 50 ? null : '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
     caller_name: 'User', assigned_group: 'OIT SSC', assessments: [],
   }));
   await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
