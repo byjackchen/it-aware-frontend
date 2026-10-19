@@ -138,7 +138,10 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
         if (result.filtered_ticket_count !== details.filtered_ticket_count) throw new Error(t('detailExportFailed'));
         allTickets.push(...result.tickets);
       }
-      if (allTickets.length !== details.filtered_ticket_count) throw new Error(t('detailExportFailed'));
+      if (allTickets.length !== details.filtered_ticket_count
+        || new Set(allTickets.map((ticket) => ticket.oid)).size !== allTickets.length) {
+        throw new Error(t('detailExportFailed'));
+      }
       const headers = [t('detailMonth'), t('detailMetric'), t('detailTicket'), dateHeader,
         t('detailSummary'), t('detailCaller'), t('detailGroup'), t('detailAssessmentCount'),
         t('detailAssessmentIds'), t('detailScores'), t('detailSubmittedAt'), t('detailTakenOn'),

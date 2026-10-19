@@ -138,6 +138,32 @@ test('month details defaults to the opened OIT denominator and exports every fil
   expect(detailQueries.some((query) => query.get('page') === '2')).toBe(true);
 });
 
+test('Excel export rejects a duplicate ticket when detail pages change during download', async ({ page }) => {
+  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
+    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 51 }] },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
+    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [], averages: { csat: null, poor_rate: null, feedback_rate: null } },
+  }));
+  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
+    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page') || '1');
+    const ids = pageNumber === 1 ? Array.from({ length: 50 }, (_, index) => index + 1) : [50];
+    return route.fulfill({ json: {
+      month: '2026-07', ticket_count: 51, assessment_count: 0, filtered_ticket_count: 51,
+      tickets: ids.map((id) => ({ oid: `ticket-${id}`, stable_id: `INC-${id}`, title: `Ticket ${id}`,
+        state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
+        caller_name: null, assigned_group: 'OIT SSC', assessments: [] })),
+    } });
+  });
+  await page.goto('/campaign/survey-analytics');
+  await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 51 tickets');
+  const downloads: string[] = [];
+  page.on('download', (download) => downloads.push(download.suggestedFilename()));
+  await page.getByRole('button', { name: 'Download Excel' }).click();
+  await expect(page.getByText('Could not download month details. Please retry.')).toBeVisible();
+  expect(downloads).toHaveLength(0);
+});
+
 test('switching timezone reloads CSAT month totals and matching ticket details', async ({ page, context }) => {
   await page.setViewportSize({ width: 2048, height: 1000 });
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
