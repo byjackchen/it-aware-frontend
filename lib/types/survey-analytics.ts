@@ -49,7 +49,7 @@ export interface ServiceNowTicketDetail {
     stable_id: string;
     title: string;
     state: string;
-    source_opened_at: string;
+    source_opened_at: string | null;
     source_closed_at: string | null;
     caller_name: string | null;
     assigned_group: string | null;
