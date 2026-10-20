@@ -31,7 +31,7 @@ export function BatchSelector({ selectedBatchOid, onBatchChange, isLight }: Batc
                 const items: SurveyBatchItem[] = data.items || [];
                 setBatches(items);
                 if (!selectedBatchOid && items.length > 0) {
-                    onBatchChange(items[0]);
+                    onBatchChange(items.find((item) => item.name === 'ServiceNow Assessments') ?? items[0]);
                 }
             } catch { /* ignore */ }
             finally { setIsLoading(false); }
