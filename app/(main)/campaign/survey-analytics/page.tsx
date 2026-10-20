@@ -1,5 +1,5 @@
-import { SurveyAnalyticsDashboard } from './SurveyAnalyticsDashboard';
+import { redirect } from 'next/navigation';
 
 export default function SurveyAnalyticsPage() {
-    return <SurveyAnalyticsDashboard />;
+    redirect('/itopsdashboard/survey-analytics');
 }
