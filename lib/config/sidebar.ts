@@ -382,19 +382,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     },
                 ],
             },
-            {
-                labelKey: 'analytics',
-                items: [
-                    {
-                        href: '/campaign/survey-analytics',
-                        labelKey: 'surveyAnalytics',
-                        icon: BarChart3,
-                        permissions: requireAnyPermission([
-                            PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
-                        ]),
-                    },
-                ],
-            },
         ],
     },
     '/dashboard': {
@@ -423,6 +410,14 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 href: '/itopsdashboard/service-experience',
                 labelKey: 'itopsServiceExperience',
                 icon: Timer,
+                permissions: requireAnyPermission([
+                    PERMISSIONS.UI.NAVIGATION_OPERATION,
+                ]),
+            },
+            {
+                href: '/itopsdashboard/survey-analytics',
+                labelKey: 'surveyAnalytics',
+                icon: BarChart3,
                 permissions: requireAnyPermission([
                     PERMISSIONS.UI.NAVIGATION_OPERATION,
                 ]),

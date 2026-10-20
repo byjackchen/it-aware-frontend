@@ -76,6 +76,7 @@ function QualityBarTooltip({ active, payload }: TooltipContentProps) {
       <p className="font-bold text-[#132968]">{row.label} · {label}</p>
       <p className="mt-2">{numeratorLabel}: <strong>{numerator}</strong></p>
       <p>{denominatorLabel}: <strong>{denominator}</strong></p>
+      {metric === 'csat' && <p>{t('csatTicketCount', { count: row.feedback_count })}</p>}
       <p className="mt-2 border-t border-[#e7ebf3] pt-2 font-bold">{formula}</p>
     </div>
   );
@@ -149,21 +150,18 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const { hasPermission } = usePermissions();
   // The backend also requires incident read: the metrics are built from tickets.
   const canReadIncidents = hasPermission(PERMISSIONS.OBJECTS.INCIDENTS_READ);
-  const [initialRange] = useState(() => defaultMonthRange(new Date(), timezone));
+  const [initialRange] = useState(() => defaultMonthRange(new Date(), 'UTC'));
   const [startMonth, setStartMonth] = useState(initialRange.start);
   const [endMonth, setEndMonth] = useState(initialRange.end);
-  const [csatNumeratorDate, setCsatNumeratorDate] = useState<NumeratorBasis>('taken_on');
-  const [csatDenominatorDate, setCsatDenominatorDate] = useState<NumeratorBasis>('taken_on');
   const [poorNumeratorDate, setPoorNumeratorDate] = useState<NumeratorBasis>('taken_on');
-  const [feedbackNumeratorDate, setFeedbackNumeratorDate] = useState<NumeratorBasis>('opened');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showFormula, setShowFormula] = useState(false);
   const validRange = isValidMonthSelection(startMonth, endMonth);
   const params = new URLSearchParams({
     batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone,
-    csat_numerator_date: csatNumeratorDate, csat_denominator_date: csatDenominatorDate,
+    csat_numerator_date: 'submitted', csat_denominator_date: 'submitted',
     poor_numerator_date: poorNumeratorDate, poor_denominator_date: 'opened',
-    feedback_numerator_date: feedbackNumeratorDate, feedback_denominator_date: 'opened',
+    feedback_numerator_date: 'submitted', feedback_denominator_date: 'opened',
   });
   const { data, isLoading, error } = useSurveyAnalytics<ServiceNowQualityReport>(
     validRange && ready && canReadIncidents ? `/api/dashboard/survey-analytics/servicenow-quality?${params}` : null,
@@ -174,6 +172,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
 
   const monthRows = data?.months.map((row) => ({ ...row, label: formatMonthLabel(row.month, locale) })) ?? [];
   const average = data?.averages;
+  const csatTotalCount = data?.months.reduce((sum, row) => sum + row.rating_count, 0) ?? 0;
   const scoreText = (value: number | null | undefined) => value == null ? '—' : value.toFixed(2);
   const percentText = (value: number | null | undefined) => value == null ? '—' : `${value.toFixed(2)}%`;
   // Right axis: 0–50% unless a month goes higher, then the next round 10%.
@@ -183,7 +182,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const scoreTop = Math.max(5, Math.ceil(Math.max(0, ...monthRows.map((row) => row.csat ?? 0))));
   const scoreTicks = [0, 1, 2, 3, 4, 5].map((step) => (scoreTop / 5) * step);
   const formulaCell = (row: ServiceNowQualityMonth, key: 'csat' | 'poor_rate' | 'feedback_rate') => key === 'csat'
-    ? `${row.rating_sum} ÷ ${row.rating_count} = ${scoreText(row.csat)}`
+    ? `${row.rating_sum}${t('csatTicketCountInFormula', { count: row.feedback_count })} ÷ ${row.rating_count} = ${scoreText(row.csat)} / 5`
     : `${key === 'poor_rate' ? row.poor_count : row.feedback_count} ÷ ${key === 'poor_rate' ? (row.poor_ticket_count ?? row.ticket_count) : (row.feedback_ticket_count ?? row.ticket_count)} × 100% = ${percentText(row[key])}`;
 
   return (
@@ -216,8 +215,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
       {settingsOpen && <div className="mb-5 grid gap-3 rounded-xl border border-[#dce5f5] bg-[#f7f9fe] p-4 text-sm lg:grid-cols-3">
         <div className="space-y-3 rounded-lg border border-[#d9e3fb] bg-white p-3">
           <h3 className="font-bold text-[#2455d4]">{t('csat')}</h3>
-          <DateBasisSelect label={t('csatNumeratorDate')} value={csatNumeratorDate} onChange={setCsatNumeratorDate} allowClosed={false} />
-          <DateBasisSelect label={t('csatDenominatorDate')} value={csatDenominatorDate} onChange={setCsatDenominatorDate} allowClosed={false} />
+          <p className="text-sm text-[#50648f]">{t('csatSubmittedNote')}</p>
         </div>
         <div className="space-y-3 rounded-lg border border-[#f4dfd2] bg-white p-3">
           <h3 className="font-bold text-[#df6228]">{t('poorRate')}</h3>
@@ -225,7 +223,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </div>
         <div className="space-y-3 rounded-lg border border-[#d7e9e1] bg-white p-3">
           <h3 className="font-bold text-[#339261]">{t('feedbackRate')}</h3>
-          <DateBasisSelect label={t('feedbackNumeratorDate')} value={feedbackNumeratorDate} onChange={setFeedbackNumeratorDate} />
+          <p className="text-sm text-[#50648f]">{t('feedbackErpNote')}</p>
         </div>
         <p className="text-xs text-[#60729a] lg:col-span-3">{t('selectionNote')}</p>
       </div>}
@@ -239,7 +237,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
           <div className="grid gap-3 md:grid-cols-3">
             <div className="flex items-center gap-4 rounded-xl border border-[#d9e3fb] bg-[#fbfcff] p-5 shadow-[0_1px_5px_rgba(40,82,160,0.06)]">
               <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#5789f0] to-[#123dc7] text-white"><Star className="h-9 w-9 fill-current" /></span>
-              <div><p className="font-semibold">{t('csat')}<MetricHelp metric="csat" label={t('csat')} /></p><p className="text-3xl font-bold text-[#2455d4]">{scoreText(average?.csat)} / 5</p><p className="text-sm text-[#60729a]">{t('monthlyAverage')}</p></div>
+              <div><p className="font-semibold">{t('csat')}<MetricHelp metric="csat" label={t('csat')} /></p><p className="text-3xl font-bold text-[#2455d4]">{scoreText(average?.csat)} / 5</p><p className="text-sm text-[#60729a]">{t('monthlyAverage')}</p><p className="text-xs text-[#60729a]">{t('csatTotalCount', { count: csatTotalCount })}</p></div>
             </div>
             <div className="flex items-center gap-4 rounded-xl border border-[#f4dfd2] bg-[#fffdfb] p-5 shadow-[0_1px_5px_rgba(180,80,30,0.05)]">
               <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f89443] to-[#d74719] text-white"><ThumbsDown className="h-8 w-8 fill-current" /></span>
@@ -313,8 +311,8 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </>
       )}
       {canReadIncidents && validRange && ready && !error && (
-        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} csatNumeratorDate={csatNumeratorDate}
-          poorNumeratorDate={poorNumeratorDate} feedbackNumeratorDate={feedbackNumeratorDate} />
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone}
+          poorNumeratorDate={poorNumeratorDate} />
       )}
     </section>
   );

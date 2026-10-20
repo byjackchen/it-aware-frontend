@@ -7,7 +7,7 @@ import type { ServiceNowMonthDetails, ServiceNowTicketDetail } from '@/lib/types
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
 
 type DetailScope = 'all' | 'csat' | 'poor' | 'feedback';
-type DateBasis = 'opened' | 'closed' | 'taken_on';
+type DateBasis = 'opened' | 'closed' | 'taken_on' | 'submitted';
 type DetailPart = 'denominator' | 'numerator';
 type DetailFilters = { ratedOnly: boolean; ratings: number[] };
 
@@ -15,9 +15,7 @@ interface Props {
   batchOid: string;
   months: Array<{ month: string; label: string }>;
   timezone: string;
-  csatNumeratorDate: DateBasis;
   poorNumeratorDate: DateBasis;
-  feedbackNumeratorDate: DateBasis;
 }
 
 const PAGE_SIZE = 50;
@@ -34,18 +32,17 @@ function detailSearchParams(batchOid: string, month: string, timezone: string, s
   return params;
 }
 
-export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumeratorDate, poorNumeratorDate, feedbackNumeratorDate }: Props) {
+export function ServiceNowMonthDetails({ batchOid, months, timezone, poorNumeratorDate }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   // Empty until the user picks one: the latest month in the range is shown.
   const [requestedMonth, setRequestedMonth] = useState('');
   const [detailScope, setDetailScope] = useState<DetailScope>('all');
   const [detailPart, setDetailPart] = useState<DetailPart>('denominator');
-  const [csatDetailDate, setCsatDetailDate] = useState<'opened' | 'taken_on'>('taken_on');
-  const denominatorDate: DateBasis = detailScope === 'csat' ? csatDetailDate
+  const denominatorDate: DateBasis = detailScope === 'csat' ? 'submitted'
     : detailScope === 'poor' || detailScope === 'feedback' ? 'opened' : 'closed';
   const numeratorDate: DateBasis = detailScope === 'poor' ? poorNumeratorDate
-    : detailScope === 'feedback' ? feedbackNumeratorDate : csatNumeratorDate;
+    : detailScope === 'feedback' || detailScope === 'csat' ? 'submitted' : 'taken_on';
   const activePart: DetailPart = detailScope === 'poor' || detailScope === 'feedback' ? detailPart : 'denominator';
   const activeDate: DateBasis = activePart === 'numerator' ? numeratorDate : denominatorDate;
   const [loaded, setLoaded] = useState<{ key: string; data: ServiceNowMonthDetails } | null>(null);
@@ -60,7 +57,8 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
   const selectedMonth = months.some((item) => item.month === requestedMonth)
     ? requestedMonth : months.at(-1)?.month;
   const activeFilters = detailScope === 'all' ? appliedFilters : null;
-  const selectionKey = JSON.stringify([batchOid, selectedMonth, timezone, detailScope, activePart, activeDate, activeFilters]);
+  const detailTimezone = detailScope === 'csat' || detailScope === 'feedback' ? 'UTC' : timezone;
+  const selectionKey = JSON.stringify([batchOid, selectedMonth, detailTimezone, detailScope, activePart, activeDate, activeFilters]);
   const page = paging.key === selectionKey ? paging.page : 1;
   const requestKey = JSON.stringify([selectionKey, page]);
   const details = loaded?.key === requestKey ? loaded.data : null;
@@ -70,7 +68,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
   useEffect(() => {
     if (!selectedMonth) return;
     const controller = new AbortController();
-    const params = detailSearchParams(batchOid, selectedMonth, timezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters);
+    const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters);
     fetch(`/api/dashboard/survey-analytics/servicenow-month-details?${params}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error(t('detailLoadFailed'));
@@ -93,28 +91,34 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
         setLoaded((current) => (current?.key === requestKey ? null : current));
       });
     return () => controller.abort();
-  }, [batchOid, selectedMonth, timezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters, requestKey, selectionKey, t]);
+  }, [batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters, requestKey, selectionKey, t]);
 
   const pages = Math.max(1, Math.ceil((details?.filtered_ticket_count ?? 0) / PAGE_SIZE));
   const visible = details?.tickets ?? [];
   const dateFormat = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: timezone,
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: detailTimezone,
   });
   const ticketDate = (ticket: ServiceNowTicketDetail) => {
     if (activeDate === 'opened') return ticket.source_opened_at;
     if (activeDate === 'closed') return ticket.source_closed_at;
+    if (activeDate === 'submitted') return ticket.assessments[0]?.submitted_at ?? null;
     return ticket.assessments.map((assessment) => assessment.source_taken_on)
       .filter((value): value is string => !!value).sort().at(-1) ?? null;
   };
-  const formattedDate = (value: string | null) => value ? dateFormat.format(new Date(value)) : '—';
-  const dateHeader = t(activeDate === 'opened' ? 'detailOpenedAt'
-    : activeDate === 'closed' ? 'detailClosedAt' : 'detailTakenOnAt', { timezone });
+  const formattedDate = (value: string | null) => {
+    if (!value) return '—';
+    if (detailScope === 'csat' || detailScope === 'feedback') return `${new Date(value).toISOString().slice(0, 19)}Z`;
+    return dateFormat.format(new Date(value));
+  };
+  const dateHeader = activeDate === 'submitted' ? `${t('detailSubmittedAt')} (UTC)`
+    : t(activeDate === 'opened' ? 'detailOpenedAt'
+      : activeDate === 'closed' ? 'detailClosedAt' : 'detailTakenOnAt', { timezone: detailTimezone });
   const scopeLabel = t(detailScope === 'all' ? 'detailScopeAll'
     : detailScope === 'csat' ? 'detailScopeCsat'
       : detailScope === 'poor' ? 'detailScopePoor' : 'detailScopeFeedback');
   const partLabel = t(activePart === 'numerator' ? 'detailNumerator' : 'detailDenominator');
   const exportScopeLabel = detailScope === 'csat'
-    ? `${scopeLabel} · ${t(csatDetailDate === 'taken_on' ? 'detailCsatTakenOnMonth' : 'detailCsatOpenedMonth')}`
+    ? `${scopeLabel} · ${t('detailCsatSubmittedMonth')}`
     : detailScope === 'poor' || detailScope === 'feedback' ? `${scopeLabel} · ${partLabel}` : scopeLabel;
 
   const downloadDetails = async () => {
@@ -129,7 +133,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
           allTickets.push(...details.tickets);
           continue;
         }
-        const params = detailSearchParams(batchOid, selectedMonth, timezone, detailScope, activePart, denominatorDate, numeratorDate, nextPage, activeFilters);
+        const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, nextPage, activeFilters);
         const response = await fetch(`/api/dashboard/survey-analytics/servicenow-month-details?${params}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(t('detailExportFailed'));
         const result = await response.json() as ServiceNowMonthDetails;
@@ -154,7 +158,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
         ticket.assessments.map((assessment) => JSON.stringify(assessment.survey_questions)).join('\n---\n'),
         ticket.assessments.map((assessment) => JSON.stringify(assessment.survey_answer)).join('\n---\n'),
       ]);
-      const partSuffix = detailScope === 'csat' ? `_${csatDetailDate}`
+      const partSuffix = detailScope === 'csat' ? '_submitted'
         : detailScope === 'poor' || detailScope === 'feedback' ? `_${activePart}` : '';
       downloadXlsx('ServiceNow tickets', headers, rows, `servicenow_tickets_${selectedMonth}_${detailScope}${partSuffix}.xlsx`);
     } catch {
@@ -190,16 +194,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
               {months.map((item) => <option key={item.month} value={item.month}>{item.label}</option>)}
             </select>
           </label>
-          {detailScope === 'csat' && (
-            <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
-              {t('detailCsatMonth')}
-              <select value={csatDetailDate} onChange={(event) => setCsatDetailDate(event.target.value as 'opened' | 'taken_on')}
-                className="min-w-40 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm text-[#142960]">
-                <option value="taken_on">{t('detailCsatTakenOnMonth')}</option>
-                <option value="opened">{t('detailCsatOpenedMonth')}</option>
-              </select>
-            </label>
-          )}
+          {detailScope === 'csat' && <span className="pb-2 text-xs font-semibold text-[#50648f]">{t('detailCsatSubmittedMonth')}</span>}
           {detailScope === 'all' && <>
             <label className="flex items-center gap-2 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm font-medium text-[#142960]">
               <input type="checkbox" checked={ratedOnly} onChange={(event) => setRatedOnly(event.target.checked)} />
@@ -264,7 +259,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
               : activePart === 'numerator' ? 'detailNumeratorCounts' : 'detailCounts',
             { tickets: details.ticket_count, assessments: details.assessment_count })}</span>
             <span role="status" aria-live="polite" className="rounded-full bg-[#eaf0ff] px-3 py-1 font-semibold text-[#2455d4]">
-              {t('detailFilteredCount', { shown: details.filtered_ticket_count })}
+              {t(detailScope === 'csat' ? 'detailFilteredRatingCount' : 'detailFilteredCount', { shown: details.filtered_ticket_count })}
             </span>
           </p>
           <div className="overflow-x-auto rounded-xl border border-[#dbe4f4]">
@@ -272,18 +267,22 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, csatNumerat
               <thead className="bg-[#142f82] text-white"><tr>
                 <th className="px-3 py-3">{t('detailTicket')}</th>
                 <th className="px-3 py-3">{dateHeader}</th>
-                <th className="px-3 py-3">{t('detailSummary')}</th>
-                <th className="px-3 py-3">{t('detailCaller')}</th>
-                <th className="px-3 py-3">{t('detailGroup')}</th>
+                {detailScope !== 'csat' && <>
+                  <th className="px-3 py-3">{t('detailSummary')}</th>
+                  <th className="px-3 py-3">{t('detailCaller')}</th>
+                  <th className="px-3 py-3">{t('detailGroup')}</th>
+                </>}
                 <th className="px-3 py-3">{t('detailAssessments')}</th>
               </tr></thead>
               <tbody>
                 {visible.map((ticket) => <tr key={ticket.oid} className="border-t border-[#dce5f2] align-top">
                   <td className="px-3 py-3 font-semibold">{ticket.stable_id}</td>
                   <td className="whitespace-nowrap px-3 py-3">{formattedDate(ticketDate(ticket))}</td>
-                  <td className="max-w-80 px-3 py-3">{ticket.title}</td>
-                  <td className="px-3 py-3">{ticket.caller_name || '—'}</td>
-                  <td className="px-3 py-3">{ticket.assigned_group || '—'}</td>
+                  {detailScope !== 'csat' && <>
+                    <td className="max-w-80 px-3 py-3">{ticket.title}</td>
+                    <td className="px-3 py-3">{ticket.caller_name || '—'}</td>
+                    <td className="px-3 py-3">{ticket.assigned_group || '—'}</td>
+                  </>}
                   <td className="px-3 py-3">
                     {ticket.assessments.length === 0 ? t('detailNoAssessment') : ticket.assessments.map((assessment) => (
                       <details key={assessment.oid} className="mb-2 rounded-md border border-[#dbe4f4] bg-[#f8faff] p-2 last:mb-0">
