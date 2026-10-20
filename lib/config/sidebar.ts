@@ -418,8 +418,10 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                 href: '/itopsdashboard/survey-analytics',
                 labelKey: 'surveyAnalytics',
                 icon: BarChart3,
-                permissions: requireAnyPermission([
+                permissions: requireAllPermissions([
                     PERMISSIONS.UI.NAVIGATION_OPERATION,
+                    PERMISSIONS.OBJECTS.SURVEY_BATCHS_READ,
+                    PERMISSIONS.OBJECTS.INCIDENTS_READ,
                 ]),
             },
         ],
