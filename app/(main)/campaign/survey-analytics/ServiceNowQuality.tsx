@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CalendarDays, MessageCircle, Settings2, Star, ThumbsDown } from 'lucide-react';
+import { CalendarDays, MessageCircle, Star, ThumbsDown } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer,
@@ -24,7 +24,6 @@ interface Props {
 const COLORS = { csat: '#4f7fe9', poor: '#9da0a7', feedback: '#ea792b' };
 
 type QualityMetric = 'csat' | 'poorRate' | 'feedbackRate';
-type NumeratorBasis = 'opened' | 'closed' | 'taken_on';
 
 const HELP_KEYS = {
   csat: { definition: 'csatDefinition', formula: 'csatFormula' },
@@ -124,25 +123,6 @@ function MetricHelp({ metric, label }: { metric: QualityMetric; label: string })
   );
 }
 
-function DateBasisSelect({ label, value, onChange, allowTakenOn = true, allowClosed = true }: {
-  label: string;
-  value: NumeratorBasis;
-  onChange: (value: NumeratorBasis) => void;
-  allowTakenOn?: boolean;
-  allowClosed?: boolean;
-}) {
-  const t = useTranslations('SurveyAnalytics.serviceQuality');
-  return <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
-    {label}
-    <select value={value} onChange={(event) => onChange(event.target.value as NumeratorBasis)}
-      className="w-full rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm text-[#142960]">
-      <option value="opened">{t('dateOpened')}</option>
-      {allowClosed && <option value="closed">{t('dateClosed')}</option>}
-      {allowTakenOn && <option value="taken_on">{t('dateTakenOn')}</option>}
-    </select>
-  </label>;
-}
-
 export function ServiceNowQuality({ batchOid }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
@@ -153,14 +133,12 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const [initialRange] = useState(() => defaultMonthRange(new Date(), 'UTC'));
   const [startMonth, setStartMonth] = useState(initialRange.start);
   const [endMonth, setEndMonth] = useState(initialRange.end);
-  const [poorNumeratorDate, setPoorNumeratorDate] = useState<NumeratorBasis>('taken_on');
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [showFormula, setShowFormula] = useState(false);
   const validRange = isValidMonthSelection(startMonth, endMonth);
   const params = new URLSearchParams({
     batch_oid: batchOid, start_month: startMonth, end_month: endMonth, timezone,
     csat_numerator_date: 'submitted', csat_denominator_date: 'submitted',
-    poor_numerator_date: poorNumeratorDate, poor_denominator_date: 'opened',
+    poor_numerator_date: 'submitted', poor_denominator_date: 'opened',
     feedback_numerator_date: 'submitted', feedback_denominator_date: 'opened',
   });
   const { data, isLoading, error } = useSurveyAnalytics<ServiceNowQualityReport>(
@@ -208,25 +186,8 @@ export function ServiceNowQuality({ batchOid }: Props) {
               onChange={(event) => setEndMonth(event.target.value)}
               className="rounded-md border border-[#cad6eb] bg-white px-2 py-1.5 text-sm text-[#142960]" />
           </label>
-          <button type="button" aria-label={t('settings')} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((open) => !open)}
-            className="rounded-md border border-[#cad6eb] bg-white p-2 text-[#2455d4]" title={t('settings')}><Settings2 className="h-5 w-5" /></button>
         </div>
       </div>
-      {settingsOpen && <div className="mb-5 grid gap-3 rounded-xl border border-[#dce5f5] bg-[#f7f9fe] p-4 text-sm lg:grid-cols-3">
-        <div className="space-y-3 rounded-lg border border-[#d9e3fb] bg-white p-3">
-          <h3 className="font-bold text-[#2455d4]">{t('csat')}</h3>
-          <p className="text-sm text-[#50648f]">{t('csatSubmittedNote')}</p>
-        </div>
-        <div className="space-y-3 rounded-lg border border-[#f4dfd2] bg-white p-3">
-          <h3 className="font-bold text-[#df6228]">{t('poorRate')}</h3>
-          <DateBasisSelect label={t('poorNumeratorDate')} value={poorNumeratorDate} onChange={setPoorNumeratorDate} />
-        </div>
-        <div className="space-y-3 rounded-lg border border-[#d7e9e1] bg-white p-3">
-          <h3 className="font-bold text-[#339261]">{t('feedbackRate')}</h3>
-          <p className="text-sm text-[#50648f]">{t('feedbackErpNote')}</p>
-        </div>
-        <p className="text-xs text-[#60729a] lg:col-span-3">{t('selectionNote')}</p>
-      </div>}
 
       {!canReadIncidents && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('noIncidentAccess')}</p>}
       {canReadIncidents && !validRange && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{t('invalidRange')}</p>}
@@ -311,8 +272,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </>
       )}
       {canReadIncidents && validRange && ready && !error && (
-        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone}
-          poorNumeratorDate={poorNumeratorDate} />
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} />
       )}
     </section>
   );
