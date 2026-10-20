@@ -2534,6 +2534,7 @@
       "feedbackErpNote": "Numerator: distinct tickets with valid assessments submitted in the UTC month. Denominator: OIT eligible ServiceNow tickets opened in the UTC month.",
       "showValues": "Show metric values",
       "showCalculation": "Show calculation",
+      "scrollMonths": "Scroll months",
       "showNumeratorDenominator": "Show numerator / denominator",
       "calculation": "Calculation",
       "formulaNote": "Each month shows its numerator ÷ denominator and result. The final column is the simple average of monthly results.",

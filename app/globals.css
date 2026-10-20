@@ -521,6 +521,23 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.5);
 }
 
+/* The CSAT table has a white background in both app themes. */
+.csat-metric-scroll {
+  scrollbar-color: #315fc5 #e7eefb;
+}
+
+.csat-metric-scroll::-webkit-scrollbar-track {
+  background: #e7eefb;
+}
+
+.csat-metric-scroll::-webkit-scrollbar-thumb {
+  background: #315fc5;
+}
+
+.csat-metric-scroll::-webkit-scrollbar-thumb:hover {
+  background: #214ba8;
+}
+
 @media (min-width: 1024px) {
   .campaign-pane-scroll-no-native {
     scrollbar-width: none;

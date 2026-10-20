@@ -2212,6 +2212,7 @@
       "feedbackErpNote": "分子按 UTC submitted_at 归月，按工单去重；分母按 UTC Opened at 归月，只包含符合 OIT 条件的 ServiceNow 工单。",
       "showValues": "显示指标值",
       "showCalculation": "显示计算公式",
+      "scrollMonths": "横向查看月份",
       "showNumeratorDenominator": "显示分子 / 分母",
       "calculation": "计算公式",
       "formulaNote": "每个月显示分子 ÷ 分母及计算结果；最后一列仍为各月结果的简单平均。",
