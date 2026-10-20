@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarDays, MessageCircle, Star, ThumbsDown } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -22,6 +23,91 @@ interface Props {
 }
 
 const COLORS = { csat: '#4f7fe9', poor: '#9da0a7', feedback: '#ea792b' };
+
+function MonthTableScroll({ children, label }: { children: ReactNode; label: string }) {
+  const id = useId();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ x: number; left: number } | null>(null);
+  const [scroll, setScroll] = useState({ left: 0, max: 0, visible: 0, total: 0 });
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const sync = () => setScroll({
+      left: content.scrollLeft,
+      max: Math.max(0, content.scrollWidth - content.clientWidth),
+      visible: content.clientWidth,
+      total: content.scrollWidth,
+    });
+    const observer = new ResizeObserver(sync);
+    observer.observe(content);
+    if (content.firstElementChild) observer.observe(content.firstElementChild);
+    sync();
+    return () => observer.disconnect();
+  }, []);
+
+  const thumbPercent = scroll.total ? Math.max(8, scroll.visible / scroll.total * 100) : 100;
+  const travelPercent = 100 - thumbPercent;
+  const thumbLeft = scroll.max ? scroll.left / scroll.max * travelPercent : 0;
+
+  return (
+    <div className="relative mt-2 rounded-xl border border-[#dbe4f4] bg-[#e7eefb] pb-2">
+      <div id={id} ref={contentRef} onScroll={(event) => {
+        const left = event.currentTarget.scrollLeft;
+        setScroll((current) => ({ ...current, left }));
+      }} className="csat-metric-scroll overflow-x-auto rounded-t-xl bg-white">
+        {children}
+      </div>
+      {scroll.max > 0 && (
+        <div
+          role="scrollbar"
+          aria-label={label}
+          aria-controls={id}
+          aria-orientation="horizontal"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(scroll.max)}
+          aria-valuenow={Math.round(scroll.left)}
+          tabIndex={0}
+          className="absolute inset-x-1 bottom-0 h-2 cursor-pointer touch-none rounded-full bg-[#e7eefb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#315fc5]"
+          onPointerDown={(event) => {
+            const content = contentRef.current;
+            if (!content) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const thumbWidth = bounds.width * thumbPercent / 100;
+            const thumbStart = bounds.width * thumbLeft / 100;
+            const x = event.clientX - bounds.left;
+            if (x < thumbStart || x > thumbStart + thumbWidth) {
+              content.scrollLeft = (x - thumbWidth / 2) / Math.max(1, bounds.width - thumbWidth) * scroll.max;
+            }
+            dragRef.current = { x: event.clientX, left: content.scrollLeft };
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            const content = contentRef.current;
+            if (!content || !dragRef.current) return;
+            const trackWidth = event.currentTarget.clientWidth * (1 - thumbPercent / 100);
+            content.scrollLeft = dragRef.current.left + (event.clientX - dragRef.current.x) / Math.max(1, trackWidth) * scroll.max;
+          }}
+          onPointerUp={() => { dragRef.current = null; }}
+          onPointerCancel={() => { dragRef.current = null; }}
+          onKeyDown={(event) => {
+            const content = contentRef.current;
+            if (!content) return;
+            const step = event.key === 'PageDown' || event.key === 'PageUp' ? content.clientWidth : 80;
+            if (event.key === 'ArrowRight' || event.key === 'PageDown') content.scrollLeft += step;
+            else if (event.key === 'ArrowLeft' || event.key === 'PageUp') content.scrollLeft -= step;
+            else if (event.key === 'Home') content.scrollLeft = 0;
+            else if (event.key === 'End') content.scrollLeft = scroll.max;
+            else return;
+            event.preventDefault();
+          }}
+        >
+          <span className="absolute inset-y-[1px] rounded-full bg-[#315fc5] hover:bg-[#214ba8]" style={{ width: `${thumbPercent}%`, left: `${thumbLeft}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 type QualityMetric = 'csat' | 'poorRate' | 'feedbackRate';
 
@@ -244,7 +330,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
           <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
             <button type="button" onClick={() => setShowFormula((value) => !value)} className="rounded-md border border-[#cad6eb] px-3 py-2 text-sm font-semibold">{showFormula ? t('showValues') : t('showCalculation')}</button>
           </div>
-          <div className="mt-2 overflow-x-auto rounded-xl border border-[#dbe4f4]">
+          <MonthTableScroll label={t('scrollMonths')}>
             <table className="min-w-[760px] w-full border-collapse text-center text-sm">
               <thead className="bg-[#142f82] text-white"><tr>
                 <th className="min-w-48 border-r border-white/30 px-3 py-3">{t('metric')}</th>
@@ -267,7 +353,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </MonthTableScroll>
           <p className="mt-3 text-right text-xs text-[#60729a]">{showFormula ? t('formulaNote') : t('sourceNote')}</p>
         </>
       )}
