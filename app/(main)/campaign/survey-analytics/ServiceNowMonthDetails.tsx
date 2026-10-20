@@ -15,7 +15,6 @@ interface Props {
   batchOid: string;
   months: Array<{ month: string; label: string }>;
   timezone: string;
-  poorNumeratorDate: DateBasis;
 }
 
 const PAGE_SIZE = 50;
@@ -32,7 +31,7 @@ function detailSearchParams(batchOid: string, month: string, timezone: string, s
   return params;
 }
 
-export function ServiceNowMonthDetails({ batchOid, months, timezone, poorNumeratorDate }: Props) {
+export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   // Empty until the user picks one: the latest month in the range is shown.
@@ -41,8 +40,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, poorNumerat
   const [detailPart, setDetailPart] = useState<DetailPart>('denominator');
   const denominatorDate: DateBasis = detailScope === 'csat' ? 'submitted'
     : detailScope === 'poor' || detailScope === 'feedback' ? 'opened' : 'closed';
-  const numeratorDate: DateBasis = detailScope === 'poor' ? poorNumeratorDate
-    : detailScope === 'feedback' || detailScope === 'csat' ? 'submitted' : 'taken_on';
+  const numeratorDate: DateBasis = detailScope === 'all' ? 'taken_on' : 'submitted';
   const activePart: DetailPart = detailScope === 'poor' || detailScope === 'feedback' ? detailPart : 'denominator';
   const activeDate: DateBasis = activePart === 'numerator' ? numeratorDate : denominatorDate;
   const [loaded, setLoaded] = useState<{ key: string; data: ServiceNowMonthDetails } | null>(null);
@@ -57,7 +55,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, poorNumerat
   const selectedMonth = months.some((item) => item.month === requestedMonth)
     ? requestedMonth : months.at(-1)?.month;
   const activeFilters = detailScope === 'all' ? appliedFilters : null;
-  const detailTimezone = detailScope === 'csat' || detailScope === 'feedback' ? 'UTC' : timezone;
+  const detailTimezone = detailScope === 'all' ? timezone : 'UTC';
   const selectionKey = JSON.stringify([batchOid, selectedMonth, detailTimezone, detailScope, activePart, activeDate, activeFilters]);
   const page = paging.key === selectionKey ? paging.page : 1;
   const requestKey = JSON.stringify([selectionKey, page]);
@@ -107,7 +105,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone, poorNumerat
   };
   const formattedDate = (value: string | null) => {
     if (!value) return '—';
-    if (detailScope === 'csat' || detailScope === 'feedback') return `${new Date(value).toISOString().slice(0, 19)}Z`;
+    if (detailScope !== 'all') return `${new Date(value).toISOString().slice(0, 19)}Z`;
     return dateFormat.format(new Date(value));
   };
   const dateHeader = activeDate === 'submitted' ? `${t('detailSubmittedAt')} (UTC)`
