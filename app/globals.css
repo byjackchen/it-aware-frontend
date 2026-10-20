@@ -521,21 +521,13 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.5);
 }
 
-/* The CSAT table has a white background in both app themes. */
+/* The table uses its own always-visible scroll thumb below the native scroll area. */
 .csat-metric-scroll {
-  scrollbar-color: #315fc5 #e7eefb;
+  scrollbar-width: none;
 }
 
-.csat-metric-scroll::-webkit-scrollbar-track {
-  background: #e7eefb;
-}
-
-.csat-metric-scroll::-webkit-scrollbar-thumb {
-  background: #315fc5;
-}
-
-.csat-metric-scroll::-webkit-scrollbar-thumb:hover {
-  background: #214ba8;
+.csat-metric-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 1024px) {
