@@ -36,7 +36,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   const locale = useLocale();
   // Empty until the user picks one: the latest month in the range is shown.
   const [requestedMonth, setRequestedMonth] = useState('');
-  const [detailScope, setDetailScope] = useState<DetailScope>('all');
+  const [detailScope, setDetailScope] = useState<DetailScope>('feedback');
   const [detailPart, setDetailPart] = useState<DetailPart>('denominator');
   const denominatorDate: DateBasis = detailScope === 'csat' ? 'submitted'
     : detailScope === 'poor' || detailScope === 'feedback' ? 'opened' : 'closed';

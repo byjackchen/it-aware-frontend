@@ -161,7 +161,7 @@ function QualityBarTooltip({ active, payload }: TooltipContentProps) {
       <p className="font-bold text-[#132968]">{row.label} · {label}</p>
       <p className="mt-2">{numeratorLabel}: <strong>{numerator}</strong></p>
       <p>{denominatorLabel}: <strong>{denominator}</strong></p>
-      {metric === 'csat' && <p>{t('csatTicketCount', { count: row.feedback_count })}</p>}
+      {metric === 'csat' && <p>{t('csatTicketCount', { count: row.rating_count })}</p>}
       <p className="mt-2 border-t border-[#e7ebf3] pt-2 font-bold">{formula}</p>
     </div>
   );
@@ -246,7 +246,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
   const scoreTop = Math.max(5, Math.ceil(Math.max(0, ...monthRows.map((row) => row.csat ?? 0))));
   const scoreTicks = [0, 1, 2, 3, 4, 5].map((step) => (scoreTop / 5) * step);
   const formulaCell = (row: ServiceNowQualityMonth, key: 'csat' | 'poor_rate' | 'feedback_rate') => key === 'csat'
-    ? `${row.rating_sum}${t('csatTicketCountInFormula', { count: row.feedback_count })} ÷ ${row.rating_count} = ${scoreText(row.csat)} / 5`
+    ? `${row.rating_sum}${t('csatTicketCountInFormula', { count: row.rating_count })} ÷ ${row.rating_count} = ${scoreText(row.csat)} / 5`
     : `${key === 'poor_rate' ? row.poor_count : row.feedback_count} ÷ ${key === 'poor_rate' ? (row.poor_ticket_count ?? row.ticket_count) : (row.feedback_ticket_count ?? row.ticket_count)} × 100% = ${percentText(row[key])}`;
 
   return (
