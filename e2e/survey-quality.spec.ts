@@ -97,7 +97,7 @@ test('CSAT numerator and denominator dates are independent while rate denominato
   await expect(page.getByRole('cell', { name: '20 ÷ 200 × 100% = 10.00%' })).toBeVisible();
 });
 
-test('month details defaults to all tickets and exports every filtered page', async ({ page, context }) => {
+test('month details defaults to the opened OIT denominator and exports every filtered page', async ({ page, context }) => {
   await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
     json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
@@ -111,7 +111,7 @@ test('month details defaults to all tickets and exports every filtered page', as
   const detailQueries: URLSearchParams[] = [];
   const tickets = Array.from({ length: 51 }, (_, index) => ({
     oid: `ticket-${index}`, stable_id: `INC-${index + 1}`, title: `Ticket ${index + 1}`,
-    state: 'Closed', source_opened_at: index === 50 ? null : '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
+    state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
     caller_name: 'User', assigned_group: 'OIT SSC', assessments: [],
   }));
   await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
@@ -122,13 +122,11 @@ test('month details defaults to all tickets and exports every filtered page', as
       filtered_ticket_count: 51, tickets: tickets.slice((pageNumber - 1) * 50, pageNumber * 50) } });
   });
   await page.goto('/campaign/survey-analytics');
-  await expect(page.getByLabel('View metric range')).toHaveValue('all');
-  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('closed');
-  await page.getByLabel('View metric range').selectOption('csat');
-  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('csat');
-  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('taken_on');
-  await page.getByLabel('View metric range').selectOption('all');
-  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('all');
+  await expect(page.getByLabel('View metric range')).toHaveValue('feedback');
+  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('feedback');
+  expect(detailQueries.at(-1)?.get('part')).toBe('denominator');
+  expect(detailQueries.at(-1)?.get('denominator_date')).toBe('opened');
+  expect(detailQueries.at(-1)?.get('timezone')).toBe('UTC');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download Excel' }).click();
   const download = await downloadPromise;
@@ -321,7 +319,10 @@ test('metric details show denominator or numerator tickets and export the select
   await page.goto('/campaign/survey-analytics');
   const scope = page.getByLabel('View metric range');
   const part = page.getByRole('group', { name: 'View numerator or denominator' });
-  await expect(scope).toHaveValue('all');
+  await expect(scope).toHaveValue('feedback');
+  await expect(part.getByRole('button', { name: 'View denominator' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('INC-BASE-1', { exact: true })).toBeVisible();
+  await scope.selectOption('all');
   await expect(part).toHaveCount(0);
   await expect(page.getByLabel('Only rated tickets')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rating', exact: true })).toBeVisible();
@@ -341,7 +342,7 @@ test('metric details show denominator or numerator tickets and export the select
   await part.getByRole('button', { name: 'View numerator' }).click();
   await expect(page.getByText('INC-POOR', { exact: true })).toBeVisible();
   await expect(page.getByText('INC-BASE-1', { exact: true })).toHaveCount(0);
-  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('taken_on');
+  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('submitted');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download Excel' }).click();
   const download = await downloadPromise;
@@ -356,7 +357,7 @@ test('metric details show denominator or numerator tickets and export the select
   await expect(part.getByRole('button', { name: 'View denominator' })).toHaveAttribute('aria-pressed', 'true');
   await part.getByRole('button', { name: 'View numerator' }).click();
   await expect(page.getByText('INC-FEEDBACK', { exact: true })).toBeVisible();
-  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('opened');
+  expect(detailQueries.at(-1)?.get('numerator_date')).toBe('submitted');
 });
 
 test('all tickets keeps rated and score filters for its list and Excel export', async ({ page }) => {
@@ -386,6 +387,7 @@ test('all tickets keeps rated and score filters for its list and Excel export', 
       filtered_ticket_count: selected.length, tickets: selected } });
   });
   await page.goto('/campaign/survey-analytics');
+  await page.getByLabel('View metric range').selectOption('all');
   await expect(page.getByText('INC-NONE', { exact: true })).toBeVisible();
   await page.getByLabel('Only rated tickets').check();
   await expect(page.getByText('INC-NONE', { exact: true })).toBeVisible();
@@ -430,6 +432,7 @@ test('Excel export follows the applied score filter across all detail pages', as
       filtered_ticket_count: ids.length, tickets } });
   });
   await page.goto('/campaign/survey-analytics');
+  await page.getByLabel('View metric range').selectOption('all');
   await page.getByRole('button', { name: 'Rating', exact: true }).click();
   await page.getByRole('checkbox', { name: '5', exact: true }).check();
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
