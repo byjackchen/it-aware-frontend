@@ -7,14 +7,13 @@ import type { ServiceNowMonthDetails, ServiceNowTicketDetail } from '@/lib/types
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
 
 type DetailScope = 'all' | 'csat' | 'poor' | 'feedback';
-type DateBasis = 'opened' | 'closed' | 'taken_on' | 'submitted';
+type DateBasis = 'opened' | 'taken_on' | 'submitted';
 type DetailPart = 'denominator' | 'numerator';
 type DetailFilters = { ratedOnly: boolean; ratings: number[] };
 
 interface Props {
   batchOid: string;
   months: Array<{ month: string; label: string }>;
-  timezone: string;
 }
 
 const PAGE_SIZE = 50;
@@ -31,15 +30,14 @@ function detailSearchParams(batchOid: string, month: string, timezone: string, s
   return params;
 }
 
-export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
+export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   const t = useTranslations('SurveyAnalytics.serviceQuality');
   const locale = useLocale();
   // Empty until the user picks one: the latest month in the range is shown.
   const [requestedMonth, setRequestedMonth] = useState('');
-  const [detailScope, setDetailScope] = useState<DetailScope>('feedback');
+  const [detailScope, setDetailScope] = useState<DetailScope>('all');
   const [detailPart, setDetailPart] = useState<DetailPart>('denominator');
-  const denominatorDate: DateBasis = detailScope === 'csat' ? 'submitted'
-    : detailScope === 'poor' || detailScope === 'feedback' ? 'opened' : 'closed';
+  const denominatorDate: DateBasis = detailScope === 'csat' ? 'submitted' : 'opened';
   const numeratorDate: DateBasis = detailScope === 'all' ? 'taken_on' : 'submitted';
   const activePart: DetailPart = detailScope === 'poor' || detailScope === 'feedback' ? detailPart : 'denominator';
   const activeDate: DateBasis = activePart === 'numerator' ? numeratorDate : denominatorDate;
@@ -55,7 +53,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   const selectedMonth = months.some((item) => item.month === requestedMonth)
     ? requestedMonth : months.at(-1)?.month;
   const activeFilters = detailScope === 'all' ? appliedFilters : null;
-  const detailTimezone = detailScope === 'all' ? timezone : 'UTC';
+  const detailTimezone = 'UTC';
   const selectionKey = JSON.stringify([batchOid, selectedMonth, detailTimezone, detailScope, activePart, activeDate, activeFilters]);
   const page = paging.key === selectionKey ? paging.page : 1;
   const requestKey = JSON.stringify([selectionKey, page]);
@@ -98,7 +96,6 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
   });
   const ticketDate = (ticket: ServiceNowTicketDetail) => {
     if (activeDate === 'opened') return ticket.source_opened_at;
-    if (activeDate === 'closed') return ticket.source_closed_at;
     if (activeDate === 'submitted') return ticket.assessments[0]?.submitted_at ?? null;
     return ticket.assessments.map((assessment) => assessment.source_taken_on)
       .filter((value): value is string => !!value).sort().at(-1) ?? null;
@@ -109,8 +106,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
     return dateFormat.format(new Date(value));
   };
   const dateHeader = activeDate === 'submitted' ? `${t('detailSubmittedAt')} (UTC)`
-    : t(activeDate === 'opened' ? 'detailOpenedAt'
-      : activeDate === 'closed' ? 'detailClosedAt' : 'detailTakenOnAt', { timezone: detailTimezone });
+    : t(activeDate === 'opened' ? 'detailOpenedAt' : 'detailTakenOnAt', { timezone: detailTimezone });
   const scopeLabel = t(detailScope === 'all' ? 'detailScopeAll'
     : detailScope === 'csat' ? 'detailScopeCsat'
       : detailScope === 'poor' ? 'detailScopePoor' : 'detailScopeFeedback');
@@ -171,7 +167,7 @@ export function ServiceNowMonthDetails({ batchOid, months, timezone }: Props) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-xl font-bold">{t('detailTitle')}</h3>
-          <p className="mt-1 text-sm text-[#60729a]">{t('detailSubtitle')}</p>
+          <p className="mt-1 text-sm text-[#60729a]">{t(detailScope === 'all' ? 'detailAllScopeHint' : 'detailSubtitle')}</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
