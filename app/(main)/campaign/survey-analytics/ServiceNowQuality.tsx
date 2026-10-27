@@ -358,7 +358,7 @@ export function ServiceNowQuality({ batchOid }: Props) {
         </>
       )}
       {canReadIncidents && validRange && ready && !error && (
-        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} timezone={timezone} />
+        <ServiceNowMonthDetails batchOid={batchOid} months={detailMonths} />
       )}
     </section>
   );
