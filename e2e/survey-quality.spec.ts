@@ -122,8 +122,8 @@ test('month details defaults to the opened OIT denominator and exports every fil
       filtered_ticket_count: 51, tickets: tickets.slice((pageNumber - 1) * 50, pageNumber * 50) } });
   });
   await page.goto('/campaign/survey-analytics');
-  await expect(page.getByLabel('View metric range')).toHaveValue('feedback');
-  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('feedback');
+  await expect(page.getByLabel('View metric range')).toHaveValue('all');
+  await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('all');
   expect(detailQueries.at(-1)?.get('part')).toBe('denominator');
   expect(detailQueries.at(-1)?.get('denominator_date')).toBe('opened');
   expect(detailQueries.at(-1)?.get('timezone')).toBe('UTC');
@@ -164,7 +164,7 @@ test('Excel export rejects a duplicate ticket when detail pages change during do
   expect(downloads).toHaveLength(0);
 });
 
-test('switching timezone reloads CSAT month totals and matching ticket details', async ({ page, context }) => {
+test('switching user timezone preserves the UTC opened ticket cohort', async ({ page, context }) => {
   await page.setViewportSize({ width: 2048, height: 1000 });
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({ json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 1 }] } }));
@@ -173,13 +173,13 @@ test('switching timezone reloads CSAT month totals and matching ticket details',
   await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => {
     const zone = new URL(route.request().url()).searchParams.get('timezone') ?? 'missing';
     qualityZones.push(zone);
-    const ticketCount = zone === 'America/Los_Angeles' ? 0 : 1;
+    const ticketCount = 1;
     return route.fulfill({ json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [{ month: '2026-07', ticket_count: ticketCount, feedback_count: ticketCount, rating_count: ticketCount, rating_sum: ticketCount * 5, poor_count: 0, csat: ticketCount ? 5 : null, poor_rate: ticketCount ? 0 : null, feedback_rate: ticketCount ? 100 : null }], averages: { csat: ticketCount ? 5 : null, poor_rate: ticketCount ? 0 : null, feedback_rate: ticketCount ? 100 : null } } });
   });
   await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
     const zone = new URL(route.request().url()).searchParams.get('timezone') ?? 'missing';
     detailZones.push(zone);
-    const tickets = zone === 'America/Los_Angeles' ? [] : [{ oid: 'july-ticket', stable_id: 'INC-JULY', title: 'Boundary ticket', state: 'Closed', source_closed_at: '2026-07-01T02:00:00Z', caller_name: null, assigned_group: null, assessments: [] }];
+    const tickets = zone === 'America/Los_Angeles' ? [] : [{ oid: 'july-ticket', stable_id: 'INC-JULY', title: 'Boundary ticket', state: 'Closed', source_opened_at: '2026-07-01T02:00:00Z', source_closed_at: '2026-07-02T02:00:00Z', caller_name: null, assigned_group: 'OIT SSC', assessments: [] }];
     return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length, assessment_count: 0, filtered_ticket_count: tickets.length, tickets } });
   });
   await page.goto('/campaign/survey-analytics');
@@ -190,10 +190,10 @@ test('switching timezone reloads CSAT month totals and matching ticket details',
   await profile.hover();
   await profile.getByRole('button', { name: /UTC UTC\+0/ }).click();
   await profile.getByRole('button', { name: /Los Angeles/ }).click();
-  await expect(page.getByText('INC-JULY')).toHaveCount(0);
-  await expect(page.getByRole('columnheader', { name: 'Closed at (America/Los_Angeles)' })).toBeVisible();
-  expect(qualityZones).toContain('America/Los_Angeles');
-  expect(detailZones).toContain('America/Los_Angeles');
+  await expect.poll(() => qualityZones.at(-1)).toBe('America/Los_Angeles');
+  await expect(page.getByText('INC-JULY')).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Opened at (UTC)' })).toBeVisible();
+  expect(detailZones.every((zone) => zone === 'UTC')).toBe(true);
 });
 
 test('ServiceNow quality chart shows monthly metrics and month selection', async ({ page }) => {
@@ -319,10 +319,7 @@ test('metric details show denominator or numerator tickets and export the select
   await page.goto('/campaign/survey-analytics');
   const scope = page.getByLabel('View metric range');
   const part = page.getByRole('group', { name: 'View numerator or denominator' });
-  await expect(scope).toHaveValue('feedback');
-  await expect(part.getByRole('button', { name: 'View denominator' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByText('INC-BASE-1', { exact: true })).toBeVisible();
-  await scope.selectOption('all');
+  await expect(scope).toHaveValue('all');
   await expect(part).toHaveCount(0);
   await expect(page.getByLabel('Only rated tickets')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rating', exact: true })).toBeVisible();
