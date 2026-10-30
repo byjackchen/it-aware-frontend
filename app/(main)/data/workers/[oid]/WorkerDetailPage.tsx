@@ -32,6 +32,7 @@ import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import type { Worker, WorkerManagedBy, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location } from '@/lib/types/objects';
 import { updateWorkerAction, upsertWorkerProfileAction, deleteWorkerAction } from '@/app/actions/objects';
+import { changedWorkerFields } from '@/lib/utils/worker-edit';
 
 interface WorkerDetailPageProps {
     worker: Worker;
@@ -144,24 +145,29 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
         setIsPending(true);
         setSaveError(null);
         try {
-            const formData = new FormData();
-            formData.set('fullname', fullname);
-            formData.set('email', email);
-            formData.set('worker_id', workerId);
-            formData.set('location_oid', locationOid);
-            formData.set('gender', gender);
-            formData.set('worker_type', workerType);
-            formData.set('job_category', jobCategory);
-            formData.set('job_subcategory', jobSubcategory);
-            formData.set('job_professional_level', jobProfessionalLevel);
-            formData.set('job_management_level', jobManagementLevel);
-            formData.set('job_band', jobBand);
-            formData.set('job_title', jobTitle);
-            formData.set('is_vip', String(isVip));
-            formData.set('vip_type', isVip ? vipType : '');
-            formData.set('is_active', String(isActive));
-            formData.set('managed_by', managedBy);
-            await updateWorkerAction(worker.oid, formData);
+            const changes = changedWorkerFields(worker, {
+                fullname,
+                email,
+                worker_id: workerId,
+                location_oid: locationOid,
+                gender,
+                worker_type: workerType,
+                job_category: jobCategory,
+                job_subcategory: jobSubcategory,
+                job_professional_level: jobProfessionalLevel,
+                job_management_level: jobManagementLevel,
+                job_band: jobBand,
+                job_title: jobTitle,
+                is_vip: isVip,
+                vip_type: vipType,
+                is_active: isActive,
+                managed_by: managedBy,
+            });
+            if (Object.keys(changes).length > 0) {
+                const formData = new FormData();
+                for (const [key, value] of Object.entries(changes)) formData.set(key, value);
+                await updateWorkerAction(worker.oid, formData);
+            }
             setIsEditing(false);
             router.refresh();
         } catch (error) {
