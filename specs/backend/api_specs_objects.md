@@ -100,9 +100,19 @@ class Worker(Base):
     is_vip = Column(Boolean, default=False, nullable=False)
     vip_type = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
+    managed_by = Column(Text, nullable=False, server_default="'erp'")  # 'erp' | 'manual' (CHECK)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 ```
+
+#### Worker ownership (`managed_by`)
+
+| Value | Meaning |
+|-------|---------|
+| `erp` (default) | Owned by the hourly `sync_workers_erp` DAG, which adds, updates and deactivates it from the ERP feed. |
+| `manual` | Kept by admins through this API, for people outside the ERP feed (for example HQ stakeholders). The sync never adds, updates or deactivates it. |
+
+If the ERP feed later carries a manual worker's `stable_id`, the next sync takes it over: it sets `managed_by='erp'` and overwrites the fields with ERP's values, including the organization. Manual workers without an ERP organization go under one organization node named `External / HQ`, created with no `stable_id` so the ERP organization sync never deactivates it. `GET /objects/workers?managed_by=manual` lists them. In the UI, the workers list shows a "Manual" badge, the detail page shows and edits "Managed by", and New Worker defaults to manual under `External / HQ`.
 
 #### Job Fields Reference
 
@@ -165,6 +175,7 @@ class WorkerCreate(BaseModel):
     is_vip: bool = False
     vip_type: Optional[str] = None  # Set null to clear
     is_active: bool = True
+    managed_by: Literal["erp", "manual"] = "erp"  # ERP sync adds stay 'erp'
 
 class WorkerUpdate(BaseModel):
     worker_id: Optional[str] = None
@@ -188,6 +199,7 @@ class WorkerUpdate(BaseModel):
     is_vip: Optional[bool] = None
     vip_type: Optional[str] = None
     is_active: Optional[bool] = None
+    managed_by: Optional[Literal["erp", "manual"]] = None
 
 class WorkerResponse(BaseModel):
     oid: str
@@ -212,6 +224,7 @@ class WorkerResponse(BaseModel):
     is_vip: bool
     vip_type: Optional[str] = None
     is_active: bool
+    managed_by: Literal["erp", "manual"]
     created_at: datetime
     updated_at: datetime
 
