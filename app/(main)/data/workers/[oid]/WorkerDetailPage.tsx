@@ -30,7 +30,7 @@ import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
-import type { Worker, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location } from '@/lib/types/objects';
+import type { Worker, WorkerManagedBy, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location } from '@/lib/types/objects';
 import { updateWorkerAction, upsertWorkerProfileAction, deleteWorkerAction } from '@/app/actions/objects';
 
 interface WorkerDetailPageProps {
@@ -127,6 +127,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const [profileTagsText, setProfileTagsText] = useState(formatCommaList(workerProfile?.tags || null));
 
     const [isActive, setIsActive] = useState(worker.is_active);
+    const [managedBy, setManagedBy] = useState<WorkerManagedBy>(worker.managed_by);
     const [edgeFilter, setEdgeFilter] = useState<string | null>(null);
 
     const orgName = organizations.find((o) => o.oid === worker.org_oid)?.name || 'Unknown';
@@ -159,6 +160,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
             formData.set('is_vip', String(isVip));
             formData.set('vip_type', isVip ? vipType : '');
             formData.set('is_active', String(isActive));
+            formData.set('managed_by', managedBy);
             await updateWorkerAction(worker.oid, formData);
             setIsEditing(false);
             router.refresh();
@@ -201,6 +203,7 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
         setIsVip(worker.is_vip);
         setVipType(worker.vip_type || '');
         setIsActive(worker.is_active);
+        setManagedBy(worker.managed_by);
         setIsEditing(false);
     };
 
@@ -545,22 +548,45 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                     </div>
 
                     {/* Status Row */}
-                    <div>
-                        <label className={labelClass}>{t('workers.status')}</label>
-                        {isEditing ? (
-                            <label className="flex items-center gap-2 px-3 py-2">
-                                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
-                                <span className={isLight ? 'text-slate-700' : 'text-gray-300'}>{t('workers.active')}</span>
-                            </label>
-                        ) : (
-                            <div className={displayClass}>
-                                {worker.is_active ? (
-                                    <span className="flex items-center gap-1 text-green-500"><Check className="w-4 h-4" /> {t('workers.active')}</span>
-                                ) : (
-                                    <span className="flex items-center gap-1 text-red-500"><X className="w-4 h-4" /> {t('workers.inactive')}</span>
-                                )}
-                            </div>
-                        )}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>{t('workers.status')}</label>
+                            {isEditing ? (
+                                <label className="flex items-center gap-2 px-3 py-2">
+                                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
+                                    <span className={isLight ? 'text-slate-700' : 'text-gray-300'}>{t('workers.active')}</span>
+                                </label>
+                            ) : (
+                                <div className={displayClass}>
+                                    {worker.is_active ? (
+                                        <span className="flex items-center gap-1 text-green-500"><Check className="w-4 h-4" /> {t('workers.active')}</span>
+                                    ) : (
+                                        <span className="flex items-center gap-1 text-red-500"><X className="w-4 h-4" /> {t('workers.inactive')}</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Managed by: ERP sync or kept by hand */}
+                        <div>
+                            <label className={labelClass} title={t('workers.managedByHint')}>{t('workers.managedBy')}</label>
+                            {isEditing ? (
+                                <select
+                                    value={managedBy}
+                                    onChange={(e) => setManagedBy(e.target.value as WorkerManagedBy)}
+                                    className={inputClass}
+                                >
+                                    <option value="erp">{t('workers.managedByErp')}</option>
+                                    <option value="manual">{t('workers.managedByManual')}</option>
+                                </select>
+                            ) : (
+                                <div className={displayClass} title={t('workers.managedByHint')}>
+                                    <span className={worker.managed_by === 'manual' ? (isLight ? 'text-amber-700' : 'text-amber-400') : textClass}>
+                                        {worker.managed_by === 'manual' ? t('workers.managedByManual') : t('workers.managedByErp')}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Timestamps */}

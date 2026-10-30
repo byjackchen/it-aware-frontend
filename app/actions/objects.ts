@@ -50,7 +50,7 @@ import {
     updateScenario,
     deleteScenario,
 } from '@/lib/api/scenarios';
-import type { WorkerProfile, WorkerProfileUpsert, TicketStatus } from '@/lib/types/objects';
+import type { WorkerManagedBy, WorkerProfile, WorkerProfileUpsert, TicketStatus } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -363,6 +363,11 @@ export async function deleteServiceCatalogAction(oid: string) {
 // Worker Actions
 // ============================================================================
 
+function parseWorkerManagedBy(value: FormDataEntryValue | null): WorkerManagedBy | undefined {
+    if (value === 'erp' || value === 'manual') return value;
+    return undefined;
+}
+
 export async function createWorkerAction(formData: FormData) {
     const requestId = logger.generateRequestId();
     const action = 'Objects:createWorker';
@@ -386,6 +391,7 @@ export async function createWorkerAction(formData: FormData) {
     const isVipStr = formData.get('is_vip');
     const vipType = formData.get('vip_type') as string | null;
     const isActiveStr = formData.get('is_active');
+    const managedBy = parseWorkerManagedBy(formData.get('managed_by'));
 
     logger.info(`Started`, { requestId, action });
 
@@ -409,6 +415,7 @@ export async function createWorkerAction(formData: FormData) {
             is_vip: isVipStr !== null ? isVipStr === 'true' : undefined,
             vip_type: vipType !== null ? (vipType.trim() || null) : undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+            managed_by: managedBy,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
@@ -443,6 +450,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const isVipStr = formData.get('is_vip');
     const vipType = formData.get('vip_type') as string | null;
     const isActiveStr = formData.get('is_active');
+    const managedBy = parseWorkerManagedBy(formData.get('managed_by'));
 
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
@@ -466,6 +474,7 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
             is_vip: isVipStr !== null ? isVipStr === 'true' : undefined,
             vip_type: vipType !== null ? (vipType.trim() || null) : undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
+            managed_by: managedBy,
         });
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });

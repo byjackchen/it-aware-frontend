@@ -11,11 +11,18 @@ import { ArrowLeft, User, Save, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { usePermissions } from '@/lib/contexts/user-context';
 import { useLazyResourceList } from '@/lib/hooks/useLazyResourceList';
-import type { Organization, Location, Worker } from '@/lib/types/objects';
+import type { Organization, Location, Worker, WorkerManagedBy } from '@/lib/types/objects';
 import { createWorkerAction } from '@/app/actions/objects';
 import { PERMISSIONS } from '@/lib/config/permissions';
 
-export function WorkerCreatePage() {
+// Organization node for manual workers who have no ERP organization.
+const MANUAL_WORKER_ORG_NAME = 'External / HQ';
+
+interface WorkerCreatePageProps {
+    organizations: Organization[];
+}
+
+export function WorkerCreatePage({ organizations }: WorkerCreatePageProps) {
     const { theme } = useTheme();
     const router = useTransitionRouter();
     const t = useTranslations('Data');
@@ -25,10 +32,15 @@ export function WorkerCreatePage() {
     const { hasPermission } = usePermissions();
     const canEditSensitive = hasPermission(PERMISSIONS.OBJECTS.WORKERS_EDIT_SENSITIVE);
 
+    const manualOrgOid = organizations.find((o) => o.name === MANUAL_WORKER_ORG_NAME && o.is_active)?.oid ?? '';
+
     // Required fields
     const [stableId, setStableId] = useState('');
     const [fullname, setFullname] = useState('');
-    const [orgOid, setOrgOid] = useState('');
+    // Workers added here are usually people outside the ERP feed, so they
+    // start as manual and in the manual-worker organization.
+    const [managedBy, setManagedBy] = useState<WorkerManagedBy>('manual');
+    const [orgOid, setOrgOid] = useState(manualOrgOid);
 
     // Optional fields
     const [email, setEmail] = useState('');
@@ -43,15 +55,6 @@ export function WorkerCreatePage() {
     const [jobManagementLevel, setJobManagementLevel] = useState('');
     const [jobBand, setJobBand] = useState('');
     const [jobTitle, setJobTitle] = useState('');
-
-    const {
-        items: organizations,
-        isLoading: isOrganizationsLoading,
-        error: organizationsError,
-    } = useLazyResourceList<Organization>('organizations', {
-        query: { limit: 1000 },
-        auto: true,
-    });
 
     const {
         items: locations,
@@ -101,6 +104,7 @@ export function WorkerCreatePage() {
             if (jobBand.trim()) formData.set('job_band', jobBand.trim());
             if (jobTitle.trim()) formData.set('job_title', jobTitle.trim());
             formData.set('is_active', 'true');
+            formData.set('managed_by', managedBy);
 
             const result = await createWorkerAction(formData);
             router.push(`/data/workers/${result.stable_id}`);
@@ -174,20 +178,26 @@ export function WorkerCreatePage() {
                                 value={orgOid}
                                 onChange={(e) => setOrgOid(e.target.value)}
                                 className={inputClass}
-                                disabled={isOrganizationsLoading || !!organizationsError}
                                 required
                             >
-                                <option value="">
-                                    {isOrganizationsLoading
-                                        ? 'Loading organizations...'
-                                        : organizationsError
-                                            ? 'Failed to load organizations'
-                                            : 'Select organization...'}
-                                </option>
+                                <option value="">Select organization...</option>
                                 {organizations.map((org) => (
                                     <option key={org.oid} value={org.oid}>{org.name}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>{t('workers.managedBy')} *</label>
+                            <select
+                                value={managedBy}
+                                onChange={(e) => setManagedBy(e.target.value as WorkerManagedBy)}
+                                className={inputClass}
+                            >
+                                <option value="manual">{t('workers.managedByManual')}</option>
+                                <option value="erp">{t('workers.managedByErp')}</option>
+                            </select>
+                            <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.managedByHint')}</p>
                         </div>
                     </div>
 

@@ -146,6 +146,12 @@ export interface ServiceCatalogUpdate {
 // Worker Types
 // ============================================================================
 
+/**
+ * Who maintains a worker: the hourly ERP sync ('erp') or an admin by hand
+ * ('manual', for people outside the ERP feed; the sync leaves them alone).
+ */
+export type WorkerManagedBy = 'erp' | 'manual';
+
 export interface Worker {
     oid: string;
     worker_id: string | null;
@@ -168,6 +174,7 @@ export interface Worker {
     is_vip: boolean;
     vip_type: string | null;
     is_active: boolean;
+    managed_by: WorkerManagedBy;
     created_at: string;
     updated_at: string;
 
@@ -408,6 +415,7 @@ export interface WorkerCreate {
     is_vip?: boolean;
     vip_type?: string | null;
     is_active?: boolean;
+    managed_by?: WorkerManagedBy;
 }
 
 export interface WorkerUpdate {
@@ -431,6 +439,7 @@ export interface WorkerUpdate {
     is_vip?: boolean;
     vip_type?: string | null;
     is_active?: boolean;
+    managed_by?: WorkerManagedBy;
 }
 
 // ============================================================================

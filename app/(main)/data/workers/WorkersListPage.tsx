@@ -192,6 +192,14 @@ export function WorkersListPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        {worker.managed_by === 'manual' && (
+                                            <span
+                                                title="Kept by hand; the hourly ERP sync does not deactivate this worker"
+                                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${isLight ? 'bg-amber-100 text-amber-700' : 'bg-amber-500/15 text-amber-400'}`}
+                                            >
+                                                Manual
+                                            </span>
+                                        )}
                                         {worker.is_active ? (
                                             <span className="flex items-center gap-1 text-xs text-green-500">
                                                 <Check className="w-3 h-3" /> Active
