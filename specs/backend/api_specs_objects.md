@@ -178,10 +178,11 @@ class WorkerCreate(BaseModel):
     managed_by: Literal["erp", "manual"] = "erp"  # ERP sync adds stay 'erp'
 
 class WorkerUpdate(BaseModel):
-    worker_id: Optional[str] = None
+    # null or omitted keeps the stored value
+    worker_id: Optional[str] = None  # Empty string to clear
     stable_id: Optional[str] = None
     fullname: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[Union[Literal[""], EmailStr]] = None  # Empty string to clear
     hire_date: Optional[datetime] = None
     gender: Optional[str] = None
 

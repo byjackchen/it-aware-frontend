@@ -452,25 +452,27 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     const isActiveStr = formData.get('is_active');
     const managedBy = parseWorkerManagedBy(formData.get('managed_by'));
 
+    // A field missing from formData is left out of the request, so the
+    // backend keeps its stored value; '' clears it.
     logger.info(`Started - oid: ${oid}`, { requestId, action });
 
     try {
         const result = await updateWorker(oid, {
             stable_id: stableId || undefined,
             fullname: fullname || undefined,
-            worker_id: workerId,
-            email: email,
-            gender: gender,
-            worker_type: workerType,
-            job_category: jobCategory,
-            job_subcategory: jobSubcategory,
-            job_professional_level: jobProfessionalLevel,
-            job_management_level: jobManagementLevel,
-            job_band: jobBand,
-            job_title: jobTitle,
+            worker_id: workerId ?? undefined,
+            email: email ?? undefined,
+            gender: gender ?? undefined,
+            worker_type: workerType ?? undefined,
+            job_category: jobCategory ?? undefined,
+            job_subcategory: jobSubcategory ?? undefined,
+            job_professional_level: jobProfessionalLevel ?? undefined,
+            job_management_level: jobManagementLevel ?? undefined,
+            job_band: jobBand ?? undefined,
+            job_title: jobTitle ?? undefined,
             org_oid: orgOid || undefined,
-            location_oid: locationOid === '' ? '' : (locationOid || undefined),
-            manager_oid: managerOid,
+            location_oid: locationOid ?? undefined,
+            manager_oid: managerOid ?? undefined,
             is_vip: isVipStr !== null ? isVipStr === 'true' : undefined,
             vip_type: vipType !== null ? (vipType.trim() || null) : undefined,
             is_active: isActiveStr !== null ? isActiveStr === 'true' : undefined,
