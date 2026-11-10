@@ -1712,6 +1712,8 @@
     "llmModels": "LLM 模型",
     "airflow": "Airflow 调度",
     "airflowDags": "DAG 监控",
+    "agentAccess": "Agent 接入",
+    "agentAccessConnect": "CLI 与 MCP",
     "itopsOverview": "运营总览",
     "itopsServiceExperience": "服务交付与体验",
     "journeyHeadline": "概览",
@@ -2261,6 +2263,10 @@
       "detailTitle": "单月数据明细",
       "detailSubtitle": "查看所选月份的工单及已导入的 ServiceNow assessment；本月全部工单可按评分筛选，差评率和反馈率可切换分母、分子明细。",
       "detailMonth": "明细月份",
+      "detailTicketSearch": "工单号",
+      "detailTicketSearchPlaceholder": "完整或部分编号，如 INC0123558",
+      "detailSearch": "搜索",
+      "detailClearSearch": "清空搜索",
       "detailMetric": "查看指标范围",
       "detailScopeAll": "当月新开 OIT 工单（UTC）",
       "detailAllScopeHint": "按 UTC 开单月份统计：处理组为 OIT SSC、包含 OIT Support，或带 OIT SSC Tag 标签；排除带 Invalid 标签的工单，包含所有工单状态。",
@@ -2940,6 +2946,35 @@
       "active": "启用",
       "noRun": "无运行记录",
       "importError": "DAG 存在导入错误"
+    },
+    "agentAccess": {
+      "title": "Agent 接入",
+      "help": "把 Agent（Knot Agent、Claude Code、脚本）接入 IT-Aware 数据。两种方式都只读。",
+      "environment": "当前环境的地址：{env}",
+      "copy": "复制",
+      "noAccess": "需要“系统”权限才能查看此页面。",
+      "mcp": {
+        "title": "MCP 服务（it-aware-mcp）",
+        "help": "适合对话式 Agent。每次回答都按提问人的权限返回数据：每位用户需授权一次（在 Knot 中点“去授权”，再点“我已授权”）。",
+        "noEndpoint": "当前环境没有 MCP 地址。"
+      },
+      "cli": {
+        "title": "命令行（it-aware CLI）",
+        "download": "下载 CLI",
+        "help": "适合批量分析：与 MCP 相同的只读工具，另外可以翻完整个列表（--all）、只保留需要的字段（--fields）、把结果写入文件（--out），大结果不经过模型。",
+        "meta": "版本 {source} · {tools} 个只读工具 · {kb} KB",
+        "identityWarning": "与 MCP 不同，CLI 用一个账号登录，所有使用该 Agent 的人看到的都是这个账号的权限范围。请使用专用的 agent 账号，并且它所在的组只授予只读权限。",
+        "step1Title": "在 Agent 所在主机上安装",
+        "step1Help": "需要 Python 3.10+，并安装 click 和 requests。以 root 运行时装到 /usr/local，否则装到 ~/.local。",
+        "step2Title": "为 Agent 创建账号",
+        "step2Help": "创建类型为 agent 的账号，密码至少 8 位（密码即 API key），并把它加入只含所需只读权限的组。",
+        "step2Link": "认证 → 账号",
+        "step3Title": "在主机上保存账号",
+        "step3Help": "运行 it-aware-setup，输入 API 地址 {apiBase}、账号名和 key。key 以 0600 权限保存，不会显示。",
+        "step4Title": "试用",
+        "step4Help": "工具名和参数与 MCP 一致。任何工具后加 --help 查看说明。",
+        "requirements": "来源：it-aware-backend（it_aware_cli）。工具列表由 it-aware-mcp 的定义生成，只含只读工具。"
+      }
     }
   },
   "ItopsOverview": {

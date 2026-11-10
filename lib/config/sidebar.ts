@@ -53,6 +53,8 @@ import {
     PlayCircle,
     MessagesSquare,
     History,
+    Plug,
+    Terminal,
     type LucideIcon,
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
@@ -754,6 +756,18 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         href: '/systems/airflow',
                         labelKey: 'airflowDags',
                         icon: Workflow,
+                        permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
+                    },
+                ],
+            },
+            {
+                labelKey: 'agentAccess',
+                icon: Plug,
+                items: [
+                    {
+                        href: '/systems/agent-access',
+                        labelKey: 'agentAccessConnect',
+                        icon: Terminal,
                         permissions: requireAnyPermission([PERMISSIONS.UI.NAVIGATION_SYSTEMS]),
                     },
                 ],

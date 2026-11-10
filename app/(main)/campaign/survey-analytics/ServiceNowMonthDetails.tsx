@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ServiceNowMonthDetails, ServiceNowTicketDetail } from '@/lib/types/survey-analytics';
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
@@ -18,11 +18,12 @@ interface Props {
 
 const PAGE_SIZE = 50;
 
-function detailSearchParams(batchOid: string, month: string, timezone: string, scope: DetailScope, part: DetailPart, denominatorDate: DateBasis, numeratorDate: DateBasis, page: number, filters: DetailFilters | null) {
+function detailSearchParams(batchOid: string, month: string, timezone: string, scope: DetailScope, part: DetailPart, denominatorDate: DateBasis, numeratorDate: DateBasis, page: number, filters: DetailFilters | null, ticketId: string) {
   const params = new URLSearchParams({
     batch_oid: batchOid, month, timezone, scope, part, denominator_date: denominatorDate,
     numerator_date: numeratorDate, page: String(page),
   });
+  if (ticketId) params.set('ticket_id', ticketId);
   if (filters) {
     params.set('rated_only', String(filters.ratedOnly));
     for (const rating of filters.ratings) params.append('ratings', String(rating));
@@ -48,13 +49,16 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   const [ratingFilter, setRatingFilter] = useState<number[]>([]);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<DetailFilters>({ ratedOnly: false, ratings: [] });
+  const [ticketId, setTicketId] = useState('');
+  const [appliedTicketId, setAppliedTicketId] = useState('');
+  const [searchRevision, setSearchRevision] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const selectedMonth = months.some((item) => item.month === requestedMonth)
     ? requestedMonth : months.at(-1)?.month;
   const activeFilters = detailScope === 'all' ? appliedFilters : null;
   const detailTimezone = 'UTC';
-  const selectionKey = JSON.stringify([batchOid, selectedMonth, detailTimezone, detailScope, activePart, activeDate, activeFilters]);
+  const selectionKey = JSON.stringify([batchOid, selectedMonth, detailTimezone, detailScope, activePart, activeDate, activeFilters, appliedTicketId, searchRevision]);
   const page = paging.key === selectionKey ? paging.page : 1;
   const requestKey = JSON.stringify([selectionKey, page]);
   const details = loaded?.key === requestKey ? loaded.data : null;
@@ -64,7 +68,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
   useEffect(() => {
     if (!selectedMonth) return;
     const controller = new AbortController();
-    const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters);
+    const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters, appliedTicketId);
     fetch(`/api/dashboard/survey-analytics/servicenow-month-details?${params}`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error(t('detailLoadFailed'));
@@ -87,7 +91,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
         setLoaded((current) => (current?.key === requestKey ? null : current));
       });
     return () => controller.abort();
-  }, [batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters, requestKey, selectionKey, t]);
+  }, [batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, page, activeFilters, appliedTicketId, requestKey, selectionKey, t]);
 
   const pages = Math.max(1, Math.ceil((details?.filtered_ticket_count ?? 0) / PAGE_SIZE));
   const visible = details?.tickets ?? [];
@@ -127,7 +131,7 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
           allTickets.push(...details.tickets);
           continue;
         }
-        const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, nextPage, activeFilters);
+        const params = detailSearchParams(batchOid, selectedMonth, detailTimezone, detailScope, activePart, denominatorDate, numeratorDate, nextPage, activeFilters, appliedTicketId);
         const response = await fetch(`/api/dashboard/survey-analytics/servicenow-month-details?${params}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(t('detailExportFailed'));
         const result = await response.json() as ServiceNowMonthDetails;
@@ -189,6 +193,28 @@ export function ServiceNowMonthDetails({ batchOid, months }: Props) {
             </select>
           </label>
           {detailScope === 'csat' && <span className="pb-2 text-xs font-semibold text-[#50648f]">{t('detailCsatSubmittedMonth')}</span>}
+          <form role="search" aria-label={t('detailTicketSearch')} className="flex flex-wrap items-end gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setAppliedTicketId(ticketId.trim());
+              setSearchRevision((revision) => revision + 1);
+            }}>
+            <label className="flex flex-col gap-1 text-xs font-semibold text-[#50648f]">
+              {t('detailTicketSearch')}
+              <input type="search" value={ticketId} maxLength={100}
+                onChange={(event) => setTicketId(event.target.value)}
+                placeholder={t('detailTicketSearchPlaceholder')}
+                className="w-56 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm text-[#142960]" />
+            </label>
+            <button type="submit" className="inline-flex items-center gap-2 rounded-md bg-[#2455d4] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1b42ad]">
+              <Search className="h-4 w-4" aria-hidden="true" />{t('detailSearch')}
+            </button>
+            {(ticketId || appliedTicketId) && <button type="button"
+              onClick={() => { setTicketId(''); setAppliedTicketId(''); }}
+              className="rounded-md border border-[#cad6eb] px-3 py-2 text-sm font-semibold text-[#142960] hover:bg-[#eaf0ff]">
+              {t('detailClearSearch')}
+            </button>}
+          </form>
           {detailScope === 'all' && <>
             <label className="flex items-center gap-2 rounded-md border border-[#cad6eb] bg-white px-3 py-2 text-sm font-medium text-[#142960]">
               <input type="checkbox" checked={ratedOnly} onChange={(event) => setRatedOnly(event.target.checked)} />
