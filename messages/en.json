@@ -2034,6 +2034,8 @@
     "llmModels": "LLM Models",
     "airflow": "Airflow",
     "airflowDags": "DAGs",
+    "agentAccess": "Agent Access",
+    "agentAccessConnect": "CLI & MCP",
     "itopsOverview": "Operations Overview",
     "itopsServiceExperience": "Service Delivery & Experience",
     "journeyHeadline": "Headline",
@@ -3266,6 +3268,35 @@
       "active": "Active",
       "noRun": "No runs",
       "importError": "DAG has import errors"
+    },
+    "agentAccess": {
+      "title": "Agent access",
+      "help": "Connect agents (Knot agents, Claude Code, scripts) to IT-Aware data. Both routes are read-only.",
+      "environment": "Endpoints for this environment: {env}",
+      "copy": "Copy",
+      "noAccess": "You need the Systems permission to view this page.",
+      "mcp": {
+        "title": "MCP server (it-aware-mcp)",
+        "help": "For conversational agents. Each answer is scoped to the person chatting: every user authorizes the agent once (in Knot: 去授权, then 我已授权).",
+        "noEndpoint": "No MCP endpoint for this environment."
+      },
+      "cli": {
+        "title": "Command line (it-aware CLI)",
+        "download": "Download CLI",
+        "help": "For bulk analysis: the same read tools as the MCP, plus paging through whole lists (--all), trimming fields (--fields) and writing results to files (--out), so large results never pass through the model.",
+        "meta": "Version {source} · {tools} read tools · {kb} KB",
+        "identityWarning": "Unlike the MCP, the CLI signs in as one account and answers with that account's access for everyone who uses the agent. Use a dedicated agent account whose group has read permissions only.",
+        "step1Title": "Install on the agent's host",
+        "step1Help": "Needs Python 3.10+ with click and requests. As root it installs to /usr/local, otherwise to ~/.local.",
+        "step2Title": "Create an account for the agent",
+        "step2Help": "Create an account of type agent with a password of at least 8 characters (the password is the API key), and add it to a group with only the read permissions the agent needs.",
+        "step2Link": "Auth → Accounts",
+        "step3Title": "Save the account on the host",
+        "step3Help": "Run it-aware-setup and enter the API base {apiBase}, the account name and the key. The key is stored with mode 0600 and never printed.",
+        "step4Title": "Try it",
+        "step4Help": "Tool names and parameters match the MCP. Add --help to any tool.",
+        "requirements": "Source: agent-ops-tools (aot data). The tool list is generated from the it-aware-mcp specs; read tools only."
+      }
     }
   },
   "ItopsOverview": {
