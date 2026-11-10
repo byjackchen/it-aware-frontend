@@ -3295,7 +3295,7 @@
         "step3Help": "Run it-aware-setup and enter the API base {apiBase}, the account name and the key. The key is stored with mode 0600 and never printed.",
         "step4Title": "Try it",
         "step4Help": "Tool names and parameters match the MCP. Add --help to any tool.",
-        "requirements": "Source: agent-ops-tools (aot data). The tool list is generated from the it-aware-mcp specs; read tools only."
+        "requirements": "Source: it-aware-backend (it_aware_cli). The tool list is generated from the it-aware-mcp specs; read tools only."
       }
     }
   },

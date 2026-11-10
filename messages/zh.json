@@ -2973,7 +2973,7 @@
         "step3Help": "运行 it-aware-setup，输入 API 地址 {apiBase}、账号名和 key。key 以 0600 权限保存，不会显示。",
         "step4Title": "试用",
         "step4Help": "工具名和参数与 MCP 一致。任何工具后加 --help 查看说明。",
-        "requirements": "来源：agent-ops-tools（aot data）。工具列表由 it-aware-mcp 的定义生成，只含只读工具。"
+        "requirements": "来源：it-aware-backend（it_aware_cli）。工具列表由 it-aware-mcp 的定义生成，只含只读工具。"
       }
     }
   },
