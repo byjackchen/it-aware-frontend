@@ -5,7 +5,7 @@ The OHLA CI gate standard v0.3 (ohla-xray `quality/code-review/ci-gate.md`), bui
 ## Before you push
 
 - **Before you push, run both, with no arguments:** `ci/gate.sh` (the static gate), then `ci/e2e.sh` (the hermetic e2e). A green round tags the commit `converged/<UTC>`. Push the commit and its tag together: `git push woa development converged/<ts>`, and the same to `origin` so the remotes stay equal.
-- **The dev pipeline checks the tag.** 蓝盾 `it-aware-dev-frontend` runs `ci/check-tags.sh` first and refuses a commit without its own green `converged/*` tag. A red gate is never pushed, and an untagged push does not deploy.
+- **The dev pipeline checks the tag.** 蓝盾 `it-aware-dev-frontend` runs `ci/check-tags.sh` right after the git pull, before the image build (step "Gate tag check", since pipeline version 11, 2026-11-11), and refuses a commit without its own green `converged/*` tag. A red gate is never pushed, and an untagged push does not deploy.
 - **An agent session reports the last line of each run** (`GATE PASS` / `GATE FAIL: …`, `E2E PASS` / `E2E FAIL: …`) before it proposes a merge or a push.
 - Docker must be running, and `gitleaks` installed (`brew install gitleaks`). Nothing else: Node, the browsers and the backend all run in containers.
 
