@@ -5,4 +5,8 @@ npm-debug.log
 README.md
 .next
 .git
+# GET /api/version: lib/build-info.ts reads only HEAD and the refs at build time.
+!.git/HEAD
+!.git/refs/heads
+!.git/packed-refs
 .wt
