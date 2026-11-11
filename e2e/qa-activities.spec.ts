@@ -319,7 +319,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     await page.waitForURL('**/data/systems', { timeout: 15_000 });
 
     // Verify created
-    let listAfterCreate = extractItems(
+    const listAfterCreate = extractItems(
       await (await page.request.get('/api/objects/systems?limit=1000')).json()
     ) as Array<{ oid: string; system_id: string; name: string; is_active: boolean }>;
     const created = listAfterCreate.find((s) => s.system_id === systemId);
@@ -337,7 +337,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     // Wait for the edit-mode buttons to disappear (handler flips isEditing back to false).
     await expect(onScreen(page, 'system-edit-button')).toBeVisible({ timeout: 15_000 });
 
-    let listAfterEdit = extractItems(
+    const listAfterEdit = extractItems(
       await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
     ) as Array<{ oid: string; system_id: string; name: string }>;
     const edited = listAfterEdit.find((s) => s.system_id === systemId);
@@ -348,7 +348,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     await onScreen(page, 'system-delete-button').click();
     await page.waitForURL('**/data/systems', { timeout: 15_000 });
 
-    let listAfterDelete = extractItems(
+    const listAfterDelete = extractItems(
       await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
     ) as Array<{ system_id: string; is_active: boolean }>;
     const softDeleted = listAfterDelete.find((s) => s.system_id === systemId);

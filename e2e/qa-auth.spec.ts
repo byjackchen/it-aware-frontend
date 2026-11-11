@@ -22,15 +22,6 @@ const PERM_CODE = `qatest:perm_${RUN_ID}:verify`;
 
 // --- helpers ---------------------------------------------------------------
 
-async function clickByText(page: Page, text: string) {
-  await page.getByRole('button', { name: text, exact: true }).first().click();
-}
-
-async function clickIconButton(page: Page, sectionHeading: string, title: string) {
-  // Add/Remove buttons in AssignmentManager are icon-only with a title attribute.
-  await page.locator(`button[title="${title}"]`).first().click();
-}
-
 async function waitForRedirectAway(page: Page, fromPath: string, timeoutMs = 10_000) {
   await page.waitForURL((url) => !url.pathname.startsWith(fromPath), { timeout: timeoutMs });
 }
