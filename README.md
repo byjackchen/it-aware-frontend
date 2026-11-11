@@ -127,6 +127,10 @@ Two complementary modes — pick whichever fits the task.
 | **In-repo Playwright spec** | Regression net. Run before merging, in CI, or whenever you want a deterministic "did I break the smoke?" answer in ~15 s. | One-time: `npm install` (already includes `@playwright/test`) then `npx playwright install chromium`. |
 | **MCP-driven Playwright** | Exploratory walks, debugging a UI bug visually, capturing selectors for a brand-new spec, or having Claude Code drive the browser as you. | One-time, user-scoped: `claude mcp add playwright --scope user -- npx -y @playwright/mcp@latest` then restart Claude Code. |
 
+### CI gate — `ci/gate.sh`, then `ci/e2e.sh`
+
+Before every push to `development`: the static gate, then the hermetic e2e, which runs every spec below against the backend's hermetic stack and tags the commit `converged/<UTC>`. The dev pipeline deploys only tagged commits. Rules and details: [`ci/README.md`](ci/README.md).
+
 ### In-repo spec — `npx playwright test`
 
 Pre-reqs: backend on `localhost:8007` with auth seeding done (P0–P5), frontend on `localhost:3007`, `byjackchen` admin account exists.

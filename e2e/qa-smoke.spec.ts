@@ -26,8 +26,10 @@ function extractItems(payload: unknown): unknown[] {
 test.describe('Phase C — activities-decouple smoke', () => {
   test('C1+C7 sidebar has Systems, no Inquiries', async ({ page }) => {
     await page.goto('/data/workers');
-    await expect(page.locator('aside').first()).toBeVisible();
-    await expect(page.getByRole('link', { name: /Systems/i })).toBeVisible();
+    const sidebar = page.locator('aside').first();
+    await expect(sidebar).toBeVisible();
+    // The top bar has its own Systems app link (/systems); this is the sidebar's.
+    await expect(sidebar.getByRole('link', { name: /Systems/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Inquiries?/i })).toHaveCount(0);
   });
 
@@ -58,7 +60,8 @@ test.describe('Phase C — activities-decouple smoke', () => {
     const listResponse = await listResponsePromise;
     expect(listResponse.ok()).toBeTruthy();
     const items = extractItems(await listResponse.json());
-    // P5 seeds 3 default systems (servicenow-ingest, airflow-scheduler, it-aware-backend).
+    // P5 seeds 3 default systems; the hermetic e2e has grafana_integration,
+    // servicenow-ingest and airflow-scheduler (ci/e2e/world.py).
     expect(items.length).toBeGreaterThanOrEqual(3);
   });
 

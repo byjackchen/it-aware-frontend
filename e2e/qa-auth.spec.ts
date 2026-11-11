@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { API_URL, PASSWORD, USERNAME } from './env';
 
 /**
  * Auth module — full UI surface coverage.
@@ -11,8 +12,8 @@ import { test, expect, Page } from '@playwright/test';
  * The login-flow describe overrides that to use a fresh context.
  *
  * Pre-reqs:
- *   - Backend on localhost:8007, frontend on localhost:3007.
- *   - byjackchen exists with password=byjackchen and has admins membership.
+ *   - Backend at E2E_API_URL (default localhost:8007), frontend at E2E_BASE_URL.
+ *   - The E2E user (E2E_USERNAME / E2E_PASSWORD, see env.ts) has admins membership.
  *   - Auth seeding (P0–P3) completed so the standard permissions/groups exist.
  */
 
@@ -20,15 +21,6 @@ const RUN_ID = `qaauth${Date.now()}`;
 const PERM_CODE = `qatest:perm_${RUN_ID}:verify`;
 
 // --- helpers ---------------------------------------------------------------
-
-async function clickByText(page: Page, text: string) {
-  await page.getByRole('button', { name: text, exact: true }).first().click();
-}
-
-async function clickIconButton(page: Page, sectionHeading: string, title: string) {
-  // Add/Remove buttons in AssignmentManager are icon-only with a title attribute.
-  await page.locator(`button[title="${title}"]`).first().click();
-}
 
 async function waitForRedirectAway(page: Page, fromPath: string, timeoutMs = 10_000) {
   await page.waitForURL((url) => !url.pathname.startsWith(fromPath), { timeout: timeoutMs });
@@ -59,7 +51,7 @@ test.describe('Auth module — login flow', () => {
 
   test('invalid password surfaces backend error message', async ({ page }) => {
     await page.goto('/login');
-    await page.locator('input#username').fill('byjackchen');
+    await page.locator('input#username').fill(USERNAME);
     await page.locator('input#password').fill('wrongpassword');
     await page.getByRole('button', { name: /^Login$/ }).click();
     await expect(page.locator('text=Invalid password')).toBeVisible();
@@ -75,8 +67,8 @@ test.describe('Auth module — login flow', () => {
 
   test('valid creds redirect to home and set access cookie', async ({ page, context }) => {
     await page.goto('/login');
-    await page.locator('input#username').fill('byjackchen');
-    await page.locator('input#password').fill('byjackchen');
+    await page.locator('input#username').fill(USERNAME);
+    await page.locator('input#password').fill(PASSWORD);
     await page.getByRole('button', { name: /^Login$/ }).click();
     await waitForRedirectAway(page, '/login', 20_000);
 
@@ -308,25 +300,27 @@ test.describe('Auth module — authenticated', () => {
 
   // -- accounts ----------------------------------------------------------
 
-  test('account create form conditionally shows password for system/agent', async ({ page }) => {
+  test('account create form requires a password for every account type', async ({ page }) => {
+    // Since b9ba07f (2026-05-18) user accounts take a password too: they can
+    // log in with grant_type=password, so Create waits for one.
     await page.goto('/auth/accounts/new');
-    // Default = user → no password field.
-    await expect(page.locator('input[type="password"]')).toHaveCount(0);
-
-    await page.locator('select').selectOption('system');
-    await expect(page.locator('input[type="password"]')).toBeVisible();
-
-    await page.locator('select').selectOption('agent');
-    await expect(page.locator('input[type="password"]')).toBeVisible();
-
-    await page.locator('select').selectOption('user');
-    await expect(page.locator('input[type="password"]')).toHaveCount(0);
+    const create = page.getByRole('button', { name: /^Create$/ });
+    await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_form`);
+    for (const type of ['user', 'system', 'agent']) {
+      await page.locator('select').selectOption(type);
+      await expect(page.locator('input[type="password"]')).toBeVisible();
+      await page.locator('input[type="password"]').fill('');
+      await expect(create).toBeDisabled();
+      await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
+      await expect(create).toBeEnabled();
+    }
   });
 
   test('create three accounts — user / system / agent', async ({ page }) => {
     // user
     await page.goto('/auth/accounts/new');
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_usr`);
+    await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
     await page.getByRole('button', { name: /^Create$/ }).click();
     await page.waitForURL(/\/auth\/accounts$/);
 
@@ -476,8 +470,8 @@ test.describe('Auth module — authenticated', () => {
 
   test.afterAll(async ({ request }) => {
     // Cleanup uses the backend directly (Next.js server actions are server-only).
-    const tokenResp = await request.post('http://localhost:8007/auth/session/token', {
-      form: { grant_type: 'password', username: 'byjackchen', password: 'byjackchen' },
+    const tokenResp = await request.post(`${API_URL}/auth/session/token`, {
+      form: { grant_type: 'password', username: USERNAME, password: PASSWORD },
     });
     const setCookie = tokenResp.headers()['set-cookie'] ?? '';
     const accessMatch = /it_aware_access=([^;]+)/.exec(setCookie);
@@ -500,14 +494,14 @@ test.describe('Auth module — authenticated', () => {
     // user account in case the link/unlink test bailed out mid-way.
     if (created.acctUserOid) {
       const links = await request.get(
-        `http://localhost:8007/auth/config/account_workers?account_oid=${created.acctUserOid}`,
+        `${API_URL}/auth/config/account_workers?account_oid=${created.acctUserOid}`,
         { headers }
       );
       if (links.ok()) {
         const rows = (await links.json()) as Array<{ account_oid: string; worker_oid: string }>;
         for (const row of rows) {
           await request.delete(
-            `http://localhost:8007/auth/config/account_workers/${row.account_oid}/${row.worker_oid}`,
+            `${API_URL}/auth/config/account_workers/${row.account_oid}/${row.worker_oid}`,
             { headers }
           );
         }
@@ -516,7 +510,7 @@ test.describe('Auth module — authenticated', () => {
 
     for (const [resource, oid] of deletes) {
       if (!oid) continue;
-      await request.delete(`http://localhost:8007/auth/config/${resource}/${oid}`, { headers });
+      await request.delete(`${API_URL}/auth/config/${resource}/${oid}`, { headers });
     }
   });
 });

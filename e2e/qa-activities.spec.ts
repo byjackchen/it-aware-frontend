@@ -17,6 +17,15 @@ import { test, expect, type Page, type Response } from '@playwright/test';
  * If any of those bugs comes back, the corresponding test below will fail.
  */
 
+/**
+ * The on-screen element with this test id. React streams server segments
+ * through a hidden `<div hidden id="S:n">` template before swapping them in, so
+ * for a moment the same test id exists twice; the specs mean the visible one.
+ */
+function onScreen(page: Page, testId: string) {
+  return page.getByTestId(testId).filter({ visible: true });
+}
+
 function extractItems(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === 'object') {
@@ -88,10 +97,10 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     // The denormalized actors-section heading from Phase 2.
     await expect(page.getByText(/^Actors\b/).first()).toBeVisible();
     // Phase 3 ActorBadge: typed pill + stable_id, both rendered.
-    const badge = page.getByTestId('actor-type-badge');
+    const badge = onScreen(page, 'actor-type-badge');
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText(/Worker|System|Agent|External/);
-    const id = page.getByTestId('actor-stable-id');
+    const id = onScreen(page, 'actor-stable-id');
     await expect(id).toBeVisible();
     if (sample.actor_stable_id) {
       await expect(id).toHaveText(sample.actor_stable_id);
@@ -231,11 +240,11 @@ test.describe('Requests — list, detail, creation form', () => {
     });
     await expect(page.getByText(/^Actors\b/).first()).toBeVisible();
     // Phase 3 ActorBadge surfaces typed actor on the request detail too.
-    const badge = page.getByTestId('actor-type-badge');
+    const badge = onScreen(page, 'actor-type-badge');
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText(/Worker|System|Agent|External/);
     if (sample?.actor_stable_id) {
-      await expect(page.getByTestId('actor-stable-id')).toHaveText(sample.actor_stable_id);
+      await expect(onScreen(page, 'actor-stable-id')).toHaveText(sample.actor_stable_id);
     }
   });
 
@@ -276,10 +285,10 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     expect(sample?.oid).toBeTruthy();
 
     await page.goto(`/data/systems/${sample!.oid}`);
-    await expect(page.getByTestId('system-detail-title')).toHaveText('System Details');
-    await expect(page.getByTestId('system-stable-id')).toHaveText(sample!.system_id);
-    await expect(page.getByTestId('system-edit-button')).toBeVisible();
-    await expect(page.getByTestId('system-delete-button')).toBeVisible();
+    await expect(onScreen(page, 'system-detail-title')).toHaveText('System Details');
+    await expect(onScreen(page, 'system-stable-id')).toHaveText(sample!.system_id);
+    await expect(onScreen(page, 'system-edit-button')).toBeVisible();
+    await expect(onScreen(page, 'system-delete-button')).toBeVisible();
   });
 
   test('S-3 /data/systems/new form renders all required fields', async ({ page }) => {
@@ -310,7 +319,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     await page.waitForURL('**/data/systems', { timeout: 15_000 });
 
     // Verify created
-    let listAfterCreate = extractItems(
+    const listAfterCreate = extractItems(
       await (await page.request.get('/api/objects/systems?limit=1000')).json()
     ) as Array<{ oid: string; system_id: string; name: string; is_active: boolean }>;
     const created = listAfterCreate.find((s) => s.system_id === systemId);
@@ -320,15 +329,15 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
 
     // EDIT (rename via detail page)
     await page.goto(`/data/systems/${created!.oid}`);
-    await page.getByTestId('system-edit-button').click();
+    await onScreen(page, 'system-edit-button').click();
     // The Name input is the first editable text input on the detail card.
     await page.locator(`input[value="${initialName}"]`).fill(renamedName);
-    await page.getByTestId('system-save-button').click();
+    await onScreen(page, 'system-save-button').click();
 
     // Wait for the edit-mode buttons to disappear (handler flips isEditing back to false).
-    await expect(page.getByTestId('system-edit-button')).toBeVisible({ timeout: 15_000 });
+    await expect(onScreen(page, 'system-edit-button')).toBeVisible({ timeout: 15_000 });
 
-    let listAfterEdit = extractItems(
+    const listAfterEdit = extractItems(
       await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
     ) as Array<{ oid: string; system_id: string; name: string }>;
     const edited = listAfterEdit.find((s) => s.system_id === systemId);
@@ -336,10 +345,10 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
 
     // SOFT-DELETE (backend convention: flips is_active=false; row stays in list)
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByTestId('system-delete-button').click();
+    await onScreen(page, 'system-delete-button').click();
     await page.waitForURL('**/data/systems', { timeout: 15_000 });
 
-    let listAfterDelete = extractItems(
+    const listAfterDelete = extractItems(
       await (await page.request.get(`/api/objects/systems?limit=1000`)).json()
     ) as Array<{ system_id: string; is_active: boolean }>;
     const softDeleted = listAfterDelete.find((s) => s.system_id === systemId);

@@ -1,0 +1,2029 @@
+{
+  "_why": [
+    "Files below 100% when the floor was recorded, with covered and total counts per metric.",
+    "Not an exemption: an entry may not gain a missed unit, and is deleted when its file",
+    "reaches 100%. A file not listed here is held at 100% from its first commit."
+  ],
+  "_recorded_at": {
+    "commit": "97b89e8f6f39e7b39911462b64a6b96770bf64d3",
+    "note": "the logic tier of development at 97b89e8, measured 2026-11-11 on node:20-alpine"
+  },
+  "files": {
+    "app/actions/campaigns.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 374
+      },
+      "lines": {
+        "covered": 0,
+        "total": 368
+      },
+      "functions": {
+        "covered": 0,
+        "total": 32
+      },
+      "branches": {
+        "covered": 0,
+        "total": 76
+      }
+    },
+    "app/actions/objects.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 789
+      },
+      "lines": {
+        "covered": 0,
+        "total": 786
+      },
+      "functions": {
+        "covered": 0,
+        "total": 43
+      },
+      "branches": {
+        "covered": 0,
+        "total": 441
+      }
+    },
+    "app/actions/security.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 303
+      },
+      "lines": {
+        "covered": 0,
+        "total": 303
+      },
+      "functions": {
+        "covered": 0,
+        "total": 23
+      },
+      "branches": {
+        "covered": 0,
+        "total": 52
+      }
+    },
+    "app/actions/session.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 96
+      },
+      "lines": {
+        "covered": 0,
+        "total": 93
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/actions/systems.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 26
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 15
+      },
+      "branches": {
+        "covered": 0,
+        "total": 2
+      }
+    },
+    "app/api/agentops/[...path]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 44
+      },
+      "lines": {
+        "covered": 0,
+        "total": 42
+      },
+      "functions": {
+        "covered": 0,
+        "total": 12
+      },
+      "branches": {
+        "covered": 0,
+        "total": 20
+      }
+    },
+    "app/api/agentops/ws-url/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 3
+      },
+      "lines": {
+        "covered": 0,
+        "total": 3
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "app/api/agents/[oid]/chat-history/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 14
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 4
+      },
+      "branches": {
+        "covered": 0,
+        "total": 6
+      }
+    },
+    "app/api/auth/me/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 37
+      },
+      "lines": {
+        "covered": 0,
+        "total": 36
+      },
+      "functions": {
+        "covered": 0,
+        "total": 5
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "app/api/campaigns/notification_batchs/[oid]/notifications/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 39
+      },
+      "lines": {
+        "covered": 0,
+        "total": 33
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/api/campaigns/notification_batchs/[oid]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 20
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/campaigns/notification_batchs/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 38
+      },
+      "lines": {
+        "covered": 0,
+        "total": 32
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/api/campaigns/survey_batchs/[oid]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 20
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/campaigns/survey_batchs/[oid]/surveys/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 39
+      },
+      "lines": {
+        "covered": 0,
+        "total": 33
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/api/campaigns/survey_batchs/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 38
+      },
+      "lines": {
+        "covered": 0,
+        "total": 32
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/api/campaigns/surveys/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 38
+      },
+      "lines": {
+        "covered": 0,
+        "total": 32
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "app/api/dashboard/object-stats/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 97
+      },
+      "lines": {
+        "covered": 0,
+        "total": 85
+      },
+      "functions": {
+        "covered": 0,
+        "total": 21
+      },
+      "branches": {
+        "covered": 0,
+        "total": 72
+      }
+    },
+    "app/api/dashboard/survey-analytics/analysis-classification/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 147
+      },
+      "lines": {
+        "covered": 0,
+        "total": 131
+      },
+      "functions": {
+        "covered": 0,
+        "total": 22
+      },
+      "branches": {
+        "covered": 0,
+        "total": 78
+      }
+    },
+    "app/api/dashboard/survey-analytics/keyword-heatmap/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 186
+      },
+      "lines": {
+        "covered": 0,
+        "total": 153
+      },
+      "functions": {
+        "covered": 0,
+        "total": 20
+      },
+      "branches": {
+        "covered": 0,
+        "total": 111
+      }
+    },
+    "app/api/dashboard/survey-analytics/servicenow-month-details/route.ts": {
+      "statements": {
+        "covered": 20,
+        "total": 26
+      },
+      "lines": {
+        "covered": 19,
+        "total": 24
+      },
+      "functions": {
+        "covered": 3,
+        "total": 3
+      },
+      "branches": {
+        "covered": 5,
+        "total": 10
+      }
+    },
+    "app/api/dashboard/survey-analytics/servicenow-quality/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 24
+      },
+      "lines": {
+        "covered": 0,
+        "total": 22
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 10
+      }
+    },
+    "app/api/dashboard/survey-analytics/submission-overview/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 103
+      },
+      "lines": {
+        "covered": 0,
+        "total": 85
+      },
+      "functions": {
+        "covered": 0,
+        "total": 12
+      },
+      "branches": {
+        "covered": 0,
+        "total": 51
+      }
+    },
+    "app/api/dashboards/chatbot/[view]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 29
+      },
+      "lines": {
+        "covered": 0,
+        "total": 26
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 10
+      }
+    },
+    "app/api/dashboards/ohla-journey/[...path]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 14
+      },
+      "lines": {
+        "covered": 0,
+        "total": 12
+      },
+      "functions": {
+        "covered": 0,
+        "total": 2
+      },
+      "branches": {
+        "covered": 0,
+        "total": 9
+      }
+    },
+    "app/api/dashboards/ops/hub/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 25
+      },
+      "lines": {
+        "covered": 0,
+        "total": 22
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/dashboards/ssc/faq-advice/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 15
+      },
+      "lines": {
+        "covered": 0,
+        "total": 13
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/edges/connected/[oid]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 28
+      },
+      "lines": {
+        "covered": 0,
+        "total": 26
+      },
+      "functions": {
+        "covered": 0,
+        "total": 7
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "app/api/networks/ioa_scans/[...path]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 33
+      },
+      "lines": {
+        "covered": 0,
+        "total": 31
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 18
+      }
+    },
+    "app/api/objects/[resource]/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 43
+      },
+      "lines": {
+        "covered": 0,
+        "total": 37
+      },
+      "functions": {
+        "covered": 0,
+        "total": 10
+      },
+      "branches": {
+        "covered": 0,
+        "total": 32
+      }
+    },
+    "app/api/objects/incidents/[incident_oid]/review/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 16
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/objects/incidents/export.xlsx/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 16
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 14
+      }
+    },
+    "app/api/objects/interactions/[interaction_oid]/review/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 16
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/objects/interactions/export.xlsx/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 16
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 14
+      }
+    },
+    "app/api/objects/worker-clusters/summary/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 20
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/search/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 19
+      },
+      "lines": {
+        "covered": 0,
+        "total": 19
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/services/chatbot/react/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 18
+      },
+      "lines": {
+        "covered": 0,
+        "total": 16
+      },
+      "functions": {
+        "covered": 0,
+        "total": 7
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "app/api/ssc/survey/route.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 12
+      },
+      "lines": {
+        "covered": 0,
+        "total": 12
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 6
+      }
+    },
+    "i18n/request.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 7
+      },
+      "lines": {
+        "covered": 0,
+        "total": 7
+      },
+      "functions": {
+        "covered": 0,
+        "total": 2
+      },
+      "branches": {
+        "covered": 0,
+        "total": 4
+      }
+    },
+    "i18n/routing.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 2
+      },
+      "lines": {
+        "covered": 0,
+        "total": 2
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/api/activity-events.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 11
+      },
+      "lines": {
+        "covered": 0,
+        "total": 10
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "lib/api/campaigns.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 85
+      },
+      "lines": {
+        "covered": 0,
+        "total": 73
+      },
+      "functions": {
+        "covered": 0,
+        "total": 28
+      },
+      "branches": {
+        "covered": 0,
+        "total": 30
+      }
+    },
+    "lib/api/channels.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 58
+      },
+      "lines": {
+        "covered": 0,
+        "total": 45
+      },
+      "functions": {
+        "covered": 0,
+        "total": 20
+      },
+      "branches": {
+        "covered": 0,
+        "total": 32
+      }
+    },
+    "lib/api/clusters.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 15
+      },
+      "lines": {
+        "covered": 0,
+        "total": 11
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 11
+      }
+    },
+    "lib/api/core.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 15
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 4
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "lib/api/errors.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 3
+      },
+      "lines": {
+        "covered": 0,
+        "total": 3
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/api/exports.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 39
+      },
+      "lines": {
+        "covered": 0,
+        "total": 38
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 25
+      }
+    },
+    "lib/api/insights.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 28
+      },
+      "lines": {
+        "covered": 0,
+        "total": 24
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 11
+      }
+    },
+    "lib/api/itopsdashboard.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 2
+      },
+      "lines": {
+        "covered": 0,
+        "total": 2
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/api/networks/ioa_scans.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 2
+      },
+      "lines": {
+        "covered": 0,
+        "total": 2
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/api/objects.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 394
+      },
+      "lines": {
+        "covered": 0,
+        "total": 314
+      },
+      "functions": {
+        "covered": 0,
+        "total": 106
+      },
+      "branches": {
+        "covered": 0,
+        "total": 230
+      }
+    },
+    "lib/api/ohla_chatbot.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 26
+      },
+      "lines": {
+        "covered": 0,
+        "total": 23
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 11
+      }
+    },
+    "lib/api/ohla_journey.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 4
+      },
+      "lines": {
+        "covered": 0,
+        "total": 3
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 2
+      }
+    },
+    "lib/api/ops_dashboard.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 83
+      },
+      "lines": {
+        "covered": 0,
+        "total": 74
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 37
+      }
+    },
+    "lib/api/ops_dashboard_report.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 37
+      },
+      "lines": {
+        "covered": 0,
+        "total": 31
+      },
+      "functions": {
+        "covered": 0,
+        "total": 4
+      },
+      "branches": {
+        "covered": 0,
+        "total": 23
+      }
+    },
+    "lib/api/scenarios.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 23
+      },
+      "lines": {
+        "covered": 0,
+        "total": 19
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 11
+      }
+    },
+    "lib/api/security.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 76
+      },
+      "lines": {
+        "covered": 0,
+        "total": 72
+      },
+      "functions": {
+        "covered": 0,
+        "total": 40
+      },
+      "branches": {
+        "covered": 0,
+        "total": 27
+      }
+    },
+    "lib/api/systems.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 14
+      },
+      "lines": {
+        "covered": 0,
+        "total": 14
+      },
+      "functions": {
+        "covered": 0,
+        "total": 12
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/api/tickets-channel.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 19
+      },
+      "lines": {
+        "covered": 0,
+        "total": 16
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "lib/auth/taihu.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 26
+      },
+      "lines": {
+        "covered": 0,
+        "total": 24
+      },
+      "functions": {
+        "covered": 0,
+        "total": 4
+      },
+      "branches": {
+        "covered": 0,
+        "total": 22
+      }
+    },
+    "lib/config/agent-access.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 3
+      },
+      "lines": {
+        "covered": 0,
+        "total": 3
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 2
+      }
+    },
+    "lib/config/runtime.ts": {
+      "statements": {
+        "covered": 1,
+        "total": 1
+      },
+      "lines": {
+        "covered": 1,
+        "total": 1
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 10,
+        "total": 11
+      }
+    },
+    "lib/config/search.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 6
+      },
+      "lines": {
+        "covered": 0,
+        "total": 6
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 2
+      }
+    },
+    "lib/config/sidebar.ts": {
+      "statements": {
+        "covered": 1,
+        "total": 4
+      },
+      "lines": {
+        "covered": 1,
+        "total": 3
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/contexts/error-context.tsx": {
+      "statements": {
+        "covered": 0,
+        "total": 32
+      },
+      "lines": {
+        "covered": 0,
+        "total": 29
+      },
+      "functions": {
+        "covered": 0,
+        "total": 11
+      },
+      "branches": {
+        "covered": 0,
+        "total": 25
+      }
+    },
+    "lib/contexts/theme-context.tsx": {
+      "statements": {
+        "covered": 0,
+        "total": 35
+      },
+      "lines": {
+        "covered": 0,
+        "total": 33
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "lib/contexts/timezone-context.tsx": {
+      "statements": {
+        "covered": 0,
+        "total": 25
+      },
+      "lines": {
+        "covered": 0,
+        "total": 22
+      },
+      "functions": {
+        "covered": 0,
+        "total": 7
+      },
+      "branches": {
+        "covered": 0,
+        "total": 6
+      }
+    },
+    "lib/contexts/user-context.tsx": {
+      "statements": {
+        "covered": 0,
+        "total": 111
+      },
+      "lines": {
+        "covered": 0,
+        "total": 103
+      },
+      "functions": {
+        "covered": 0,
+        "total": 24
+      },
+      "branches": {
+        "covered": 0,
+        "total": 48
+      }
+    },
+    "lib/hooks/useAllActiveWorkers.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 40
+      },
+      "lines": {
+        "covered": 0,
+        "total": 37
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 14
+      }
+    },
+    "lib/hooks/useDashboardStats.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 54
+      },
+      "lines": {
+        "covered": 0,
+        "total": 53
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 19
+      }
+    },
+    "lib/hooks/useInfiniteResource.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 158
+      },
+      "lines": {
+        "covered": 0,
+        "total": 142
+      },
+      "functions": {
+        "covered": 0,
+        "total": 21
+      },
+      "branches": {
+        "covered": 0,
+        "total": 116
+      }
+    },
+    "lib/hooks/useLazyResourceList.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 81
+      },
+      "lines": {
+        "covered": 0,
+        "total": 77
+      },
+      "functions": {
+        "covered": 0,
+        "total": 17
+      },
+      "branches": {
+        "covered": 0,
+        "total": 38
+      }
+    },
+    "lib/hooks/useOhla.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 75
+      },
+      "lines": {
+        "covered": 0,
+        "total": 63
+      },
+      "functions": {
+        "covered": 0,
+        "total": 13
+      },
+      "branches": {
+        "covered": 0,
+        "total": 32
+      }
+    },
+    "lib/hooks/useOhlaChatbotReport.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 41
+      },
+      "lines": {
+        "covered": 0,
+        "total": 37
+      },
+      "functions": {
+        "covered": 0,
+        "total": 10
+      },
+      "branches": {
+        "covered": 0,
+        "total": 23
+      }
+    },
+    "lib/hooks/useOhlaDateRange.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 63
+      },
+      "lines": {
+        "covered": 0,
+        "total": 51
+      },
+      "functions": {
+        "covered": 0,
+        "total": 16
+      },
+      "branches": {
+        "covered": 0,
+        "total": 31
+      }
+    },
+    "lib/hooks/useOpsAssetFilter.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 54
+      },
+      "lines": {
+        "covered": 0,
+        "total": 44
+      },
+      "functions": {
+        "covered": 0,
+        "total": 17
+      },
+      "branches": {
+        "covered": 0,
+        "total": 33
+      }
+    },
+    "lib/hooks/useOpsDashboard.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 102
+      },
+      "lines": {
+        "covered": 0,
+        "total": 93
+      },
+      "functions": {
+        "covered": 0,
+        "total": 19
+      },
+      "branches": {
+        "covered": 0,
+        "total": 75
+      }
+    },
+    "lib/hooks/useOpsGlobalFilter.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 62
+      },
+      "lines": {
+        "covered": 0,
+        "total": 50
+      },
+      "functions": {
+        "covered": 0,
+        "total": 22
+      },
+      "branches": {
+        "covered": 0,
+        "total": 55
+      }
+    },
+    "lib/hooks/useOpsHubReport.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 74
+      },
+      "lines": {
+        "covered": 0,
+        "total": 69
+      },
+      "functions": {
+        "covered": 0,
+        "total": 11
+      },
+      "branches": {
+        "covered": 0,
+        "total": 36
+      }
+    },
+    "lib/hooks/useServerSearch.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 37
+      },
+      "lines": {
+        "covered": 0,
+        "total": 34
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 16
+      }
+    },
+    "lib/hooks/useSurveyAnalytics.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 62
+      },
+      "lines": {
+        "covered": 0,
+        "total": 53
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 46
+      }
+    },
+    "lib/itopsdashboard/dashboard.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 31
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 19
+      },
+      "branches": {
+        "covered": 0,
+        "total": 12
+      }
+    },
+    "lib/itopsdashboard/domain/format.ts": {
+      "statements": {
+        "covered": 15,
+        "total": 16
+      },
+      "lines": {
+        "covered": 15,
+        "total": 16
+      },
+      "functions": {
+        "covered": 2,
+        "total": 2
+      },
+      "branches": {
+        "covered": 16,
+        "total": 19
+      }
+    },
+    "lib/itopsdashboard/domain/gap.ts": {
+      "statements": {
+        "covered": 24,
+        "total": 26
+      },
+      "lines": {
+        "covered": 20,
+        "total": 20
+      },
+      "functions": {
+        "covered": 5,
+        "total": 5
+      },
+      "branches": {
+        "covered": 23,
+        "total": 25
+      }
+    },
+    "lib/itopsdashboard/domain/scale.ts": {
+      "statements": {
+        "covered": 7,
+        "total": 8
+      },
+      "lines": {
+        "covered": 5,
+        "total": 6
+      },
+      "functions": {
+        "covered": 1,
+        "total": 1
+      },
+      "branches": {
+        "covered": 11,
+        "total": 12
+      }
+    },
+    "lib/itopsdashboard/routes.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 2
+      },
+      "lines": {
+        "covered": 0,
+        "total": 2
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 2
+      }
+    },
+    "lib/logger.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 12
+      },
+      "lines": {
+        "covered": 0,
+        "total": 12
+      },
+      "functions": {
+        "covered": 0,
+        "total": 4
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "lib/markdown.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 31
+      },
+      "lines": {
+        "covered": 0,
+        "total": 29
+      },
+      "functions": {
+        "covered": 0,
+        "total": 8
+      },
+      "branches": {
+        "covered": 0,
+        "total": 4
+      }
+    },
+    "lib/ohla-journey/drilldown.ts": {
+      "statements": {
+        "covered": 25,
+        "total": 25
+      },
+      "lines": {
+        "covered": 24,
+        "total": 24
+      },
+      "functions": {
+        "covered": 5,
+        "total": 5
+      },
+      "branches": {
+        "covered": 17,
+        "total": 19
+      }
+    },
+    "lib/ohla-journey/report-view.ts": {
+      "statements": {
+        "covered": 47,
+        "total": 48
+      },
+      "lines": {
+        "covered": 40,
+        "total": 40
+      },
+      "functions": {
+        "covered": 15,
+        "total": 15
+      },
+      "branches": {
+        "covered": 55,
+        "total": 74
+      }
+    },
+    "lib/ohla/aggregate.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 223
+      },
+      "lines": {
+        "covered": 0,
+        "total": 186
+      },
+      "functions": {
+        "covered": 0,
+        "total": 26
+      },
+      "branches": {
+        "covered": 0,
+        "total": 149
+      }
+    },
+    "lib/ohla/classify.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 47
+      },
+      "lines": {
+        "covered": 0,
+        "total": 37
+      },
+      "functions": {
+        "covered": 0,
+        "total": 7
+      },
+      "branches": {
+        "covered": 0,
+        "total": 48
+      }
+    },
+    "lib/ohla/colors.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 1
+      },
+      "lines": {
+        "covered": 0,
+        "total": 1
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/ohla/decode.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 98
+      },
+      "lines": {
+        "covered": 0,
+        "total": 79
+      },
+      "functions": {
+        "covered": 0,
+        "total": 12
+      },
+      "branches": {
+        "covered": 0,
+        "total": 123
+      }
+    },
+    "lib/ohla/mask.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 9
+      },
+      "lines": {
+        "covered": 0,
+        "total": 7
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 4
+      }
+    },
+    "lib/ops_dashboard/aggregate.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 377
+      },
+      "lines": {
+        "covered": 0,
+        "total": 279
+      },
+      "functions": {
+        "covered": 0,
+        "total": 39
+      },
+      "branches": {
+        "covered": 0,
+        "total": 339
+      }
+    },
+    "lib/ops_dashboard/csv_export.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 32
+      },
+      "lines": {
+        "covered": 0,
+        "total": 25
+      },
+      "functions": {
+        "covered": 0,
+        "total": 10
+      },
+      "branches": {
+        "covered": 0,
+        "total": 16
+      }
+    },
+    "lib/ops_dashboard/region.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 105
+      },
+      "lines": {
+        "covered": 0,
+        "total": 76
+      },
+      "functions": {
+        "covered": 0,
+        "total": 11
+      },
+      "branches": {
+        "covered": 0,
+        "total": 88
+      }
+    },
+    "lib/ops_dashboard/tzDate.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 37
+      },
+      "lines": {
+        "covered": 0,
+        "total": 30
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 24
+      }
+    },
+    "lib/relative-time.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 19
+      },
+      "lines": {
+        "covered": 0,
+        "total": 17
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 16
+      }
+    },
+    "lib/survey-quality.ts": {
+      "statements": {
+        "covered": 27,
+        "total": 28
+      },
+      "lines": {
+        "covered": 23,
+        "total": 23
+      },
+      "functions": {
+        "covered": 5,
+        "total": 5
+      },
+      "branches": {
+        "covered": 15,
+        "total": 16
+      }
+    },
+    "lib/types/objects.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 17
+      },
+      "lines": {
+        "covered": 0,
+        "total": 16
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 10
+      }
+    },
+    "lib/types/security.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 1
+      },
+      "lines": {
+        "covered": 0,
+        "total": 1
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/utils/activityState.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 18
+      },
+      "lines": {
+        "covered": 0,
+        "total": 13
+      },
+      "functions": {
+        "covered": 0,
+        "total": 3
+      },
+      "branches": {
+        "covered": 0,
+        "total": 18
+      }
+    },
+    "lib/utils/cluster-feature-labels.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 1
+      },
+      "lines": {
+        "covered": 0,
+        "total": 1
+      },
+      "functions": {
+        "covered": 0,
+        "total": 0
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/utils/datetime.ts": {
+      "statements": {
+        "covered": 63,
+        "total": 116
+      },
+      "lines": {
+        "covered": 56,
+        "total": 92
+      },
+      "functions": {
+        "covered": 14,
+        "total": 19
+      },
+      "branches": {
+        "covered": 37,
+        "total": 71
+      }
+    },
+    "lib/utils/export-xlsx.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 11
+      },
+      "lines": {
+        "covered": 0,
+        "total": 11
+      },
+      "functions": {
+        "covered": 0,
+        "total": 1
+      },
+      "branches": {
+        "covered": 0,
+        "total": 0
+      }
+    },
+    "lib/utils/hierarchy.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 22
+      },
+      "lines": {
+        "covered": 0,
+        "total": 18
+      },
+      "functions": {
+        "covered": 0,
+        "total": 6
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "lib/utils/serviceCatalog.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 14
+      },
+      "lines": {
+        "covered": 0,
+        "total": 10
+      },
+      "functions": {
+        "covered": 0,
+        "total": 2
+      },
+      "branches": {
+        "covered": 0,
+        "total": 8
+      }
+    },
+    "lib/utils/survey-datetime.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 7
+      },
+      "lines": {
+        "covered": 0,
+        "total": 5
+      },
+      "functions": {
+        "covered": 0,
+        "total": 2
+      },
+      "branches": {
+        "covered": 0,
+        "total": 4
+      }
+    },
+    "lib/utils/user-data-cookie.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 77
+      },
+      "lines": {
+        "covered": 0,
+        "total": 67
+      },
+      "functions": {
+        "covered": 0,
+        "total": 12
+      },
+      "branches": {
+        "covered": 0,
+        "total": 58
+      }
+    },
+    "lib/utils/worker-edit.ts": {
+      "statements": {
+        "covered": 15,
+        "total": 15
+      },
+      "lines": {
+        "covered": 10,
+        "total": 10
+      },
+      "functions": {
+        "covered": 1,
+        "total": 1
+      },
+      "branches": {
+        "covered": 15,
+        "total": 16
+      }
+    },
+    "proxy.ts": {
+      "statements": {
+        "covered": 0,
+        "total": 126
+      },
+      "lines": {
+        "covered": 0,
+        "total": 124
+      },
+      "functions": {
+        "covered": 0,
+        "total": 9
+      },
+      "branches": {
+        "covered": 0,
+        "total": 78
+      }
+    }
+  }
+}

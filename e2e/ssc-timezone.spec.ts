@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('SSC lists and totals follow a timezone switch while an older request is pending', async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date('2026-07-15T12:00:00Z')); // daylight time: Los Angeles is -07:00
   await page.setViewportSize({ width: 2048, height: 1000 });
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
   const seen: string[] = [];
@@ -65,6 +66,7 @@ test('SSC keeps the page usable if a selected time becomes nonexistent after swi
 });
 
 test('SSC never displays old totals beneath the newly selected timezone', async ({ page, context }) => {
+  await page.clock.setFixedTime(new Date('2026-07-15T12:00:00Z')); // daylight time: Los Angeles is -07:00
   await page.setViewportSize({ width: 2048, height: 1000 });
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
   for (const resource of ['interactions', 'incidents']) {
