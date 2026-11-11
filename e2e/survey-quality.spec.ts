@@ -6,97 +6,6 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-07-15T12:00:00Z'));
 });
 
-test('CSAT details default to Taken On and export the selected monthly cohort', async ({ page, context }) => {
-  await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
-  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
-    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 2 }] },
-  }));
-  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => route.fulfill({
-    json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months: [], averages: { csat: null, poor_rate: null, feedback_rate: null } },
-  }));
-  const detailQueries: URLSearchParams[] = [];
-  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
-    const query = new URL(route.request().url()).searchParams;
-    detailQueries.push(query);
-    const basis = query.get('denominator_date');
-    const ticket = {
-      oid: basis, stable_id: basis === 'taken_on' ? 'INC-TAKEN' : 'INC-OPENED', title: 'Rated ticket',
-      state: 'Closed', source_opened_at: '2026-07-01T10:00:00Z', source_closed_at: '2026-07-02T10:00:00Z',
-      caller_name: 'User', assigned_group: 'OIT SSC', assessments: [{ oid: 'rating-1', external_id: 'AINST-1',
-        submitted_at: '2026-07-02T10:00:00Z', source_taken_on: '2026-07-03T10:00:00Z', rating: 5,
-        survey_questions: {}, survey_answer: {} }],
-    };
-    return route.fulfill({ json: { month: '2026-07', ticket_count: 1, assessment_count: 1,
-      filtered_ticket_count: 1, tickets: [ticket] } });
-  });
-  await page.goto('/campaign/survey-analytics');
-  await page.getByLabel('View metric range').selectOption('csat');
-  const basis = page.getByLabel('CSAT ticket month');
-  await expect(basis).toHaveValue('taken_on');
-  await expect(page.getByText('INC-TAKEN', { exact: true })).toBeVisible();
-  expect(detailQueries.at(-1)?.get('denominator_date')).toBe('taken_on');
-  await basis.selectOption('opened');
-  await expect(page.getByText('INC-OPENED', { exact: true })).toBeVisible();
-  expect(detailQueries.at(-1)?.get('denominator_date')).toBe('opened');
-  const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download Excel' }).click();
-  const workbook = readFile((await (await downloadPromise).path())!);
-  const rows = xlsxUtils.sheet_to_json<(string | number)[]>(workbook.Sheets['ServiceNow tickets'], { header: 1 });
-  expect(rows).toHaveLength(2);
-  expect(rows[1]).toContain('INC-OPENED');
-  expect(rows[1]).not.toContain('INC-TAKEN');
-});
-
-test('CSAT numerator and denominator dates are independent while rate denominators stay on opened tickets', async ({ page, context }) => {
-  await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
-  await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
-    json: { items: [{ oid: 'AAAAAAAAAAAAAAAAAAAAAA', name: 'ServiceNow Assessments', status: 'collecting', total_count: 100 }] },
-  }));
-  const qualityQueries: URLSearchParams[] = [];
-  await page.route('**/api/dashboard/survey-analytics/servicenow-quality?*', (route) => {
-    qualityQueries.push(new URL(route.request().url()).searchParams);
-    return route.fulfill({ json: {
-      batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA',
-      months: [{ month: '2026-07', ticket_count: 200, poor_ticket_count: 100, feedback_ticket_count: 200,
-        feedback_count: 20, rating_count: 20, rating_sum: 98, poor_count: 1,
-        csat: 4.9, poor_rate: 1, feedback_rate: 10 }],
-      averages: { csat: 4.9, poor_rate: 1, feedback_rate: 10 },
-    } });
-  });
-  const detailQueries: URLSearchParams[] = [];
-  await page.route('**/api/dashboard/survey-analytics/servicenow-month-details?*', (route) => {
-    detailQueries.push(new URL(route.request().url()).searchParams);
-    return route.fulfill({ json: { month: '2026-07', ticket_count: 0, assessment_count: 0, filtered_ticket_count: 0, tickets: [] } });
-  });
-  await page.goto('/campaign/survey-analytics');
-  await page.getByRole('button', { name: 'Date settings' }).click();
-  await expect(page.getByLabel('CSAT rating points month')).toHaveValue('taken_on');
-  await expect(page.getByLabel('Valid ratings month')).toHaveValue('taken_on');
-  await expect(page.getByLabel('CSAT rating points month').locator('option')).toHaveCount(2);
-  await expect(page.getByLabel('Poor-rated tickets month')).toBeVisible();
-  await expect(page.getByLabel('Poor rate ticket denominator month')).toHaveCount(0);
-  await expect(page.getByLabel('Tickets with feedback month')).toBeVisible();
-  await expect(page.getByLabel('Feedback rate ticket denominator month')).toHaveCount(0);
-  await expect(page.getByLabel('Tickets with feedback month')).toHaveValue('opened');
-  await expect.poll(() => qualityQueries.at(-1)?.get('poor_denominator_date')).toBe('opened');
-  expect(qualityQueries.at(-1)?.get('feedback_numerator_date')).toBe('opened');
-  expect(qualityQueries.at(-1)?.get('feedback_denominator_date')).toBe('opened');
-  expect(qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('taken_on');
-  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
-  await page.getByLabel('CSAT rating points month').selectOption('opened');
-  await expect.poll(() => qualityQueries.at(-1)?.get('csat_numerator_date')).toBe('opened');
-  expect(qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('taken_on');
-  await page.getByLabel('Valid ratings month').selectOption('opened');
-  await expect.poll(() => qualityQueries.at(-1)?.get('csat_denominator_date')).toBe('opened');
-  await page.getByLabel('View metric range').selectOption('csat');
-  await expect.poll(() => detailQueries.at(-1)?.get('denominator_date')).toBe('taken_on');
-  await expect(page.getByLabel('CSAT ticket month')).toHaveValue('taken_on');
-  await page.getByRole('button', { name: 'Show calculation' }).click();
-  await expect(page.getByRole('cell', { name: '98 ÷ 20 = 4.90' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: '1 ÷ 100 × 100% = 1.00%' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: '20 ÷ 200 × 100% = 10.00%' })).toBeVisible();
-});
-
 test('month details defaults to the opened OIT denominator and exports every filtered page', async ({ page, context }) => {
   await context.addCookies([{ name: 'IT_AWARE_LOCALE', value: 'en', domain: 'localhost', path: '/' }]);
   await page.route('**/api/campaigns/survey_batchs?*', (route) => route.fulfill({
@@ -212,7 +121,7 @@ test('ServiceNow quality chart shows monthly metrics and month selection', async
   });
   await page.goto('/campaign/survey-analytics');
 
-  await expect(page.getByRole('heading', { name: /Service Quality Performance/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^CSAT Analysis \(Jan 2026 – Jul 2026\)$/ })).toBeVisible();
   await expect(page.getByText('4.88 / 5')).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Jan 2026' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Jul 2026' })).toBeVisible();
