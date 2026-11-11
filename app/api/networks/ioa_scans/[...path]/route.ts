@@ -1,6 +1,6 @@
 /**
  * Catch-all proxy for /api/networks/ioa_scans/* → backend
- * /objects/networks/ioa_scans/*. Mirrors the agentops proxy pattern.
+ * /objects/networks/ioa_scans/*.
  *
  * Used by client components — server-rendered reads bypass this and call
  * the backend directly via lib/api/networks/ioa_scans.ts.

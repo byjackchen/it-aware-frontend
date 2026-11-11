@@ -11,47 +11,37 @@ import type {
     Account,
     Worker,
     AccountWorker,
-    AccountAgent,
     AccountSystem,
 } from '@/lib/types/security';
-import type { Agent, System } from '@/lib/types/objects';
+import type { System } from '@/lib/types/objects';
 
 interface AccountsListPageProps {
     accounts: Account[];
     workers: Worker[];
-    agents: Agent[];
     systems: System[];
     accountWorkers: AccountWorker[];
-    accountAgents: AccountAgent[];
     accountSystems: AccountSystem[];
 }
 
 export function AccountsListPage({
     accounts,
     workers,
-    agents,
     systems,
     accountWorkers,
-    accountAgents,
     accountSystems,
 }: AccountsListPageProps) {
     const t = useTranslations('Auth');
     const router = useTransitionRouter();
 
     // For a given account, return a display label for its linked entity
-    // (worker / agent / system depending on account_type), or null if unlinked.
+    // (worker or system depending on account_type), or null if unlinked; agent
+    // accounts have no linked record since the agent registry was retired.
     const getLinkedLabel = (account: Account): string | null => {
         if (account.account_type === 'user') {
             const link = accountWorkers.find((aw) => aw.account_oid === account.oid);
             if (!link) return null;
             const w = workers.find((x) => x.oid === link.worker_oid);
             return w ? w.fullname : null;
-        }
-        if (account.account_type === 'agent') {
-            const link = accountAgents.find((aa) => aa.account_oid === account.oid);
-            if (!link) return null;
-            const a = agents.find((x) => x.oid === link.agent_oid);
-            return a ? a.name : null;
         }
         if (account.account_type === 'system') {
             const link = accountSystems.find((as) => as.account_oid === account.oid);
