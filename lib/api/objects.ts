@@ -46,27 +46,10 @@ import type {
     Interaction,
     InteractionListParams,
     InteractionListResponse,
-    Agent,
-    AgentCreate,
-    AgentUpdate,
-    AgentListResponse,
     System,
     SystemCreate,
     SystemUpdate,
     SystemListResponse,
-    Ticket,
-    TicketCreate,
-    TicketUpdate,
-    TicketListResponse,
-    ThreadMessage,
-    ThreadMessageCreate,
-    ThreadListResponse,
-    Run,
-    RunListResponse,
-    Prompt,
-    PromptCreate,
-    PromptUpdate,
-    PromptListResponse,
 } from '@/lib/types/objects';
 import type { Role } from '@/lib/types/security';
 
@@ -785,46 +768,6 @@ export async function deleteInteraction(oid: string): Promise<void> {
 // Review APIs have been moved to @/lib/api/exports (client-safe module).
 // Import updateInteractionReview / updateIncidentReview from there.
 
-// ==================== Agents ====================
-
-export async function getAgents(): Promise<Agent[]> {
-    const resp = await fetchApi<AgentListResponse>(`${OBJECTS_BASE}/agents?limit=1000`);
-    return resp.items;
-}
-
-export async function getAgentsPage(params: { skip?: number; limit?: number; is_active?: boolean; agent_platform?: string }): Promise<AgentListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
-    if (params.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
-    if (params.agent_platform) searchParams.set('agent_platform', params.agent_platform);
-    return fetchApi<AgentListResponse>(`${OBJECTS_BASE}/agents?${searchParams}`);
-}
-
-export async function getAgent(oid: string): Promise<Agent> {
-    return fetchApi<Agent>(`${OBJECTS_BASE}/agents/${oid}`);
-}
-
-export async function createAgent(data: AgentCreate): Promise<Agent> {
-    return fetchApi<Agent>(`${OBJECTS_BASE}/agents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateAgent(oid: string, data: AgentUpdate): Promise<Agent> {
-    return fetchApi<Agent>(`${OBJECTS_BASE}/agents/${oid}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function deleteAgent(oid: string): Promise<void> {
-    await fetchApi<void>(`${OBJECTS_BASE}/agents/${oid}`, { method: 'DELETE' });
-}
-
 // ==================== Systems ====================
 
 export async function getSystems(): Promise<System[]> {
@@ -863,130 +806,6 @@ export async function updateSystem(oid: string, data: SystemUpdate): Promise<Sys
 
 export async function deleteSystem(oid: string): Promise<void> {
     await fetchApi<void>(`${OBJECTS_BASE}/systems/${oid}`, { method: 'DELETE' });
-}
-
-// ==================== Tickets ====================
-
-export async function getTickets(): Promise<Ticket[]> {
-    return fetchApi<Ticket[]>(`${OBJECTS_BASE}/agentops/tickets?limit=1000`);
-}
-
-export async function getTicketsPage(params: { skip?: number; limit?: number; status?: string; tag?: string; assignee_account_oid?: string }): Promise<TicketListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params.limit !== undefined) searchParams.set('limit', String(params.limit));
-    if (params.status) searchParams.set('status', params.status);
-    if (params.tag) searchParams.set('tag', params.tag);
-    if (params.assignee_account_oid) searchParams.set('assignee_account_oid', params.assignee_account_oid);
-    return fetchApi<TicketListResponse>(`${OBJECTS_BASE}/agentops/tickets?${searchParams}`);
-}
-
-export async function getTicket(oid: string): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}`);
-}
-
-export async function createTicket(data: TicketCreate): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateTicket(oid: string, data: TicketUpdate): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updateTicketStatus(oid: string, status: string): Promise<Ticket> {
-    return fetchApi<Ticket>(`${OBJECTS_BASE}/agentops/tickets/${oid}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-    });
-}
-
-export async function deleteTicket(oid: string): Promise<void> {
-    await fetchApi<void>(`${OBJECTS_BASE}/agentops/tickets/${oid}`, { method: 'DELETE' });
-}
-
-// ==================== Ticket Thread (conversation) ====================
-// v2: the ticket thread is read via /tickets/{oid}/thread and appended to via
-// the top-level /thread-messages endpoint. There is no delete endpoint —
-// threads are append-only (history is preserved).
-
-export async function getTicketThread(ticketOid: string): Promise<ThreadListResponse> {
-    return fetchApi<ThreadListResponse>(`${OBJECTS_BASE}/agentops/tickets/${ticketOid}/thread`);
-}
-
-export async function createThreadMessage(data: ThreadMessageCreate): Promise<ThreadMessage> {
-    return fetchApi<ThreadMessage>(`${OBJECTS_BASE}/agentops/thread-messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-// Read-only list of thread messages across tickets (envelope shape). The
-// ticket-scoped thread is fetched via getTicketThread; this is the flat,
-// filterable list used by the AgentOps → Threads page.
-export async function getThreadMessages(params?: { ticket_oid?: string; kind?: string; skip?: number; limit?: number }): Promise<ThreadListResponse & { total?: number; skip?: number; limit?: number }> {
-    const searchParams = new URLSearchParams();
-    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
-    if (params?.kind) searchParams.set('kind', params.kind);
-    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    return fetchApi<ThreadListResponse & { total?: number; skip?: number; limit?: number }>(`${OBJECTS_BASE}/agentops/thread-messages?${searchParams}`);
-}
-
-// ==================== Runs (agent dispatch executions, read-only) ====================
-
-export async function getRuns(params?: { agent_oid?: string; ticket_oid?: string; status?: string; skip?: number; limit?: number }): Promise<RunListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.agent_oid) searchParams.set('agent_oid', params.agent_oid);
-    if (params?.ticket_oid) searchParams.set('ticket_oid', params.ticket_oid);
-    if (params?.status) searchParams.set('status', params.status);
-    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    return fetchApi<RunListResponse>(`${OBJECTS_BASE}/agentops/runs?${searchParams}`);
-}
-
-// ==================== Prompts (role/persona prompt bundles) ====================
-
-export async function getPrompts(params?: { kind?: string; is_active?: boolean; skip?: number; limit?: number }): Promise<PromptListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.kind) searchParams.set('kind', params.kind);
-    if (params?.is_active !== undefined) searchParams.set('is_active', String(params.is_active));
-    if (params?.skip !== undefined) searchParams.set('skip', String(params.skip));
-    if (params?.limit !== undefined) searchParams.set('limit', String(params.limit));
-    return fetchApi<PromptListResponse>(`${OBJECTS_BASE}/agentops/prompts?${searchParams}`);
-}
-
-export async function getPrompt(oid: string): Promise<Prompt> {
-    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`);
-}
-
-export async function createPrompt(data: PromptCreate): Promise<Prompt> {
-    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function updatePrompt(oid: string, data: PromptUpdate): Promise<Prompt> {
-    return fetchApi<Prompt>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
-
-export async function deletePrompt(oid: string): Promise<void> {
-    await fetchApi<void>(`${OBJECTS_BASE}/agentops/prompts/${oid}`, { method: 'DELETE' });
 }
 
 // SSC analyst reports. Backend interprets start_date / end_date as

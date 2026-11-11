@@ -2,7 +2,7 @@
 
 import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { BarChart3, Bell, BookOpen, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, KanbanSquare, Wrench, Cpu, Bot } from 'lucide-react';
+import { Bell, BookOpen, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, Wrench, Cpu, Bot } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -140,7 +140,6 @@ export function TopBar() {
         PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
         PERMISSIONS.UI.NAVIGATION_DATA,
         PERMISSIONS.UI.NAVIGATION_OPERATION,
-        PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
       ]),
       children: [
         {
@@ -149,14 +148,6 @@ export function TopBar() {
           icon: Wrench,
           permissions: requireAnyPermission([
             PERMISSIONS.UI.NAVIGATION_OPERATION,
-          ]),
-        },
-        {
-          href: '/agent-ops',
-          label: t('agentOps'),
-          icon: KanbanSquare,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
           ]),
         },
         {

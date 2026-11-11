@@ -65,18 +65,6 @@ test.describe('Phase C — activities-decouple smoke', () => {
     expect(items.length).toBeGreaterThanOrEqual(3);
   });
 
-  test('C5 agents list shows at least one agent (Knot QA)', async ({ page }) => {
-    const listResponsePromise = page.waitForResponse(
-      (r) => r.url().includes('/api/objects/agents') && r.request().method() === 'GET',
-      { timeout: 15_000 }
-    );
-    await page.goto('/data/agents');
-    const listResponse = await listResponsePromise;
-    expect(listResponse.ok()).toBeTruthy();
-    const items = extractItems(await listResponse.json());
-    expect(items.length).toBeGreaterThanOrEqual(1);
-  });
-
   test('C6 persona page renders and never requests inquiry endpoints', async ({ page }) => {
     const workersResponse = await page.request.get('/api/objects/workers?limit=1');
     expect(workersResponse.ok()).toBeTruthy();

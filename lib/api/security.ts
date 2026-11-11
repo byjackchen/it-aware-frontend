@@ -19,7 +19,6 @@ import type {
   PermissionCreate,
   Worker,
   AccountWorker,
-  AccountAgent,
   AccountSystem,
   AccountGroup,
   GroupPermission,
@@ -206,27 +205,6 @@ export async function unlinkAccountWorker(accountOid: string, workerOid: string)
 // ============================================================================
 // Account-Agent Link APIs
 // ============================================================================
-
-export async function getAccountAgents(filter?: { account_oid?: string; agent_oid?: string }): Promise<AccountAgent[]> {
-  const params = new URLSearchParams({ limit: '1000' });
-  if (filter?.account_oid) params.set('account_oid', filter.account_oid);
-  if (filter?.agent_oid) params.set('agent_oid', filter.agent_oid);
-  return fetchApi<AccountAgent[]>(`${AUTH_CONFIG_BASE}/account_agents?${params.toString()}`);
-}
-
-export async function linkAccountAgent(accountOid: string, agentOid: string): Promise<AccountAgent> {
-  return fetchApi<AccountAgent>(`${AUTH_CONFIG_BASE}/account_agents`, {
-    method: 'POST',
-    body: JSON.stringify({ account_oid: accountOid, agent_oid: agentOid }),
-  });
-}
-
-export async function unlinkAccountAgent(accountOid: string, agentOid: string): Promise<void> {
-  return fetchApi<void>(
-    `${AUTH_CONFIG_BASE}/account_agents/${encodeURIComponent(accountOid)}/${encodeURIComponent(agentOid)}`,
-    { method: 'DELETE' }
-  );
-}
 
 // ============================================================================
 // Account-System Link APIs

@@ -260,7 +260,7 @@ test.describe('Auth module — authenticated', () => {
     await page.goto(`/auth/groups/${created.groupRbOid}`);
 
     // Open the AssignmentManager combobox for Permissions.
-    await page.locator('button[title="Add permissions"]').click();
+    await page.locator('button[title="Add permissions"]').filter({ visible: true }).click();
     await page
       .locator('select')
       .filter({ has: page.locator(`option[value="${created.permissionOid}"]`) })
@@ -284,7 +284,7 @@ test.describe('Auth module — authenticated', () => {
     test.skip(!created.groupRbOid || !created.roleOid, 'depends on group_rb and role');
     await page.goto(`/auth/groups/${created.groupRbOid}`);
 
-    await page.locator('button[title="Add roles"]').click();
+    await page.locator('button[title="Add roles"]').filter({ visible: true }).click();
     await page
       .locator('select')
       .filter({ has: page.locator(`option[value="${created.roleOid}"]`) })
@@ -413,7 +413,7 @@ test.describe('Auth module — authenticated', () => {
   test('assign group to system account via AssignmentManager', async ({ page }) => {
     test.skip(!created.acctSysOid || !created.groupUncOid, 'depends on accounts and group');
     await page.goto(`/auth/accounts/${created.acctSysOid}`);
-    await page.locator('button[title="Add groups"]').click();
+    await page.locator('button[title="Add groups"]').filter({ visible: true }).click();
     await page.locator('select').first().selectOption(created.groupUncOid!);
     await page.getByRole('button', { name: /^Add$/ }).click();
     await expect(page.locator(`text=group_${RUN_ID}_unc`).first()).toBeVisible();
@@ -444,6 +444,11 @@ test.describe('Auth module — authenticated', () => {
     page,
     context,
   }) => {
+    // At 1280px the top bar is wider than the window for an account that sees
+    // every top-level item (measured 1470px on d241716 and after the AgentOps
+    // retirement alike), which pushes the user menu off screen: open it at a
+    // width that fits. The overflow itself is a layout bug reported separately.
+    await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/dashboard/data-overview');
 
     // The Logout button lives inside the user-menu popover, which is opened by
@@ -451,9 +456,15 @@ test.describe('Auth module — authenticated', () => {
     // clicking the avatar. Hover the wrapper, wait for Logout to become visible,
     // click. There are several `.group` divs in the layout — the user menu is
     // the one that wraps a `rounded-full` avatar button.
-    await page.locator('div.group:has(button.rounded-full)').hover();
-    const logoutBtn = page.locator('button').filter({ hasText: /^Logout$/ }).first();
+    // Streaming can render the shell twice for a moment, and the header settles
+    // once the account loads: target the menu that is on screen, then keep the
+    // pointer on the Logout button itself while clicking it.
+    const userMenu = page.locator('div.group:has(button.rounded-full)').filter({ visible: true }).last();
+    await page.waitForLoadState('networkidle');
+    await userMenu.hover();
+    const logoutBtn = userMenu.locator('button').filter({ hasText: /^Logout$/ });
     await expect(logoutBtn).toBeVisible({ timeout: 5_000 });
+    await logoutBtn.hover();
     await logoutBtn.click();
 
     await page.waitForURL(/\/login$/, { timeout: 10_000 });

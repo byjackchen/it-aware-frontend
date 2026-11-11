@@ -31,18 +31,13 @@ import {
     Bot,
     Cpu,
     TicketCheck,
-    KanbanSquare,
-    List,
     Crown,
     Gauge,
     Timer,
     PackageCheck,
     PackageOpen,
-    Wrench,
     DollarSign,
-    Bot as Chatbot,
-    LineChart,
-    MessageSquare,
+    Bot as LineChart,
     Activity,
     HelpCircle,
     Headphones,
@@ -50,9 +45,6 @@ import {
     Search,
     UserPlus,
     UserX,
-    PlayCircle,
-    MessagesSquare,
-    History,
     Plug,
     Terminal,
     type LucideIcon,
@@ -165,15 +157,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.WORKERS_READ,
-                        ]),
-                    },
-                    {
-                        href: '/data/agents',
-                        labelKey: 'agents',
-                        icon: Bot,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.AGENTS_READ,
                         ]),
                     },
                     {
@@ -307,52 +290,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                         permissions: requireAllPermissions([
                             PERMISSIONS.UI.NAVIGATION_DATA,
                             PERMISSIONS.OBJECTS.WORKER_CLUSTERS_READ,
-                        ]),
-                    },
-                ],
-            },
-            {
-                labelKey: 'agentOps',
-                items: [
-                    {
-                        href: '/data/agentops/tickets',
-                        labelKey: 'tickets',
-                        icon: TicketCheck,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                            PERMISSIONS.OBJECTS.TICKETS_READ,
-                        ]),
-                    },
-                    {
-                        href: '/data/agentops/prompts',
-                        labelKey: 'prompts',
-                        icon: Sparkles,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                        ]),
-                    },
-                    {
-                        href: '/data/agentops/runs',
-                        labelKey: 'runs',
-                        icon: PlayCircle,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                        ]),
-                    },
-                    {
-                        href: '/data/agentops/threads',
-                        labelKey: 'threads',
-                        icon: MessagesSquare,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
-                        ]),
-                    },
-                    {
-                        href: '/data/agentops/activity',
-                        labelKey: 'activity',
-                        icon: History,
-                        permissions: requireAllPermissions([
-                            PERMISSIONS.UI.NAVIGATION_DATA,
                         ]),
                     },
                 ],
@@ -669,62 +606,6 @@ export const SIDEBAR_CONFIG: Record<string, SubMenuWithSections> = {
                     // dashboard perf overhaul — it was the only consumer that
                     // required pulling the full 200k-row /interactions list.
                 ],
-            },
-        ],
-    },
-    '/agent-ops': {
-        items: [
-            {
-                href: '/agent-ops/agents',
-                labelKey: 'agentFleet',
-                icon: Bot,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                    PERMISSIONS.OBJECTS.AGENTS_READ,
-                ]),
-            },
-            {
-                href: '/agent-ops/ticket-list',
-                labelKey: 'ticketList',
-                icon: List,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                    PERMISSIONS.OBJECTS.TICKETS_READ,
-                ]),
-            },
-            {
-                href: '/agent-ops/ticket-kanban',
-                labelKey: 'ticketKanban',
-                icon: KanbanSquare,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                    PERMISSIONS.OBJECTS.TICKETS_READ,
-                ]),
-            },
-            {
-                href: '/agent-ops/channels',
-                labelKey: 'channels',
-                icon: MessageSquare,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                ]),
-            },
-            {
-                href: '/agent-ops/activity',
-                labelKey: 'activity',
-                icon: Activity,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                ]),
-            },
-            {
-                href: '/agent-ops/lineage',
-                labelKey: 'lineage',
-                icon: Network,
-                permissions: requireAllPermissions([
-                    PERMISSIONS.UI.NAVIGATION_AGENT_OPS,
-                    PERMISSIONS.OBJECTS.TICKETS_READ,
-                ]),
             },
         ],
     },

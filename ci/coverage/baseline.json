@@ -99,60 +99,6 @@
         "total": 2
       }
     },
-    "app/api/agentops/[...path]/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 44
-      },
-      "lines": {
-        "covered": 0,
-        "total": 42
-      },
-      "functions": {
-        "covered": 0,
-        "total": 12
-      },
-      "branches": {
-        "covered": 0,
-        "total": 20
-      }
-    },
-    "app/api/agentops/ws-url/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 3
-      },
-      "lines": {
-        "covered": 0,
-        "total": 3
-      },
-      "functions": {
-        "covered": 0,
-        "total": 1
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
-      }
-    },
-    "app/api/agents/[oid]/chat-history/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 14
-      },
-      "lines": {
-        "covered": 0,
-        "total": 14
-      },
-      "functions": {
-        "covered": 0,
-        "total": 4
-      },
-      "branches": {
-        "covered": 0,
-        "total": 6
-      }
-    },
     "app/api/auth/me/route.ts": {
       "statements": {
         "covered": 0,
@@ -711,24 +657,6 @@
         "total": 0
       }
     },
-    "lib/api/activity-events.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 11
-      },
-      "lines": {
-        "covered": 0,
-        "total": 10
-      },
-      "functions": {
-        "covered": 0,
-        "total": 1
-      },
-      "branches": {
-        "covered": 0,
-        "total": 12
-      }
-    },
     "lib/api/campaigns.ts": {
       "statements": {
         "covered": 0,
@@ -745,24 +673,6 @@
       "branches": {
         "covered": 0,
         "total": 30
-      }
-    },
-    "lib/api/channels.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 58
-      },
-      "lines": {
-        "covered": 0,
-        "total": 45
-      },
-      "functions": {
-        "covered": 0,
-        "total": 20
-      },
-      "branches": {
-        "covered": 0,
-        "total": 32
       }
     },
     "lib/api/clusters.ts": {
@@ -1033,24 +943,6 @@
       "branches": {
         "covered": 0,
         "total": 0
-      }
-    },
-    "lib/api/tickets-channel.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 19
-      },
-      "lines": {
-        "covered": 0,
-        "total": 16
-      },
-      "functions": {
-        "covered": 0,
-        "total": 6
-      },
-      "branches": {
-        "covered": 0,
-        "total": 8
       }
     },
     "lib/auth/taihu.ts": {

@@ -38,18 +38,15 @@ function generateRandomPassword(length = 16): string {
 import {
     AssignmentManager,
     WorkerSearchDialog,
-    AgentSearchDialog,
     SystemSearchDialog,
 } from '@/components/security';
 import type { Account, Worker, Group } from '@/lib/types/security';
-import type { Agent, System } from '@/lib/types/objects';
+import type { System } from '@/lib/types/objects';
 import {
     updateAccount,
     deleteAccount,
     linkAccountWorker,
     unlinkAccountWorker,
-    linkAccountAgent,
-    unlinkAccountAgent,
     linkAccountSystem,
     unlinkAccountSystem,
     assignAccountGroup,
@@ -61,9 +58,6 @@ interface AccountDetailPageProps {
     linkedWorker: Worker | null;
     workers: Worker[];
     linkedWorkerOids: string[];
-    linkedAgent: Agent | null;
-    agents: Agent[];
-    linkedAgentOids: string[];
     linkedSystem: System | null;
     systems: System[];
     linkedSystemOids: string[];
@@ -76,9 +70,6 @@ export function AccountDetailPage({
     linkedWorker,
     workers,
     linkedWorkerOids,
-    linkedAgent,
-    agents,
-    linkedAgentOids,
     linkedSystem,
     systems,
     linkedSystemOids,
@@ -90,7 +81,6 @@ export function AccountDetailPage({
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
     const [isLinkingWorker, setIsLinkingWorker] = useState(false);
-    const [isLinkingAgent, setIsLinkingAgent] = useState(false);
     const [isLinkingSystem, setIsLinkingSystem] = useState(false);
     const [isActive, setIsActive] = useState(account.is_active);
     const [password, setPassword] = useState('');
@@ -152,23 +142,6 @@ export function AccountDetailPage({
         if (!linkedWorker) return;
         startTransition(async () => {
             await unlinkAccountWorker(account.oid, linkedWorker.oid);
-            router.refresh();
-        });
-    };
-
-    // Agent handlers
-    const handleLinkAgent = async (agent: Agent) => {
-        startTransition(async () => {
-            await linkAccountAgent(account.oid, agent.oid);
-            setIsLinkingAgent(false);
-            router.refresh();
-        });
-    };
-
-    const handleUnlinkAgent = async () => {
-        if (!linkedAgent) return;
-        startTransition(async () => {
-            await unlinkAccountAgent(account.oid, linkedAgent.oid);
             router.refresh();
         });
     };
@@ -423,50 +396,6 @@ export function AccountDetailPage({
                         </div>
                     )}
 
-                    {/* Linked Agent (Agent accounts only) */}
-                    {account.account_type === 'agent' && (
-                        <div className="border-t pt-6 border-white/10">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
-                                Linked Agent
-                            </h3>
-                            {linkedAgent ? (
-                                <div className="flex items-center justify-between p-3 rounded-lg theme-surface">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                                            <Bot className="w-5 h-5 text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-white">{linkedAgent.name}</div>
-                                            <div className="text-sm text-gray-400">
-                                                {linkedAgent.agent_id} · {linkedAgent.agent_platform}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleUnlinkAgent}
-                                        disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm transition-colors disabled:opacity-50"
-                                    >
-                                        <Unlink className="w-3.5 h-3.5" />
-                                        <span>{t('accounts.unlink')}</span>
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-between p-3 rounded-lg theme-empty-bg">
-                                    <span className="text-gray-500">No linked agent</span>
-                                    <button
-                                        onClick={() => setIsLinkingAgent(true)}
-                                        disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-sm transition-colors disabled:opacity-50"
-                                    >
-                                        <Link className="w-3.5 h-3.5" />
-                                        <span>Link Agent</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {/* Linked System (System accounts only) */}
                     {account.account_type === 'system' && (
                         <div className="border-t pt-6 border-white/10">
@@ -549,15 +478,6 @@ export function AccountDetailPage({
                 onSelect={handleLinkWorker}
                 workers={workers}
                 linkedWorkerOids={linkedWorkerOids}
-            />
-
-            {/* Agent Search Dialog */}
-            <AgentSearchDialog
-                isOpen={isLinkingAgent}
-                onClose={() => setIsLinkingAgent(false)}
-                onSelect={handleLinkAgent}
-                agents={agents}
-                linkedAgentOids={linkedAgentOids}
             />
 
             {/* System Search Dialog */}
