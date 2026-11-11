@@ -61,6 +61,10 @@ Everything after `sync` runs in a `git archive` of HEAD inside one `node:20-alpi
 
 The gate cannot be narrowed. To iterate, run the underlying command: `npx vitest run lib/x.test.ts`, `npx eslint <file>`, `npx tsc --noEmit`. For one spec, start the backend stack by hand from an export of the commit in `ci/backend.ref` (`ci/e2e/stack.sh up <dir>`, then `python3 ci/e2e/world.py "$IT_AWARE_API_BASE_URL" gate.admin gate-fake-password` with `<dir>/stack.env` sourced), point a local `next dev` at it (`BACKEND_DOMAIN`), and run `E2E_USERNAME=gate.admin E2E_PASSWORD=gate-fake-password E2E_API_URL=… npx playwright test e2e/<spec>`.
 
+## GET /api/version
+
+`app/api/version/route.ts` returns `{commit, built_at}` and nothing else. `next.config.ts` reads them once at `next build` (`lib/build-info.ts`: the commit from the build context's `.git/HEAD`, which `.dockerignore` lets through with the refs only) and inlines them. A build from a `git archive`, like the e2e's, reports `commit: "unknown"`.
+
 ## Limits
 
 - The e2e runs `next start`, not the Dockerfile's standalone `server.js`; the image build itself is the dev pipeline's.

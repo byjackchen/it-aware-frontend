@@ -14,7 +14,9 @@ backend's dashboard golden snapshots, which this must not disturb):
   returns a different first row;
 - two more systems, so the systems list has three;
 - one more worker, gate.erin, with an email and no account, for the
-  account-to-worker link dialog (which lists unlinked workers by email).
+  account-to-worker link dialog (which lists unlinked workers by email);
+- one edge, gate.erin belongs_to Gate Carol's organization, so the relationship
+  graph on a worker's page has something to draw (the seed has no edges).
 
 Deterministic: fixed timestamps and IDs, no randomness. It runs once per stack.
 """
@@ -129,11 +131,15 @@ def main(argv: list[str]) -> int:
         },
     )
     workers = api.oids("/objects/workers", "stable_id")
+    api.post(
+        "/edges",
+        {"from_oid": workers["gate.erin"], "to_oid": carol["org_oid"], "edge_type": "belongs_to"},
+    )
     systems = api.oids("/objects/systems", "system_id")
     for kind in ("requests", "incidents"):
         for n in range(1, COUNT + 1):
             api.post(f"/objects/activities/{kind}", ticket(kind, n, workers, systems))
-    print(f"ui world: 2 systems, 1 worker, {COUNT} requests, {COUNT} incidents")
+    print(f"ui world: 2 systems, 1 worker, 1 edge, {COUNT} requests, {COUNT} incidents")
     return 0
 
 
