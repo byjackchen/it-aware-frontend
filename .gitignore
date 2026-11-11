@@ -64,3 +64,6 @@ CLAUDE.md
 
 # Claude Code session state + per-task worktrees
 .claude/
+
+# OHLA CI gate: local reports and logs
+/.gate/

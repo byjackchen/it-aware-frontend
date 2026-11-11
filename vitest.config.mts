@@ -17,5 +17,20 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: ['lib/**/*.test.ts'],
+        // Measured by ci/gate.sh (ci/coverage/verify_coverage.py): the logic tier
+        // only, as sia's workbench does. Pages, layouts and components are driven
+        // through a real browser by the hermetic Playwright e2e (ci/e2e.sh).
+        coverage: {
+            provider: 'v8',
+            include: [
+                'lib/**/*.{ts,tsx}',
+                'i18n/**/*.ts',
+                'app/**/route.ts',
+                'app/actions/**/*.ts',
+                'proxy.ts',
+            ],
+            exclude: ['**/*.test.ts', '**/*.d.ts'],
+            reporter: ['json'],
+        },
     },
 });
