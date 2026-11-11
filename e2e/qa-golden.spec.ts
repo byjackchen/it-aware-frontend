@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
  * relationship graph, search) and GET /api/version. Every value asserted comes from
  * the synthetic data: the backend's seed (ci/e2e/seed.py) and the UI world
  * (ci/e2e/world.py: gate.erin, its edge to Gate Carol's organization, the gate.*
- * tickets dated May to August 2026).
+ * tickets, stored by the world just before the specs run).
  */
 
 async function workerOid(page: Page, stableId: string): Promise<string> {
@@ -45,8 +45,8 @@ test.describe('M0 golden: version, search, graph, persona', () => {
   });
 
   test('G4 the persona page shows the seeded worker and their activity', async ({ page }) => {
-    // The timeline's window is relative to today: pin it inside the world's tickets.
-    await page.clock.setFixedTime(new Date('2026-08-15T12:00:00Z'));
+    // The timeline shows the last 30 days by created_at, the time a row was stored:
+    // ci/e2e/world.py stores Gate Carol's tickets minutes before the specs run.
     const oid = await workerOid(page, 'gate.carol');
     await page.goto(`/persona/${oid}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Gate Carol' })).toBeVisible();
