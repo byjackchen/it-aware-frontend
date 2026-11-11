@@ -1,13 +1,10 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'node:path';
+import { USERNAME, PASSWORD } from './env';
 
 const STORAGE_STATE = path.join(__dirname, '.auth/user.json');
 
-const USERNAME = process.env.E2E_USERNAME ?? 'byjackchen';
-const PASSWORD =
-  process.env.E2E_PASSWORD ?? (USERNAME.length >= 8 ? USERNAME : USERNAME.padEnd(8, '0'));
-
-setup('authenticate as byjackchen', async ({ page, context }) => {
+setup('authenticate as the E2E user', async ({ page, context }) => {
   await page.goto('/auth/login');
   await page.locator('#username').fill(USERNAME);
   await page.locator('#password').fill(PASSWORD);
