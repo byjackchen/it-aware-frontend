@@ -101,9 +101,8 @@ export function AccountCreatePage() {
                             onChange={(e) => setAccountType(e.target.value)}
                             className="w-full px-3 py-2 rounded-lg theme-input"
                         >
-                            <option value="user">User</option>
-                            <option value="system">System</option>
-                            <option value="agent">Agent</option>
+                            <option value="user">{t('accounts.typeUser')}</option>
+                            <option value="integration">{t('accounts.typeIntegration')}</option>
                         </select>
                     </div>
 

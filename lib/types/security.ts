@@ -10,9 +10,20 @@ export interface Account {
   oid: string;
   username: string;
   is_active: boolean;
+  /** 'user' or 'integration'; old rows may still say 'system' or 'agent' (TODO00000135). */
   account_type: string;
   created_at: string;
   updated_at: string;
+}
+
+/** A service account: `integration`, or the `system` and `agent` types it replaced. */
+export function isIntegrationAccount(accountType?: string): boolean {
+  return accountType === 'integration' || accountType === 'system' || accountType === 'agent';
+}
+
+/** May be linked to a system record (the backend's account_types.can_link_system). */
+export function canLinkSystem(accountType?: string): boolean {
+  return accountType === 'integration' || accountType === 'system';
 }
 
 export interface Group {

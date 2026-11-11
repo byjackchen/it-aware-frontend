@@ -88,8 +88,7 @@ test.describe('Auth module — authenticated', () => {
     groupSelfOid?: string;
     groupRbOid?: string;
     acctUserOid?: string;
-    acctSysOid?: string;
-    acctAgtOid?: string;
+    acctIntOid?: string;
   } = {};
 
   test('GET /auth → 302 to /auth/permissions', async ({ page }) => {
@@ -306,7 +305,7 @@ test.describe('Auth module — authenticated', () => {
     await page.goto('/auth/accounts/new');
     const create = page.getByRole('button', { name: /^Create$/ });
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_form`);
-    for (const type of ['user', 'system', 'agent']) {
+    for (const type of ['user', 'integration']) {
       await page.locator('select').selectOption(type);
       await expect(page.locator('input[type="password"]')).toBeVisible();
       await page.locator('input[type="password"]').fill('');
@@ -316,7 +315,7 @@ test.describe('Auth module — authenticated', () => {
     }
   });
 
-  test('create three accounts — user / system / agent', async ({ page }) => {
+  test('create two accounts — user / integration', async ({ page }) => {
     // user
     await page.goto('/auth/accounts/new');
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_usr`);
@@ -324,18 +323,12 @@ test.describe('Auth module — authenticated', () => {
     await page.getByRole('button', { name: /^Create$/ }).click();
     await page.waitForURL(/\/auth\/accounts$/);
 
-    // system
+    // integration (system and agent were merged into it: it-aware-backend
+    // 2de7e84, ohla-xray TODO00000135)
     await page.goto('/auth/accounts/new');
-    await page.locator('select').selectOption('system');
-    await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_sys`);
-    await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
-    await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/accounts$/);
-
-    // agent
-    await page.goto('/auth/accounts/new');
-    await page.locator('select').selectOption('agent');
-    await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_agt`);
+    await expect(page.locator('select option')).toHaveText(['User', 'Integration']);
+    await page.locator('select').selectOption('integration');
+    await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_int`);
     await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
     await page.getByRole('button', { name: /^Create$/ }).click();
     await page.waitForURL(/\/auth\/accounts$/);
@@ -345,11 +338,8 @@ test.describe('Auth module — authenticated', () => {
       page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`).first()
     ).toContainText(/User/);
     await expect(
-      page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`).first()
-    ).toContainText(/System/);
-    await expect(
-      page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`).first()
-    ).toContainText(/Agent/);
+      page.locator(`tbody tr:has-text("acct_${RUN_ID}_int")`).first()
+    ).toContainText(/Integration/);
 
     // Capture OIDs. Always wait for the navigation before reading page.url(),
     // otherwise we capture the listing URL ("/auth/accounts") and assign
@@ -359,30 +349,21 @@ test.describe('Auth module — authenticated', () => {
     created.acctUserOid = page.url().split('/').pop()!;
 
     await page.goto('/auth/accounts');
-    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_sys")`).first().click();
+    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_int")`).first().click();
     await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
-    created.acctSysOid = page.url().split('/').pop()!;
-
-    await page.goto('/auth/accounts');
-    await page.locator(`tbody tr:has-text("acct_${RUN_ID}_agt")`).first().click();
-    await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
-    created.acctAgtOid = page.url().split('/').pop()!;
+    created.acctIntOid = page.url().split('/').pop()!;
   });
 
-  test('user account detail shows Link Worker; system/agent hide it', async ({ page }) => {
-    test.skip(
-      !created.acctUserOid || !created.acctSysOid || !created.acctAgtOid,
-      'depends on accounts'
-    );
+  test('user account detail shows Link Worker; integration shows Linked System', async ({ page }) => {
+    test.skip(!created.acctUserOid || !created.acctIntOid, 'depends on accounts');
     await page.goto(`/auth/accounts/${created.acctUserOid}`);
     await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Link Worker$/ })).toBeVisible();
 
-    await page.goto(`/auth/accounts/${created.acctSysOid}`);
+    await page.goto(`/auth/accounts/${created.acctIntOid}`);
     await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toHaveCount(0);
-
-    await page.goto(`/auth/accounts/${created.acctAgtOid}`);
-    await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Linked System', level: 3 })).toBeVisible();
+    await expect(page.getByText('Integration').first()).toBeVisible();
   });
 
   test('link then unlink a worker to user account', async ({ page }) => {
@@ -410,18 +391,18 @@ test.describe('Auth module — authenticated', () => {
     await expect(page.getByRole('button', { name: /^Link Worker$/ })).toBeVisible();
   });
 
-  test('assign group to system account via AssignmentManager', async ({ page }) => {
-    test.skip(!created.acctSysOid || !created.groupUncOid, 'depends on accounts and group');
-    await page.goto(`/auth/accounts/${created.acctSysOid}`);
+  test('assign group to integration account via AssignmentManager', async ({ page }) => {
+    test.skip(!created.acctIntOid || !created.groupUncOid, 'depends on accounts and group');
+    await page.goto(`/auth/accounts/${created.acctIntOid}`);
     await page.locator('button[title="Add groups"]').filter({ visible: true }).click();
     await page.locator('select').first().selectOption(created.groupUncOid!);
     await page.getByRole('button', { name: /^Add$/ }).click();
     await expect(page.locator(`text=group_${RUN_ID}_unc`).first()).toBeVisible();
   });
 
-  test('system account edit: toggle active off + password reset', async ({ page }) => {
-    test.skip(!created.acctSysOid, 'depends on create system account');
-    await page.goto(`/auth/accounts/${created.acctSysOid}`);
+  test('integration account edit: toggle active off + password reset', async ({ page }) => {
+    test.skip(!created.acctIntOid, 'depends on create integration account');
+    await page.goto(`/auth/accounts/${created.acctIntOid}`);
     await page.getByRole('button', { name: /^Edit$/ }).click();
     await page.locator('input[type="checkbox"]').uncheck();
     await page.locator('input[type="password"]').fill('new_pwd_8chars');
@@ -492,8 +473,7 @@ test.describe('Auth module — authenticated', () => {
 
     const deletes: Array<[string, string | undefined]> = [
       ['accounts', created.acctUserOid],
-      ['accounts', created.acctSysOid],
-      ['accounts', created.acctAgtOid],
+      ['accounts', created.acctIntOid],
       ['groups', created.groupUncOid],
       ['groups', created.groupSelfOid],
       ['groups', created.groupRbOid],
