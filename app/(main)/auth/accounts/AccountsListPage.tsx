@@ -13,6 +13,7 @@ import type {
     AccountWorker,
     AccountSystem,
 } from '@/lib/types/security';
+import { canLinkSystem, isIntegrationAccount } from '@/lib/types/security';
 import type { System } from '@/lib/types/objects';
 
 interface AccountsListPageProps {
@@ -34,8 +35,8 @@ export function AccountsListPage({
     const router = useTransitionRouter();
 
     // For a given account, return a display label for its linked entity
-    // (worker or system depending on account_type), or null if unlinked; agent
-    // accounts have no linked record since the agent registry was retired.
+    // (a worker for a user, a system record for an integration account), or
+    // null if unlinked.
     const getLinkedLabel = (account: Account): string | null => {
         if (account.account_type === 'user') {
             const link = accountWorkers.find((aw) => aw.account_oid === account.oid);
@@ -43,7 +44,7 @@ export function AccountsListPage({
             const w = workers.find((x) => x.oid === link.worker_oid);
             return w ? w.fullname : null;
         }
-        if (account.account_type === 'system') {
+        if (canLinkSystem(account.account_type)) {
             const link = accountSystems.find((as) => as.account_oid === account.oid);
             if (!link) return null;
             const s = systems.find((x) => x.oid === link.system_oid);
@@ -109,11 +110,10 @@ export function AccountsListPage({
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                    account.account_type === 'system' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                                                    account.account_type === 'agent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                                                    isIntegrationAccount(account.account_type) ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
                                                     'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                                                 }`}>
-                                                    {account.account_type === 'system' ? 'System' : account.account_type === 'agent' ? 'Agent' : 'User'}
+                                                    {isIntegrationAccount(account.account_type) ? t('accounts.typeIntegration') : t('accounts.typeUser')}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

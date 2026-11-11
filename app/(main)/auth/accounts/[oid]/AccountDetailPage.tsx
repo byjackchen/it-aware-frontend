@@ -41,6 +41,7 @@ import {
     SystemSearchDialog,
 } from '@/components/security';
 import type { Account, Worker, Group } from '@/lib/types/security';
+import { canLinkSystem, isIntegrationAccount } from '@/lib/types/security';
 import type { System } from '@/lib/types/objects';
 import {
     updateAccount,
@@ -221,15 +222,10 @@ export function AccountDetailPage({
                                     {t('accounts.type')}
                                 </label>
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
-                                    {account.account_type === 'system' ? (
+                                    {isIntegrationAccount(account.account_type) ? (
                                         <span className="flex items-center gap-1.5 text-purple-400">
                                             <Bot className="w-4 h-4" />
-                                            <span>{t('accounts.typeSystem')}</span>
-                                        </span>
-                                    ) : account.account_type === 'agent' ? (
-                                        <span className="flex items-center gap-1.5 text-blue-400">
-                                            <Bot className="w-4 h-4" />
-                                            <span>{t('accounts.typeAgent')}</span>
+                                            <span>{t('accounts.typeIntegration')}</span>
                                         </span>
                                     ) : (
                                         <span className="flex items-center gap-1.5 text-green-400">
@@ -396,8 +392,8 @@ export function AccountDetailPage({
                         </div>
                     )}
 
-                    {/* Linked System (System accounts only) */}
-                    {account.account_type === 'system' && (
+                    {/* Linked System (integration accounts only) */}
+                    {canLinkSystem(account.account_type) && (
                         <div className="border-t pt-6 border-white/10">
                             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
                                 Linked System

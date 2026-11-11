@@ -1719,24 +1719,6 @@
         "total": 10
       }
     },
-    "lib/types/security.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 1
-      },
-      "lines": {
-        "covered": 0,
-        "total": 1
-      },
-      "functions": {
-        "covered": 0,
-        "total": 0
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
-      }
-    },
     "lib/utils/activityState.ts": {
       "statements": {
         "covered": 0,
