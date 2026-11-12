@@ -22,7 +22,15 @@ async function ownAccountOid(context: BrowserContext): Promise<string> {
 /** Open the home page; while it streams in its markup is briefly there twice. */
 async function openHome(page: Page) {
   await page.goto('/home');
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { name: 'Home', exact: true })).toHaveCount(1);
+}
+
+/** Open a user's account page and wait until it is there once, with its requests done. */
+async function openAccount(page: Page, oid: string) {
+  await page.goto(`/auth/accounts/${oid}`);
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByTestId('profile-customization')).toHaveCount(1);
 }
 
 test.describe('Tasks 3: home, pins and the user profile', () => {
@@ -121,8 +129,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     const startPage = card.getByLabel('Start page');
     const onHome = card.getByLabel('Data · Workers', { exact: true });
 
-    await page.goto(`/auth/accounts/${oid}`);
-    await expect(card.getByRole('heading', { name: 'Customization' })).toHaveCount(1);
+    await openAccount(page, oid);
     await expect(card.getByText('Tasks this user can open (63)')).toBeVisible();
     await expect(card.getByTestId('profile-can-open')).toContainText('Service Catalogs');
     await expect(startPage).toHaveValue('');
@@ -144,11 +151,11 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       await expect(page.getByTestId('home-other').getByRole('link', { name: 'Workers', exact: true })).toHaveCount(0);
 
       // What was saved is what the admin reads back.
-      await page.goto(`/auth/accounts/${oid}`);
+      await openAccount(page, oid);
       await expect(startPage).toHaveValue('data.locations');
       await expect(onHome).toBeChecked();
     } finally {
-      await page.goto(`/auth/accounts/${oid}`);
+      await openAccount(page, oid);
       await startPage.selectOption('');
       await onHome.uncheck();
       await card.getByRole('button', { name: 'Save customization' }).click();
@@ -162,6 +169,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
 
   test("who has what tasks links a person to their profile page", async ({ page }) => {
     await page.goto('/auth/tasks');
+    await page.waitForLoadState('networkidle');
     await expect(page.getByPlaceholder('Filter…')).toHaveCount(1);
     await page.getByRole('tab', { name: 'By person' }).click();
     await page.getByPlaceholder('Filter…').fill('gate.alice');
@@ -169,6 +177,8 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await page.getByRole('link', { name: 'User profile: gate.alice' }).click();
 
     await expect(page).toHaveURL(/\/auth\/accounts\/[\w-]{22}$/);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('profile-customization')).toHaveCount(1);
     await expect(page.getByTestId('profile-customization').getByText('Tasks this user can open (63)')).toBeVisible();
   });
 });
