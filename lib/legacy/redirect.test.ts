@@ -15,10 +15,10 @@ describe('the legacy redirect', () => {
         expect(legacyRedirect(request('/data/workers'))).toBeNull();
     });
 
-    it('answers an old address with a permanent redirect, query kept, and logs the patterns only', () => {
+    it('answers an old address with a temporary redirect, query kept, and logs the patterns only', () => {
         const log = vi.spyOn(console, 'info').mockImplementation(() => {});
         const response = legacyRedirect(request('/data/workers/w-1?tab=history'), true);
-        expect(response?.status).toBe(308);
+        expect(response?.status).toBe(307);
         expect(response?.headers.get('location')).toBe('http://localhost/tasks/workers/workers/w-1?tab=history');
         expect(log).toHaveBeenCalledTimes(1);
         expect(log).toHaveBeenCalledWith('[legacy-redirect] old=/data/workers/[oid] new=/tasks/workers/workers/[oid]');

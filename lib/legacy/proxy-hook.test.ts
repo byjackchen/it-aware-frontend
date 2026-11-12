@@ -14,7 +14,7 @@ describe('the proxy with legacy redirects on', () => {
         vi.spyOn(console, 'info').mockImplementation(() => {});
         const fetchMock = vi.spyOn(globalThis, 'fetch');
         const response = await middleware(new NextRequest('http://localhost/operation-teams/ops-dashboard/vip-tickets'));
-        expect(response.status).toBe(308);
+        expect(response.status).toBe(307);
         expect(response.headers.get('location')).toBe('http://localhost/tasks/it-tickets/vip');
         expect(fetchMock).not.toHaveBeenCalled();
     });
