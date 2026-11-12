@@ -50,7 +50,7 @@ export function HomePage({ home }: HomePageProps) {
                     <span
                         className={`px-2 py-0.5 rounded-md text-xs border border-blue-500/30 text-blue-400 ${task.kind === 'external' ? 'border-dashed' : ''}`}
                     >
-                        {t(task.kind === 'external' ? 'external' : 'itAware')}
+                        {t(task.kind)}
                     </span>
                     {withPin && (
                         <button

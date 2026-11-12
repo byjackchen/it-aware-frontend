@@ -1503,7 +1503,7 @@
   "Home": {
     "title": "首页",
     "subtitle": "你的任务，也可以用搜索找到。",
-    "itAware": "IT-Aware 任务",
+    "internal": "内部任务",
     "external": "外部任务",
     "pin": "固定",
     "unpin": "取消固定",

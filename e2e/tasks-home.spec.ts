@@ -48,7 +48,9 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(page.getByTestId('home-pinned').getByText('Pin a task below or from search.')).toBeVisible();
     const other = page.getByTestId('home-other');
     await expect(other.getByRole('link', { name: 'Maintain IT Service Catalog', exact: true })).toHaveAttribute('href', '/tasks/it-service-catalog/service-catalogs');
-    await expect(other.getByText('IT-Aware task').first()).toBeVisible();
+    // The task kinds are named Internal Task and External Task (maintainer, 2026-11-12:
+    // "rename thoroughly the task kind: Internal Task, External Task").
+    await expect(other.getByText('Internal Task').first()).toBeVisible();
     // With more than about ten tasks, the others are under their groupings, in catalog order.
     await expect(other.getByRole('heading', { level: 3 })).toHaveText(['Data', 'Analytics', 'Operations', 'Administration']);
     await expect(page.getByTestId('home-grouping-analytics').getByRole('link', { name: 'Persona Dashboard', exact: true })).toBeVisible();

@@ -1825,8 +1825,8 @@
   "Home": {
     "title": "Home",
     "subtitle": "Your tasks. Search finds them too.",
-    "itAware": "IT-Aware task",
-    "external": "External task",
+    "internal": "Internal Task",
+    "external": "External Task",
     "pin": "Pin",
     "unpin": "Unpin",
     "pinTask": "Pin {name}",
