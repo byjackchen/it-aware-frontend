@@ -81,24 +81,6 @@
         "total": 30
       }
     },
-    "app/actions/systems.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 26
-      },
-      "lines": {
-        "covered": 0,
-        "total": 18
-      },
-      "functions": {
-        "covered": 0,
-        "total": 15
-      },
-      "branches": {
-        "covered": 0,
-        "total": 2
-      }
-    },
     "app/api/auth/me/route.ts": {
       "statements": {
         "covered": 0,
