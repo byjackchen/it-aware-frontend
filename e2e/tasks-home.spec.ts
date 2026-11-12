@@ -44,6 +44,29 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(page).toHaveURL(/\/home$/);
   });
 
+  test('the top bar has no menu; its pages are reached as tasks, and the sidebar stays', async ({ page }) => {
+    await page.goto('/data/workers');
+    const topBar = page.locator('header').filter({ visible: true }).last();
+    await expect(topBar.getByRole('link', { name: /IT-Aware/ })).toHaveAttribute('href', '/');
+    await expect(topBar.getByPlaceholder('Search Data Objects...')).toBeVisible();
+    // The retired entries: none is a link or a button in the top bar any more.
+    for (const entry of ['Auth', 'Data', 'Persona', 'ITOps Dashboard', 'Ohla Chatbot', 'Ohla Journey', 'SSC Team', 'Systems', 'Other Apps']) {
+      await expect(topBar.getByRole('link', { name: entry, exact: true })).toHaveCount(0);
+      await expect(topBar.getByRole('button', { name: entry, exact: true })).toHaveCount(0);
+    }
+    await expect(topBar.getByRole('navigation')).toHaveCount(0);
+    // The section's sidebar is as it was.
+    await expect(page.locator('aside').first().getByRole('link', { name: 'Organizations' })).toBeVisible();
+
+    // A page a retired entry opened is a task on the home: Persona, and the first page of Auth.
+    await openHome(page);
+    const other = page.getByTestId('home-other');
+    await expect(other.getByRole('link', { name: 'Permissions', exact: true })).toHaveAttribute('href', '/auth/permissions');
+    await expect(other.locator('a[href="/persona"]')).toHaveCount(1);
+    await expect(other.locator('a[href="/knowledge"]')).toHaveCount(1);
+    await expect(other.locator('a[href="/dashboard/data-overview"]')).toHaveCount(1);
+  });
+
   test('a task is pinned and unpinned from the home', async ({ page }) => {
     await openHome(page);
     const pinned = page.getByTestId('home-pinned');
