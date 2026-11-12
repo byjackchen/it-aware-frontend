@@ -22,6 +22,13 @@ it('finds the task at the address, or the nearest one above it', () => {
   expect(owningTask('/data', tasks)).toBeUndefined();
 });
 
+it('lets a page with a named segment belong to a task at one of its values', () => {
+  const journey = [{ code: 'ohla_journey.headline', opens: '/ohla-journey/headline' }];
+  expect(owningTask('/ohla-journey/[section]', journey)?.code).toBe('ohla_journey.headline');
+  expect(owningTask('/ohla-journey', journey)).toBeUndefined();
+  expect(owningTask('/[area]/headline/[oid]', journey)?.code).toBe('ohla_journey.headline');
+});
+
 it('lists the pages no task covers', () => {
   const files = [
     'app/(main)/data/workers/page.tsx',

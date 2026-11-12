@@ -33,6 +33,9 @@ test.describe('Tasks 1: task access', () => {
     await page.goto('/auth/tasks');
     await expect(page.getByRole('heading', { name: 'Task access' })).toBeVisible();
 
+    // While the page streams in, its markup is briefly there twice; wait for the one page.
+    await expect(page.getByPlaceholder('Filter…')).toHaveCount(1);
+
     // By group: gate-readers holds every read and ui permission (backend ci/e2e/seed.py).
     await page.getByPlaceholder('Filter…').fill('gate-readers');
     await page.getByTestId('task-holders').getByRole('button', { name: /gate-readers/ }).click();
@@ -71,6 +74,9 @@ test.describe('Tasks 1: task access', () => {
     // signs in with the e2e password asks for the page of each of its tasks; a
     // redirect (to the login or access-denied page) or an error answer is
     // reported. It does not see what a page loads after it renders.
+    // Not asked: the Airflow page, whose server render asks Airflow for its
+    // DAGs, which the hermetic stack's double does not answer.
+    const notAsked = ['/systems/airflow'];
     const opens = new Map(access.tasks.map((task) => [task.code, task.opens]));
     const notOpening: { username: string; task: string; opens: string; answer: string }[] = [];
     const notSignedIn: string[] = [];
@@ -90,6 +96,7 @@ test.describe('Tasks 1: task access', () => {
       const browserless = await request.newContext({ baseURL, extraHTTPHeaders: { Cookie: cookie } });
       for (const held of account.tasks) {
         const address = opens.get(held.code)!;
+        if (notAsked.includes(address)) continue;
         const response = await browserless.get(address, { maxRedirects: 0 });
         opened += 1;
         if (response.status() !== 200) {
@@ -110,6 +117,7 @@ test.describe('Tasks 1: task access', () => {
       pages: pages.length,
       pages_without_task: withoutTask,
       task_pages_asked: opened,
+      task_pages_not_asked: notAsked,
       tasks_not_opening: notOpening,
       accounts_not_signed_in: notSignedIn,
     };

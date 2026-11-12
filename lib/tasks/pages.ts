@@ -19,10 +19,16 @@ export function pageAddress(file: string): string {
     return `/${segments.join('/')}`;
 }
 
+/** Whether the page's address is the task's or lies under it; a `[name]` segment of the page stands for any value. */
+function covers(opens: string, address: string): boolean {
+    const page = address.split('/');
+    return opens.split('/').every((segment, i) => page[i] === segment || /^\[.*\]$/.test(page[i] ?? ''));
+}
+
 /** The task whose address is the page's or the nearest above it; undefined when none. */
 export function owningTask<T extends TaskAddress>(address: string, tasks: T[]): T | undefined {
     return tasks
-        .filter(task => address === task.opens || address.startsWith(`${task.opens}/`))
+        .filter(task => covers(task.opens, address))
         .sort((a, b) => b.opens.length - a.opens.length)[0];
 }
 
