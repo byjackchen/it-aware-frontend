@@ -119,7 +119,7 @@ it('reads the form back into the parameters to send', () => {
     param('note', { type: 'string' }, ''),
     param('ids', { type: 'array' }),
   ]);
-  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { window_hours: 2, dry_run: true, note: '' } });
+  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { window_hours: 2, dry_run: true } });
   expect(parameterValues(fields, { window_hours: '3', ratio: '0.5', dry_run: false, note: 'n', ids: '[1]' })).toEqual({
     ok: true, values: { window_hours: 3, ratio: 0.5, dry_run: false, note: 'n', ids: [1] },
   });
@@ -139,4 +139,17 @@ it('adds the next part of a log to what was read', () => {
     content: 'a\nb\n', truncated: false, next_token: 't',
   });
   expect(appendLog({ content: '', truncated: true }, { content: 'x', truncated: false, next_token: null }).truncated).toBe(true);
+});
+
+it('leaves out an empty string field with no default, and sends one that clears a default', () => {
+  const fields = parameterFields([
+    param('notification_batch_oid', { type: 'string' }, ''),
+    param('note', { type: 'string' }),
+    param('label', { type: 'string' }, 'x'),
+  ]);
+  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { label: 'x' } });
+  expect(parameterValues(fields, { label: '' })).toEqual({ ok: true, values: { label: '' } });
+  expect(parameterValues(fields, { note: 'n', notification_batch_oid: 'b' })).toEqual({
+    ok: true, values: { notification_batch_oid: 'b', note: 'n', label: 'x' },
+  });
 });
