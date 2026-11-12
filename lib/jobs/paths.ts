@@ -17,15 +17,17 @@ export const ACTIONS_PAGE_SIZE = 50;
 
 /**
  * A job, run or step id as the backend accepts it (app/jobs/service.py
- * ID_PATTERN): letters, digits and `_ - . ~ : + @`, at least one not a dot, at
- * most 250 characters. So `.` and `..` never reach a path.
+ * ID_PATTERN): Unicode letters and digits (Python's `\w`) and `_ - . : + @`, at
+ * least one not a dot, at most 250 characters (code points, as Python counts).
+ * So `.` and `..` never reach a path, and `~`, Airflow's "all" wildcard, is
+ * refused.
  */
-const ID = /^[A-Za-z0-9_.~:+@-]*[A-Za-z0-9_~:+@-][A-Za-z0-9_.~:+@-]*$/;
+const ID = /^[\p{L}\p{N}_.:+@-]*[\p{L}\p{N}_:+@-][\p{L}\p{N}_.:+@-]*$/u;
 const ID_MAX = 250;
 export const INVALID_ID_MESSAGE = 'Not a job, run or step id.';
 
 export function isJobsId(value: string): boolean {
-  return value.length <= ID_MAX && ID.test(value);
+  return [...value].length <= ID_MAX && ID.test(value);
 }
 
 export interface JobsLink {

@@ -42,10 +42,26 @@ it('round-trips a link through its own search parameters', () => {
 
 it('refuses an id the backend would refuse, before any screen is read', async () => {
   const { isJobsId } = await import('@/lib/jobs/paths');
-  for (const ok of ['gate_digest', RUN, 'a.b', '.a', 'a@b~c-d', 'x'.repeat(250)]) expect(isJobsId(ok)).toBe(true);
-  for (const bad of ['.', '..', '...', '', 'a/b', 'a b', 'a%2e', 'é', 'x'.repeat(251)]) expect(isJobsId(bad)).toBe(false);
+  for (const ok of ['gate_digest', RUN, 'a.b', '.a', 'a@b-c', 'x'.repeat(250)]) expect(isJobsId(ok)).toBe(true);
+  for (const bad of ['.', '..', '...', '', 'a/b', 'a b', 'a%2e', 'x'.repeat(251)]) expect(isJobsId(bad)).toBe(false);
   expect(parseJobsView({ job: '..' })).toEqual({ kind: 'invalid', id: '..' });
   expect(parseJobsView({ job: 'a', run: '.' })).toEqual({ kind: 'invalid', id: '.' });
   expect(parseJobsView({ job: 'a', run: RUN, step: '../x' })).toEqual({ kind: 'invalid', id: '../x' });
   expect(parseJobsView({ tab: 'actions', job: '..' })).toEqual({ kind: 'invalid', id: '..' });
+});
+
+it('refuses ~, Airflow\'s "all" wildcard, as the backend does (review 2026-11-12)', async () => {
+  const { isJobsId } = await import('@/lib/jobs/paths');
+  for (const bad of ['~', 'a~b', 'a@b~c-d']) expect(isJobsId(bad)).toBe(false);
+  expect(parseJobsView({ job: '~' })).toEqual({ kind: 'invalid', id: '~' });
+  expect(parseJobsView({ job: 'a', run: 'manual~x' })).toEqual({ kind: 'invalid', id: 'manual~x' });
+});
+
+it("accepts Unicode letters and digits, as the backend's \\w does", async () => {
+  const { isJobsId } = await import('@/lib/jobs/paths');
+  for (const ok of ['é', '作业_1', 'день', 'job_٣', '.作业']) expect(isJobsId(ok)).toBe(true);
+  expect(parseJobsView({ job: '作业_1' })).toEqual({ kind: 'job', job: '作业_1', page: 1 });
+  // At most 250 characters as Python counts them (code points), not UTF-16 units.
+  expect(isJobsId('𝑥'.repeat(250))).toBe(true);
+  expect(isJobsId('𝑥'.repeat(251))).toBe(false);
 });
