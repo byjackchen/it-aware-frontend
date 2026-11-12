@@ -56,7 +56,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await page.goto('/data/workers');
     const topBar = page.locator('header').filter({ visible: true }).last();
     await expect(topBar.getByRole('link', { name: /IT-Aware/ })).toHaveAttribute('href', '/');
-    await expect(topBar.getByPlaceholder('Search Data Objects...')).toBeVisible();
+    await expect(topBar.getByPlaceholder('Search tasks and records...')).toBeVisible();
     // The retired entries: none is a link or a button in the top bar any more.
     for (const entry of ['Auth', 'Data', 'Persona', 'ITOps Dashboard', 'Ohla Chatbot', 'Ohla Journey', 'SSC Team', 'Systems', 'Other Apps']) {
       await expect(topBar.getByRole('link', { name: entry, exact: true })).toHaveCount(0);
@@ -95,7 +95,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
 
   test('a task is pinned from search, and shows on the home', async ({ page }) => {
     await openHome(page);
-    await page.getByPlaceholder('Search Data Objects...').fill('service cat');
+    await page.getByPlaceholder('Search tasks and records...').fill('service cat');
     const tasks = page.getByTestId('search-group-task');
     await tasks.getByRole('button', { name: 'Pin Service Catalogs', exact: true }).click();
     await expect(tasks.getByRole('button', { name: 'Unpin Service Catalogs', exact: true })).toBeVisible();

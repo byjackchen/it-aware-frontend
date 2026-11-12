@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Tasks 2: search over tasks and records', () => {
   test('a task is found by its name and opens its page', async ({ page }) => {
     await page.goto('/data/workers');
-    await page.getByPlaceholder('Search Data Objects...').fill('incid');
+    await page.getByPlaceholder('Search tasks and records...').fill('incid');
 
     const tasks = page.getByTestId('search-group-task');
     await expect(tasks.getByText('Tasks', { exact: true })).toBeVisible();
@@ -23,7 +23,7 @@ test.describe('Tasks 2: search over tasks and records', () => {
 
   test('a record is found in its group and opens its detail page', async ({ page }) => {
     await page.goto('/data/workers');
-    await page.getByPlaceholder('Search Data Objects...').fill('Gate Org');
+    await page.getByPlaceholder('Search tasks and records...').fill('Gate Org');
 
     const organizations = page.getByTestId('search-group-organization');
     await expect(organizations.getByText('Organizations', { exact: true })).toBeVisible();
@@ -34,7 +34,7 @@ test.describe('Tasks 2: search over tasks and records', () => {
 
   test('a kind the bar could not reach before is found: incidents', async ({ page }) => {
     await page.goto('/data/workers');
-    await page.getByPlaceholder('Search Data Objects...').fill('synthetic incident');
+    await page.getByPlaceholder('Search tasks and records...').fill('synthetic incident');
     const incidents = page.getByTestId('search-group-incident');
     await expect(incidents.getByText('Incidents', { exact: true })).toBeVisible();
     await expect(incidents.getByRole('button').first()).toContainText('synthetic incident');

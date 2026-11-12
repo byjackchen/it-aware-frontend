@@ -30,7 +30,7 @@ test.describe('M0 golden: version, search, graph, persona', () => {
 
   test('G2 the top-bar search finds a seeded worker and opens it', async ({ page }) => {
     await page.goto('/data/workers');
-    await page.getByPlaceholder('Search Data Objects...').fill('gate.erin');
+    await page.getByPlaceholder('Search tasks and records...').fill('gate.erin');
     await page.getByRole('button', { name: 'gate.erin', exact: true }).click();
     await expect(page).toHaveURL(/\/data\/workers\/[A-Za-z0-9_-]{22}$/);
     await expect(page.getByText('Gate Erin').filter({ visible: true }).first()).toBeVisible();

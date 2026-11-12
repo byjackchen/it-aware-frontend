@@ -141,7 +141,7 @@
       "addTitle": "添加{title}"
     },
     "GlobalSearch": {
-      "placeholder": "搜索数据对象...",
+      "placeholder": "搜索任务和记录...",
       "noResults": "未找到结果",
       "searching": "搜索中...",
       "organizations": "组织",
@@ -1533,7 +1533,7 @@
     "unpin": "从首页取消固定",
     "pinTask": "固定 {name}",
     "unpinTask": "取消固定 {name}",
-    "placeholder": "搜索数据对象...",
+    "placeholder": "搜索任务和记录...",
     "noResults": "未找到结果",
     "searching": "搜索中...",
     "organizations": "组织",
