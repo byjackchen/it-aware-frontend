@@ -143,7 +143,7 @@ export function NotificationDirectSpreadsheetCreate({
                 return;
             }
 
-            router.push(`/campaign/notification-batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
+            router.push(`/tasks/notifications/batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
             router.refresh();
         });
     };

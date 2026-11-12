@@ -158,8 +158,7 @@ export async function createCampaignNotificationBatchAction(
             ...payload,
             ...(creatorAccount ? { creator_account: creatorAccount } : {}),
         });
-        revalidatePath('/campaign');
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, notificationBatchOid: created.oid });
         return { success: true, data: created };
@@ -190,7 +189,7 @@ export async function updateCampaignNotificationBatchAction(
 
     try {
         const updated = await updateNotificationBatch(notificationBatchOid, payload);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, notificationBatchOid });
         return { success: true, data: updated };
@@ -218,7 +217,7 @@ export async function deleteCampaignNotificationBatchAction(notificationBatchOid
 
     try {
         await deleteNotificationBatch(notificationBatchOid);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, notificationBatchOid });
         return { success: true, data: null };
@@ -249,7 +248,7 @@ export async function batchUpsertCampaignNotificationsAction(
 
     try {
         const result = await batchUpsertNotifications(notificationBatchOid, notifications);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -285,7 +284,7 @@ export async function createCampaignNotificationAction(
 
     try {
         const created = await createNotification(notificationBatchOid, notification);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -323,7 +322,7 @@ export async function updateCampaignNotificationAction(
 
     try {
         const updated = await updateNotification(notificationBatchOid, notificationOid, notification);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, notificationBatchOid, notificationOid });
         return { success: true, data: updated };
@@ -354,7 +353,7 @@ export async function deleteCampaignNotificationAction(
 
     try {
         await deleteNotification(notificationBatchOid, notificationOid);
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, notificationBatchOid, notificationOid });
         return { success: true, data: null };
@@ -384,7 +383,7 @@ export async function triggerCampaignNotificationBatchAction(
 
     try {
         const result = await postNotificationBatchAction(notificationBatchOid, { action: 'trigger' });
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -419,7 +418,7 @@ export async function cancelCampaignNotificationBatchAction(
 
     try {
         const result = await postNotificationBatchAction(notificationBatchOid, { action: 'cancel' });
-        revalidatePath('/campaign/notification-batches');
+        revalidatePath('/tasks/notifications/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -458,8 +457,7 @@ export async function createCampaignSurveyBatchAction(
             ...payload,
             ...(creatorAccount ? { creator_account: creatorAccount } : {}),
         });
-        revalidatePath('/campaign');
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid: created.oid });
         return { success: true, data: created };
@@ -490,7 +488,7 @@ export async function updateCampaignSurveyBatchAction(
 
     try {
         const updated = await updateSurveyBatch(surveyBatchOid, payload);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid });
         return { success: true, data: updated };
@@ -518,7 +516,7 @@ export async function deleteCampaignSurveyBatchAction(surveyBatchOid: string): P
 
     try {
         await deleteSurveyBatch(surveyBatchOid);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid });
         return { success: true, data: null };
@@ -548,7 +546,7 @@ export async function publishCampaignSurveyBatchAction(
 
     try {
         const result = await postSurveyBatchAction(surveyBatchOid, { action: 'publish' });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
         return { success: true, data: result };
@@ -578,7 +576,7 @@ export async function closeCampaignSurveyBatchAction(
 
     try {
         const result = await postSurveyBatchAction(surveyBatchOid, { action: 'close' });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
         return { success: true, data: result };
@@ -608,7 +606,7 @@ export async function reopenCampaignSurveyBatchAction(
 
     try {
         const result = await postSurveyBatchAction(surveyBatchOid, { action: 'reopen' });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
         return { success: true, data: result };
@@ -638,7 +636,7 @@ export async function cancelCampaignSurveyBatchAction(
 
     try {
         const result = await postSurveyBatchAction(surveyBatchOid, { action: 'cancel' });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyBatchOid, status: result.status });
         return { success: true, data: result };
@@ -669,7 +667,7 @@ export async function createCampaignSurveyAction(
 
     try {
         const created = await createSurvey(surveyBatchOid, survey);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -706,7 +704,7 @@ export async function updateCampaignSurveyAction(
 
     try {
         const updated = await updateSurvey(surveyOid, survey);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
         return { success: true, data: updated };
@@ -740,7 +738,7 @@ export async function submitCampaignSurveyAction(
             action: 'submit',
             survey_answer: surveyAnswer,
         });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, status: updated.status });
         return { success: true, data: updated };
@@ -772,7 +770,7 @@ export async function revokeCampaignSurveyAction(
         const updated = await postSurveyAction(surveyOid, {
             action: 'revoke',
         });
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid, status: updated.status });
         return { success: true, data: updated };
@@ -803,7 +801,7 @@ export async function batchUpsertCampaignSurveysAction(
 
     try {
         const result = await batchUpsertSurveys(surveyBatchOid, surveys);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, {
             requestId,
@@ -838,7 +836,7 @@ export async function deleteCampaignSurveyAction(
 
     try {
         await deleteSurvey(surveyOid);
-        revalidatePath('/campaign/survey-batches');
+        revalidatePath('/tasks/surveys/batches');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action, surveyOid });
         return { success: true, data: null };

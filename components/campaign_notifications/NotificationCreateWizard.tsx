@@ -103,7 +103,7 @@ export function NotificationCreateWizard() {
                 return;
             }
 
-            router.push(`/campaign/notification-batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
+            router.push(`/tasks/notifications/batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
             router.refresh();
         });
     };
@@ -114,7 +114,7 @@ export function NotificationCreateWizard() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.push('/campaign/notification-batches')}
+                        onClick={() => router.push('/tasks/notifications/batches')}
                         className={`p-2 rounded-lg ${isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
                     >
                         <ArrowLeft className="w-4 h-4" />

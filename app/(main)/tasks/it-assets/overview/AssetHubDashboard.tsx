@@ -1,0 +1,632 @@
+'use client';
+
+/**
+ * Asset Hub (Page 1.3.1) — ports `temp_ref/.../assets/AssetsDashboardPage.tsx`
+ * to the real API via {@link useHardwares}.
+ *
+ * Base filter: model_category whitelisted via `isInScopeAsset`. We pull the
+ * data with no category filter (Phase 1 backend param is single-value)
+ * and narrow client-side — `limit=1000` plus active-only covers
+ * reasonable dashboard volumes.
+ */
+
+import { useCallback, useMemo, useState } from 'react';
+import { BarChart3, HardDrive, PackageCheck, Truck, Wrench, HelpCircle, DollarSign, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslations } from 'next-intl';
+import { useTheme } from '@/lib/contexts/theme-context';
+import { useHardwares } from '@/lib/hooks/useOpsDashboard';
+import type { HardwareRow } from '@/lib/api/ops_dashboard';
+import {
+    summarizeAssets,
+    groupBy,
+    inferDeviceType,
+    isInScopeAsset,
+    isInStock,
+} from '@/lib/ops_dashboard/aggregate';
+import {
+    countryToRegion,
+    extractCountry,
+    normalizeRegion,
+} from '@/lib/ops_dashboard/region';
+import { KpiCard } from '@/components/ops_dashboard/KpiCard';
+import { DonutCard } from '@/components/ops_dashboard/DonutCard';
+import { TopFilterBar, type FilterState, type SlicerConfig } from '@/components/ops_dashboard/filters/TopFilterBar';
+import { useOpsAssetFilter } from '@/lib/hooks/useOpsAssetFilter';
+import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
+import { CollapsibleDetailTable } from '@/components/ops_dashboard/CollapsibleDetailTable';
+import type { ColDef } from '@/components/ops_dashboard/DataTable';
+
+const MAC_COLOR = '#6366f1';
+const WIN_COLOR = '#3b82f6';
+const OTHER_COLOR = '#0ea5e9';
+const DONUT_PALETTE = ['#1d4ed8', '#0ea5e9', '#06b6d4', '#0891b2', '#0284c7', '#0369a1', '#075985', '#1e3a5f'];
+const TOP_LOCATIONS = 8;
+
+function procuredByOf(row: HardwareRow): string {
+    // `asset_owner` is the procurement-side ownership label (typically
+    // "OIT" or "Studio"). Earlier code used `company` which is the
+    // legal-entity buyer — not the same concept.
+    return row.asset_owner?.trim() || 'Unknown';
+}
+
+function supportGroupOf(row: HardwareRow): string {
+    // Region fallback chain: office_region → region → region_code →
+    // location as region label → location-derived country → stock_room
+    // -derived country. Only assets with nothing identifiable land
+    // in "Unassigned".
+    const r =
+        normalizeRegion(row.office_region) ??
+        normalizeRegion(row.region) ??
+        normalizeRegion(row.region_code) ??
+        normalizeRegion(row.location) ??
+        countryToRegion(extractCountry(row.location)) ??
+        countryToRegion(row.stock_room);
+    return r ? `${r} OIT Support` : 'Unassigned';
+}
+
+export function AssetHubDashboard() {
+    const t = useTranslations('OpsDashboard');
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
+    const { data, loading, error, refetch } = useHardwares(
+        { limit: 1000, is_active: true },
+        { fetchAll: true },
+    );
+    const rows: HardwareRow[] = useMemo(() => data?.items ?? [], [data]);
+    const partial = data?.partial === true;
+
+    // Sidebar filter state — three slicers + a chart-only
+    // `stock_room` dimension driven exclusively by the In-Stock
+    // Location donut (no panel slicer for it). Support Group /
+    // Procured By / Department are SHARED across every asset-oriented
+    // dashboard via useOpsAssetFilter — picking "AMER OIT Support"
+    // on Asset Overview carries to In-Stock / Pending / Zero Residual.
+    const {
+        filter: assetFilter,
+        setSupportGroups,
+        setProcuredBy,
+        setDepartments,
+    } = useOpsAssetFilter();
+    const [filters, setFilters] = useState<FilterState>({
+        stock_room: [],
+    });
+    // Mirror the three shared dims into the legacy FilterState shape
+    // the TopFilterBar expects. Updates flow back into the global hook.
+    const filterStateForBar: FilterState = useMemo(
+        () => ({
+            ...filters,
+            support_group: assetFilter.supportGroups,
+            procured_by: assetFilter.procuredBy,
+            department: assetFilter.departments,
+        }),
+        [filters, assetFilter],
+    );
+    const onFilterStateChange = useCallback(
+        (next: FilterState) => {
+            // Pull the three shared dims out and route them through
+            // the global hook. Everything else (stock_room) stays local.
+            const supportGroups = (next.support_group as string[]) ?? [];
+            const procuredBy = (next.procured_by as string[]) ?? [];
+            const departments = (next.department as string[]) ?? [];
+            if (JSON.stringify(supportGroups) !== JSON.stringify(assetFilter.supportGroups)) {
+                setSupportGroups(supportGroups);
+            }
+            if (JSON.stringify(procuredBy) !== JSON.stringify(assetFilter.procuredBy)) {
+                setProcuredBy(procuredBy);
+            }
+            if (JSON.stringify(departments) !== JSON.stringify(assetFilter.departments)) {
+                setDepartments(departments);
+            }
+            const localOnly: FilterState = { ...next };
+            delete localOnly.support_group;
+            delete localOnly.procured_by;
+            delete localOnly.department;
+            setFilters(localOnly);
+        },
+        [assetFilter, setSupportGroups, setProcuredBy, setDepartments],
+    );
+
+    // Option pools derive from the fetched data.
+    const slicers: SlicerConfig[] = useMemo(() => {
+        const supportGroups = groupBy(rows, supportGroupOf).map((g) => g.key);
+        const procured = groupBy(rows, procuredByOf).map((g) => g.key);
+        const departments = groupBy(rows, (r) => r.department).map((g) => g.key);
+        return [
+            {
+                type: 'multi',
+                param: 'support_group',
+                label: t('filters.supportGroup'),
+                options: supportGroups,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'procured_by',
+                label: t('filters.procuredBy'),
+                options: procured,
+                clientSide: true,
+            },
+            {
+                type: 'multi',
+                param: 'department',
+                label: t('filters.department'),
+                options: departments,
+                clientSide: true,
+            },
+        ];
+    }, [rows, t]);
+
+    // Base set: dashboard model categories + user sidebar slicers applied.
+    const filtered = useMemo(() => {
+        const supportGroupSel = assetFilter.supportGroups;
+        const procuredSel = assetFilter.procuredBy;
+        const deptSel = assetFilter.departments;
+        const stockRoomSel = (filters.stock_room as string[]) ?? [];
+        const statusSel = (filters.asset_status as string[]) ?? [];
+        const substatusSel = (filters.substatus as string[]) ?? [];
+        return rows.filter((r) => {
+            if (!isInScopeAsset(r)) return false;
+            if (supportGroupSel.length && !supportGroupSel.includes(supportGroupOf(r))) return false;
+            if (procuredSel.length && !procuredSel.includes(procuredByOf(r))) return false;
+            if (deptSel.length && !deptSel.includes(r.department ?? 'Unknown')) return false;
+            if (stockRoomSel.length && !stockRoomSel.includes(r.stock_room ?? 'Unknown')) return false;
+            if (statusSel.length && !statusSel.includes(r.asset_status ?? 'Unknown')) return false;
+            if (substatusSel.length && !substatusSel.includes(r.substatus ?? 'Unknown')) return false;
+            return true;
+        });
+    }, [rows, filters, assetFilter]);
+
+    const kpis = useMemo(() => summarizeAssets(filtered), [filtered]);
+
+    // Pending Image — count assets whose `substatus` equals "Pending Image"
+    // (case-insensitive). Surfaced as a dedicated big-chart banner below
+    // Row 1 so the operations team can spot a growing queue at a glance.
+    const pendingImageCount = useMemo(() => {
+        let n = 0;
+        for (const r of filtered) {
+            if ((r.substatus ?? '').trim().toLowerCase() === 'pending image') n += 1;
+        }
+        return n;
+    }, [filtered]);
+
+    const procuredBySlices = useMemo(() => {
+        return groupBy(filtered, procuredByOf)
+            .slice(0, 8)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+
+    const inStockLocationSlices = useMemo(() => {
+        const inStockRows = filtered.filter(isInStock);
+        // Group by physical stock-room name. Top-N caps the long tail
+        // of small rooms so the donut stays readable.
+        return groupBy(inStockRows, (r) => r.stock_room ?? 'Unknown')
+            .slice(0, TOP_LOCATIONS)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+
+    // Asset status / substatus donuts — split the inventory by SN's
+    // status taxonomy. Top 8 keeps each donut legible; the long tail
+    // collapses into "Unknown" if the SN row didn't carry a value.
+    const statusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.asset_status ?? 'Unknown')
+            .slice(0, 8)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+    const substatusSlices = useMemo(() => {
+        return groupBy(filtered, (r) => r.substatus ?? 'Unknown')
+            .slice(0, 8)
+            .map((g) => ({ name: g.key, value: g.count }));
+    }, [filtered]);
+
+    const supportGroupMatrix = useMemo(() => {
+        type Bucket = { name: string; Mac: number; Windows: number; Other: number; total: number };
+        const buckets = new Map<string, Bucket>();
+        for (const row of filtered) {
+            const key = supportGroupOf(row);
+            const bucket = buckets.get(key) ?? { name: key, Mac: 0, Windows: 0, Other: 0, total: 0 };
+            bucket[inferDeviceType(row.model_name)] += 1;
+            bucket.total += 1;
+            buckets.set(key, bucket);
+        }
+        return Array.from(buckets.values())
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10)
+            .map((b) => ({
+                ...b,
+                displayName: b.name.length > 20 ? `${b.name.slice(0, 20)}…` : b.name,
+            }));
+    }, [filtered]);
+
+    // Generic toggle helper — both donut slice clicks and interactive
+    // legend toggles plumb through here so the two stay in sync.
+    const toggleFilter = (param: string, name: string) => {
+        const cur = (filters[param] as string[]) ?? [];
+        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+        setFilters({ ...filters, [param]: next });
+    };
+    const onProcuredSliceClick = (slice: { name: string }) => toggleFilter('procured_by', slice.name);
+    const onProcuredLegendToggle = (name: string) => toggleFilter('procured_by', name);
+    const onLocationSliceClick = (slice: { name: string }) => toggleFilter('stock_room', slice.name);
+    const onLocationLegendToggle = (name: string) => toggleFilter('stock_room', name);
+    const onStatusSliceClick = (slice: { name: string }) => toggleFilter('asset_status', slice.name);
+    const onStatusLegendToggle = (name: string) => toggleFilter('asset_status', name);
+    const onSubstatusSliceClick = (slice: { name: string }) => toggleFilter('substatus', slice.name);
+    const onSubstatusLegendToggle = (name: string) => toggleFilter('substatus', name);
+    const selectedProcured = (filters.procured_by as string[]) ?? [];
+    const selectedStockRooms = (filters.stock_room as string[]) ?? [];
+    const selectedStatuses = (filters.asset_status as string[]) ?? [];
+    const selectedSubstatuses = (filters.substatus as string[]) ?? [];
+
+    const textMain = isLight ? 'text-slate-800' : 'text-white';
+    const textMuted = isLight ? 'text-slate-500' : 'text-gray-400';
+    const cardBg = isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10';
+    const axisStroke = isLight ? '#94a3b8' : '#64748b';
+
+    const hasFilters =
+        (Object.values(filters) as string[][]).some((v) => Array.isArray(v) && v.length > 0) ||
+        assetFilter.supportGroups.length > 0 ||
+        assetFilter.procuredBy.length > 0 ||
+        assetFilter.departments.length > 0;
+    const inStockPct = kpis.inStockRatePct;
+    // In-Stock Rate colour — asset spec:
+    //   < 15%  → green (healthy — stock is moving)
+    //   15-25% → yellow (watch)
+    //   > 25%  → red (too much idle stock)
+    const inStockRateColor =
+        kpis.total === 0
+            ? textMain
+            : inStockPct > 25
+                ? 'text-red-500'
+                : inStockPct > 15
+                    ? 'text-yellow-500'
+                    : 'text-green-500';
+
+    // Unconfirmed / Pending Repair / Pending Return colour rule:
+    //   > 10 → red, > 0 → yellow, = 0 → green
+    const pendingRuleColor = (n: number): string =>
+        n > 10 ? 'text-red-500' : n > 0 ? 'text-yellow-500' : 'text-green-500';
+
+    // ── Detail table at the bottom — collapsible. Rows mirror the
+    //   `filtered` HardwareRow set so it always reflects the current
+    //   slicer + donut-driven filter state.
+    interface AssetDetailRow extends Record<string, unknown> {
+        oid: string;
+        serial_number: string;
+        model_category: string | null;
+        model_name: string | null;
+        asset_status: string | null;
+        substatus: string | null;
+        stock_room: string | null;
+        assigned_to_display_name: string | null;
+        department: string | null;
+        _supportGroup: string;
+        _procuredBy: string;
+    }
+    const [detailPage, setDetailPage] = useState<{ skip: number; limit: number }>(
+        { skip: 0, limit: 50 },
+    );
+    const detailRows: AssetDetailRow[] = useMemo(() => {
+        return filtered.map((r) => ({
+            oid: r.oid,
+            serial_number: r.serial_number,
+            model_category: r.model_category,
+            model_name: r.model_name,
+            asset_status: r.asset_status,
+            substatus: r.substatus,
+            stock_room: r.stock_room,
+            assigned_to_display_name: r.assigned_to_display_name,
+            department: r.department,
+            _supportGroup: supportGroupOf(r),
+            _procuredBy: procuredByOf(r),
+        }));
+    }, [filtered]);
+    const detailEffSkip = detailPage.skip >= detailRows.length ? 0 : detailPage.skip;
+    const detailPageRows = useMemo(
+        () => detailRows.slice(detailEffSkip, detailEffSkip + detailPage.limit),
+        [detailRows, detailEffSkip, detailPage.limit],
+    );
+    const detailCols: ColDef<AssetDetailRow>[] = useMemo(() => [
+        {
+            key: 'serial_number',
+            label: t('tables.serialNumber'),
+            width: '160px',
+            render: (r) => <span className="font-mono text-xs">{r.serial_number}</span>,
+        },
+        { key: 'model_category', label: t('tables.modelCategory'), width: '120px' },
+        {
+            key: 'model_name',
+            label: t('tables.model'),
+            width: '200px',
+            render: (r) => r.model_name ?? '—',
+        },
+        { key: 'asset_status', label: t('tables.state'), width: '120px', render: (r) => r.asset_status ?? '—' },
+        { key: 'substatus', label: t('tables.substate'), width: '160px', render: (r) => r.substatus ?? '—' },
+        { key: 'stock_room', label: t('filters.stockroom'), width: '140px', render: (r) => r.stock_room ?? '—' },
+        {
+            key: 'assigned_to_display_name',
+            label: t('tables.assignedTo'),
+            width: '160px',
+            render: (r) => r.assigned_to_display_name ?? '—',
+        },
+        { key: 'department', label: t('tables.department'), width: '140px', render: (r) => r.department ?? '—' },
+        { key: '_supportGroup', label: t('tables.supportGroup'), width: '150px' },
+        { key: '_procuredBy', label: t('filters.procuredBy'), width: '120px' },
+    ], [t]);
+
+    return (
+        <div className={`flex flex-col h-[calc(100vh-4rem)] overflow-hidden p-4 gap-3 ${isLight ? 'bg-slate-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isLight ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-400'}`}>
+                        <BarChart3 className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h1 className={`text-2xl font-semibold ${textMain}`}>{t('pages.assetsTitle')}</h1>
+                        <p className={`text-sm mt-0.5 ${textMuted}`}>{t('pages.assetsSubtitle')}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    {hasFilters && (
+                        <span className="text-xs text-blue-400">
+                            {t('pages.filteredCount', {
+                                filtered: filtered.length.toLocaleString(),
+                                total: rows.filter(isInScopeAsset).length.toLocaleString(),
+                            })}
+                        </span>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <TranslatedAutoRefresh onRefresh={() => void refetch()} storageKey="ops-dashboard:assets:auto-refresh" />
+                        <button
+                        onClick={() => void refetch()}
+                        className={`p-2 rounded-lg border transition-colors ${isLight ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
+                        title={t('empty.retry')}
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <TopFilterBar
+                slicers={slicers}
+                value={filterStateForBar}
+                onChange={onFilterStateChange}
+                storageKey="ops-dashboard:assets:filters"
+                title={t('filters.title')}
+                clearLabel={t('filters.clearAll')}
+                clientSideTooltip={t('filters.clientSideTooltip')}
+            />
+
+            {/* Scrollable main content */}
+            <div className="flex-1 min-h-0 overflow-auto">
+                {/* Loading / error / partial banners */}
+                {partial && (
+                    <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
+                        <span>{t('empty.partialResult')}</span>
+                        <button onClick={() => void refetch()} className={`ml-auto px-2 py-0.5 rounded text-[11px] font-medium ${isLight ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200'}`}>{t('empty.retry')}</button>
+                    </div>
+                )}
+                {error && !partial && (
+                    <div className={`rounded-xl border p-3 mb-3 text-xs flex items-center gap-2 ${isLight ? 'border-red-200 bg-red-50 text-red-700' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
+                        <span>{error}</span>
+                        <button onClick={() => void refetch()} className={`ml-auto px-2 py-0.5 rounded text-[11px] font-medium ${isLight ? 'bg-red-100 hover:bg-red-200 text-red-800' : 'bg-red-500/20 hover:bg-red-500/30 text-red-200'}`}>{t('empty.retry')}</button>
+                    </div>
+                )}
+
+                {/* Row 1: headline counts.
+                    - In-Stock Rate: <15% green, 15-25% yellow, >25% red */}
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.totalAssets')}
+                        value={kpis.total}
+                        icon={HardDrive}
+                        tooltip={t('kpis.totalAssetsInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.activeHardware')}
+                        value={kpis.activeAsset}
+                        tooltip={t('kpis.activeHardwareInfo')}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStock')}
+                        value={kpis.inStock}
+                        icon={PackageCheck}
+                        linkHref="/tasks/it-assets/in-stock"
+                        linkLabel={t('links.openInStockAssets')}
+                    />
+                    <KpiCard
+                        label={t('kpis.inStockRate')}
+                        value={kpis.total > 0 ? `${inStockPct}%` : '—'}
+                        tooltip={t('kpis.inStockRateInfo')}
+                        valueColor={inStockRateColor}
+                    />
+                </div>
+
+                {/* Row 2: Pending Return / Pending Repair / Pending Image
+                    / Unconfirmed / Zero Residual. Pending* sub-counts
+                    share the 0-green / 1-10-yellow / >10-red rule.
+                    Pending Image clicking applies a substatus filter so
+                    the donuts + sub-status counts narrow to the imaging
+                    queue. Zero Residual sits on the right as the
+                    operational tail. */}
+                <div className="grid grid-cols-5 gap-3 mb-3">
+                    <KpiCard
+                        label={t('kpis.pendingReturn')}
+                        value={kpis.pendingReturn}
+                        icon={Truck}
+                        linkHref="/tasks/it-assets/pending"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingReturn)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingRepair')}
+                        value={kpis.pendingRepair}
+                        icon={Wrench}
+                        linkHref="/tasks/it-assets/pending"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.pendingRepair)}
+                    />
+                    <KpiCard
+                        label={t('kpis.pendingImage')}
+                        value={pendingImageCount}
+                        icon={ImageIcon}
+                        tooltip={t('kpis.pendingImageInfo')}
+                        valueColor={pendingRuleColor(pendingImageCount)}
+                        onClick={() =>
+                            setFilters((f) => ({ ...f, substatus: ['Pending Image'] }))
+                        }
+                    />
+                    <KpiCard
+                        label={t('kpis.unconfirmed')}
+                        value={kpis.unconfirmed}
+                        icon={HelpCircle}
+                        linkHref="/tasks/it-assets/pending"
+                        linkLabel={t('links.openPendingAssets')}
+                        valueColor={pendingRuleColor(kpis.unconfirmed)}
+                    />
+                    <KpiCard
+                        label={t('kpis.zeroResidual')}
+                        value={kpis.zeroResidual}
+                        icon={DollarSign}
+                        linkHref="/tasks/it-assets/zero-residual"
+                        linkLabel={t('links.openZeroResidualAssets')}
+                    />
+                </div>
+
+                {/* Row 2: Donuts — 4 across, click-to-filter. */}
+                <div className="grid gap-3 mb-3 grid-cols-2">
+                    <DonutCard
+                        title={t('charts.procuredBy')}
+                        subtitle={t('charts.procuredBySubtitle')}
+                        info={t('charts.procuredByInfo')}
+                        data={procuredBySlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onProcuredSliceClick}
+                        selectedSlices={selectedProcured}
+                        onLegendToggle={onProcuredLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <DonutCard
+                        title={t('charts.inStockLocation')}
+                        info={t('charts.inStockLocationInfo')}
+                        data={inStockLocationSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onLocationSliceClick}
+                        selectedSlices={selectedStockRooms}
+                        onLegendToggle={onLocationLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+                <div className="grid gap-3 mb-3 grid-cols-2">
+                    <DonutCard
+                        title={t('charts.assetsByStatus')}
+                        info={t('charts.assetsByStatusInfo')}
+                        data={statusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onStatusSliceClick}
+                        selectedSlices={selectedStatuses}
+                        onLegendToggle={onStatusLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                    <DonutCard
+                        title={t('charts.assetsBySubstatus')}
+                        info={t('charts.assetsBySubstatusInfo')}
+                        data={substatusSlices}
+                        palette={DONUT_PALETTE}
+                        height={220}
+                        onSliceClick={onSubstatusSliceClick}
+                        selectedSlices={selectedSubstatuses}
+                        onLegendToggle={onSubstatusLegendToggle}
+                        emptyText={loading ? t('empty.loading') : t('empty.noData')}
+                    />
+                </div>
+
+                {/* Row 3: Support-group × device-type stacked bar (inline recharts -- GroupBarCard does not support stacked) */}
+                <div className={`rounded-xl border p-4 ${cardBg}`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className={`text-sm font-medium ${textMain}`}>{t('charts.supportGroupDevice')}</h3>
+                        <div className={`flex gap-4 text-xs ${textMuted}`}>
+                            {[
+                                { color: MAC_COLOR, label: t('charts.legendMac') },
+                                { color: WIN_COLOR, label: t('charts.legendWindows') },
+                                { color: OTHER_COLOR, label: t('charts.legendOther') },
+                            ].map(({ color, label }) => (
+                                <span key={label} className="flex items-center gap-1">
+                                    <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: color }} />
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    {supportGroupMatrix.length === 0 ? (
+                        <div className={`text-center text-xs py-8 ${textMuted}`}>
+                            {loading ? t('empty.loading') : t('empty.noData')}
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={220}>
+                            <BarChart data={supportGroupMatrix} margin={{ top: 8, right: 10, left: -10, bottom: 28 }}>
+                                <XAxis
+                                    dataKey="displayName"
+                                    tick={{ fontSize: 10, fill: axisStroke }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    angle={-30}
+                                    textAnchor="end"
+                                    interval={0}
+                                />
+                                <YAxis tick={{ fontSize: 10, fill: axisStroke }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: isLight ? '#fff' : '#1e293b',
+                                        border: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                    }}
+                                />
+                                <Bar dataKey="Mac" stackId="a" fill={MAC_COLOR} />
+                                <Bar dataKey="Windows" stackId="a" fill={WIN_COLOR} />
+                                <Bar dataKey="Other" stackId="a" fill={OTHER_COLOR} radius={[3, 3, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+
+                {/* Detail table — collapsible. Mirrors the filtered
+                    HardwareRow set with search, sort, pagination, and
+                    CSV export. */}
+                <div className="mt-3 mb-3">
+                    <CollapsibleDetailTable<AssetDetailRow>
+                        storageKey="ops-dashboard:assets:detail-open"
+                        title={t('tables.assetDetail')}
+                        countLabel={t('pages.records', {
+                            count: detailRows.length.toLocaleString(),
+                        })}
+                        rows={detailPageRows}
+                        csvRows={detailRows}
+                        cols={detailCols}
+                        searchKeys={['serial_number', 'model_name', 'assigned_to_display_name', '_supportGroup', 'stock_room'] as (keyof AssetDetailRow)[]}
+                        total={detailRows.length}
+                        skip={detailEffSkip}
+                        limit={detailPage.limit}
+                        onPageChange={setDetailPage}
+                        loading={loading}
+                        partial={partial}
+                        error={error}
+                        onRetry={() => void refetch()}
+                        emptyText={t('empty.noData')}
+                        loadingText={t('empty.loading')}
+                        partialText={t('empty.partialResult')}
+                        csvFilename="assets_detail"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -220,7 +220,7 @@ export function IncidentRow({
             {/* 3. Ticket ID */}
             <div className={`text-xs font-mono truncate ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 <a
-                    href={`/data/incidents/${incident.oid}`}
+                    href={`/tasks/it-incidents/${incident.oid}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`hover:underline ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`}
@@ -316,7 +316,7 @@ export function IncidentRow({
                 <button
                     type="button"
                     disabled={kbCount === 0}
-                    onClick={() => kbCount > 0 && window.open(`/data/articles?focus=${kbOids.join(',')}`, '_blank')}
+                    onClick={() => kbCount > 0 && window.open(`/tasks/it-knowledge/articles?focus=${kbOids.join(',')}`, '_blank')}
                     className={
                         kbCount > 0
                             ? 'flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200'

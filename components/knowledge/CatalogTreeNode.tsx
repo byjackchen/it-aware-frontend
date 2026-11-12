@@ -28,8 +28,8 @@ export function CatalogTreeNode({ node, level, forceExpand }: CatalogTreeNodePro
     const hasChildren = node.children.length > 0;
 
     // Check if this node or any descendant is currently active
-    const isActive = pathname === `/knowledge/catalog/${node.oid}`;
-    const isInActivePath = pathname.startsWith('/knowledge/catalog/') &&
+    const isActive = pathname === `/tasks/it-knowledge/library/catalog/${node.oid}`;
+    const isInActivePath = pathname.startsWith('/tasks/it-knowledge/library/catalog/') &&
         pathname.includes(node.oid);
 
     // React to forceExpand changes
@@ -47,7 +47,7 @@ export function CatalogTreeNode({ node, level, forceExpand }: CatalogTreeNodePro
     };
 
     const handleClick = () => {
-        router.push(`/knowledge/catalog/${node.oid}`);
+        router.push(`/tasks/it-knowledge/library/catalog/${node.oid}`);
     };
 
     return (

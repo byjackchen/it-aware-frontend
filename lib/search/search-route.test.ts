@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 const groups = [
-  { kind: 'task', label: 'Tasks', results: [{ id: 'data.incidents', title: 'Incidents', subtitle: 'Data', opens: '/data/incidents', score: 0.9 }] },
+  { kind: 'task', label: 'Tasks', results: [{ id: 'data.incidents', title: 'Incidents', subtitle: 'Data', opens: '/tasks/it-incidents', score: 0.9 }] },
 ];
 const entry = (object_type: string, oid: string, descriptor: string) =>
   ({ oid, object_type, descriptor, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' });
@@ -49,11 +49,11 @@ it("falls back to today's record search when the backend's search is off", async
   vi.stubGlobal('fetch', fetchMock);
   expect(await (await ask('q=gate&lang=fr')).json()).toEqual({ groups: [
     { kind: 'worker', label: null, results: [
-      { id: 'w1', title: 'Gate Alice', subtitle: null, opens: '/data/workers/w1' },
-      { id: 'w2', title: 'Gate Bob', subtitle: null, opens: '/data/workers/w2' },
+      { id: 'w1', title: 'Gate Alice', subtitle: null, opens: '/tasks/workers/workers/w1' },
+      { id: 'w2', title: 'Gate Bob', subtitle: null, opens: '/tasks/workers/workers/w2' },
     ] },
     { kind: 'organization', label: null, results: [
-      { id: 'o1', title: 'Gate Org', subtitle: null, opens: '/data/organizations/o1' },
+      { id: 'o1', title: 'Gate Org', subtitle: null, opens: '/tasks/workers/organizations/o1' },
     ] },
   ] });
   const second = new URL(fetchMock.mock.calls[1][0]);
