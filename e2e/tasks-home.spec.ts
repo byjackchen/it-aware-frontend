@@ -32,7 +32,7 @@ async function openHome(page: Page) {
 
 /** Open a user's account page and wait until it is there once, with its requests done. */
 async function openAccount(page: Page, oid: string) {
-  await page.goto(`/auth/accounts/${oid}`);
+  await page.goto(`/tasks/access/accounts/${oid}`);
   await page.waitForLoadState('networkidle');
   await expect(page.getByTestId('profile-customization')).toHaveCount(1);
 }
@@ -47,20 +47,20 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(page.getByTestId('home-adminSet')).toHaveCount(0);
     await expect(page.getByTestId('home-pinned').getByText('Pin a task below or from search.')).toBeVisible();
     const other = page.getByTestId('home-other');
-    await expect(other.getByRole('link', { name: 'Maintain IT Service Catalog', exact: true })).toHaveAttribute('href', '/data/service-catalogs');
+    await expect(other.getByRole('link', { name: 'Maintain IT Service Catalog', exact: true })).toHaveAttribute('href', '/tasks/it-service-catalog/service-catalogs');
     await expect(other.getByText('IT-Aware task').first()).toBeVisible();
     // With more than about ten tasks, the others are under their groupings, in catalog order.
     await expect(other.getByRole('heading', { level: 3 })).toHaveText(['Data', 'Analytics', 'Operations', 'Administration']);
     await expect(page.getByTestId('home-grouping-analytics').getByRole('link', { name: 'Persona Dashboard', exact: true })).toBeVisible();
 
     // The top bar reaches the home from any page.
-    await page.goto('/data/workers');
+    await page.goto('/tasks/workers/workers');
     await page.getByRole('link', { name: 'Home', exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
   });
 
   test('the top bar has no menu; its pages are reached as tasks, each with its own views', async ({ page }) => {
-    await page.goto('/data/workers');
+    await page.goto('/tasks/workers/workers');
     const topBar = page.locator('header').filter({ visible: true }).last();
     await expect(topBar.getByRole('link', { name: /IT-Aware/ })).toHaveAttribute('href', '/');
     await expect(topBar.getByPlaceholder('Search tasks and records...')).toBeVisible();
@@ -72,19 +72,19 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(topBar.getByRole('navigation')).toHaveCount(0);
     // No global sidebar: the task's views are its tabs.
     await expect(page.locator('aside')).toHaveCount(0);
-    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Organizations', exact: true })).toHaveAttribute('href', '/data/organizations');
+    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Organizations', exact: true })).toHaveAttribute('href', '/tasks/workers/organizations');
 
     // A page a retired entry opened is a task on the home: Persona, and the first page of Auth.
     await openHome(page);
     const other = page.getByTestId('home-other');
-    await expect(other.getByRole('link', { name: 'Maintain Access', exact: true })).toHaveAttribute('href', '/auth/accounts');
-    await expect(other.locator('a[href="/persona"]')).toHaveCount(1);
-    await expect(other.locator('a[href="/knowledge"]')).toHaveCount(1);
-    await expect(other.locator('a[href="/dashboard/data-overview"]')).toHaveCount(1);
+    await expect(other.getByRole('link', { name: 'Maintain Access', exact: true })).toHaveAttribute('href', '/tasks/access/accounts');
+    await expect(other.locator('a[href="/tasks/persona-dashboard"]')).toHaveCount(1);
+    await expect(other.locator('a[href="/tasks/it-knowledge/library"]')).toHaveCount(1);
+    await expect(other.locator('a[href="/tasks/data-overview"]')).toHaveCount(1);
   });
 
   test("a task's page shows the task frame: its name, grouping, views and pin", async ({ page }) => {
-    await page.goto('/operation-teams/ops-dashboard/vip-tickets');
+    await page.goto('/tasks/it-tickets/vip');
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('Monitor IT Tickets');
     await expect(frame.getByText('Operations', { exact: true })).toBeVisible();
@@ -94,7 +94,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     );
     await expect(views.getByRole('link', { name: 'VIP Tickets' })).toHaveAttribute('aria-current', 'page');
     await views.getByRole('link', { name: 'Unassigned' }).click();
-    await expect(page).toHaveURL(/\/operation-teams\/ops-dashboard\/unassigned$/);
+    await expect(page).toHaveURL(/\/tasks\/it-tickets\/unassigned$/);
     await expect(views.getByRole('link', { name: 'Unassigned' })).toHaveAttribute('aria-current', 'page');
 
     // Pinned from the frame, it is on the home; unpinned from the frame, it is gone.
@@ -102,8 +102,8 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(frame.getByRole('button', { name: 'Unpin from home', exact: true })).toBeVisible();
     await openHome(page);
     const pinned = page.getByTestId('home-pinned');
-    await expect(pinned.getByRole('link', { name: 'Monitor IT Tickets', exact: true })).toHaveAttribute('href', '/operation-teams/ops-dashboard');
-    await page.goto('/operation-teams/ops-dashboard');
+    await expect(pinned.getByRole('link', { name: 'Monitor IT Tickets', exact: true })).toHaveAttribute('href', '/tasks/it-tickets/active');
+    await page.goto('/tasks/it-tickets/active');
     await page.getByTestId('task-frame').getByRole('button', { name: 'Unpin from home', exact: true }).click();
     await expect(page.getByTestId('task-frame').getByRole('button', { name: 'Pin to home', exact: true })).toBeVisible();
     await openHome(page);
@@ -111,7 +111,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
   });
 
   test('a task with one view has no tabs, and the home is no task', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('View IT Incidents');
     await expect(frame.getByRole('navigation')).toHaveCount(0);
@@ -162,9 +162,9 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
   test('a task whose page was opened is first under Recent', async ({ page }) => {
     // The page tells the backend it was opened; wait for that before leaving it.
     const noted = page.waitForResponse(
-      (response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/data/organizations'
+      (response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/tasks/workers/organizations'
     );
-    await page.goto('/data/organizations');
+    await page.goto('/tasks/workers/organizations');
     await noted;
 
     await openHome(page);
@@ -195,7 +195,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
 
       // The user lands on the start page, and the home shows what the admin set, with no pin on it.
       await page.goto('/');
-      await expect(page).toHaveURL(/\/data\/incidents$/);
+      await expect(page).toHaveURL(/\/tasks\/it-incidents$/);
       await openHome(page);
       const adminSet = page.getByTestId('home-adminSet');
       await expect(adminSet.getByText('Set for you by your admin')).toBeVisible();
@@ -221,7 +221,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
   });
 
   test("who has what tasks links a person to their profile page", async ({ page }) => {
-    await page.goto('/auth/tasks');
+    await page.goto('/tasks/access/who-has-what');
     await page.waitForLoadState('networkidle');
     await expect(page.getByPlaceholder('Filter…')).toHaveCount(1);
     await page.getByRole('tab', { name: 'By person' }).click();
@@ -229,7 +229,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await page.getByTestId('task-holders').getByRole('button', { name: /gate\.alice/ }).click();
     await page.getByRole('link', { name: 'User profile: gate.alice' }).click();
 
-    await expect(page).toHaveURL(/\/auth\/accounts\/[\w-]{22}$/);
+    await expect(page).toHaveURL(/\/tasks\/access\/accounts\/[\w-]{22}$/);
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('profile-customization')).toHaveCount(1);
     await expect(page.getByTestId('profile-customization').getByText('Tasks this user can open (23)')).toBeVisible();

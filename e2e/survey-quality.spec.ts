@@ -30,7 +30,7 @@ test('month details defaults to the opened OIT denominator and exports every fil
     return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0,
       filtered_ticket_count: 51, tickets: tickets.slice((pageNumber - 1) * 50, pageNumber * 50) } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await expect(page.getByLabel('View metric range')).toHaveValue('all');
   await expect.poll(() => detailQueries.at(-1)?.get('scope')).toBe('all');
   expect(detailQueries.at(-1)?.get('part')).toBe('denominator');
@@ -64,7 +64,7 @@ test('Excel export rejects a duplicate ticket when detail pages change during do
         caller_name: null, assigned_group: 'OIT SSC', assessments: [] })),
     } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 51 tickets');
   const downloads: string[] = [];
   page.on('download', (download) => downloads.push(download.suggestedFilename()));
@@ -91,7 +91,7 @@ test('switching user timezone preserves the UTC opened ticket cohort', async ({ 
     const tickets = zone === 'America/Los_Angeles' ? [] : [{ oid: 'july-ticket', stable_id: 'INC-JULY', title: 'Boundary ticket', state: 'Closed', source_opened_at: '2026-07-01T02:00:00Z', source_closed_at: '2026-07-02T02:00:00Z', caller_name: null, assigned_group: 'OIT SSC', assessments: [] }];
     return route.fulfill({ json: { month: '2026-07', ticket_count: tickets.length, assessment_count: 0, filtered_ticket_count: tickets.length, tickets } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await expect(page.getByText('INC-JULY')).toBeVisible();
   expect(qualityZones).toContain('UTC');
   expect(detailZones).toContain('UTC');
@@ -119,7 +119,7 @@ test('ServiceNow quality chart shows monthly metrics and month selection', async
     }));
     return route.fulfill({ json: { batch_oid: 'AAAAAAAAAAAAAAAAAAAAAA', months, averages: { csat: 4.88, poor_rate: 1, feedback_rate: 20 } } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
 
   await expect(page.getByRole('heading', { name: /^CSAT Analysis \(Jan 2026 – Jul 2026\)$/ })).toBeVisible();
   await expect(page.getByText('4.88 / 5')).toBeVisible();
@@ -142,7 +142,7 @@ test('metric help in cards and table shows the same definition and formula', asy
       averages: { csat: 4.88, poor_rate: 1, feedback_rate: 20 },
     },
   }));
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
 
   for (const name of ['Ticket Rating (CSAT)', 'Poor Rating Rate (1–3)', 'Feedback Rate']) {
     const help = page.getByRole('button', { name: `About ${name}` });
@@ -181,7 +181,7 @@ test('single-month details load raw tickets and assessments for the selected mon
       }],
     } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
 
   await expect(page.getByRole('heading', { name: 'Single-month details' })).toBeVisible();
   await expect(page.getByText('INC-JUL')).toBeVisible();
@@ -225,7 +225,7 @@ test('metric details show denominator or numerator tickets and export the select
       assessment_count: numerator || scope === 'csat' ? 1 : 0,
       filtered_ticket_count: tickets.length, tickets } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   const scope = page.getByLabel('View metric range');
   const part = page.getByRole('group', { name: 'View numerator or denominator' });
   await expect(scope).toHaveValue('all');
@@ -292,7 +292,7 @@ test('all tickets keeps rated and score filters for its list and Excel export', 
     return route.fulfill({ json: { month: '2026-07', ticket_count: 3, assessment_count: 2,
       filtered_ticket_count: selected.length, tickets: selected } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await page.getByLabel('View metric range').selectOption('all');
   await expect(page.getByText('INC-NONE', { exact: true })).toBeVisible();
   await page.getByLabel('Only rated tickets').check();
@@ -337,7 +337,7 @@ test('Excel export follows the applied score filter across all detail pages', as
     return route.fulfill({ json: { month: '2026-07', ticket_count: 52, assessment_count: 0,
       filtered_ticket_count: ids.length, tickets } });
   });
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await page.getByLabel('View metric range').selectOption('all');
   await page.getByRole('button', { name: 'Rating', exact: true }).click();
   await page.getByRole('checkbox', { name: '5', exact: true }).check();
@@ -372,7 +372,7 @@ test('single-month details requests the next server page while keeping the full 
     return route.fulfill({ json: { month: '2026-07', ticket_count: 51, assessment_count: 0, filtered_ticket_count: 51, tickets } });
   });
 
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 51 tickets');
   await expect(page.getByText('INC-1', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -392,7 +392,7 @@ test('hovering each chart bar shows that metric’s numerator and denominator', 
       averages: { csat: 4.9, poor_rate: 5, feedback_rate: 50 },
     },
   }));
-  await page.goto('/campaign/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   const bars = page.locator('.recharts-bar');
   await expect(bars).toHaveCount(3);
 

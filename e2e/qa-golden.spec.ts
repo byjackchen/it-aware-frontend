@@ -29,16 +29,16 @@ test.describe('M0 golden: version, search, graph, persona', () => {
   });
 
   test('G2 the top-bar search finds a seeded worker and opens it', async ({ page }) => {
-    await page.goto('/data/workers');
+    await page.goto('/tasks/workers/workers');
     await page.getByPlaceholder('Search tasks and records...').fill('gate.erin');
     await page.getByRole('button', { name: 'gate.erin', exact: true }).click();
-    await expect(page).toHaveURL(/\/data\/workers\/[A-Za-z0-9_-]{22}$/);
+    await expect(page).toHaveURL(/\/tasks\/workers\/workers\/[A-Za-z0-9_-]{22}$/);
     await expect(page.getByText('Gate Erin').filter({ visible: true }).first()).toBeVisible();
   });
 
   test('G3 the relationship graph draws the seeded edge', async ({ page }) => {
     const oid = await workerOid(page, 'gate.erin');
-    await page.goto(`/data/workers/${oid}`);
+    await page.goto(`/tasks/workers/workers/${oid}`);
     // the filter lists the linked object type, and the canvas labels the edge
     await expect(page.getByRole('button', { name: 'organization' }).filter({ visible: true })).toBeVisible();
     await expect(page.locator('svg text', { hasText: 'belongs to' }).first()).toBeVisible();
@@ -48,7 +48,7 @@ test.describe('M0 golden: version, search, graph, persona', () => {
     // The timeline shows the last 30 days by created_at, the time a row was stored:
     // ci/e2e/world.py stores Gate Carol's tickets minutes before the specs run.
     const oid = await workerOid(page, 'gate.carol');
-    await page.goto(`/persona/${oid}`);
+    await page.goto(`/tasks/persona-dashboard/${oid}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Gate Carol' })).toBeVisible();
     await expect(page.getByText('Loading timeline activities...')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByText('No activities in selected window')).toHaveCount(0);

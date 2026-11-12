@@ -32,7 +32,7 @@ function pageFiles(dir: string): string[] {
 
 test.describe('Tasks 1: task access', () => {
   test('an admin sees who has what tasks, by group and by person', async ({ page }) => {
-    await page.goto('/auth/tasks');
+    await page.goto('/tasks/access/who-has-what');
     await expect(page.getByRole('heading', { name: 'Task access' })).toBeVisible();
 
     // While the page streams in, its markup is briefly there twice; wait for the one page.
@@ -43,7 +43,7 @@ test.describe('Tasks 1: task access', () => {
     await page.getByTestId('task-holders').getByRole('button', { name: /gate-readers/ }).click();
     const tasks = page.getByTestId('task-list');
     await expect(tasks.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
-    await expect(tasks.getByRole('link', { name: 'Maintain IT Service Catalog' })).toHaveAttribute('href', '/data/service-catalogs');
+    await expect(tasks.getByRole('link', { name: 'Maintain IT Service Catalog' })).toHaveAttribute('href', '/tasks/it-service-catalog/service-catalogs');
     await expect(tasks.getByText('it-service-catalog', { exact: true })).toBeVisible();
 
     // By person: each task carries the scope it is held under.
@@ -56,14 +56,14 @@ test.describe('Tasks 1: task access', () => {
   });
 
   test('the page is a view of Maintain Access, a tab beside the others', async ({ page }) => {
-    await page.goto('/auth/tasks');
+    await page.goto('/tasks/access/who-has-what');
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('Maintain Access');
     await expect(frame.getByText('Administration', { exact: true })).toBeVisible();
     const views = frame.getByRole('navigation', { name: 'Views of Maintain Access' });
     await expect(views.getByRole('link')).toHaveText(['Accounts', 'Groups', 'Roles', 'Permissions', 'Who Has What Tasks']);
     await expect(views.getByRole('link', { name: 'Who Has What Tasks' })).toHaveAttribute('aria-current', 'page');
-    await expect(views.getByRole('link', { name: 'Groups' })).toHaveAttribute('href', '/auth/groups');
+    await expect(views.getByRole('link', { name: 'Groups' })).toHaveAttribute('href', '/tasks/access/groups');
     // There is no global sidebar any more.
     await expect(page.locator('aside')).toHaveCount(0);
   });
@@ -77,7 +77,7 @@ test.describe('Tasks 1: task access', () => {
     // Check 1: every page belongs to a task: it lies at or under a view's page.
     const root = path.join(process.cwd(), 'app/(main)');
     const pages = pageFiles(root).map((file) => path.relative(process.cwd(), file));
-    const views = TASKS.flatMap((task) => task.views.map((view) => ({ code: task.code, opens: view.old_base })));
+    const views = TASKS.flatMap((task) => task.views.map((view) => ({ code: task.code, opens: view.address })));
     const withoutTask = pagesWithoutTask(pages, views);
 
     // Check 2: a task a user account has opens for it. Each user account that

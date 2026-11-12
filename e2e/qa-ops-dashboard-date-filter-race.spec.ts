@@ -16,7 +16,7 @@ import { test, expect } from '@playwright/test';
  */
 
 const INCIDENTS_API = '/api/objects/incidents';
-const DASHBOARD = '/operation-teams/ops-dashboard/incidents';
+const DASHBOARD = '/tasks/it-tickets/incidents';
 
 /** Reads "Filtered: X of Y incidents" -> Y, the number of rows actually fetched. */
 async function fetchedRowCount(page: import('@playwright/test').Page): Promise<number> {

@@ -111,7 +111,7 @@ async function waitForRows(page: Page): Promise<void> {
 
 test.describe('Activities list — sort by source_created_at + row detail', () => {
   test('A-1 /data/requests rows are sorted DESC by source_created_at', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const stamps = await readRowStamps(page);
@@ -121,7 +121,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('A-2 every /data/requests row carries a 3-segment meta line', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const meta = await readRowMeta(page);
@@ -136,7 +136,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('A-3 /data/requests state dots match the helper mapping', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const dots = await readRowStateDots(page);
@@ -148,7 +148,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('A-4 /data/requests caller column shows real variety (not all "—")', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const meta = await readRowMeta(page);
@@ -159,7 +159,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('A-5 /data/requests SN-created tooltip carries an absolute datetime', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const firstTooltip = await page.evaluate(() => {
@@ -202,7 +202,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('B-1 /data/incidents rows are sorted DESC by source_created_at', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     await waitForList(page, 'incidents');
     await waitForRows(page);
     const stamps = await readRowStamps(page);
@@ -211,7 +211,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('B-2 every /data/incidents row carries a 3-segment meta line', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     await waitForList(page, 'incidents');
     await waitForRows(page);
     const meta = await readRowMeta(page);
@@ -224,7 +224,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('B-3 /data/incidents state dots match the helper mapping', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     await waitForList(page, 'incidents');
     await waitForRows(page);
     const dots = await readRowStateDots(page);
@@ -236,7 +236,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('B-4 /data/incidents caller resolution surfaces both worker fullnames and system stable_ids', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     await waitForList(page, 'incidents');
     await waitForRows(page);
     const meta = await readRowMeta(page);
@@ -276,7 +276,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('X-1 clicking a row navigates to the matching detail page', async ({ page }) => {
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     await waitForList(page, 'incidents');
     await waitForRows(page);
     const target = await page.evaluate(() => {
@@ -295,7 +295,7 @@ test.describe('Activities list — sort by source_created_at + row detail', () =
   });
 
   test('X-2 paginating preserves DESC order across page boundary', async ({ page }) => {
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     await waitForList(page, 'requests');
     await waitForRows(page);
     const before = await readRowStamps(page);
