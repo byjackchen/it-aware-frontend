@@ -1,0 +1,2072 @@
+{
+ "version": 3,
+ "frozen": "2026-11-12",
+ "rules": {
+  "task_access": "A person has a task when any of its views' rules is met; they see only the views whose rule is met.",
+  "address": "/tasks/<task> for a one-view task, /tasks/<task>/<view> otherwise; a record or sub-page follows the view part.",
+  "kind": "internal or external; view or do is derived from the leading verb of the English name.",
+  "views_in_catalog": "Views are listed in the backend catalog as data (name, keywords, rule) for search and access; they are not a level people browse.",
+  "legacy": "Every old page address has one entry in the frontend legacy registry; redirects and the old-style menu are generated from it."
+ },
+ "groupings": [
+  {
+   "code": "data",
+   "name": {
+    "en": "Data",
+    "zh": "数据"
+   }
+  },
+  {
+   "code": "analytics",
+   "name": {
+    "en": "Analytics",
+    "zh": "分析"
+   }
+  },
+  {
+   "code": "operations",
+   "name": {
+    "en": "Operations",
+    "zh": "运营"
+   }
+  },
+  {
+   "code": "administration",
+   "name": {
+    "en": "Administration",
+    "zh": "管理"
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "code": "workers",
+   "name": {
+    "en": "Maintain Workers and Organizations",
+    "zh": "维护员工与组织"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/workers/workers",
+   "views": [
+    {
+     "slug": "workers",
+     "name": {
+      "en": "Workers",
+      "zh": "员工"
+     },
+     "old_code": "data.workers",
+     "old_base": "/data/workers",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:workers:read"
+      ]
+     },
+     "keywords": [
+      "Objects",
+      "对象"
+     ],
+     "address": "/tasks/workers/workers"
+    },
+    {
+     "slug": "organizations",
+     "name": {
+      "en": "Organizations",
+      "zh": "组织"
+     },
+     "old_code": "data.organizations",
+     "old_base": "/data/organizations",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:organizations:read"
+      ]
+     },
+     "keywords": [
+      "Hierarchies",
+      "层级结构"
+     ],
+     "address": "/tasks/workers/organizations"
+    },
+    {
+     "slug": "locations",
+     "name": {
+      "en": "Locations",
+      "zh": "地点"
+     },
+     "old_code": "data.locations",
+     "old_base": "/data/locations",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:locations:read"
+      ]
+     },
+     "keywords": [
+      "Hierarchies",
+      "层级结构"
+     ],
+     "address": "/tasks/workers/locations"
+    },
+    {
+     "slug": "clusters",
+     "name": {
+      "en": "Clusters",
+      "zh": "群组"
+     },
+     "old_code": "data.clusters",
+     "old_base": "/data/clusters",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:worker_clusters:read"
+      ]
+     },
+     "keywords": [
+      "Insights",
+      "洞察"
+     ],
+     "address": "/tasks/workers/clusters"
+    }
+   ]
+  },
+  {
+   "code": "it-incidents",
+   "name": {
+    "en": "View IT Incidents",
+    "zh": "查看 IT 事件"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-incidents",
+   "views": [
+    {
+     "slug": "incidents",
+     "name": {
+      "en": "Incidents",
+      "zh": "事件"
+     },
+     "old_code": "data.incidents",
+     "old_base": "/data/incidents",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:incidents:read"
+      ]
+     },
+     "keywords": [
+      "Activities",
+      "活动"
+     ],
+     "address": "/tasks/it-incidents"
+    }
+   ]
+  },
+  {
+   "code": "it-requests",
+   "name": {
+    "en": "View IT Requests",
+    "zh": "查看 IT 请求"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-requests",
+   "views": [
+    {
+     "slug": "requests",
+     "name": {
+      "en": "Requests",
+      "zh": "请求"
+     },
+     "old_code": "data.requests",
+     "old_base": "/data/requests",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:requests:read"
+      ]
+     },
+     "keywords": [
+      "Activities",
+      "活动"
+     ],
+     "address": "/tasks/it-requests"
+    }
+   ]
+  },
+  {
+   "code": "it-interactions",
+   "name": {
+    "en": "View IT Interactions",
+    "zh": "查看 IT 交互"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-interactions",
+   "views": [
+    {
+     "slug": "interactions",
+     "name": {
+      "en": "Interactions",
+      "zh": "交互事件"
+     },
+     "old_code": "data.interactions",
+     "old_base": "/data/interactions",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:interactions:read"
+      ]
+     },
+     "keywords": [
+      "Activities",
+      "活动"
+     ],
+     "address": "/tasks/it-interactions"
+    }
+   ]
+  },
+  {
+   "code": "it-service-catalog",
+   "name": {
+    "en": "Maintain IT Service Catalog",
+    "zh": "维护 IT 服务目录"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-service-catalog/service-catalogs",
+   "views": [
+    {
+     "slug": "service-catalogs",
+     "name": {
+      "en": "Service Catalogs",
+      "zh": "服务目录"
+     },
+     "old_code": "data.service_catalogs",
+     "old_base": "/data/service-catalogs",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:service_catalogs:read"
+      ]
+     },
+     "keywords": [
+      "Hierarchies",
+      "层级结构"
+     ],
+     "address": "/tasks/it-service-catalog/service-catalogs"
+    },
+    {
+     "slug": "scenarios",
+     "name": {
+      "en": "Scenarios",
+      "zh": "场景"
+     },
+     "old_code": "data.scenarios",
+     "old_base": "/data/scenarios",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:scenarios:read"
+      ]
+     },
+     "keywords": [
+      "Journeys",
+      "旅程"
+     ],
+     "address": "/tasks/it-service-catalog/scenarios"
+    }
+   ]
+  },
+  {
+   "code": "it-hardware",
+   "name": {
+    "en": "Maintain IT Hardware and Systems",
+    "zh": "维护 IT 硬件与系统"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-hardware/hardware",
+   "views": [
+    {
+     "slug": "hardware",
+     "name": {
+      "en": "Hardwares",
+      "zh": "硬件"
+     },
+     "old_code": "data.hardwares",
+     "old_base": "/data/hardwares",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:hardwares:read"
+      ]
+     },
+     "keywords": [
+      "Objects",
+      "对象"
+     ],
+     "address": "/tasks/it-hardware/hardware"
+    },
+    {
+     "slug": "systems",
+     "name": {
+      "en": "Systems",
+      "zh": "系统"
+     },
+     "old_code": "data.systems",
+     "old_base": "/data/systems",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:systems:read"
+      ]
+     },
+     "keywords": [
+      "Objects",
+      "对象"
+     ],
+     "address": "/tasks/it-hardware/systems"
+    },
+    {
+     "slug": "ioa-scans",
+     "name": {
+      "en": "iOA Scans",
+      "zh": "iOA 扫描"
+     },
+     "old_code": "data.networks.ioa_scans",
+     "old_base": "/data/networks/ioa-scans",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "networks:ioa_scans:read"
+      ]
+     },
+     "keywords": [
+      "Networks",
+      "网络"
+     ],
+     "address": "/tasks/it-hardware/ioa-scans"
+    }
+   ]
+  },
+  {
+   "code": "data-overview",
+   "name": {
+    "en": "Data Overview Dashboard",
+    "zh": "数据总览仪表盘"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/data-overview",
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "Data Overview",
+      "zh": "数据总览"
+     },
+     "old_code": "dashboard.data_overview",
+     "old_base": "/dashboard/data-overview",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:data"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/data-overview"
+    }
+   ]
+  },
+  {
+   "code": "it-knowledge",
+   "name": {
+    "en": "View IT Knowledge",
+    "zh": "查看 IT 知识"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-knowledge/library",
+   "views": [
+    {
+     "slug": "library",
+     "name": {
+      "en": "Knowledge",
+      "zh": "知识库"
+     },
+     "old_code": "knowledge",
+     "old_base": "/knowledge",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:knowledge"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-knowledge/library"
+    },
+    {
+     "slug": "articles",
+     "name": {
+      "en": "Articles",
+      "zh": "文章"
+     },
+     "old_code": "data.articles",
+     "old_base": "/data/articles",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:articles:read"
+      ]
+     },
+     "keywords": [
+      "Objects",
+      "对象"
+     ],
+     "address": "/tasks/it-knowledge/articles"
+    }
+   ]
+  },
+  {
+   "code": "it-operations-dashboard",
+   "name": {
+    "en": "IT Operations Dashboard",
+    "zh": "IT 运营仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/it-operations-dashboard/overview",
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "Operations Overview",
+      "zh": "运营总览"
+     },
+     "old_code": "itopsdashboard.overview",
+     "old_base": "/itopsdashboard/overview",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-operations-dashboard/overview"
+    },
+    {
+     "slug": "service-experience",
+     "name": {
+      "en": "Service Delivery & Experience",
+      "zh": "服务交付与体验"
+     },
+     "old_code": "itopsdashboard.service_experience",
+     "old_base": "/itopsdashboard/service-experience",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-operations-dashboard/service-experience"
+    },
+    {
+     "slug": "csat",
+     "name": {
+      "en": "CSAT Analysis",
+      "zh": "CSAT分析"
+     },
+     "old_code": "itopsdashboard.survey_analytics",
+     "old_base": "/itopsdashboard/survey-analytics",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:operation",
+       "objects:survey_batchs:read",
+       "objects:incidents:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-operations-dashboard/csat"
+    }
+   ]
+  },
+  {
+   "code": "ohla-chatbot-dashboard",
+   "name": {
+    "en": "Ohla Chatbot Dashboard",
+    "zh": "Ohla 聊天机器人仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/ohla-chatbot-dashboard/overview",
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "Overview",
+      "zh": "概览"
+     },
+     "old_code": "chatbot.dashboard.overview",
+     "old_base": "/chatbot/dashboard/overview",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/overview"
+    },
+    {
+     "slug": "user-ask-analysis",
+     "name": {
+      "en": "User Ask Analysis",
+      "zh": "用户提问分析"
+     },
+     "old_code": "chatbot.dashboard.user_ask_analysis",
+     "old_base": "/chatbot/dashboard/user-ask-analysis",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/user-ask-analysis"
+    },
+    {
+     "slug": "agent-support",
+     "name": {
+      "en": "Agent Support",
+      "zh": "人工支持"
+     },
+     "old_code": "chatbot.dashboard.agent_support",
+     "old_base": "/chatbot/dashboard/agent-support",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/agent-support"
+    },
+    {
+     "slug": "survey-details",
+     "name": {
+      "en": "Survey Details",
+      "zh": "满意度详情"
+     },
+     "old_code": "chatbot.dashboard.survey_details",
+     "old_base": "/chatbot/dashboard/survey-details",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/survey-details"
+    },
+    {
+     "slug": "other-case",
+     "name": {
+      "en": "Other Case Analysis",
+      "zh": "其它案例分析"
+     },
+     "old_code": "chatbot.dashboard.other_case",
+     "old_base": "/chatbot/dashboard/other-case",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/other-case"
+    },
+    {
+     "slug": "latency-breakdown",
+     "name": {
+      "en": "Latency Breakdown",
+      "zh": "延迟分解"
+     },
+     "old_code": "chatbot.dashboard.latency_breakdown",
+     "old_base": "/chatbot/dashboard/latency-breakdown",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Chatbot Dashboard"
+     ],
+     "address": "/tasks/ohla-chatbot-dashboard/latency-breakdown"
+    }
+   ]
+  },
+  {
+   "code": "ohla-journey-dashboard",
+   "name": {
+    "en": "Ohla Journey Dashboard",
+    "zh": "Ohla 旅程仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/ohla-journey-dashboard/headline",
+   "views": [
+    {
+     "slug": "headline",
+     "name": {
+      "en": "Headline",
+      "zh": "概览"
+     },
+     "old_code": "ohla_journey.headline",
+     "old_base": "/ohla-journey/headline",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/headline"
+    },
+    {
+     "slug": "resolution",
+     "name": {
+      "en": "Resolution",
+      "zh": "解决情况"
+     },
+     "old_code": "ohla_journey.resolution",
+     "old_base": "/ohla-journey/resolution",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/resolution"
+    },
+    {
+     "slug": "gaps",
+     "name": {
+      "en": "Gaps",
+      "zh": "缺口"
+     },
+     "old_code": "ohla_journey.gaps",
+     "old_base": "/ohla-journey/gaps",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/gaps"
+    },
+    {
+     "slug": "journey",
+     "name": {
+      "en": "Journey",
+      "zh": "用户旅程"
+     },
+     "old_code": "ohla_journey.journey",
+     "old_base": "/ohla-journey/journey",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/journey"
+    },
+    {
+     "slug": "timeline",
+     "name": {
+      "en": "Timeline",
+      "zh": "时间线"
+     },
+     "old_code": "ohla_journey.timeline",
+     "old_base": "/ohla-journey/timeline",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/timeline"
+    },
+    {
+     "slug": "persona",
+     "name": {
+      "en": "Persona",
+      "zh": "用户画像"
+     },
+     "old_code": "ohla_journey.persona",
+     "old_base": "/ohla-journey/persona",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/persona"
+    },
+    {
+     "slug": "patterns",
+     "name": {
+      "en": "Patterns",
+      "zh": "规律分析"
+     },
+     "old_code": "ohla_journey.patterns",
+     "old_base": "/ohla-journey/patterns",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/patterns"
+    },
+    {
+     "slug": "audit",
+     "name": {
+      "en": "Audit",
+      "zh": "审计"
+     },
+     "old_code": "ohla_journey.audit",
+     "old_base": "/ohla-journey/audit",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation",
+       "dashboards:ohla_journey:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey-dashboard/audit"
+    }
+   ]
+  },
+  {
+   "code": "it-ssc-dashboard",
+   "name": {
+    "en": "IT SSC Dashboard",
+    "zh": "IT SSC 仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/it-ssc-dashboard/overview",
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "SSC Dashboard",
+      "zh": "SSC 仪表盘"
+     },
+     "old_code": "ssc_cockpit.dashboard",
+     "old_base": "/ssc-cockpit/dashboard",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:ssc",
+       "objects:interactions:read",
+       "objects:incidents:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-ssc-dashboard/overview"
+    },
+    {
+     "slug": "faq-report",
+     "name": {
+      "en": "FAQ Analyst Report",
+      "zh": "FAQ 分析报告"
+     },
+     "old_code": "ssc_cockpit.faq_report",
+     "old_base": "/ssc-cockpit/faq-report",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:ssc",
+       "objects:interactions:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-ssc-dashboard/faq-report"
+    },
+    {
+     "slug": "incident-report",
+     "name": {
+      "en": "Incident Report",
+      "zh": "工单分析报告"
+     },
+     "old_code": "ssc_cockpit.incident_report",
+     "old_base": "/ssc-cockpit/incident-report",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:ssc",
+       "objects:incidents:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/it-ssc-dashboard/incident-report"
+    }
+   ]
+  },
+  {
+   "code": "persona-dashboard",
+   "name": {
+    "en": "Persona Dashboard",
+    "zh": "用户画像仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/persona-dashboard",
+   "views": [
+    {
+     "slug": "persona",
+     "name": {
+      "en": "Persona",
+      "zh": "用户画像"
+     },
+     "old_code": "persona",
+     "old_base": "/persona",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:persona"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/persona-dashboard"
+    }
+   ]
+  },
+  {
+   "code": "survey-analysis-dashboard",
+   "name": {
+    "en": "Survey Analysis Dashboard",
+    "zh": "问卷分析仪表盘"
+   },
+   "grouping": "analytics",
+   "kind": "internal",
+   "address": "/tasks/survey-analysis-dashboard",
+   "views": [
+    {
+     "slug": "analyses",
+     "name": {
+      "en": "Analyses",
+      "zh": "分析"
+     },
+     "old_code": "data.analyses",
+     "old_base": "/data/analyses",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:analysiss:read"
+      ]
+     },
+     "keywords": [
+      "Insights",
+      "洞察"
+     ],
+     "address": "/tasks/survey-analysis-dashboard"
+    }
+   ]
+  },
+  {
+   "code": "it-tickets",
+   "name": {
+    "en": "Monitor IT Tickets",
+    "zh": "监控 IT 工单"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/it-tickets/active",
+   "views": [
+    {
+     "slug": "active",
+     "name": {
+      "en": "Active Monitoring",
+      "zh": "实时监控"
+     },
+     "old_code": "operation_teams.ops_dashboard",
+     "old_base": "/operation-teams/ops-dashboard",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/active"
+    },
+    {
+     "slug": "incidents",
+     "name": {
+      "en": "Incidents",
+      "zh": "事件"
+     },
+     "old_code": "operation_teams.ops_dashboard.incidents",
+     "old_base": "/operation-teams/ops-dashboard/incidents",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/incidents"
+    },
+    {
+     "slug": "catalog",
+     "name": {
+      "en": "Catalog",
+      "zh": "服务目录"
+     },
+     "old_code": "operation_teams.ops_dashboard.catalog",
+     "old_base": "/operation-teams/ops-dashboard/catalog",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/catalog"
+    },
+    {
+     "slug": "vip",
+     "name": {
+      "en": "VIP Tickets",
+      "zh": "VIP 工单"
+     },
+     "old_code": "operation_teams.ops_dashboard.vip_tickets",
+     "old_base": "/operation-teams/ops-dashboard/vip-tickets",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/vip"
+    },
+    {
+     "slug": "unassigned",
+     "name": {
+      "en": "Unassigned",
+      "zh": "未分派"
+     },
+     "old_code": "operation_teams.ops_dashboard.unassigned",
+     "old_base": "/operation-teams/ops-dashboard/unassigned",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/unassigned"
+    },
+    {
+     "slug": "on-off-boarding",
+     "name": {
+      "en": "On/Offboarding",
+      "zh": "入职/离职"
+     },
+     "old_code": "operation_teams.ops_dashboard.on_off_boarding",
+     "old_base": "/operation-teams/ops-dashboard/on-off-boarding",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Monitoring",
+      "监控"
+     ],
+     "address": "/tasks/it-tickets/on-off-boarding"
+    }
+   ]
+  },
+  {
+   "code": "it-aging-work",
+   "name": {
+    "en": "Monitor IT Aging Work",
+    "zh": "监控 IT 老化工作"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/it-aging-work/incidents",
+   "views": [
+    {
+     "slug": "incidents",
+     "name": {
+      "en": "Aging Incidents",
+      "zh": "老化事件"
+     },
+     "old_code": "operation_teams.ops_dashboard.aging_incidents",
+     "old_base": "/operation-teams/ops-dashboard/aging-incidents",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Aging",
+      "工单老化"
+     ],
+     "address": "/tasks/it-aging-work/incidents"
+    },
+    {
+     "slug": "sc-tasks",
+     "name": {
+      "en": "Aging SC Tasks",
+      "zh": "老化服务目录任务"
+     },
+     "old_code": "operation_teams.ops_dashboard.aging_sc_tasks",
+     "old_base": "/operation-teams/ops-dashboard/aging-sc-tasks",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Aging",
+      "工单老化"
+     ],
+     "address": "/tasks/it-aging-work/sc-tasks"
+    },
+    {
+     "slug": "asset-tasks",
+     "name": {
+      "en": "Aging Asset Tasks",
+      "zh": "老化资产任务"
+     },
+     "old_code": "operation_teams.ops_dashboard.aging_asset_tasks",
+     "old_base": "/operation-teams/ops-dashboard/aging-asset-tasks",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Aging",
+      "工单老化"
+     ],
+     "address": "/tasks/it-aging-work/asset-tasks"
+    }
+   ]
+  },
+  {
+   "code": "it-assets",
+   "name": {
+    "en": "Monitor IT Assets",
+    "zh": "监控 IT 资产"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/it-assets/overview",
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "Assets Overview",
+      "zh": "资产总览"
+     },
+     "old_code": "operation_teams.ops_dashboard.assets",
+     "old_base": "/operation-teams/ops-dashboard/assets",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Assets",
+      "资产"
+     ],
+     "address": "/tasks/it-assets/overview"
+    },
+    {
+     "slug": "in-stock",
+     "name": {
+      "en": "In-Stock Assets",
+      "zh": "库存资产"
+     },
+     "old_code": "operation_teams.ops_dashboard.in_stock_assets",
+     "old_base": "/operation-teams/ops-dashboard/in-stock-assets",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Assets",
+      "资产"
+     ],
+     "address": "/tasks/it-assets/in-stock"
+    },
+    {
+     "slug": "pending",
+     "name": {
+      "en": "Pending Assets",
+      "zh": "待处理资产"
+     },
+     "old_code": "operation_teams.ops_dashboard.pending_assets",
+     "old_base": "/operation-teams/ops-dashboard/pending-assets",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Assets",
+      "资产"
+     ],
+     "address": "/tasks/it-assets/pending"
+    },
+    {
+     "slug": "zero-residual",
+     "name": {
+      "en": "Zero Residual Assets",
+      "zh": "零残值资产"
+     },
+     "old_code": "operation_teams.ops_dashboard.zero_residual_assets",
+     "old_base": "/operation-teams/ops-dashboard/zero-residual-assets",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:operation"
+      ]
+     },
+     "keywords": [
+      "Assets",
+      "资产"
+     ],
+     "address": "/tasks/it-assets/zero-residual"
+    }
+   ]
+  },
+  {
+   "code": "notifications",
+   "name": {
+    "en": "Manage Notifications",
+    "zh": "管理通知"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/notifications/batches",
+   "views": [
+    {
+     "slug": "batches",
+     "name": {
+      "en": "Notification Batches",
+      "zh": "通知批次"
+     },
+     "old_code": "campaign.notification_batches",
+     "old_base": "/campaign/notification-batches",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:campaign",
+       "objects:notification_batchs:read"
+      ]
+     },
+     "keywords": [
+      "Campaign",
+      "运营活动"
+     ],
+     "address": "/tasks/notifications/batches"
+    },
+    {
+     "slug": "records",
+     "name": {
+      "en": "Notifications",
+      "zh": "通知"
+     },
+     "old_code": "data.notifications",
+     "old_base": "/data/notifications",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:notification_batchs:read"
+      ]
+     },
+     "keywords": [
+      "Campaign",
+      "运营活动"
+     ],
+     "address": "/tasks/notifications/records"
+    }
+   ]
+  },
+  {
+   "code": "surveys",
+   "name": {
+    "en": "Manage Surveys",
+    "zh": "管理问卷"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/surveys/batches",
+   "views": [
+    {
+     "slug": "batches",
+     "name": {
+      "en": "Survey Batches",
+      "zh": "问卷批次"
+     },
+     "old_code": "campaign.survey_batches",
+     "old_base": "/campaign/survey-batches",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:campaign",
+       "objects:survey_batchs:read"
+      ]
+     },
+     "keywords": [
+      "Campaign",
+      "运营活动"
+     ],
+     "address": "/tasks/surveys/batches"
+    },
+    {
+     "slug": "records",
+     "name": {
+      "en": "Surveys",
+      "zh": "问卷"
+     },
+     "old_code": "data.surveys",
+     "old_base": "/data/surveys",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "objects:survey_batchs:read"
+      ]
+     },
+     "keywords": [
+      "Campaign",
+      "运营活动"
+     ],
+     "address": "/tasks/surveys/records"
+    }
+   ]
+  },
+  {
+   "code": "survey-link",
+   "name": {
+    "en": "Find Survey Link",
+    "zh": "查找问卷链接"
+   },
+   "grouping": "operations",
+   "kind": "internal",
+   "address": "/tasks/survey-link",
+   "views": [
+    {
+     "slug": "lookup",
+     "name": {
+      "en": "Survey Lookup",
+      "zh": "调查链接查询"
+     },
+     "old_code": "ssc_cockpit.survey_lookup",
+     "old_base": "/ssc-cockpit/survey-lookup",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:ssc",
+       "objects:incidents:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/survey-link"
+    }
+   ]
+  },
+  {
+   "code": "access",
+   "name": {
+    "en": "Maintain Access",
+    "zh": "维护访问权限"
+   },
+   "grouping": "administration",
+   "kind": "internal",
+   "address": "/tasks/access/accounts",
+   "views": [
+    {
+     "slug": "accounts",
+     "name": {
+      "en": "Accounts",
+      "zh": "账户"
+     },
+     "old_code": "auth.accounts",
+     "old_base": "/auth/accounts",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:auth"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/access/accounts"
+    },
+    {
+     "slug": "groups",
+     "name": {
+      "en": "Groups",
+      "zh": "分组"
+     },
+     "old_code": "auth.groups",
+     "old_base": "/auth/groups",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:auth"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/access/groups"
+    },
+    {
+     "slug": "roles",
+     "name": {
+      "en": "Roles",
+      "zh": "角色"
+     },
+     "old_code": "auth.roles",
+     "old_base": "/auth/roles",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:auth"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/access/roles"
+    },
+    {
+     "slug": "permissions",
+     "name": {
+      "en": "Permissions",
+      "zh": "权限"
+     },
+     "old_code": "auth.permissions",
+     "old_base": "/auth/permissions",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:auth"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/access/permissions"
+    },
+    {
+     "slug": "who-has-what",
+     "name": {
+      "en": "Who Has What Tasks",
+      "zh": "任务分配"
+     },
+     "old_code": null,
+     "old_base": "/auth/tasks",
+     "requires": {
+      "check": "all",
+      "codes": [
+       "auth:account_groups:read",
+       "auth:group_permissions:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/access/who-has-what"
+    }
+   ]
+  },
+  {
+   "code": "jobs",
+   "name": {
+    "en": "Manage Jobs",
+    "zh": "管理作业"
+   },
+   "grouping": "administration",
+   "kind": "internal",
+   "address": "/tasks/jobs",
+   "views": [
+    {
+     "slug": "jobs",
+     "name": {
+      "en": "Jobs",
+      "zh": "作业"
+     },
+     "old_code": "systems.airflow",
+     "old_base": "/systems/airflow",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:systems"
+      ]
+     },
+     "keywords": [
+      "Airflow",
+      "Airflow 调度"
+     ],
+     "address": "/tasks/jobs"
+    }
+   ]
+  },
+  {
+   "code": "agent-access",
+   "name": {
+    "en": "View CLI and MCP Access",
+    "zh": "查看 CLI 与 MCP 接入"
+   },
+   "grouping": "administration",
+   "kind": "internal",
+   "address": "/tasks/agent-access",
+   "views": [
+    {
+     "slug": "access",
+     "name": {
+      "en": "CLI & MCP",
+      "zh": "CLI 与 MCP"
+     },
+     "old_code": "systems.agent_access",
+     "old_base": "/systems/agent-access",
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:systems"
+      ]
+     },
+     "keywords": [
+      "Agent Access",
+      "Agent 接入"
+     ],
+     "address": "/tasks/agent-access"
+    }
+   ]
+  }
+ ],
+ "retired": [
+  {
+   "old_code": "systems.llm_proxy.models",
+   "old_address": "/systems/llm_proxy/models",
+   "why": "LLM routing retired; every model call goes through Ohla Router"
+  },
+  {
+   "old_code": "systems.llm_proxy.routes",
+   "old_address": "/systems/llm_proxy/routes",
+   "why": "LLM routing retired; every model call goes through Ohla Router"
+  }
+ ],
+ "legacy": [
+  {
+   "old": "/",
+   "new": "/",
+   "type": "kept"
+  },
+  {
+   "old": "/access-denied",
+   "new": "/access-denied",
+   "type": "kept"
+  },
+  {
+   "old": "/auth",
+   "new": "/tasks/access/permissions",
+   "type": "area"
+  },
+  {
+   "old": "/auth/accounts",
+   "new": "/tasks/access/accounts",
+   "type": "view"
+  },
+  {
+   "old": "/auth/accounts/[oid]",
+   "new": "/tasks/access/accounts/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/auth/accounts/new",
+   "new": "/tasks/access/accounts/new",
+   "type": "record"
+  },
+  {
+   "old": "/auth/groups",
+   "new": "/tasks/access/groups",
+   "type": "view"
+  },
+  {
+   "old": "/auth/groups/[oid]",
+   "new": "/tasks/access/groups/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/auth/groups/new",
+   "new": "/tasks/access/groups/new",
+   "type": "record"
+  },
+  {
+   "old": "/auth/permissions",
+   "new": "/tasks/access/permissions",
+   "type": "view"
+  },
+  {
+   "old": "/auth/permissions/[oid]",
+   "new": "/tasks/access/permissions/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/auth/permissions/new",
+   "new": "/tasks/access/permissions/new",
+   "type": "record"
+  },
+  {
+   "old": "/auth/roles",
+   "new": "/tasks/access/roles",
+   "type": "view"
+  },
+  {
+   "old": "/auth/roles/[oid]",
+   "new": "/tasks/access/roles/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/auth/roles/new",
+   "new": "/tasks/access/roles/new",
+   "type": "record"
+  },
+  {
+   "old": "/auth/tasks",
+   "new": "/tasks/access/who-has-what",
+   "type": "view"
+  },
+  {
+   "old": "/campaign",
+   "new": "/tasks/notifications/batches",
+   "type": "area"
+  },
+  {
+   "old": "/campaign/notification-batches",
+   "new": "/tasks/notifications/batches",
+   "type": "view"
+  },
+  {
+   "old": "/campaign/notification-batches/new",
+   "new": "/tasks/notifications/batches/new",
+   "type": "record"
+  },
+  {
+   "old": "/campaign/survey-analytics",
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "area"
+  },
+  {
+   "old": "/campaign/survey-batches",
+   "new": "/tasks/surveys/batches",
+   "type": "view"
+  },
+  {
+   "old": "/campaign/survey-batches/new",
+   "new": "/tasks/surveys/batches/new",
+   "type": "record"
+  },
+  {
+   "old": "/chatbot",
+   "new": "/tasks/ohla-chatbot-dashboard/overview",
+   "type": "area"
+  },
+  {
+   "old": "/chatbot/dashboard/agent-support",
+   "new": "/tasks/ohla-chatbot-dashboard/agent-support",
+   "type": "view"
+  },
+  {
+   "old": "/chatbot/dashboard/latency-breakdown",
+   "new": "/tasks/ohla-chatbot-dashboard/latency-breakdown",
+   "type": "view"
+  },
+  {
+   "old": "/chatbot/dashboard/other-case",
+   "new": "/tasks/ohla-chatbot-dashboard/other-case",
+   "type": "view"
+  },
+  {
+   "old": "/chatbot/dashboard/overview",
+   "new": "/tasks/ohla-chatbot-dashboard/overview",
+   "type": "view"
+  },
+  {
+   "old": "/chatbot/dashboard/survey-details",
+   "new": "/tasks/ohla-chatbot-dashboard/survey-details",
+   "type": "view"
+  },
+  {
+   "old": "/chatbot/dashboard/user-ask-analysis",
+   "new": "/tasks/ohla-chatbot-dashboard/user-ask-analysis",
+   "type": "view"
+  },
+  {
+   "old": "/dashboard",
+   "new": "/tasks/data-overview",
+   "type": "area"
+  },
+  {
+   "old": "/dashboard/data-overview",
+   "new": "/tasks/data-overview",
+   "type": "view"
+  },
+  {
+   "old": "/data",
+   "new": "/tasks/workers/organizations",
+   "type": "area"
+  },
+  {
+   "old": "/data/analyses",
+   "new": "/tasks/survey-analysis-dashboard",
+   "type": "view"
+  },
+  {
+   "old": "/data/analyses/[oid]",
+   "new": "/tasks/survey-analysis-dashboard/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/articles",
+   "new": "/tasks/it-knowledge/articles",
+   "type": "view"
+  },
+  {
+   "old": "/data/articles/[oid]",
+   "new": "/tasks/it-knowledge/articles/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/clusters",
+   "new": "/tasks/workers/clusters",
+   "type": "view"
+  },
+  {
+   "old": "/data/clusters/[label]",
+   "new": "/tasks/workers/clusters/[label]",
+   "type": "record"
+  },
+  {
+   "old": "/data/hardwares",
+   "new": "/tasks/it-hardware/hardware",
+   "type": "view"
+  },
+  {
+   "old": "/data/hardwares/[oid]",
+   "new": "/tasks/it-hardware/hardware/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/incidents",
+   "new": "/tasks/it-incidents",
+   "type": "view"
+  },
+  {
+   "old": "/data/incidents/[oid]",
+   "new": "/tasks/it-incidents/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/interactions",
+   "new": "/tasks/it-interactions",
+   "type": "view"
+  },
+  {
+   "old": "/data/interactions/[oid]",
+   "new": "/tasks/it-interactions/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/locations",
+   "new": "/tasks/workers/locations",
+   "type": "view"
+  },
+  {
+   "old": "/data/locations/[oid]",
+   "new": "/tasks/workers/locations/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/locations/new",
+   "new": "/tasks/workers/locations/new",
+   "type": "record"
+  },
+  {
+   "old": "/data/networks/ioa-scans",
+   "new": "/tasks/it-hardware/ioa-scans",
+   "type": "view"
+  },
+  {
+   "old": "/data/networks/ioa-scans/[oid]",
+   "new": "/tasks/it-hardware/ioa-scans/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/notifications",
+   "new": "/tasks/notifications/records",
+   "type": "view"
+  },
+  {
+   "old": "/data/notifications/[oid]",
+   "new": "/tasks/notifications/records/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/organizations",
+   "new": "/tasks/workers/organizations",
+   "type": "view"
+  },
+  {
+   "old": "/data/organizations/[oid]",
+   "new": "/tasks/workers/organizations/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/organizations/new",
+   "new": "/tasks/workers/organizations/new",
+   "type": "record"
+  },
+  {
+   "old": "/data/requests",
+   "new": "/tasks/it-requests",
+   "type": "view"
+  },
+  {
+   "old": "/data/requests/[oid]",
+   "new": "/tasks/it-requests/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/requests/new",
+   "new": "/tasks/it-requests/new",
+   "type": "record"
+  },
+  {
+   "old": "/data/scenarios",
+   "new": "/tasks/it-service-catalog/scenarios",
+   "type": "view"
+  },
+  {
+   "old": "/data/scenarios/[oid]",
+   "new": "/tasks/it-service-catalog/scenarios/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/service-catalogs",
+   "new": "/tasks/it-service-catalog/service-catalogs",
+   "type": "view"
+  },
+  {
+   "old": "/data/service-catalogs/[oid]",
+   "new": "/tasks/it-service-catalog/service-catalogs/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/service-catalogs/new",
+   "new": "/tasks/it-service-catalog/service-catalogs/new",
+   "type": "record"
+  },
+  {
+   "old": "/data/surveys",
+   "new": "/tasks/surveys/records",
+   "type": "view"
+  },
+  {
+   "old": "/data/surveys/[oid]",
+   "new": "/tasks/surveys/records/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/systems",
+   "new": "/tasks/it-hardware/systems",
+   "type": "view"
+  },
+  {
+   "old": "/data/systems/[oid]",
+   "new": "/tasks/it-hardware/systems/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/systems/new",
+   "new": "/tasks/it-hardware/systems/new",
+   "type": "record"
+  },
+  {
+   "old": "/data/workers",
+   "new": "/tasks/workers/workers",
+   "type": "view"
+  },
+  {
+   "old": "/data/workers/[oid]",
+   "new": "/tasks/workers/workers/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/data/workers/new",
+   "new": "/tasks/workers/workers/new",
+   "type": "record"
+  },
+  {
+   "old": "/home",
+   "new": "/home",
+   "type": "kept"
+  },
+  {
+   "old": "/itopsdashboard",
+   "new": "/tasks/it-operations-dashboard/overview",
+   "type": "area"
+  },
+  {
+   "old": "/itopsdashboard/overview",
+   "new": "/tasks/it-operations-dashboard/overview",
+   "type": "view"
+  },
+  {
+   "old": "/itopsdashboard/service-experience",
+   "new": "/tasks/it-operations-dashboard/service-experience",
+   "type": "view"
+  },
+  {
+   "old": "/itopsdashboard/survey-analytics",
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "view"
+  },
+  {
+   "old": "/knowledge",
+   "new": "/tasks/it-knowledge/library",
+   "type": "view"
+  },
+  {
+   "old": "/knowledge/articles",
+   "new": "/tasks/it-knowledge/library",
+   "type": "special"
+  },
+  {
+   "old": "/knowledge/catalog/[oid]",
+   "new": "/tasks/it-knowledge/library/catalog/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/knowledge/faqs",
+   "new": "/tasks/it-knowledge/library",
+   "type": "special"
+  },
+  {
+   "old": "/ohla-journey",
+   "new": "/tasks/ohla-journey-dashboard/headline",
+   "type": "area"
+  },
+  {
+   "old": "/ohla-journey/[section]",
+   "new": "/tasks/ohla-journey-dashboard/[section]",
+   "type": "pattern"
+  },
+  {
+   "old": "/operation-teams",
+   "new": "/tasks/it-tickets/active",
+   "type": "area"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard",
+   "new": "/tasks/it-tickets/active",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/aging-asset-tasks",
+   "new": "/tasks/it-aging-work/asset-tasks",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/aging-incidents",
+   "new": "/tasks/it-aging-work/incidents",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/aging-sc-tasks",
+   "new": "/tasks/it-aging-work/sc-tasks",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/assets",
+   "new": "/tasks/it-assets/overview",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/catalog",
+   "new": "/tasks/it-tickets/catalog",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/in-stock-assets",
+   "new": "/tasks/it-assets/in-stock",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/incidents",
+   "new": "/tasks/it-tickets/incidents",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/on-off-boarding",
+   "new": "/tasks/it-tickets/on-off-boarding",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/pending-assets",
+   "new": "/tasks/it-assets/pending",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/unassigned",
+   "new": "/tasks/it-tickets/unassigned",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/vip-tickets",
+   "new": "/tasks/it-tickets/vip",
+   "type": "view"
+  },
+  {
+   "old": "/operation-teams/ops-dashboard/zero-residual-assets",
+   "new": "/tasks/it-assets/zero-residual",
+   "type": "view"
+  },
+  {
+   "old": "/persona",
+   "new": "/tasks/persona-dashboard",
+   "type": "view"
+  },
+  {
+   "old": "/persona/[oid]",
+   "new": "/tasks/persona-dashboard/[oid]",
+   "type": "record"
+  },
+  {
+   "old": "/ssc-cockpit",
+   "new": "/tasks/it-ssc-dashboard/overview",
+   "type": "area"
+  },
+  {
+   "old": "/ssc-cockpit/dashboard",
+   "new": "/tasks/it-ssc-dashboard/overview",
+   "type": "view"
+  },
+  {
+   "old": "/ssc-cockpit/faq-report",
+   "new": "/tasks/it-ssc-dashboard/faq-report",
+   "type": "view"
+  },
+  {
+   "old": "/ssc-cockpit/incident-report",
+   "new": "/tasks/it-ssc-dashboard/incident-report",
+   "type": "view"
+  },
+  {
+   "old": "/ssc-cockpit/survey-lookup",
+   "new": "/tasks/survey-link",
+   "type": "view"
+  },
+  {
+   "old": "/systems",
+   "new": "/tasks/jobs",
+   "type": "special"
+  },
+  {
+   "old": "/systems/agent-access",
+   "new": "/tasks/agent-access",
+   "type": "view"
+  },
+  {
+   "old": "/systems/airflow",
+   "new": "/tasks/jobs",
+   "type": "view"
+  },
+  {
+   "old": "/systems/llm_proxy",
+   "new": "/home",
+   "type": "special"
+  },
+  {
+   "old": "/systems/llm_proxy/models",
+   "new": "/home",
+   "type": "special"
+  },
+  {
+   "old": "/systems/llm_proxy/routes",
+   "new": "/home",
+   "type": "special"
+  }
+ ]
+}
