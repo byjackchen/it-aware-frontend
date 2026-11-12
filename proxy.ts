@@ -86,11 +86,17 @@ function shouldSkipMiddleware(pathname: string): boolean {
   )
 }
 
-async function fetchJwtTokens(username: string): Promise<Response> {
+// The backend checks the gateway identity itself before it issues SSO tokens
+// (M2, TODO00000138), so forward the x-tai-identity header we just verified.
+async function fetchJwtTokens(username: string, taihuHeaders: TaihuHeaders): Promise<Response> {
   return fetch(`${BACKEND_DOMAIN}/auth/session/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'sso', username }),
+    body: new URLSearchParams({
+      grant_type: 'sso',
+      username,
+      tai_identity: String(taihuHeaders['x-tai-identity']),
+    }),
   })
 }
 
@@ -194,7 +200,7 @@ export async function middleware(request: NextRequest) {
       }
 
       if (needsNewTokens) {
-        const authResponse = await fetchJwtTokens(identity.loginName)
+        const authResponse = await fetchJwtTokens(identity.loginName, taihuHeaders)
 
         if (authResponse.ok) {
           const setCookies = authResponse.headers.getSetCookie()

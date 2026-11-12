@@ -19,6 +19,7 @@ export const RUNTIME_CONFIG = {
             'http://localhost:8000',
     },
     taihu: {
-        paasToken: process.env.TAIHU_PAAS_TOKEN || 'mock-token',
+        // No default (M2, TODO00000138): without the key no Taihu identity verifies.
+        paasToken: process.env.TAIHU_PAAS_TOKEN || '',
     },
 };
