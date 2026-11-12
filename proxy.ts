@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
+import { legacyRedirect } from '@/lib/legacy/redirect'
 
 const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 
@@ -135,6 +136,13 @@ export async function middleware(request: NextRequest) {
 
   if (shouldSkipMiddleware(pathname)) {
     return NextResponse.next()
+  }
+
+  // An old page address goes to its task address, before any auth work
+  // (lib/legacy/README.md; off until the pages move).
+  const legacy = legacyRedirect(request)
+  if (legacy) {
+    return legacy
   }
 
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)
