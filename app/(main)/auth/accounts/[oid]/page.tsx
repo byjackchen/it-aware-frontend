@@ -41,7 +41,6 @@ async function loadCustomization(oid: string, accountType: string): Promise<Prof
     return {
         profile,
         tasks: access.tasks.filter(task => codes.has(task.code)),
-        serviceLines: access.service_lines,
     };
 }
 

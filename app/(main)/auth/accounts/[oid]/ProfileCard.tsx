@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * The customization part of a user's profile, set by an admin: the start page,
- * the service line and the tasks on the user's home. Only tasks the user can
+ * The customization part of a user's profile, set by an admin: the start task
+ * and the tasks on the user's home. Only tasks the user can
  * open are offered. The user never sees this; they see its effect on their
  * home page. The security part of the profile is the rest of the account page.
  */
@@ -11,24 +11,24 @@ import { useState, useTransition } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, Loader2, Save } from 'lucide-react';
 import { saveAccountProfile } from '@/app/actions/tasks';
-import type { AccountProfile, ServiceLine, Task } from '@/lib/types/tasks';
+import { groupingName, named as inLanguage } from '@/lib/tasks/catalog';
+import type { AccountProfile, Task } from '@/lib/types/tasks';
 
 export interface ProfileCardProps {
     profile: AccountProfile;
     /** The tasks this user can open now. */
     tasks: Task[];
-    serviceLines: ServiceLine[];
 }
 
-export function ProfileCard({ profile, tasks, serviceLines }: ProfileCardProps) {
+export function ProfileCard({ profile, tasks }: ProfileCardProps) {
     const t = useTranslations('Auth');
-    const zh = useLocale().startsWith('zh');
-    const named = (names: { en: string; zh: string }) => (zh ? names.zh : names.en);
+    const locale = useLocale();
+    const named = (names: { en: string; zh: string }) => inLanguage(names, locale);
+    const label = (task: Task) => `${groupingName(task.grouping, locale)} · ${named(task.name)}`;
     const canOpen = new Set(tasks.map(task => task.code));
 
     // What is stored for a task the user can no longer open is not offered, and saving drops it.
     const [start, setStart] = useState(profile.start_task && canOpen.has(profile.start_task) ? profile.start_task : '');
-    const [line, setLine] = useState(profile.service_line ?? '');
     const [home, setHome] = useState(profile.home_tasks.filter(code => canOpen.has(code)));
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,6 @@ export function ProfileCard({ profile, tasks, serviceLines }: ProfileCardProps) 
             const outcome = await saveAccountProfile(profile.account_oid, {
                 start_task: start || null,
                 home_tasks: home,
-                service_line: line || null,
             });
             if ('error' in outcome) setError(outcome.error);
             else setSaved(true);
@@ -73,18 +72,7 @@ export function ProfileCard({ profile, tasks, serviceLines }: ProfileCardProps) 
                         <option value="">{t('profile.startNotSet')}</option>
                         {tasks.map(task => (
                             <option key={task.code} value={task.code}>
-                                {named(task.area)} · {named(task.name)}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label className="flex flex-col gap-1 text-sm text-gray-300">
-                    {t('profile.serviceLine')}
-                    <select value={line} onChange={event => changed(setLine)(event.target.value)} className={select}>
-                        <option value="">{t('profile.lineNotSet')}</option>
-                        {serviceLines.map(serviceLine => (
-                            <option key={serviceLine.code} value={serviceLine.code}>
-                                {named(serviceLine.name)}
+                                {label(task)}
                             </option>
                         ))}
                     </select>
@@ -105,7 +93,7 @@ export function ProfileCard({ profile, tasks, serviceLines }: ProfileCardProps) 
                                 checked={home.includes(task.code)}
                                 onChange={() => toggleHome(task.code)}
                             />
-                            {named(task.area)} · {named(task.name)}
+                            {label(task)}
                         </label>
                     ))}
                 </div>

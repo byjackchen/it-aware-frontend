@@ -2,13 +2,14 @@
 
 /**
  * Who has what tasks: pick a group or a person on the left, see its tasks
- * grouped by area on the right.
+ * under their grouping on the right.
  */
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { ListChecks } from 'lucide-react';
+import { byGrouping, groupingName, named as inLanguage, pageHref } from '@/lib/tasks/catalog';
 import type { Task, TaskAccess, TaskNames } from '@/lib/types/tasks';
 
 interface TaskAccessPageProps {
@@ -39,7 +40,7 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
     const [filter, setFilter] = useState('');
     const [selected, setSelected] = useState<string | null>(null);
 
-    const named = (names: TaskNames) => (locale.startsWith('zh') ? names.zh : names.en);
+    const named = (names: TaskNames) => inLanguage(names, locale);
 
     const holders = useMemo<Holder[]>(
         () =>
@@ -64,14 +65,12 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
 
     const taskByCode = useMemo(() => new Map(access.tasks.map(task => [task.code, task])), [access]);
     const byArea = useMemo(() => {
-        const areas = new Map<string, { task: Task; scopes: string[] }[]>();
-        for (const held of holder?.tasks ?? []) {
-            const task = taskByCode.get(held.code);
-            if (!task) continue;
-            const area = locale.startsWith('zh') ? task.area.zh : task.area.en;
-            areas.set(area, [...(areas.get(area) ?? []), { task, scopes: held.scopes }]);
+        const held: { task: Task; scopes: string[]; grouping: string }[] = [];
+        for (const one of holder?.tasks ?? []) {
+            const task = taskByCode.get(one.code);
+            if (task) held.push({ task, scopes: one.scopes, grouping: task.grouping });
         }
-        return [...areas.entries()];
+        return byGrouping(held).map(({ grouping, tasks }) => [groupingName(grouping, locale), tasks] as const);
     }, [holder, taskByCode, locale]);
 
     const switchView = (next: View) => {
@@ -180,7 +179,7 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
                                         <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                             {held.map(({ task, scopes }) => (
                                                 <li key={task.code} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                                    <Link href={task.opens} className="font-medium text-white hover:text-blue-400">
+                                                    <Link href={pageHref(task.address)} className="font-medium text-white hover:text-blue-400">
                                                         {named(task.name)}
                                                     </Link>
                                                     <div className="text-xs text-gray-500">{task.code}</div>

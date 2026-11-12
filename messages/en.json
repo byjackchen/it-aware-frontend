@@ -19,8 +19,6 @@
       "noTasks": "None. Give the user a group first.",
       "startPage": "Start page",
       "startNotSet": "Not set (lands on Home)",
-      "serviceLine": "Service line",
-      "lineNotSet": "Not set",
       "homeTasks": "Tasks on their home",
       "homeTasksNote": "Only tasks the user can open are offered. The user's own pins are kept apart from this.",
       "save": "Save customization",
@@ -1849,6 +1847,13 @@
       "title": "Other tasks you have",
       "empty": "None."
     }
+  },
+  "TaskFrame": {
+    "views": "Views of {name}",
+    "pin": "Pin to home",
+    "unpin": "Unpin from home",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}"
   },
   "GlobalSearch": {
     "pin": "Pin to home",

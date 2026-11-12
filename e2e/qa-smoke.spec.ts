@@ -24,12 +24,13 @@ function extractItems(payload: unknown): unknown[] {
 }
 
 test.describe('Phase C — activities-decouple smoke', () => {
-  test('C1+C7 sidebar has Systems, no Inquiries', async ({ page }) => {
+  test('C1+C7 the task frame replaces the sidebar, no Inquiries', async ({ page }) => {
     await page.goto('/data/workers');
-    const sidebar = page.locator('aside').first();
-    await expect(sidebar).toBeVisible();
-    // The sidebar's Systems link (the top bar's menu, which had its own, was retired in Tasks 3).
-    await expect(sidebar.getByRole('link', { name: /Systems/i })).toBeVisible();
+    // The global sidebar, and its Systems link, went with the catalog v3
+    // (TODO00000140 A14, lane F1): a page shows its task's own views instead.
+    await expect(page.locator('aside')).toHaveCount(0);
+    const views = page.getByTestId('task-frame').getByRole('navigation');
+    await expect(views.getByRole('link')).toHaveText(['Workers', 'Organizations', 'Locations', 'Clusters']);
     await expect(page.getByRole('link', { name: /Inquiries?/i })).toHaveCount(0);
   });
 
