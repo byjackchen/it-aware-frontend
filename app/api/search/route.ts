@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
+import { registryGroups } from '@/lib/search/groups';
+import type { SearchResponse } from '@/lib/types/search';
 
 /**
- * API route to proxy registry search requests.
- * GET /api/search?q=<query>&limit=<limit>
+ * API route behind the search bar.
+ * GET /api/search?q=<query>&lang=<en|zh>&limit=<limit>
+ *
+ * It asks the backend's search (GET /search: tasks and records, in groups).
+ * When the backend answers 404, its search switch is off (or it predates
+ * Tasks 2), and the route falls back to today's record search
+ * (GET /objects/registry/search), so the bar shows what it showed before.
  */
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
+    const query = searchParams.get('q')?.trim();
     const limit = searchParams.get('limit') || '20';
+    const lang = searchParams.get('lang') === 'zh' ? 'zh' : 'en';
+    const nothing: SearchResponse = { groups: [] };
 
-    if (!query || query.trim().length === 0) {
-        return NextResponse.json([]);
+    if (!query) {
+        return NextResponse.json(nothing);
     }
 
     try {
@@ -22,32 +31,33 @@ export async function GET(request: Request) {
             .filter(c => c.name.startsWith('it_aware_'))
             .map(c => `${c.name}=${c.value}`)
             .join('; ');
-
-        const params = new URLSearchParams({
-            q: query.trim(),
-            limit,
-        });
-
-        const response = await fetch(
-            `${RUNTIME_CONFIG.backend.domain}/objects/registry/search?${params.toString()}`,
-            {
+        const ask = (path: string, params: Record<string, string>) =>
+            fetch(`${RUNTIME_CONFIG.backend.domain}${path}?${new URLSearchParams(params).toString()}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     Cookie: cookieHeader,
                 },
                 cache: 'no-store',
-            }
-        );
+            });
 
-        if (!response.ok) {
-            console.error('Registry search failed:', response.status);
-            return NextResponse.json([]);
+        const search = await ask('/search', { q: query, lang, limit });
+        if (search.ok) {
+            const data: SearchResponse = await search.json();
+            return NextResponse.json({ groups: data.groups });
+        }
+        if (search.status !== 404) {
+            console.error('Search failed:', search.status);
+            return NextResponse.json(nothing);
         }
 
-        const data = await response.json();
-        return NextResponse.json(data);
+        const registry = await ask('/objects/registry/search', { q: query, limit });
+        if (!registry.ok) {
+            console.error('Registry search failed:', registry.status);
+            return NextResponse.json(nothing);
+        }
+        return NextResponse.json({ groups: registryGroups(await registry.json()) });
     } catch (error) {
-        console.error('Registry search error:', error);
-        return NextResponse.json([]);
+        console.error('Search error:', error);
+        return NextResponse.json(nothing);
     }
 }

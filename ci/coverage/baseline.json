@@ -567,24 +567,6 @@
         "total": 8
       }
     },
-    "app/api/search/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 19
-      },
-      "lines": {
-        "covered": 0,
-        "total": 19
-      },
-      "functions": {
-        "covered": 0,
-        "total": 3
-      },
-      "branches": {
-        "covered": 0,
-        "total": 8
-      }
-    },
     "app/api/services/chatbot/react/route.ts": {
       "statements": {
         "covered": 0,
