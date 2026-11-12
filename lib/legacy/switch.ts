@@ -1,7 +1,7 @@
 /**
  * Whether old page addresses redirect to their new task addresses.
  *
- * Off while the pages still live at their old addresses. Lane F4 turns it on
- * in the commit that moves the pages under /tasks/... .
+ * On since lane F4 moved the pages under /tasks/... . Turning it off again
+ * needs the pages back at their old addresses.
  */
-export const LEGACY_REDIRECTS_ENABLED = false;
+export const LEGACY_REDIRECTS_ENABLED = true;

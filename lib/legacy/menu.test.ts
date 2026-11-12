@@ -6,8 +6,8 @@ import { legacyMenu, permits } from './menu';
 const everything = () => true;
 
 describe('the old-style menu', () => {
-    it('lists every contract view by grouping and task, in contract order, at the old addresses', () => {
-        const menu = legacyMenu('en', everything);
+    it('lists every contract view by grouping and task, in contract order, at the old addresses with the redirects off', () => {
+        const menu = legacyMenu('en', everything, false);
         expect(menu.map(g => g.code)).toEqual(contract.groupings.map(g => g.code));
         expect(menu.flatMap(g => g.tasks.map(t => t.code))).toEqual(
             contract.groupings.flatMap(g => contract.tasks.filter(t => t.grouping === g.code).map(t => t.code)),
@@ -28,8 +28,8 @@ describe('the old-style menu', () => {
         expect(links).toContainEqual({ href: '/ohla-journey/audit', label: 'Audit' });
     });
 
-    it('links to the new addresses once the redirects are on', () => {
-        const links = legacyMenu('en', everything, true).flatMap(g => g.tasks.flatMap(t => t.links));
+    it('links to the new addresses, the redirects being on since the pages moved', () => {
+        const links = legacyMenu('en', everything).flatMap(g => g.tasks.flatMap(t => t.links));
         expect(links.map(l => l.href).sort()).toEqual(
             contract.tasks.flatMap(t => t.views.map(v => v.address)).sort(),
         );

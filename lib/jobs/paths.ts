@@ -9,7 +9,7 @@
  * Moving the page means changing JOBS_BASE only.
  */
 
-export const JOBS_BASE = '/systems/airflow';
+export const JOBS_BASE = '/tasks/jobs';
 
 /** Runs per page of a job, and record rows per page. */
 export const RUNS_PAGE_SIZE = 25;
