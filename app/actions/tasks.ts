@@ -26,7 +26,9 @@ async function attempt(action: string, failed: string, work: () => Promise<unkno
 export async function setTaskPinned(code: string, pinned: boolean): Promise<Outcome> {
   return attempt('Tasks:setTaskPinned', 'Failed to change the pin', async () => {
     await (pinned ? api.pinTask(code) : api.unpinTask(code));
-    revalidatePath('/home');
+    // The layout reads the pins for the task frame on every page, so refresh
+    // it, not only the home: a pin from search or the home shows in the frame.
+    revalidatePath('/', 'layout');
   });
 }
 

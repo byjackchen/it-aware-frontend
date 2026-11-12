@@ -7,7 +7,7 @@ import * as api from '@/lib/api/tasks';
  */
 
 const revalidated: string[] = [];
-vi.mock('next/cache', () => ({ revalidatePath: (path: string) => revalidated.push(path) }));
+vi.mock('next/cache', () => ({ revalidatePath: (path: string) => revalidated.push(path) })); // pins revalidate the whole layout since the task frame reads them
 vi.mock('@/lib/api/tasks');
 
 beforeEach(() => {
@@ -21,7 +21,7 @@ it('pins and unpins, and redraws the home', async () => {
   expect(api.pinTask).toHaveBeenCalledWith('it-incidents');
   expect(await setTaskPinned('it-incidents', false)).toEqual({ success: true });
   expect(api.unpinTask).toHaveBeenCalledWith('it-incidents');
-  expect(revalidated).toEqual(['/home', '/home']);
+  expect(revalidated).toEqual(['/', '/']);
 });
 
 it('answers with the error when a pin fails, and redraws nothing', async () => {
