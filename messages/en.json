@@ -12,7 +12,22 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "profile": {
+      "title": "Customization",
+      "note": "Set by an admin. The user does not see this; they see its effect on their home page. The account's status, linked worker and groups above are the security part of the profile.",
+      "canOpen": "Tasks this user can open ({count})",
+      "noTasks": "None. Give the user a group first.",
+      "startPage": "Start page",
+      "startNotSet": "Not set (lands on Home)",
+      "serviceLine": "Service line",
+      "lineNotSet": "Not set",
+      "homeTasks": "Tasks on their home",
+      "homeTasksNote": "Only tasks the user can open are offered. The user's own pins are kept apart from this.",
+      "save": "Save customization",
+      "saved": "Saved"
+    },
     "tasks": {
+      "userProfile": "User profile: {name}",
       "title": "Task access",
       "subtitle": "Who has what tasks, from the task catalog and each group's permissions",
       "byGroup": "By group",
@@ -1809,7 +1824,37 @@
       "clusterAssignment": "Cluster"
     }
   },
+  "Home": {
+    "title": "Home",
+    "subtitle": "Your tasks. Search finds them too.",
+    "itAware": "IT-Aware task",
+    "external": "External task",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}",
+    "adminSet": {
+      "title": "Set for you by your admin",
+      "empty": "Nothing set."
+    },
+    "pinned": {
+      "title": "Pinned by you",
+      "empty": "Pin a task below or from search."
+    },
+    "recent": {
+      "title": "Recent",
+      "empty": "Tasks you open show up here."
+    },
+    "other": {
+      "title": "Other tasks you have",
+      "empty": "None."
+    }
+  },
   "GlobalSearch": {
+    "pin": "Pin to home",
+    "unpin": "Unpin from home",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}",
     "placeholder": "Search Data Objects...",
     "noResults": "No results found",
     "searching": "Searching...",
@@ -2727,6 +2772,7 @@
     }
   },
   "TopBar": {
+    "home": "Home",
     "title": "Ohla IT-Aware",
     "dashboard": "Raw Data",
     "dataOverview": "Data Overview",

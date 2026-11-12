@@ -6,7 +6,22 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "profile": {
+      "title": "个性化设置",
+      "note": "由管理员设置。用户看不到这里，只会在自己的首页看到效果。上方的账号状态、关联员工和用户组是配置中的安全部分。",
+      "canOpen": "该用户可以打开的任务（{count}）",
+      "noTasks": "没有。请先给用户分配用户组。",
+      "startPage": "起始页",
+      "startNotSet": "未设置（进入首页）",
+      "serviceLine": "服务线",
+      "lineNotSet": "未设置",
+      "homeTasks": "其首页上的任务",
+      "homeTasksNote": "只列出该用户可以打开的任务。用户自己固定的任务与此分开保存。",
+      "save": "保存个性化设置",
+      "saved": "已保存"
+    },
     "tasks": {
+      "userProfile": "用户配置：{name}",
       "title": "任务访问",
       "subtitle": "谁有哪些任务：来自任务目录和各用户组的权限",
       "byGroup": "按用户组",
@@ -1487,7 +1502,37 @@
       "clusterAssignment": "群组"
     }
   },
+  "Home": {
+    "title": "首页",
+    "subtitle": "你的任务，也可以用搜索找到。",
+    "itAware": "IT-Aware 任务",
+    "external": "外部任务",
+    "pin": "固定",
+    "unpin": "取消固定",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}",
+    "adminSet": {
+      "title": "管理员为你设置",
+      "empty": "未设置。"
+    },
+    "pinned": {
+      "title": "你固定的",
+      "empty": "在下方或搜索结果里固定一个任务。"
+    },
+    "recent": {
+      "title": "最近使用",
+      "empty": "你打开过的任务会显示在这里。"
+    },
+    "other": {
+      "title": "你的其他任务",
+      "empty": "没有。"
+    }
+  },
   "GlobalSearch": {
+    "pin": "固定到首页",
+    "unpin": "从首页取消固定",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}",
     "placeholder": "搜索数据对象...",
     "noResults": "未找到结果",
     "searching": "搜索中...",
@@ -2405,6 +2450,7 @@
     }
   },
   "TopBar": {
+    "home": "首页",
     "title": "Ohla IT-Aware",
     "dashboard": "原始数据",
     "dataOverview": "数据概览",

@@ -22,6 +22,8 @@ interface Holder {
     detail: string[];
     inactive: boolean;
     tasks: { code: string; scopes: string[] }[];
+    /** A user account's profile page. */
+    profile?: string;
 }
 
 const scopeTypeColors: Record<string, string> = {
@@ -53,6 +55,7 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
                     detail: account.groups,
                     inactive: !account.is_active,
                     tasks: account.tasks,
+                    profile: account.account_type === 'user' ? `/auth/accounts/${account.oid}` : undefined,
                 })),
         [access, view]
     );
@@ -157,6 +160,13 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
                     </div>
 
                     <div className="flex-1 overflow-auto p-4" data-testid="task-list">
+                        {holder?.profile && (
+                            <p className="mb-4 text-sm">
+                                <Link href={holder.profile} className="text-blue-400 hover:underline">
+                                    {t('tasks.userProfile', { name: holder.key })}
+                                </Link>
+                            </p>
+                        )}
                         {!holder ? (
                             <p className="text-gray-500">{t('tasks.pick')}</p>
                         ) : byArea.length === 0 ? (

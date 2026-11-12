@@ -24,14 +24,14 @@ Any signed-in account.
       "kind": "task",
       "label": "Tasks",
       "results": [
-        {"id": "data.incidents", "title": "Incidents", "subtitle": "Data", "opens": "/data/incidents", "score": 0.9}
+        {"id": "data.incidents", "title": "Incidents", "subtitle": "Data", "opens": "/data/incidents", "score": 0.9, "pinned": false}
       ]
     },
     {
       "kind": "incident",
       "label": "Incidents",
       "results": [
-        {"id": "<oid>", "title": "INC0012345", "subtitle": null, "opens": "/data/incidents/<oid>", "score": 0.6}
+        {"id": "<oid>", "title": "INC0012345", "subtitle": null, "opens": "/data/incidents/<oid>", "score": 0.6, "pinned": null}
       ]
     }
   ]
@@ -58,6 +58,8 @@ Applied in the backend, before a result leaves it:
 | 0.8 | A word of the title starts with it |
 | 0.6 | The title contains it |
 | 0.5 | Tasks only: every word of the query is found somewhere in the task's names, keywords, area or code |
+
+`pinned` says whether the caller pinned the task to their home (`PUT /tasks/pins/{code}`, in `api_specs_tasks.md`); it is `null` for a record.
 
 For a task, a match on a keyword counts 0.9 of the above, and on the area or the code 0.8. Records with the same score are ordered by trigram similarity, then by title. `%`, `_` and `\` in the query are literal characters.
 

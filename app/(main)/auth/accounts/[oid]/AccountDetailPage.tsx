@@ -53,9 +53,12 @@ import {
     assignAccountGroup,
     removeAccountGroup,
 } from '@/app/actions/security';
+import { ProfileCard, type ProfileCardProps } from './ProfileCard';
 
 interface AccountDetailPageProps {
     account: Account;
+    /** The customization part of a user's profile; null when it is not shown. */
+    customization: ProfileCardProps | null;
     linkedWorker: Worker | null;
     workers: Worker[];
     linkedWorkerOids: string[];
@@ -68,6 +71,7 @@ interface AccountDetailPageProps {
 
 export function AccountDetailPage({
     account,
+    customization,
     linkedWorker,
     workers,
     linkedWorkerOids,
@@ -465,6 +469,13 @@ export function AccountDetailPage({
                         </div>
                     )}
                 </div>
+
+                {customization && (
+                    <ProfileCard
+                        key={customization.tasks.map(task => task.code).join()}
+                        {...customization}
+                    />
+                )}
             </div>
 
             {/* Worker Search Dialog */}

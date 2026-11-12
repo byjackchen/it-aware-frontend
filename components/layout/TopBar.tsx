@@ -1,39 +1,31 @@
 'use client';
 
 import { NavLink } from '@/components/navigation/NavLink';
-import { useState, useRef } from 'react';
-import { Bell, BookOpen, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, Wrench, Cpu, Bot } from 'lucide-react';
+import { Bell, Home, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
 import { GlobalSearch } from '@/components/search';
 import { useTranslations } from 'next-intl';
 import { logout } from '@/app/actions/session';
-import { usePathname } from 'next/navigation';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { useMenuAuthorization } from './AuthorizedMenuItem';
-import { PERMISSIONS } from '@/lib/config/permissions';
-import { type MenuItem, requireAnyPermission } from '@/lib/types/menu';
 
-// Extended MenuItem with optional children for submenus
-interface NavMenuItem extends MenuItem {
-  children?: MenuItem[];
-}
+/**
+ * The top bar: the brand (goes to the person's start page), the home, the
+ * search bar and the account controls. It has no menu: a person reaches a page
+ * as a task, from search or from their home; a section's sidebar is unchanged.
+ */
 
 export function TopBar() {
   const t = useTranslations('TopBar');
   const router = useTransitionRouter();
-  const pathname = usePathname();
   const { user, isLoading, clearUser } = useUser();
   const { theme } = useTheme();
   const { timezone, setTimezone } = useTimezone();
-  const { checkMenuAccess } = useMenuAuthorization();
   const isLight = theme === 'light';
-  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use consistent initial value to avoid hydration mismatch
   const initials = !isLoading && user?.account?.username
@@ -49,151 +41,6 @@ export function TopBar() {
     router.push('/login');
   };
 
-  // Handle hover with delay to prevent flickering
-  const handleMouseEnter = (menuHref: string) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-    setHoveredMenu(menuHref);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredMenu(null);
-    }, 150);
-  };
-
-  // Navigation items with permission requirements
-  // Application menu consolidates Knowledge and Persona
-  const navItems: NavMenuItem[] = [
-    {
-      href: '/auth',
-      label: t('auth'),
-      icon: Shield,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_AUTH
-      ]),
-    },
-    {
-      href: '/data',
-      label: t('data'),
-      icon: Database,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_DATA
-      ]),
-    },
-    {
-      href: '/persona',
-      label: t('persona'),
-      icon: UserCircle,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_PERSONA
-      ]),
-    },
-    {
-      href: '/itopsdashboard',
-      label: t('itopsDashboard'),
-      icon: Gauge,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-      ]),
-    },
-    {
-      href: '/chatbot',
-      label: t('chatbot'),
-      icon: Bot,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-      ]),
-    },
-    {
-      href: '/ohla-journey',
-      label: t('ohlaJourney'),
-      icon: Gauge,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-        PERMISSIONS.DASHBOARDS.OHLA_JOURNEY_READ,
-      ]),
-    },
-    {
-      href: '/ssc-cockpit',
-      label: t('sscCockpit'),
-      icon: Headset,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_SSC,
-      ]),
-    },
-    {
-      href: '/systems',
-      label: t('systems'),
-      icon: Cpu,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_SYSTEMS,
-      ]),
-    },
-    {
-      href: '/application',
-      label: t('application'),
-      icon: Layers,
-      permissions: requireAnyPermission([
-        PERMISSIONS.UI.NAVIGATION_KNOWLEDGE,
-        PERMISSIONS.UI.NAVIGATION_CAMPAIGN,
-        PERMISSIONS.UI.NAVIGATION_DATA,
-        PERMISSIONS.UI.NAVIGATION_OPERATION,
-      ]),
-      children: [
-        {
-          href: '/operation-teams',
-          label: t('operationTeams'),
-          icon: Wrench,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_OPERATION,
-          ]),
-        },
-        {
-          href: '/dashboard/data-overview',
-          label: t('dashboard'),
-          icon: LayoutDashboard,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_DATA
-          ]),
-        },
-        {
-          href: '/knowledge',
-          label: t('knowledge'),
-          icon: BookOpen,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_KNOWLEDGE
-          ]),
-        },
-        {
-          href: '/campaign',
-          label: t('campaign'),
-          icon: Megaphone,
-          permissions: requireAnyPermission([
-            PERMISSIONS.UI.NAVIGATION_CAMPAIGN
-          ]),
-        },
-      ],
-    },
-  ];
-
-  // Filter nav items and their children based on user permissions
-  const authorizedNavItems = navItems
-    .filter(item => checkMenuAccess(item.permissions))
-    .map(item => ({
-      ...item,
-      children: item.children?.filter(child => checkMenuAccess(child.permissions))
-    }));
-
-  // Check if any child route is active
-  const isMenuActive = (item: NavMenuItem) => {
-    if (item.children && item.children.length > 0) {
-      return item.children.some(child => pathname.startsWith(child.href));
-    }
-    return pathname.startsWith(item.href);
-  };
-
   return (
     <header
       className={`px-6 flex flex-col fixed top-[var(--env-banner-h,0px)] left-0 right-0 z-50 h-16 border-b transition-all duration-300 ease-in-out ${
@@ -205,99 +52,22 @@ export function TopBar() {
         <div className="flex items-center gap-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
-              <span className="text-white font-bold text-lg">IA</span>
-            </div>
-            <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+            {/* The logo goes to the person's start page; the house to their home. */}
+            <NavLink href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+                <span className="text-white font-bold text-lg">IA</span>
+              </div>
+              <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+            </NavLink>
+            <NavLink
+              href="/home"
+              aria-label={t('home')}
+              title={t('home')}
+              className={`p-2 rounded-full transition-all duration-300 ${isLight ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-900/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+            >
+              <Home className="w-5 h-5" />
+            </NavLink>
           </div>
-
-          {/* Main Navigation - Only show authorized items */}
-          <nav className="flex items-center gap-1">
-            {authorizedNavItems.map((item) => {
-              const isActive = isMenuActive(item);
-              const Icon = item.icon;
-              const hasChildren = item.children && item.children.length > 0;
-              const isHovered = hoveredMenu === item.href;
-
-              return (
-                <div
-                  key={item.href}
-                  className="relative"
-                  onMouseEnter={() => hasChildren && handleMouseEnter(item.href)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {hasChildren ? (
-                    <button
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${isActive || isHovered
-                        ? 'nav-active text-blue-500'
-                        : isLight
-                          ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
-                          : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
-                        }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="font-medium">{item.label}</span>
-                      <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isHovered ? 'rotate-180' : ''}`} />
-                    </button>
-                  ) : (
-                    <NavLink
-                      href={item.href}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 focus:outline-none ${isActive
-                        ? 'nav-active text-blue-500'
-                        : isLight
-                          ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 border border-transparent'
-                          : 'text-gray-300 hover:text-white hover:bg-white/5 border border-transparent'
-                        }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="font-medium">{item.label}</span>
-                    </NavLink>
-                  )}
-
-                  {/* Dropdown Menu - Positioned relatively to the item */}
-                  {hasChildren && (
-                    <div
-                      className={`
-                        absolute top-full left-0 mt-2 min-w-[200px] p-2 rounded-xl border shadow-xl
-                        transform transition-all duration-200 origin-top-left
-                        ${isHovered
-                          ? 'opacity-100 visible translate-y-0'
-                          : 'opacity-0 invisible -translate-y-2 pointer-events-none'
-                        }
-                        ${isLight
-                          ? 'bg-white border-slate-200'
-                          : 'bg-slate-900 border-white/10'
-                        }
-                      `}
-                    >
-                      {item.children?.map((child) => {
-                        const ChildIcon = child.icon;
-                        const isChildActive = pathname.startsWith(child.href);
-                        return (
-                          <NavLink
-                            key={child.href}
-                            href={child.href}
-                            className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 mb-1 last:mb-0
-                              ${isChildActive
-                                ? 'bg-blue-500/10 text-blue-500'
-                                : isLight
-                                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-                              }
-                            `}
-                          >
-                            <ChildIcon className="w-4 h-4" />
-                            <span className="text-sm font-medium">{child.label}</span>
-                          </NavLink>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
         </div>
 
         {/* Global Search - Center */}

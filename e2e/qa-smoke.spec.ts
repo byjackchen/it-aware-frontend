@@ -28,7 +28,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
     await page.goto('/data/workers');
     const sidebar = page.locator('aside').first();
     await expect(sidebar).toBeVisible();
-    // The top bar has its own Systems app link (/systems); this is the sidebar's.
+    // The sidebar's Systems link (the top bar's menu, which had its own, was retired in Tasks 3).
     await expect(sidebar.getByRole('link', { name: /Systems/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Inquiries?/i })).toHaveCount(0);
   });

@@ -425,10 +425,8 @@ test.describe('Auth module — authenticated', () => {
     page,
     context,
   }) => {
-    // At 1280px the top bar is wider than the window for an account that sees
-    // every top-level item (measured 1470px on d241716 and after the AgentOps
-    // retirement alike), which pushes the user menu off screen: open it at a
-    // width that fits. The overflow itself is a layout bug reported separately.
+    // Kept from when the top bar held a menu wider than a 1280px window, which
+    // pushed the user menu off screen (the menu was retired in Tasks 3).
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/dashboard/data-overview');
 
