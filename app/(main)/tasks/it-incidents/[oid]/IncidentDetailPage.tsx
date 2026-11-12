@@ -7,7 +7,6 @@
 import { useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import {
     ArrowLeft,
     AlertCircle,
@@ -45,7 +44,7 @@ const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low', 'none'];
 const STATE_OPTIONS = ['New', 'In Progress', 'On Hold', 'Resolved', 'Closed', 'Canceled'];
 
-export function IncidentDetailPage({ incident, edges, organizations, workers, serviceCatalogs, slas }: IncidentDetailPageProps) {
+export function IncidentDetailPage({ incident, edges, workers, serviceCatalogs, slas }: IncidentDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useTransitionRouter();

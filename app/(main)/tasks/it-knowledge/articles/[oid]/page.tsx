@@ -2,6 +2,7 @@
  * Article detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getArticle, getArticleVersions, getConnectedEdges, getServiceCatalogs } from '@/lib/api/objects';
 import { ArticleDetailPage } from './ArticleDetailPage';
@@ -13,6 +14,8 @@ interface PageProps {
 export default async function ArticlePage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof ArticleDetailPage>;
     try {
         // Log start of requests
         console.log(`Fetching data for article ${oid}...`);
@@ -32,16 +35,11 @@ export default async function ArticlePage({ params }: PageProps) {
 
         console.log('Successfully fetched all article data');
 
-        return (
-            <ArticleDetailPage
-                article={article}
-                versions={versions}
-                edges={edgesResponse.items}
-                serviceCatalogs={serviceCatalogs}
-            />
-        );
+        props = { article, versions, edges: edgesResponse.items, serviceCatalogs };
     } catch (error) {
         console.error('Error fetching data for article details:', error);
         notFound();
     }
+
+    return <ArticleDetailPage {...props} />;
 }

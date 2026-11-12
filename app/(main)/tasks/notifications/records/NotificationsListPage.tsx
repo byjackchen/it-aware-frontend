@@ -81,7 +81,7 @@ export function NotificationsListPage() {
             let skip = 0;
             let total = 0;
 
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
                 const res = await fetch(
                     `/api/campaigns/notification_batchs/${encodeURIComponent(batchOid)}/notifications?limit=${PAGE_SIZE}&skip=${skip}`

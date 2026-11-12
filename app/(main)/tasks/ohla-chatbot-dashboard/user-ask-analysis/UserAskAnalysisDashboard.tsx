@@ -46,6 +46,20 @@ const ZERO_KPIS = {
     other_count: 0,
 } as const
 
+// donut order matches the FE PBIX layout: faq -> ac -> interaction -> irrelevant.
+const COLOR_BY_BUCKET: Record<string, string> = {
+    faqMatched: OHLA_PALETTE.faqMatched,
+    actionChainMatched: OHLA_PALETTE.actionChainMatched,
+    interaction: OHLA_PALETTE.interaction,
+    irrelevant: OHLA_PALETTE.irrelevant,
+}
+const LABEL_KEY_BY_BUCKET: Record<string, string> = {
+    faqMatched: 'userAsk.behaviour.faqMatched',
+    actionChainMatched: 'userAsk.behaviour.actionChainMatched',
+    interaction: 'userAsk.behaviour.interaction',
+    irrelevant: 'userAsk.behaviour.irrelevant',
+}
+
 export function UserAskAnalysisDashboard() {
     const t = useTranslations('Ohla')
     const { theme } = useTheme()
@@ -57,22 +71,9 @@ export function UserAskAnalysisDashboard() {
     const block = data?.current
     const kpis = block?.kpis ?? ZERO_KPIS
     const dailyRows = block?.charts.behaviour_daily ?? []
-    const distribution = block?.charts.behaviour_distribution ?? []
+    const distribution = useMemo(() => block?.charts.behaviour_distribution ?? [], [block])
 
     // Map BE bucket strings -> i18n labels and stable colors. The 4-bucket
-    // donut order matches the FE PBIX layout: faq -> ac -> interaction -> irrelevant.
-    const COLOR_BY_BUCKET: Record<string, string> = {
-        faqMatched: OHLA_PALETTE.faqMatched,
-        actionChainMatched: OHLA_PALETTE.actionChainMatched,
-        interaction: OHLA_PALETTE.interaction,
-        irrelevant: OHLA_PALETTE.irrelevant,
-    }
-    const LABEL_KEY_BY_BUCKET: Record<string, string> = {
-        faqMatched: 'userAsk.behaviour.faqMatched',
-        actionChainMatched: 'userAsk.behaviour.actionChainMatched',
-        interaction: 'userAsk.behaviour.interaction',
-        irrelevant: 'userAsk.behaviour.irrelevant',
-    }
 
     const behaviourSlices = useMemo(
         () =>

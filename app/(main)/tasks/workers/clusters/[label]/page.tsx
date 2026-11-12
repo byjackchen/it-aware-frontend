@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getClusterSummary, getWorkerClustersPage } from '@/lib/api/clusters';
 import { ClusterDetailPage } from './ClusterDetailPage';
@@ -11,6 +12,8 @@ export default async function ClusterPage({ params }: PageProps) {
     const clusterLabel = parseInt(label, 10);
     if (isNaN(clusterLabel)) notFound();
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof ClusterDetailPage>;
     try {
         const [summary, firstPage] = await Promise.all([
             getClusterSummary(),
@@ -19,16 +22,10 @@ export default async function ClusterPage({ params }: PageProps) {
 
         const clusterInfo = summary.clusters.find((c) => c.cluster_label === clusterLabel) ?? null;
 
-        return (
-            <ClusterDetailPage
-                clusterLabel={clusterLabel}
-                clusterInfo={clusterInfo}
-                summary={summary}
-                initialAssignments={firstPage.items}
-                totalAssignments={firstPage.total}
-            />
-        );
+        props = { clusterLabel, clusterInfo, summary, initialAssignments: firstPage.items, totalAssignments: firstPage.total };
     } catch {
         notFound();
     }
+
+    return <ClusterDetailPage {...props} />;
 }

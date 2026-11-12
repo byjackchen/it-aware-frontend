@@ -2,6 +2,7 @@
  * Incident detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
 import {
@@ -21,6 +22,8 @@ interface PageProps {
 export default async function IncidentPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof IncidentDetailPage>;
     try {
         const [incident, edgesResponse, organizations, workers, serviceCatalogs, slasResponse] = await Promise.all([
             getIncident(oid),
@@ -34,20 +37,13 @@ export default async function IncidentPage({ params }: PageProps) {
             getIncidentSlas(oid).catch(() => ({ items: [], total: 0 })),
         ]);
 
-        return (
-            <IncidentDetailPage
-                incident={incident}
-                edges={edgesResponse.items}
-                organizations={organizations}
-                workers={workers}
-                serviceCatalogs={serviceCatalogs}
-                slas={slasResponse.items}
-            />
-        );
+        props = { incident, edges: edgesResponse.items, organizations, workers, serviceCatalogs, slas: slasResponse.items };
     } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
             redirect('/access-denied');
         }
         notFound();
     }
+
+    return <IncidentDetailPage {...props} />;
 }

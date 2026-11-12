@@ -3,6 +3,7 @@
  * Displays a single permission by OID.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getPermission, getGroups, getGroupPermissions } from '@/lib/api/security';
 import type { GroupPermission, Group } from '@/lib/types/security';
@@ -15,6 +16,8 @@ interface PageProps {
 export default async function PermissionPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof PermissionDetailPage>;
     try {
         const [permission, groups, groupPermissions] = await Promise.all([
             getPermission(oid),
@@ -28,14 +31,11 @@ export default async function PermissionPage({ params }: PageProps) {
             .map((gp: GroupPermission) => gp.group_oid);
         const assignedGroups = groups.filter((g: Group) => assignedGroupOids.includes(g.oid));
 
-        return (
-            <PermissionDetailPage
-                permission={permission}
-                assignedGroups={assignedGroups}
-            />
-        );
+        props = { permission, assignedGroups };
     } catch (error) {
         console.error('[PermissionPage] Error:', error);
         notFound();
     }
+
+    return <PermissionDetailPage {...props} />;
 }

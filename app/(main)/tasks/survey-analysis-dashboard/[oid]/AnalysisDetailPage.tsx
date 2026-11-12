@@ -78,7 +78,6 @@ export function AnalysisDetailPage({ analysis, edges, workers, serviceCatalogs, 
     const [configurationItemOid, setConfigurationItemOid] = useState(analysis.configuration_item_oid || '');
 
     const worker = workers.find((w) => w.oid === analysis.worker_oid);
-    const semStyle = analysis.semantic ? SEMANTIC_COLORS[analysis.semantic] : null;
 
     const filteredEdges = edgeFilter ? edges.filter((e) => {
         const connectedObject = e.from_oid === analysis.oid ? e.to_object : e.from_object;

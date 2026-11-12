@@ -26,41 +26,49 @@ function formatCurrency(value: string | null): string {
     return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** One labelled value of a card; "not set" when empty. */
+function Field({ label, value }: { label: string; value: string | null | undefined }) {
+    const { theme } = useTheme();
+    const t = useTranslations('Data.hardwares.detail');
+    const isLight = theme === 'light';
+    return (
+        <div>
+            <div className={labelClass(isLight)}>{label}</div>
+            <div className={`text-sm ${isLight ? 'text-slate-800' : 'text-white'}`}>{value || t('notSet')}</div>
+        </div>
+    );
+}
+
+/** One labelled yes or no of a card; "not set" when unknown. */
+function BoolField({ label, value }: { label: string; value: boolean | null | undefined }) {
+    const { theme } = useTheme();
+    const t = useTranslations('Data.hardwares.detail');
+    const isLight = theme === 'light';
+    if (value === null || value === undefined) {
+        return <Field label={label} value={null} />;
+    }
+    return (
+        <div>
+            <div className={labelClass(isLight)}>{label}</div>
+            <span className={`inline-flex items-center gap-1 text-sm ${value ? 'text-green-500' : isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                {value ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                {value ? t('yes') : t('no')}
+            </span>
+        </div>
+    );
+}
+
+const labelClass = (isLight: boolean) =>
+    `text-xs font-medium uppercase tracking-wide mb-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`;
+
 export function HardwareDetailPage({ hardware }: HardwareDetailPageProps) {
     const { theme } = useTheme();
     const router = useTransitionRouter();
     const t = useTranslations('Data.hardwares.detail');
     const isLight = theme === 'light';
-    const notSet = t('notSet');
 
     const cardClass = `rounded-xl border p-6 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`;
     const headingClass = `text-lg font-semibold mb-4 ${isLight ? 'text-slate-800' : 'text-white'}`;
-    const labelClass = `text-xs font-medium uppercase tracking-wide mb-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`;
-    const valueClass = `text-sm ${isLight ? 'text-slate-800' : 'text-white'}`;
-
-    function Field({ label, value }: { label: string; value: string | null | undefined }) {
-        return (
-            <div>
-                <div className={labelClass}>{label}</div>
-                <div className={valueClass}>{value || notSet}</div>
-            </div>
-        );
-    }
-
-    function BoolField({ label, value }: { label: string; value: boolean | null | undefined }) {
-        if (value === null || value === undefined) {
-            return <Field label={label} value={null} />;
-        }
-        return (
-            <div>
-                <div className={labelClass}>{label}</div>
-                <span className={`inline-flex items-center gap-1 text-sm ${value ? 'text-green-500' : isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                    {value ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                    {value ? t('yes') : t('no')}
-                </span>
-            </div>
-        );
-    }
 
     return (
         <div className="h-[calc(100vh-4rem)] p-4 overflow-y-auto">
@@ -130,7 +138,7 @@ export function HardwareDetailPage({ hardware }: HardwareDetailPageProps) {
                         <Field label={t('assignedToDisplayName')} value={hardware.assigned_to_display_name} />
                         <Field label={t('assignedToUsername')} value={hardware.assigned_to_username} />
                         <div>
-                            <div className={labelClass}>{t('workerOid')}</div>
+                            <div className={labelClass(isLight)}>{t('workerOid')}</div>
                             {hardware.worker_oid ? (
                                 <button
                                     onClick={() => router.push(`/tasks/workers/workers/${hardware.worker_oid}`)}
@@ -186,7 +194,7 @@ export function HardwareDetailPage({ hardware }: HardwareDetailPageProps) {
                     <h2 className={headingClass}>{t('status')}</h2>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <div className={labelClass}>{t('assetStatus')}</div>
+                            <div className={labelClass(isLight)}>{t('assetStatus')}</div>
                             {hardware.asset_status ? (
                                 <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${
                                     hardware.asset_status === 'In use'
@@ -198,7 +206,7 @@ export function HardwareDetailPage({ hardware }: HardwareDetailPageProps) {
                                     {hardware.asset_status}
                                 </span>
                             ) : (
-                                <div className={valueClass}>{notSet}</div>
+                                <div className={`text-sm ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('notSet')}</div>
                             )}
                         </div>
                         <Field label={t('substatus')} value={hardware.substatus} />

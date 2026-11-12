@@ -3,6 +3,7 @@
  * Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getServiceCatalog, getServiceCatalogs, getArticles } from '@/lib/api/objects';
 import { CatalogDetailPage } from './CatalogDetailPage';
@@ -14,6 +15,8 @@ interface PageProps {
 export default async function CatalogPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof CatalogDetailPage>;
     try {
         // Fetch catalog details and articles in parallel
         const [catalog, allCatalogs, articles] = await Promise.all([
@@ -25,17 +28,13 @@ export default async function CatalogPage({ params }: PageProps) {
         // Build breadcrumb path
         const breadcrumb = buildBreadcrumb(catalog.path, allCatalogs);
 
-        return (
-            <CatalogDetailPage
-                catalog={catalog}
-                articles={articles}
-                breadcrumb={breadcrumb}
-            />
-        );
+        props = { catalog, articles, breadcrumb };
     } catch (error) {
         console.error('Error fetching catalog details:', error);
         notFound();
     }
+
+    return <CatalogDetailPage {...props} />;
 }
 
 /**

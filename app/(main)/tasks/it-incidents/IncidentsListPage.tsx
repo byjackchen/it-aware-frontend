@@ -76,7 +76,7 @@ export function IncidentsListPage() {
             return remotePage.items;
         }
         return [];
-    }, [filteredIncidents, localStartIdx, isLocalPage, remotePage, currentPage]);
+    }, [filteredIncidents, localStartIdx, isLocalPage, remotePage, currentPage, pageSize]);
 
     // Fetch remote page when navigating beyond loaded data
     const fetchRemotePage = useCallback((page: number) => {
@@ -106,10 +106,14 @@ export function IncidentsListPage() {
 
     useEffect(() => {
         if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
+            // Pre-existing, moved unchanged by the address move: the fetch marks the page loading as it starts.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchRemotePage(currentPage);
         }
     }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
+    // Pre-existing, moved unchanged by the address move: a new search or page size starts at page 1.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [searchQuery, pageSize, sysTagFilter]);
 
     // Tag options for the filter dropdown, derived from loaded rows so the

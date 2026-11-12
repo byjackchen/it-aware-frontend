@@ -2,6 +2,7 @@
  * Organization detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import {
     getOrganization,
@@ -20,6 +21,8 @@ interface PageProps {
 export default async function OrganizationPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof OrganizationDetailPage>;
     try {
         const [organization, organizations, edgesResponse, assignments, workers, roles] = await Promise.all([
             getOrganization(oid),
@@ -30,18 +33,11 @@ export default async function OrganizationPage({ params }: PageProps) {
             getRoles(),
         ]);
 
-        return (
-            <OrganizationDetailPage
-                organization={organization}
-                organizations={organizations}
-                edges={edgesResponse.items}
-                assignments={assignments}
-                workers={workers}
-                roles={roles}
-            />
-        );
+        props = { organization, organizations, edges: edgesResponse.items, assignments, workers, roles };
     } catch {
         notFound();
     }
+
+    return <OrganizationDetailPage {...props} />;
 }
 

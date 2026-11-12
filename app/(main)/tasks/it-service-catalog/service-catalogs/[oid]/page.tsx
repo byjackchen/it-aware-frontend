@@ -2,6 +2,7 @@
  * Service Catalog detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import {
     getServiceCatalog,
@@ -20,6 +21,8 @@ interface PageProps {
 export default async function ServiceCatalogPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof ServiceCatalogDetailPage>;
     try {
         const [serviceCatalog, serviceCatalogs, edgesResponse, assignments, workers, roles] = await Promise.all([
             getServiceCatalog(oid),
@@ -30,17 +33,10 @@ export default async function ServiceCatalogPage({ params }: PageProps) {
             getRoles(),
         ]);
 
-        return (
-            <ServiceCatalogDetailPage
-                serviceCatalog={serviceCatalog}
-                serviceCatalogs={serviceCatalogs}
-                edges={edgesResponse.items}
-                assignments={assignments}
-                workers={workers}
-                roles={roles}
-            />
-        );
+        props = { serviceCatalog, serviceCatalogs, edges: edgesResponse.items, assignments, workers, roles };
     } catch {
         notFound();
     }
+
+    return <ServiceCatalogDetailPage {...props} />;
 }

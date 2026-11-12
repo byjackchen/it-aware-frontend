@@ -34,7 +34,6 @@ import {
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
-import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';

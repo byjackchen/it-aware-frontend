@@ -88,7 +88,7 @@ export function ClusterDetailPage({
             try {
                 const map: Record<string, { name: string; stableId: string }> = {};
                 let skip = 0;
-                // eslint-disable-next-line no-constant-condition
+                 
                 while (true) {
                     const res = await fetch(`/api/objects/workers?limit=${PAGE_SIZE}&skip=${skip}`);
                     if (!res.ok) break;

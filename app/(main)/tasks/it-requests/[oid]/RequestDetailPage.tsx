@@ -7,7 +7,6 @@
 import { useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import {
     ArrowLeft,
     ClipboardList,

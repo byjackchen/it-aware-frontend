@@ -5,7 +5,7 @@
  * Supports expand/collapse of children and navigation to catalog detail page.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
@@ -24,20 +24,20 @@ export function CatalogTreeNode({ node, level, forceExpand }: CatalogTreeNodePro
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
-    const [isExpanded, setIsExpanded] = useState(level < 2); // Auto-expand first 2 levels
+    const [isExpanded, setIsExpanded] = useState(forceExpand ?? level < 2); // Auto-expand first 2 levels
     const hasChildren = node.children.length > 0;
 
     // Check if this node or any descendant is currently active
     const isActive = pathname === `/tasks/it-knowledge/library/catalog/${node.oid}`;
-    const isInActivePath = pathname.startsWith('/tasks/it-knowledge/library/catalog/') &&
-        pathname.includes(node.oid);
 
-    // React to forceExpand changes
-    useEffect(() => {
+    // React to forceExpand changes (adjusted while rendering, not in an effect).
+    const [seenForceExpand, setSeenForceExpand] = useState(forceExpand);
+    if (forceExpand !== seenForceExpand) {
+        setSeenForceExpand(forceExpand);
         if (forceExpand !== undefined) {
             setIsExpanded(forceExpand);
         }
-    }, [forceExpand]);
+    }
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();

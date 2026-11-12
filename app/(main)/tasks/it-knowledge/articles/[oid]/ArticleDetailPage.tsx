@@ -64,7 +64,6 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
     }) : edges;
 
     const displayedVersion = versions.find(v => v.version_number === selectedVersionNum) || article.latest_version;
-    const isLatest = selectedVersionNum === article.latest_version.version_number;
 
     const handleSave = async () => {
         setIsPending(true);

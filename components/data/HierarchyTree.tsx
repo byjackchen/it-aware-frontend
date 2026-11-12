@@ -13,7 +13,7 @@ import type { HierarchyTreeNode } from '@/lib/types/objects';
 
 interface HierarchyTreeProps {
     nodes: HierarchyTreeNode[];
-    baseHref: string; // e.g., '/tasks/workers/organizations' or '/tasks/workers/locations'
+    baseHref: string; // e.g., '/data/organizations' or '/data/locations'
     emptyMessage?: string;
     expandAll?: boolean; // When true, all nodes are expanded
 }

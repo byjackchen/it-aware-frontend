@@ -2,6 +2,7 @@
  * Survey detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getSurvey, getSurveyBatch } from '@/lib/api/campaigns';
 import { getWorkers } from '@/lib/api/objects';
@@ -14,6 +15,8 @@ interface PageProps {
 export default async function SurveyPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof SurveyDetailPage>;
     try {
         const survey = await getSurvey(oid);
         const [surveyBatch, workers] = await Promise.all([
@@ -21,14 +24,10 @@ export default async function SurveyPage({ params }: PageProps) {
             getWorkers(),
         ]);
 
-        return (
-            <SurveyDetailPage
-                survey={survey}
-                surveyBatch={surveyBatch}
-                workers={workers}
-            />
-        );
+        props = { survey, surveyBatch, workers };
     } catch {
         notFound();
     }
+
+    return <SurveyDetailPage {...props} />;
 }

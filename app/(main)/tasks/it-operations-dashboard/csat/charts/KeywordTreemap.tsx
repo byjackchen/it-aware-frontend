@@ -141,7 +141,7 @@ function CustomTreemapContent({ x, y, width, height, name, fill, isLight, positi
 }
 
 /** A single flat treemap for one group, with its own hover state. */
-function GroupTreemap({ groupName, keywords, isLight, onHover, onLeave }: {
+function GroupTreemap({ keywords, isLight, onHover, onLeave }: {
     groupName: string;
     keywords: KeywordItem[];
     isLight: boolean;

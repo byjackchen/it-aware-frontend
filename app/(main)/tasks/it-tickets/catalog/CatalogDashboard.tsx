@@ -26,19 +26,15 @@ import {
     trendByMonth,
     daysSinceUpdated,
     formatDurationSec,
-    formatMoM,
     groupBy,
     isActiveState,
     isInScopeGroup,
     meanOf,
-    momActiveSnapshot,
-    momByDate,
     monthsFromRange,
     openedAt,
     snDayEndIso,
     snDayStartIso,
     sumOf,
-    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -52,7 +48,6 @@ import {
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
-import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
@@ -89,10 +84,6 @@ export function CatalogDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const deltaLabel = (d: DeltaInfo) =>
-        d.trend === 'flat'
-            ? t('kpis.momFlat')
-            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // 3-month default seeded into the user-visible filter so the picker
     // reflects what's actually being fetched. Otherwise users see a date
@@ -194,14 +185,6 @@ export function CatalogDashboard() {
     const activeRows = useMemo(() => filtered.filter((r) => isActiveState(r.state)), [filtered]);
 
     // Month-over-month delta for the volume + active KPIs.
-    const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
-        [filtered, now],
-    );
-    const activeMoM = useMemo(
-        () => formatMoM(momActiveSnapshot(filtered, now)),
-        [filtered, now],
-    );
 
     const kpis = useMemo(() => {
         const total = filtered.length;

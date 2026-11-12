@@ -25,11 +25,6 @@ interface PersonaProfilePageProps {
     clusterSummary: ClusterSummaryResponse | null;
 }
 
-function formatTagsList(items: string[] | null): string {
-    if (!items || items.length === 0) return '—';
-    return items.join(', ');
-}
-
 export function PersonaProfilePage({
     currentWorker,
     workerProfile,

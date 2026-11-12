@@ -82,7 +82,7 @@ export function ClusterProfileCard({
                 rawValue: raw,
             };
         });
-    }, [workerCluster?.behavior_features, workerCluster?.behavior_scales, locale]);
+    }, [workerCluster, locale]);
 
     const hasClustering = workerCluster && workerCluster.cluster_label !== -1;
 

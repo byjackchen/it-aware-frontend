@@ -101,10 +101,14 @@ export function RequestsListPage() {
 
     useEffect(() => {
         if (!isLocalPage && remotePage?.page !== currentPage && !isInitialLoading) {
+            // Pre-existing, moved unchanged by the address move: the fetch marks the page loading as it starts.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchRemotePage(currentPage);
         }
     }, [currentPage, isLocalPage, remotePage?.page, isInitialLoading, fetchRemotePage]);
 
+    // Pre-existing, moved unchanged by the address move: a new search or page size starts at page 1.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setCurrentPage(1); setRemotePage(null); }, [searchQuery, pageSize]);
 
     const handleRefresh = () => {

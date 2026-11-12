@@ -30,17 +30,13 @@ import type { TicketRow, HardwareRow } from '@/lib/api/ops_dashboard';
 import {
     cumulativeTrendByMonth,
     daysSinceUpdated,
-    formatMoM,
     groupBy,
     isActiveState,
     isInScopeGroup,
-    momActiveSnapshot,
-    momByDate,
     monthsFromRange,
     openedAt,
     snDayEndIso,
     snDayStartIso,
-    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { laDayKey } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -53,9 +49,6 @@ import {
     type FilterState,
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
-import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
-import type { Region } from '@/components/ops_dashboard/RegionMap';
-import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
 
@@ -173,10 +166,6 @@ function extractOffboardingUser(title: string | null | undefined): string | null
     return m[1].trim().toLowerCase();
 }
 
-function locationForFilter(row: TicketRow): string | null {
-    return row.actor?.location?.descriptor?.trim() || null;
-}
-
 function departmentOf(row: TicketRow): string {
     // Offboarding rows carry no `request.department` — that column is
     // null on every offboarding ticket in the dump. The actor's
@@ -226,10 +215,6 @@ export function OnOffBoardingDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const deltaLabel = (d: DeltaInfo) =>
-        d.trend === 'flat'
-            ? t('kpis.momFlat')
-            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // Default Open-date filter starts at the FIRST DAY OF THE
     // CURRENT MONTH so on/offboarding matches every other Ops
@@ -321,7 +306,7 @@ export function OnOffBoardingDashboard() {
         { limit: 1000 },
         { enabled: flow === 'offboarding', fetchAll: true },
     );
-    const hardwareRows: HardwareRow[] = hwData?.items ?? [];
+    const hardwareRows: HardwareRow[] = useMemo(() => hwData?.items ?? [], [hwData]);
 
     // Worker fetch — onboarding-only. SN-side onboarding tickets don't
     // carry a usable `expected_start_date` (every onboarding row has
@@ -330,7 +315,7 @@ export function OnOffBoardingDashboard() {
     // ABAC-aware `/api/objects/workers` endpoint. ~3k active workers
     // total, fetched once when the user first visits the Onboarding
     // tab, cached client-side via the hook's seen-set dedup.
-    const { workers: activeWorkers, loading: workersLoading } = useAllActiveWorkers({
+    const { workers: activeWorkers } = useAllActiveWorkers({
         enabled: flow === 'onboarding',
     });
     const hireDateByOid = useMemo(() => {
@@ -354,7 +339,7 @@ export function OnOffBoardingDashboard() {
     // window, not the filtered subset, so switching filters doesn't
     // nudge the tab counts and confuse users. Same OIT-scope clamp
     // applied here so the badge never over-counts.
-    const allRows = data?.items ?? [];
+    const allRows = useMemo(() => data?.items ?? [], [data]);
     const onboardingCount = useMemo(
         () => allRows.filter((r) => matchesFlow(r, 'onboarding') && isInScopeGroup(r.assigned_group)).length,
         [allRows],
@@ -563,8 +548,6 @@ export function OnOffBoardingDashboard() {
         return { users: users.size, usersWithAsset: usersWithAsset.size, assetCount };
     }, [offboardedAssets]);
 
-    const totalMoM = useMemo(() => formatMoM(momByDate(filtered, (r) => openedAt(r), now)), [filtered, now]);
-    const activeMoM = useMemo(() => formatMoM(momActiveSnapshot(filtered, now)), [filtered, now]);
 
     const kpis = useMemo(() => {
         const total = filtered.length;

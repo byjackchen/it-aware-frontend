@@ -65,12 +65,9 @@ export function TicketsPanel({
     kpis,
     groupDonut,
     assigneeBar,
-    // `trend` / `trendMonths` are still on the props contract for
-    // backwards-compat with OpsDashboardHub; the monthly-opened trend
-    // card was removed from the row, so we deliberately don't read
-    // these locally any more.
-    trend: _trend,
-    trendMonths: _trendMonths,
+    // `trend`, `trendMonths` and `kpiDeltas` are still on the props
+    // contract for backwards-compat with OpsDashboardHub; the cards that
+    // showed them were removed, so they are not read here any more.
     regionData,
     loading,
     filteredCount,
@@ -78,16 +75,8 @@ export function TicketsPanel({
     onGroupSliceClick,
     selectedGroups,
     onGroupLegendToggle,
-    kpiDeltas,
 }: TicketsPanelProps) {
     const t = useTranslations('OpsDashboard');
-    function deltaProp(d?: DeltaInfo | null) {
-        if (!d) return undefined;
-        const value = d.trend === 'flat'
-            ? t('kpis.momFlat')
-            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
-        return { value, trend: d.trend };
-    }
     const { theme } = useTheme();
     const isLight = theme === 'light';
 

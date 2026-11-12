@@ -72,7 +72,7 @@ export function ClustersListPage() {
             try {
                 const map: Record<string, { name: string; stableId: string }> = {};
                 let skip = 0;
-                // eslint-disable-next-line no-constant-condition
+                 
                 while (true) {
                     const res = await fetch(`/api/objects/workers?limit=${PAGE_SIZE}&skip=${skip}`);
                     if (!res.ok) break;
@@ -114,7 +114,7 @@ export function ClustersListPage() {
             let skip = 0;
             let total = 0;
 
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
                 const params = new URLSearchParams({ limit: String(PAGE_SIZE), skip: String(skip) });
                 if (filterClusterLabel !== '') params.set('cluster_label', filterClusterLabel);

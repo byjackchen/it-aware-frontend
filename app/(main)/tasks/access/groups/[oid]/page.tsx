@@ -2,6 +2,7 @@
  * Group detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import {
     getGroup,
@@ -20,6 +21,8 @@ interface PageProps {
 export default async function GroupPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof GroupDetailPage>;
     try {
         const [group, permissions, roles, groupPermissions, groupRoles] = await Promise.all([
             getGroup(oid),
@@ -37,16 +40,10 @@ export default async function GroupPage({ params }: PageProps) {
         const linkedRoleOids = groupRoles.map((gr: GroupRole) => gr.role_oid);
         const linkedRoles = roles.filter((r: Role) => linkedRoleOids.includes(r.oid));
 
-        return (
-            <GroupDetailPage
-                group={group}
-                assignedPermissions={assignedPermissions}
-                allPermissions={permissions}
-                linkedRoles={linkedRoles}
-                allRoles={roles}
-            />
-        );
+        props = { group, assignedPermissions, allPermissions: permissions, linkedRoles, allRoles: roles };
     } catch {
         notFound();
     }
+
+    return <GroupDetailPage {...props} />;
 }

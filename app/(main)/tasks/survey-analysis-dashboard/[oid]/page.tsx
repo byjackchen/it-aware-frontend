@@ -2,6 +2,7 @@
  * Analysis detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
 import { getAnalysis } from '@/lib/api/insights';
@@ -16,6 +17,8 @@ interface PageProps {
 export default async function AnalysisPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof AnalysisDetailPage>;
     try {
         const [analysis, edgesResponse, workers, serviceCatalogs, surveyBatchesRes] = await Promise.all([
             getAnalysis(oid),
@@ -37,20 +40,13 @@ export default async function AnalysisPage({ params }: PageProps) {
             batchMap[b.oid] = b.name;
         }
 
-        return (
-            <AnalysisDetailPage
-                analysis={analysis}
-                edges={edgesResponse.items}
-                workers={workers}
-                serviceCatalogs={serviceCatalogs}
-                sourceUrl={sourceUrl}
-                batchMap={batchMap}
-            />
-        );
+        props = { analysis, edges: edgesResponse.items, workers, serviceCatalogs, sourceUrl, batchMap };
     } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
             redirect('/access-denied');
         }
         notFound();
     }
+
+    return <AnalysisDetailPage {...props} />;
 }

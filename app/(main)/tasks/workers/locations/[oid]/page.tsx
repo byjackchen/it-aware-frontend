@@ -2,6 +2,7 @@
  * Location detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import {
     getLocation,
@@ -20,6 +21,8 @@ interface PageProps {
 export default async function LocationPage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof LocationDetailPage>;
     try {
         const [location, locations, edgesResponse, assignments, workers, roles] = await Promise.all([
             getLocation(oid),
@@ -30,18 +33,11 @@ export default async function LocationPage({ params }: PageProps) {
             getRoles(),
         ]);
 
-        return (
-            <LocationDetailPage
-                location={location}
-                locations={locations}
-                edges={edgesResponse.items}
-                assignments={assignments}
-                workers={workers}
-                roles={roles}
-            />
-        );
+        props = { location, locations, edges: edgesResponse.items, assignments, workers, roles };
     } catch {
         notFound();
     }
+
+    return <LocationDetailPage {...props} />;
 }
 

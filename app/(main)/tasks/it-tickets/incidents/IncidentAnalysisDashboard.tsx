@@ -28,14 +28,10 @@ import {
     monthsFromRange,
     cumulativeTrendByMonth,
     trendByMonth,
-    momByDate,
-    momActiveSnapshot,
     openedAt,
     snDayEndIso,
     snDayStartIso,
     sumOf,
-    formatMoM,
-    type DeltaInfo,
 } from '@/lib/ops_dashboard/aggregate';
 import { laDateLabel } from '@/lib/ops_dashboard/tzDate';
 import { KpiCard } from '@/components/ops_dashboard/KpiCard';
@@ -47,7 +43,6 @@ import {
     type SlicerConfig,
 } from '@/components/ops_dashboard/filters/TopFilterBar';
 import { RegionCountryFilter } from '@/components/ops_dashboard/filters/RegionCountryFilter';
-import type { Region } from '@/components/ops_dashboard/RegionMap';
 import { matchesRegionCountry } from '@/lib/ops_dashboard/region';
 import { useOpsGlobalFilter } from '@/lib/hooks/useOpsGlobalFilter';
 import { TranslatedAutoRefresh } from '@/components/ops_dashboard/TranslatedAutoRefresh';
@@ -75,14 +70,6 @@ const STATE_PALETTE = [
  *   4 (Low) + 5 (Planning)   → Low       — green
  */
 type PriorityBucket = 'High' | 'Medium' | 'Low';
-
-const PRIORITY_BUCKET_ORDER: readonly PriorityBucket[] = ['High', 'Medium', 'Low'];
-
-const PRIORITY_BUCKET_COLOR: Record<PriorityBucket, string> = {
-    High: '#ef4444',
-    Medium: '#f59e0b',
-    Low: '#22c55e',
-};
 
 /** Pull a leading digit out of a priority label ("P1" / "1" / "1 - Critical" → "1"). */
 function priorityDigit(p: string | null | undefined): string | null {
@@ -114,10 +101,6 @@ export function IncidentAnalysisDashboard() {
     const t = useTranslations('OpsDashboard');
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    const deltaLabel = (d: DeltaInfo) =>
-        d.trend === 'flat'
-            ? t('kpis.momFlat')
-            : t('kpis.momDelta', { arrow: d.trend === 'up' ? '▲' : '▼', pct: Math.abs(d.pct) });
 
     // 3-month default horizon on page load. Seeded into the user-facing
     // filter state so the date picker shows it — otherwise the default is
@@ -270,14 +253,6 @@ export function IncidentAnalysisDashboard() {
     //   30 days ago. Uses created_at + closure timestamps for
     //   point-in-time replay (see momActiveSnapshot).
     // - VIP Active: same snapshot, narrowed to VIP rows.
-    const totalMoM = useMemo(
-        () => formatMoM(momByDate(filtered, (r) => openedAt(r), now)),
-        [filtered, now],
-    );
-    const activeMoM = useMemo(
-        () => formatMoM(momActiveSnapshot(filtered, now)),
-        [filtered, now],
-    );
     // VIP active comes from a dedicated is_vip=true server-side fetch
     // (vipQuery above) — no MoM delta available because that fetch
     // only returns currently-active rows.
@@ -382,21 +357,6 @@ export function IncidentAnalysisDashboard() {
         selectedLocations,
     ]);
 
-    const priorityDonut = useMemo(() => {
-        // Bucket the active rows into High/Medium/Low and emit slices
-        // in canonical order (High first) so colours stay stable
-        // regardless of which buckets happen to have rows this period.
-        const counts: Record<PriorityBucket, number> = { High: 0, Medium: 0, Low: 0 };
-        for (const r of activeRows) {
-            const bucket = priorityBucket(r.priority);
-            if (bucket) counts[bucket] += 1;
-        }
-        return PRIORITY_BUCKET_ORDER.map((bucket) => ({
-            name: bucket,
-            value: counts[bucket],
-            color: PRIORITY_BUCKET_COLOR[bucket],
-        }));
-    }, [activeRows]);
 
     // Category donut — replaces the By Priority slice on the page.
     // Uses SN's incident.category column; rows missing a category fall
@@ -464,13 +424,6 @@ export function IncidentAnalysisDashboard() {
     // Both the donut slice click (via DonutCard.onSliceClick) and the
     // interactive legend toggle (via DonutCard.onLegendToggle) feed
     // through these toggle helpers so the two stay in sync.
-    const togglePriority = (name: string) => {
-        const cur = (filters.priority as string[]) ?? [];
-        const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
-        setFilters({ ...filters, priority: next });
-    };
-    const onPrioritySliceClick = (slice: { name: string }) => togglePriority(slice.name);
-    const selectedPriorities = (filters.priority as string[]) ?? [];
 
     const toggleState = (name: string) => {
         const cur = (filters.state as string[]) ?? [];

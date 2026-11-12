@@ -72,6 +72,18 @@ function toDetailRow(i: Interaction): DetailRow {
 
 const ZERO_KPIS = { other_count: 0 } as const
 
+// Slice color/label mapping by bucket (BE returns 'interaction' / 'irrelevant' / 'unmatched_anywhere').
+const COLOR_BY_BUCKET: Record<string, string> = {
+    interaction: OHLA_PALETTE.interaction,
+    irrelevant: OHLA_PALETTE.irrelevant,
+    unmatched_anywhere: OHLA_PALETTE.unmatchedAnywhere,
+}
+const LABEL_KEY_BY_BUCKET: Record<string, string> = {
+    interaction: 'otherCase.categories.interaction',
+    irrelevant: 'otherCase.categories.irrelevant',
+    unmatched_anywhere: 'otherCase.categories.unmatchedAnywhere',
+}
+
 export function OtherCaseDashboard() {
     const t = useTranslations('Ohla')
     const { theme } = useTheme()
@@ -88,7 +100,7 @@ export function OtherCaseDashboard() {
 
     const block = report?.current
     const kpis = block?.kpis ?? ZERO_KPIS
-    const distribution = block?.charts.distribution ?? []
+    const distribution = useMemo(() => block?.charts.distribution ?? [], [block])
     const dailyRows = block?.charts.daily ?? []
 
     // Detail rows from /interactions?ask_classification=other.
@@ -137,17 +149,6 @@ export function OtherCaseDashboard() {
     const loading = reportLoading || detailLoading
     const error = reportError ?? detailError
 
-    // Slice color/label mapping by bucket (BE returns 'interaction' / 'irrelevant' / 'unmatched_anywhere').
-    const COLOR_BY_BUCKET: Record<string, string> = {
-        interaction: OHLA_PALETTE.interaction,
-        irrelevant: OHLA_PALETTE.irrelevant,
-        unmatched_anywhere: OHLA_PALETTE.unmatchedAnywhere,
-    }
-    const LABEL_KEY_BY_BUCKET: Record<string, string> = {
-        interaction: 'otherCase.categories.interaction',
-        irrelevant: 'otherCase.categories.irrelevant',
-        unmatched_anywhere: 'otherCase.categories.unmatchedAnywhere',
-    }
 
     const slices = useMemo(
         () =>

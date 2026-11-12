@@ -96,7 +96,7 @@ export function SurveysListPage() {
         let pagesSinceFlush = 0;
 
         try {
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
                 const res = await fetch(
                     `/api/campaigns/survey_batchs/${encodeURIComponent(batchOid)}/surveys?limit=${PAGE_SIZE}&skip=${skip}`,

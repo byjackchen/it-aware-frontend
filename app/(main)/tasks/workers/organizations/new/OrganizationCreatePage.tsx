@@ -65,7 +65,7 @@ export function OrganizationCreatePage({ organizations }: OrganizationCreatePage
                         throw new Error('Metadata must be a JSON object');
                     }
                     formData.set('metadata', JSON.stringify(parsed));
-                } catch (e) {
+                } catch {
                     setMetadataError('Invalid JSON format');
                     setIsPending(false);
                     return;

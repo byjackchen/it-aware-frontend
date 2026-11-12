@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
-import { Sparkles, RefreshCw, Search, Loader2, Filter, Download } from 'lucide-react';
+import { Sparkles, RefreshCw, Search, Loader2, Download } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { downloadXlsx } from '@/lib/utils/export-xlsx';
 import { QuickScrollRail } from '@/components/data/QuickScrollRail';
@@ -90,7 +90,7 @@ export function AnalysesListPage() {
             try {
                 const map: Record<string, string> = {};
                 let skip = 0;
-                // eslint-disable-next-line no-constant-condition
+                 
                 while (true) {
                     const res = await fetch(`/api/objects/workers?limit=${PAGE_SIZE}&skip=${skip}`);
                     if (!res.ok) break;
@@ -120,7 +120,7 @@ export function AnalysesListPage() {
             let skip = 0;
             let total = 0;
 
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
                 const params = new URLSearchParams({ limit: String(PAGE_SIZE), skip: String(skip) });
                 if (filterBatchOid) params.set('source_batch_oid', filterBatchOid);

@@ -17,7 +17,7 @@ const COLORS: Record<string, string> = {
     expired: '#ef4444',
 };
 
-export function ResponseRateDonut({ statusCounts, isLight, batchOid }: ResponseRateDonutProps) {
+export function ResponseRateDonut({ statusCounts, isLight }: ResponseRateDonutProps) {
     const t = useTranslations('SurveyAnalytics');
 
     const LABELS: Record<string, string> = {

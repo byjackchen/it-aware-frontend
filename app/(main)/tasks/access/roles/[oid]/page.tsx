@@ -2,6 +2,7 @@
  * Role detail page - Server Component.
  */
 
+import type { ComponentProps } from 'react';
 import { notFound } from 'next/navigation';
 import { getRole, getGroups, getGroupRoles } from '@/lib/api/security';
 import type { GroupRole, Group } from '@/lib/types/security';
@@ -14,6 +15,8 @@ interface PageProps {
 export default async function RolePage({ params }: PageProps) {
     const { oid } = await params;
 
+    // Built outside the try: React renders after this returns, so a try cannot catch its errors.
+    let props: ComponentProps<typeof RoleDetailPage>;
     try {
         const [role, groups, groupRoles] = await Promise.all([
             getRole(oid),
@@ -27,13 +30,10 @@ export default async function RolePage({ params }: PageProps) {
             .map((gr: GroupRole) => gr.group_oid);
         const linkedGroups = groups.filter((g: Group) => linkedGroupOids.includes(g.oid));
 
-        return (
-            <RoleDetailPage
-                role={role}
-                linkedGroups={linkedGroups}
-            />
-        );
+        props = { role, linkedGroups };
     } catch {
         notFound();
     }
+
+    return <RoleDetailPage {...props} />;
 }
