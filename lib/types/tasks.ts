@@ -32,22 +32,30 @@ export interface TaskView {
     address: string;
 }
 
-export interface ServiceLine {
-    code: string;
-    name: TaskNames;
-}
-
+/**
+ * A task as the backend answers it. In `/tasks/mine`, `/tasks/home` and search
+ * it carries only the caller's views, and `address` is the first of them.
+ */
 export interface Task {
     code: string;
     name: TaskNames;
-    area: TaskNames;
-    keywords: string[];
-    kind: 'view' | 'do';
-    origin: 'it_aware' | 'external';
+    grouping: string;
+    kind: 'internal' | 'external';
     external_app: string | null;
-    service_line: string;
-    requires: { check: 'any' | 'all'; codes: string[] };
-    opens: string;
+    address: string;
+    keywords: string[];
+    views: TaskView[];
+}
+
+/** GET /tasks/catalog: the whole catalog. */
+export interface TaskCatalog {
+    groupings: Grouping[];
+    tasks: Task[];
+}
+
+/** GET /tasks/mine: the caller's tasks, each with only the views they have. */
+export interface TasksMine {
+    tasks: { task: Task; scopes: string[] }[];
 }
 
 export interface GroupTasks {
@@ -66,7 +74,7 @@ export interface AccountTasks {
 }
 
 export interface TaskAccess {
-    service_lines: ServiceLine[];
+    groupings: Grouping[];
     tasks: Task[];
     groups: GroupTasks[];
     accounts: AccountTasks[];
@@ -74,7 +82,7 @@ export interface TaskAccess {
 
 /** The signed-in person's home (GET /tasks/home). Every list holds only tasks they have. */
 export interface TaskHome {
-    /** The address they land on; null lands on the home page. */
+    /** The code of the task they land on; null lands on the home page. */
     start: string | null;
     /** Set for them by an admin. */
     admin_set: Task[];
@@ -87,7 +95,6 @@ export interface TaskHome {
 export interface ProfileUpdate {
     start_task: string | null;
     home_tasks: string[];
-    service_line: string | null;
 }
 
 export interface AccountProfile extends ProfileUpdate {

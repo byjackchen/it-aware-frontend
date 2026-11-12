@@ -2,13 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect, request } from '@playwright/test';
 import { pagesWithoutTask } from '../lib/tasks/pages';
-import type { TaskAccess } from '../lib/types/tasks';
+import { TASKS, pageHref } from '../lib/tasks/catalog';
+import type { TaskAccess, TasksMine } from '../lib/types/tasks';
 import { API_URL, PASSWORD } from './env';
 
 /**
  * Tasks 1 (TODO00000140): the admin's "who has what tasks" page, and the two
- * reporting-only checks of the task catalog. The page is reached by address;
- * the menu does not change.
+ * reporting-only checks of the task catalog. Since the catalog v3 (TODO00000140
+ * A14, lane F1) tasks are grouped by grouping, the page is a view of Maintain
+ * Access, and the global sidebar is gone: a task's views are its tabs.
  */
 
 async function taskAccess(cookie: string): Promise<TaskAccess> {
@@ -40,23 +42,30 @@ test.describe('Tasks 1: task access', () => {
     await page.getByPlaceholder('Filter…').fill('gate-readers');
     await page.getByTestId('task-holders').getByRole('button', { name: /gate-readers/ }).click();
     const tasks = page.getByTestId('task-list');
-    await expect(tasks.getByRole('link', { name: 'Service Catalogs' })).toHaveAttribute('href', '/data/service-catalogs');
-    await expect(tasks.getByText('data.service_catalogs')).toBeVisible();
+    await expect(tasks.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+    await expect(tasks.getByRole('link', { name: 'Maintain IT Service Catalog' })).toHaveAttribute('href', '/data/service-catalogs');
+    await expect(tasks.getByText('it-service-catalog', { exact: true })).toBeVisible();
 
     // By person: each task carries the scope it is held under.
     await page.getByRole('tab', { name: 'By person' }).click();
     await expect(tasks.getByText('Pick a group or a person')).toBeVisible();
     await page.getByPlaceholder('Filter…').fill('gate.alice');
     await page.getByTestId('task-holders').getByRole('button', { name: /gate\.alice/ }).click();
-    await expect(tasks.getByRole('link', { name: 'Service Catalogs' })).toBeVisible();
+    await expect(tasks.getByRole('link', { name: 'Maintain IT Service Catalog' })).toBeVisible();
     await expect(tasks.getByText('Unconstrained').first()).toBeVisible();
   });
 
-  test('the menu does not change: the page is not in the sidebar', async ({ page }) => {
+  test('the page is a view of Maintain Access, a tab beside the others', async ({ page }) => {
     await page.goto('/auth/tasks');
-    const sidebar = page.locator('aside').first();
-    await expect(sidebar.getByRole('link', { name: 'Groups' })).toBeVisible();
-    await expect(sidebar.getByRole('link', { name: /Task access/i })).toHaveCount(0);
+    const frame = page.getByTestId('task-frame');
+    await expect(frame.getByTestId('task-frame-name')).toHaveText('Maintain Access');
+    await expect(frame.getByText('Administration', { exact: true })).toBeVisible();
+    const views = frame.getByRole('navigation', { name: 'Views of Maintain Access' });
+    await expect(views.getByRole('link')).toHaveText(['Accounts', 'Groups', 'Roles', 'Permissions', 'Who Has What Tasks']);
+    await expect(views.getByRole('link', { name: 'Who Has What Tasks' })).toHaveAttribute('aria-current', 'page');
+    await expect(views.getByRole('link', { name: 'Groups' })).toHaveAttribute('href', '/auth/groups');
+    // There is no global sidebar any more.
+    await expect(page.locator('aside')).toHaveCount(0);
   });
 
   test('the catalog checks are reported (reporting only)', async ({ context, baseURL }, testInfo) => {
@@ -65,19 +74,20 @@ test.describe('Tasks 1: task access', () => {
     const access = await taskAccess(`it_aware_access=${session!.value}`);
     expect(access.tasks.length).toBeGreaterThan(0);
 
-    // Check 1: every page belongs to a task.
+    // Check 1: every page belongs to a task: it lies at or under a view's page.
     const root = path.join(process.cwd(), 'app/(main)');
     const pages = pageFiles(root).map((file) => path.relative(process.cwd(), file));
-    const withoutTask = pagesWithoutTask(pages, access.tasks);
+    const views = TASKS.flatMap((task) => task.views.map((view) => ({ code: task.code, opens: view.old_base })));
+    const withoutTask = pagesWithoutTask(pages, views);
 
     // Check 2: a task a user account has opens for it. Each user account that
-    // signs in with the e2e password asks for the page of each of its tasks; a
+    // signs in with the e2e password asks for the page of each of its tasks,
+    // where the task opens for it (its first view it has, from /tasks/mine); a
     // redirect (to the login or access-denied page) or an error answer is
     // reported. It does not see what a page loads after it renders.
     // Not asked: the Airflow page, whose server render asks Airflow for its
     // DAGs, which the hermetic stack's double does not answer.
     const notAsked = ['/systems/airflow'];
-    const opens = new Map(access.tasks.map((task) => [task.code, task.opens]));
     const notOpening: { username: string; task: string; opens: string; answer: string }[] = [];
     const notSignedIn: string[] = [];
     let opened = 0;
@@ -93,9 +103,17 @@ test.describe('Tasks 1: task access', () => {
         notSignedIn.push(account.username);
         continue;
       }
+      const own = await request.newContext({ extraHTTPHeaders: { Cookie: cookie } });
+      const mine = (await (await own.get(`${API_URL}/tasks/mine`)).json()) as TasksMine;
+      await own.dispose();
+      const opens = new Map(mine.tasks.map(({ task }) => [task.code, pageHref(task.address)]));
       const browserless = await request.newContext({ baseURL, extraHTTPHeaders: { Cookie: cookie } });
       for (const held of account.tasks) {
-        const address = opens.get(held.code)!;
+        const address = opens.get(held.code);
+        if (!address) {
+          notOpening.push({ username: account.username, task: held.code, opens: '', answer: 'not in /tasks/mine' });
+          continue;
+        }
         if (notAsked.includes(address)) continue;
         const response = await browserless.get(address, { maxRedirects: 0 });
         opened += 1;

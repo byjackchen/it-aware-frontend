@@ -8,7 +8,9 @@ export interface SearchResult {
     id: string;
     title: string;
     subtitle: string | null;
-    /** The address the result opens. */
+    /** A task: its grouping's name. Absent or null for a record. */
+    caption?: string | null;
+    /** The address the result opens: a task address (`/tasks/...`), or a page's address. */
     opens: string;
     /** A task: whether the person pinned it to their home. Absent or null for a record. */
     pinned?: boolean | null;

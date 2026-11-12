@@ -1,21 +1,17 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { Sidebar } from './Sidebar';
-import { hasPathSidebar } from '@/lib/config/sidebar';
+import { TaskFrame, type TaskFrameProps } from '@/components/tasks/TaskFrame';
 
-export function MainContent({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
-
-    // Dynamically check if current path has a sidebar
-    const hasSidebar = hasPathSidebar(pathname);
-
+/**
+ * The page area under the top bar. A page that belongs to a task gets the task
+ * frame above it (its name, pin and views); there is no global sidebar.
+ */
+export function MainContent({ children, held, pinned }: TaskFrameProps & { children: React.ReactNode }) {
     return (
-        <>
-            <Sidebar />
-            <main className={`relative pt-[calc(4rem+var(--env-banner-h,0px))] min-h-screen transition-all ${hasSidebar ? 'pl-56' : 'pl-0'}`}>
-                {children}
-            </main>
-        </>
+        <main className="relative pt-[calc(4rem+var(--env-banner-h,0px))] min-h-screen">
+            {/* Drawn afresh when the pins change, so a pin made elsewhere shows here. */}
+            <TaskFrame key={pinned?.join(',') ?? ''} held={held} pinned={pinned} />
+            {children}
+        </main>
     );
 }

@@ -31,12 +31,12 @@ export async function setTaskPinned(code: string, pinned: boolean): Promise<Outc
 }
 
 /**
- * Note the page the person opened, for "recent" on their home. It never fails
- * the page: with the tasks switch off, or any error, nothing is kept.
+ * Note the task whose page the person opened, for "recent" on their home. It
+ * never fails the page: with the tasks switch off, or any error, nothing is kept.
  */
-export async function taskOpened(path: string): Promise<void> {
+export async function taskOpened(code: string): Promise<void> {
   try {
-    await api.recordOpened(path);
+    await api.recordOpened(code);
   } catch {
     // Recents are a convenience; a page view must not break on them.
   }

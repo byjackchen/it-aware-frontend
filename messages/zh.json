@@ -13,8 +13,6 @@
       "noTasks": "没有。请先给用户分配用户组。",
       "startPage": "起始页",
       "startNotSet": "未设置（进入首页）",
-      "serviceLine": "服务线",
-      "lineNotSet": "未设置",
       "homeTasks": "其首页上的任务",
       "homeTasksNote": "只列出该用户可以打开的任务。用户自己固定的任务与此分开保存。",
       "save": "保存个性化设置",
@@ -1527,6 +1525,13 @@
       "title": "你的其他任务",
       "empty": "没有。"
     }
+  },
+  "TaskFrame": {
+    "views": "{name} 的视图",
+    "pin": "固定到首页",
+    "unpin": "从首页取消固定",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}"
   },
   "GlobalSearch": {
     "pin": "固定到首页",

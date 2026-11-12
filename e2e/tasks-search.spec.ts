@@ -7,18 +7,40 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Tasks 2: search over tasks and records', () => {
-  test('a task is found by its name and opens its page', async ({ page }) => {
+  test('a task is found by a name and opens its page', async ({ page }) => {
     await page.goto('/data/workers');
     await page.getByPlaceholder('Search tasks and records...').fill('incid');
 
     const tasks = page.getByTestId('search-group-task');
     await expect(tasks.getByText('Tasks', { exact: true })).toBeVisible();
-    // Two tasks are called Incidents; the area beside the name tells them apart.
-    await expect(tasks.getByRole('button', { name: 'Incidents Ops Team', exact: true })).toBeVisible();
-    await tasks.getByRole('button', { name: 'Incidents Data', exact: true }).click();
+    // Since the catalog v3 (TODO00000140 A14, lane F1) a task shows its grouping
+    // beside it; one found through a view names the view.
+    await expect(tasks.getByRole('button', { name: 'Monitor IT Tickets Incidents Operations', exact: true })).toBeVisible();
+    // View IT Incidents is found best through its one view, Incidents.
+    await tasks.getByRole('button', { name: 'View IT Incidents Incidents Data', exact: true }).click();
 
     await expect(page).toHaveURL(/\/data\/incidents$/);
     await expect(page.getByTestId('search-results')).toHaveCount(0);
+  });
+
+  test('a task found by its own name opens where it opens for the person', async ({ page }) => {
+    await page.goto('/data/workers');
+    await page.getByPlaceholder('Search tasks and records...').fill('maintain access');
+    await page.getByTestId('search-group-task')
+      .getByRole('button', { name: 'Maintain Access Administration', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/auth\/accounts$/);
+  });
+
+  test("a task found through one of its views opens that view", async ({ page }) => {
+    await page.goto('/data/workers');
+    await page.getByPlaceholder('Search tasks and records...').fill('incid');
+    await page.getByTestId('search-group-task')
+      .getByRole('button', { name: 'Monitor IT Tickets Incidents Operations', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/operation-teams\/ops-dashboard\/incidents$/);
+    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Incidents', exact: true }))
+      .toHaveAttribute('aria-current', 'page');
   });
 
   test('a record is found in its group and opens its detail page', async ({ page }) => {

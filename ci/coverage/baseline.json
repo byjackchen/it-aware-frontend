@@ -981,24 +981,6 @@
         "total": 2
       }
     },
-    "lib/config/sidebar.ts": {
-      "statements": {
-        "covered": 1,
-        "total": 4
-      },
-      "lines": {
-        "covered": 1,
-        "total": 3
-      },
-      "functions": {
-        "covered": 0,
-        "total": 3
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
-      }
-    },
     "lib/contexts/error-context.tsx": {
       "statements": {
         "covered": 0,

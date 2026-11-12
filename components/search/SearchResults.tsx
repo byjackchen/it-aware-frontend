@@ -3,7 +3,8 @@
 /**
  * Search results dropdown component.
  * Renders the groups the search answers with (tasks, then records by kind);
- * each result opens its address. A task can be pinned to the home from here.
+ * each result opens its page. A task shows its grouping beside it, and can be
+ * pinned to the home from here.
  */
 
 import { useState } from 'react';
@@ -13,6 +14,7 @@ import { FileText, ListChecks, Loader2, Pin, PinOff } from 'lucide-react';
 import { setTaskPinned } from '@/app/actions/tasks';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { SEARCH_CONFIG } from '@/lib/config/search';
+import { pageHref } from '@/lib/tasks/catalog';
 import type { SearchGroup, SearchResult } from '@/lib/types/search';
 
 interface SearchResultsProps {
@@ -38,7 +40,7 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
     };
 
     const handleClick = (item: SearchResult) => {
-        router.push(item.opens);
+        router.push(pageHref(item.opens));
         onSelect();
     };
 
@@ -94,6 +96,17 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
                                                 {' '}
                                                 <span className={`ml-1 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                                                     {item.subtitle}
+                                                </span>
+                                            </>
+                                        )}
+                                        {item.caption && (
+                                            <>
+                                                {' '}
+                                                <span
+                                                    data-testid="search-caption"
+                                                    className={`ml-2 px-1.5 py-0.5 rounded text-[11px] ${isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-gray-500'}`}
+                                                >
+                                                    {item.caption}
                                                 </span>
                                             </>
                                         )}

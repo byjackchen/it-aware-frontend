@@ -17,10 +17,10 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 it('pins and unpins, and redraws the home', async () => {
-  expect(await setTaskPinned('data.incidents', true)).toEqual({ success: true });
-  expect(api.pinTask).toHaveBeenCalledWith('data.incidents');
-  expect(await setTaskPinned('data.incidents', false)).toEqual({ success: true });
-  expect(api.unpinTask).toHaveBeenCalledWith('data.incidents');
+  expect(await setTaskPinned('it-incidents', true)).toEqual({ success: true });
+  expect(api.pinTask).toHaveBeenCalledWith('it-incidents');
+  expect(await setTaskPinned('it-incidents', false)).toEqual({ success: true });
+  expect(api.unpinTask).toHaveBeenCalledWith('it-incidents');
   expect(revalidated).toEqual(['/home', '/home']);
 });
 
@@ -32,15 +32,15 @@ it('answers with the error when a pin fails, and redraws nothing', async () => {
   expect(revalidated).toEqual([]);
 });
 
-it('notes an opened page and never fails on it', async () => {
-  await taskOpened('/data/incidents');
-  expect(api.recordOpened).toHaveBeenCalledWith('/data/incidents');
+it("notes an opened page's task and never fails on it", async () => {
+  await taskOpened('it-incidents');
+  expect(api.recordOpened).toHaveBeenCalledWith('it-incidents');
   vi.mocked(api.recordOpened).mockRejectedValueOnce(new Error('Not Found'));
-  await expect(taskOpened('/data/incidents')).resolves.toBeUndefined();
+  await expect(taskOpened('it-incidents')).resolves.toBeUndefined();
 });
 
 it("saves a user's profile and redraws the account page and the home", async () => {
-  const update = { start_task: 'data.incidents', home_tasks: ['persona'], service_line: 'it' };
+  const update = { start_task: 'it-incidents', home_tasks: ['persona-dashboard'] };
   expect(await saveAccountProfile('abc', update)).toEqual({ success: true });
   expect(api.putAccountProfile).toHaveBeenCalledWith('abc', update);
   expect(revalidated).toEqual(['/auth/accounts/abc', '/home']);
