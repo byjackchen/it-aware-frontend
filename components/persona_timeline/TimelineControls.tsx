@@ -2,7 +2,7 @@
 
 import { CalendarClock, ChevronLeft, ChevronRight, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/datetime';
-import type { TimelineWindowState } from '@/app/(main)/persona/types';
+import type { TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
 import { PRESET_WINDOWS } from './constants';
 
 interface TimelineControlsProps {

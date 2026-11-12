@@ -48,7 +48,7 @@ export async function taskOpened(code: string): Promise<void> {
 export async function saveAccountProfile(oid: string, update: ProfileUpdate): Promise<Outcome> {
   return attempt('Tasks:saveAccountProfile', 'Failed to save the profile', async () => {
     await api.putAccountProfile(oid, update);
-    revalidatePath(`/auth/accounts/${oid}`);
+    revalidatePath(`/tasks/access/accounts/${oid}`);
     revalidatePath('/home');
   });
 }

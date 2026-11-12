@@ -23,35 +23,27 @@ describe('the checked-in catalog', () => {
   });
 });
 
-describe('pageHref: a task address to the page where it lives today', () => {
-  it('maps a view address to its old base', () => {
-    expect(pageHref('/tasks/it-incidents')).toBe('/data/incidents');
-    expect(pageHref('/tasks/it-tickets/active')).toBe('/operation-teams/ops-dashboard');
-    expect(pageHref('/tasks/it-aging-work/incidents')).toBe('/operation-teams/ops-dashboard/aging-incidents');
-    expect(pageHref('/tasks/access/who-has-what')).toBe('/auth/tasks');
+describe('pageHref: the page of a task address, which lives at that address since the move', () => {
+  it('returns every address as it is, record, query and fragment included', () => {
+    for (const address of [
+      '/tasks/it-incidents',
+      '/tasks/it-tickets/active',
+      '/tasks/it-incidents/abc',
+      '/tasks/workers/locations/new',
+      '/tasks/it-knowledge/library/catalog/xyz',
+      '/tasks/it-incidents?state=open',
+      '/tasks/it-incidents/abc#notes',
+      '/home',
+    ]) {
+      expect(pageHref(address)).toBe(address);
+    }
   });
 
-  it('keeps a record or sub-page, and a query or fragment', () => {
-    expect(pageHref('/tasks/it-incidents/abc')).toBe('/data/incidents/abc');
-    expect(pageHref('/tasks/workers/locations/new')).toBe('/data/locations/new');
-    expect(pageHref('/tasks/it-knowledge/library/catalog/xyz')).toBe('/knowledge/catalog/xyz');
-    expect(pageHref('/tasks/it-incidents?state=open')).toBe('/data/incidents?state=open');
-    expect(pageHref('/tasks/it-incidents/abc#notes')).toBe('/data/incidents/abc#notes');
-  });
-
-  it("opens a task's own address at its first view", () => {
-    expect(pageHref('/tasks/workers')).toBe('/data/workers');
-    expect(pageHref('/tasks/workers?x=1')).toBe('/data/workers?x=1');
-  });
-
-  it('matches on segment boundaries only', () => {
-    expect(pageHref('/tasks/it-incidentsx')).toBe('/tasks/it-incidentsx');
-  });
-
-  it('returns any other address as it is', () => {
-    expect(pageHref('/home')).toBe('/home');
-    expect(pageHref('/data/organizations/abc')).toBe('/data/organizations/abc');
-    expect(pageHref('/tasks/no-such-task')).toBe('/tasks/no-such-task');
+  it('is what every task address in the catalog opens', () => {
+    for (const task of TASKS) {
+      expect(pageHref(task.address)).toBe(task.address);
+      for (const view of task.views) expect(pageHref(view.address)).toBe(view.address);
+    }
   });
 });
 
@@ -61,26 +53,26 @@ describe('resolvePage: the task and view of the page shown', () => {
     return found && `${found.task.code}/${found.view.slug}`;
   };
 
-  it('finds the view at its old base, or under it, longest first', () => {
-    expect(at('/data/incidents')).toBe('it-incidents/incidents');
-    expect(at('/data/incidents/abc')).toBe('it-incidents/incidents');
-    expect(at('/operation-teams/ops-dashboard')).toBe('it-tickets/active');
-    expect(at('/operation-teams/ops-dashboard/incidents')).toBe('it-tickets/incidents');
-    expect(at('/operation-teams/ops-dashboard/aging-incidents')).toBe('it-aging-work/incidents');
-    expect(at('/knowledge/faqs')).toBe('it-knowledge/library');
-    expect(at('/auth/tasks')).toBe('access/who-has-what');
-  });
-
-  it('finds the view at its new address too', () => {
-    expect(at('/tasks/it-tickets/vip')).toBe('it-tickets/vip');
+  it('finds the view at its address, or under it, longest first', () => {
+    expect(at('/tasks/it-incidents')).toBe('it-incidents/incidents');
     expect(at('/tasks/it-incidents/abc')).toBe('it-incidents/incidents');
+    expect(at('/tasks/it-tickets/active')).toBe('it-tickets/active');
+    expect(at('/tasks/it-tickets/incidents')).toBe('it-tickets/incidents');
+    expect(at('/tasks/it-tickets/vip')).toBe('it-tickets/vip');
+    expect(at('/tasks/it-aging-work/incidents')).toBe('it-aging-work/incidents');
+    expect(at('/tasks/it-knowledge/library/catalog/xyz')).toBe('it-knowledge/library');
+    expect(at('/tasks/it-knowledge/articles/abc')).toBe('it-knowledge/articles');
+    expect(at('/tasks/access/who-has-what')).toBe('access/who-has-what');
   });
 
-  it('finds nothing for a page that is no task', () => {
+  it('finds nothing for a page that is no task, an old address included', () => {
     expect(at('/')).toBeNull();
     expect(at('/home')).toBeNull();
-    expect(at('/ohla-journey')).toBeNull();
-    expect(at('/data/incidents-archive')).toBeNull();
+    expect(at('/tasks/ohla-journey-dashboard')).toBeNull();
+    expect(at('/tasks/it-incidents-archive')).toBeNull();
+    // Old addresses redirect before a page renders (lib/legacy/redirect.ts).
+    expect(at('/data/incidents')).toBeNull();
+    expect(at('/knowledge/faqs')).toBeNull();
   });
 });
 

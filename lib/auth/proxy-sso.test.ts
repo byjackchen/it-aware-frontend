@@ -45,7 +45,7 @@ it('forwards the verified Taihu identity with the sso grant', async () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    const response = await middleware(new NextRequest('http://localhost/persona', { headers }));
+    const response = await middleware(new NextRequest('http://localhost/tasks/persona-dashboard', { headers }));
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toMatch(/\/auth\/session\/token$/);

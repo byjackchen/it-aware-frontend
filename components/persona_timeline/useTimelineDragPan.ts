@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { CLICK_SUPPRESS_MS, DRAG_SHIFT_MIN_MS } from './constants';
 import type { TimelineDragSession } from './types';
-import type { TimelineWindowState } from '@/app/(main)/persona/types';
+import type { TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
 
 interface UseTimelineDragPanParams {
     axisWidth: number;

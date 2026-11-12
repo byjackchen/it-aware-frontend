@@ -8,9 +8,9 @@
  * 目前只有 SLA 一族有：/itopsdashboard/service-experience 有真实的月度报表。
  */
 const DEDICATED: Record<string, string> = {
-    sla: '/itopsdashboard/service-experience',
-    overall_sla: '/itopsdashboard/service-experience',
-    response_sla: '/itopsdashboard/service-experience',
+    sla: '/tasks/it-operations-dashboard/service-experience',
+    overall_sla: '/tasks/it-operations-dashboard/service-experience',
+    response_sla: '/tasks/it-operations-dashboard/service-experience',
 };
 
 export function metricDetailHref(code: string): string | null {

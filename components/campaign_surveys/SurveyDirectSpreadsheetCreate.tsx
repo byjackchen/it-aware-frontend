@@ -154,7 +154,7 @@ export function SurveyDirectSpreadsheetCreate({
                 return;
             }
 
-            router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
+            router.push(`/tasks/surveys/batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
             router.refresh();
         });
     };

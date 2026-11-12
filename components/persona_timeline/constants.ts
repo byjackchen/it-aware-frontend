@@ -1,4 +1,4 @@
-import type { PersonaActivityEventType } from '@/app/(main)/persona/types';
+import type { PersonaActivityEventType } from '@/app/(main)/tasks/persona-dashboard/types';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 

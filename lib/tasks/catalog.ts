@@ -2,10 +2,10 @@
  * The frontend's copy of the task catalog (contract v3, `contract-v3.json`,
  * frozen 2026-11-12), and the two helpers every task link goes through.
  *
- * Pages still live at their old addresses: each view's `old_base`. Until they
- * move to `/tasks/...`, `pageHref` turns a task address into the page's
- * current address, and `resolvePage` finds the task and view of either form.
- * When the pages move, `pageHref` becomes the identity.
+ * The pages live at their task addresses (lane F4 moved them under
+ * `/tasks/...`); an old address answers with a redirect from the legacy
+ * registry (lib/legacy/). `pageHref` is the identity since the move, kept so
+ * every task link still goes through one place.
  */
 
 import contract from './contract-v3.json';
@@ -16,7 +16,7 @@ export interface ContractView {
     name: TaskNames;
     requires: TaskRule;
     address: string;
-    /** The page's address before the move to `/tasks/...`. */
+    /** The page's address before the move to `/tasks/...` (the legacy registry's source). */
     old_base: string;
     keywords: string[];
 }
@@ -41,23 +41,9 @@ function under(path: string, base: string): boolean {
 /** Every view with the task it belongs to. */
 const VIEWS = TASKS.flatMap(task => task.views.map(view => ({ task, view })));
 
-/**
- * The page's current address for a task address (with any record or sub-page
- * after it, and any query): `/tasks/it-incidents/<oid>` → `/data/incidents/<oid>`.
- * A task's own address (`/tasks/workers`) opens its first view. Any other
- * address is returned as it is.
- */
+/** The page's address for a task address: the same, since the pages live at their task addresses. */
 export function pageHref(address: string): string {
-    const cut = address.search(/[?#]/);
-    const path = cut < 0 ? address : address.slice(0, cut);
-    const rest = cut < 0 ? '' : address.slice(cut);
-    // View addresses never nest (contract rule 3), so at most one matches.
-    const found = VIEWS.find(({ view }) => under(path, view.address));
-    if (found) {
-        return found.view.old_base + path.slice(found.view.address.length) + rest;
-    }
-    const task = TASKS.find(candidate => path === `/tasks/${candidate.code}`);
-    return task ? task.views[0].old_base + rest : address;
+    return address;
 }
 
 export interface PageTask {
@@ -66,19 +52,17 @@ export interface PageTask {
 }
 
 /**
- * The task and view of the page at `pathname`, which may be a view's address
- * or its old base, or lie under one; the longest match wins. Null for a page
- * that is no task's (the home, the root).
+ * The task and view of the page at `pathname`, a view's address or under one
+ * (a record or sub-page); the longest match wins. Null for a page that is no
+ * task's (the home, the root).
  */
 export function resolvePage(pathname: string): PageTask | null {
     let best: PageTask | null = null;
     let length = -1;
     for (const { task, view } of VIEWS) {
-        for (const base of [view.address, view.old_base]) {
-            if (under(pathname, base) && base.length > length) {
-                best = { task, view };
-                length = base.length;
-            }
+        if (under(pathname, view.address) && view.address.length > length) {
+            best = { task, view };
+            length = view.address.length;
         }
     }
     return best;

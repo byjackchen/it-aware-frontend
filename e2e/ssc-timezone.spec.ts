@@ -14,7 +14,7 @@ test('SSC lists and totals follow a timezone switch while an older request is pe
       await route.fulfill({ json: { items: [], total: from.includes('-07:00') ? 2 : 1 } });
     });
   }
-  await page.goto('/ssc-cockpit/dashboard');
+  await page.goto('/tasks/it-ssc-dashboard/overview');
   const profile = page.locator('div.relative.group').filter({ hasText: 'Times shown in' }).last();
   await profile.hover();
   await profile.getByRole('button', { name: /UTC UTC\+0/ }).click();
@@ -36,7 +36,7 @@ test('SSC rejects a nonexistent local time without crashing the dashboard', asyn
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'America/New_York' } })).toString('base64'), domain: 'localhost', path: '/' }]);
   await page.route('**/api/objects/interactions?*', (route) => route.fulfill({ json: { items: [], total: 1 } }));
   await page.route('**/api/objects/incidents?*', (route) => route.fulfill({ json: { items: [], total: 1 } }));
-  await page.goto('/ssc-cockpit/dashboard');
+  await page.goto('/tasks/it-ssc-dashboard/overview');
   await page.locator('input[type="datetime-local"]').first().evaluate((input) => {
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     setter?.call(input, '2026-03-08T02:30:00');
@@ -53,7 +53,7 @@ test('SSC keeps the page usable if a selected time becomes nonexistent after swi
   await context.addCookies([{ name: 'it_aware_user_data', value: Buffer.from(JSON.stringify({ preferences: { timezone: 'UTC' } })).toString('base64'), domain: 'localhost', path: '/' }]);
   await page.route('**/api/objects/interactions?*', (route) => route.fulfill({ json: { items: [], total: 0 } }));
   await page.route('**/api/objects/incidents?*', (route) => route.fulfill({ json: { items: [], total: 0 } }));
-  await page.goto('/ssc-cockpit/dashboard');
+  await page.goto('/tasks/it-ssc-dashboard/overview');
   await page.locator('input[type="datetime-local"]').first().fill('2026-03-08T02:30');
   await page.locator('input[type="datetime-local"]').nth(1).fill('2026-03-08T04:00');
   await page.getByRole('button', { name: 'Apply Filters' }).click();
@@ -76,7 +76,7 @@ test('SSC never displays old totals beneath the newly selected timezone', async 
       await route.fulfill({ json: { items: [], total: from.includes('-07:00') ? 2 : 1 } });
     });
   }
-  await page.goto('/ssc-cockpit/dashboard');
+  await page.goto('/tasks/it-ssc-dashboard/overview');
   await expect(page.getByText('1 records')).toHaveCount(2);
   await page.evaluate(() => {
     const state = { stale: false };
@@ -104,7 +104,7 @@ test('SSC includes both occurrences of a repeated fall hour in lists and exports
       return route.fulfill({ json: { items: [], total: 0 } });
     });
   }
-  await page.goto('/ssc-cockpit/dashboard');
+  await page.goto('/tasks/it-ssc-dashboard/overview');
   await page.locator('input[type="datetime-local"]').first().fill('2026-11-01T01:00');
   await page.locator('input[type="datetime-local"]').nth(1).fill('2026-11-01T01:30');
   await page.getByRole('button', { name: 'Apply Filters' }).click();

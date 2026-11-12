@@ -10,9 +10,12 @@ afterEach(() => {
 });
 
 describe('the legacy redirect', () => {
-    it('is switched off until the pages move', () => {
-        expect(LEGACY_REDIRECTS_ENABLED).toBe(false);
-        expect(legacyRedirect(request('/data/workers'))).toBeNull();
+    // Turned on by lane F4 with the move of the pages under /tasks/... .
+    it('is switched on since the pages moved, and lets everything through when off', () => {
+        vi.spyOn(console, 'info').mockImplementation(() => {});
+        expect(LEGACY_REDIRECTS_ENABLED).toBe(true);
+        expect(legacyRedirect(request('/data/workers'))?.headers.get('location')).toBe('http://localhost/tasks/workers/workers');
+        expect(legacyRedirect(request('/data/workers'), false)).toBeNull();
     });
 
     it('answers an old address with a temporary redirect, query kept, and logs the patterns only', () => {

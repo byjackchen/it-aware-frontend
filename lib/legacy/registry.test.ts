@@ -10,7 +10,7 @@ const KEPT = ['/', '/home', '/access-denied'];
 const views = contract.tasks.flatMap(task => task.views.map(view => ({ task, view })));
 const viewAddresses = views.map(({ view }) => view.address);
 
-/** Every page.tsx under app/(main), as its address. */
+/** Every page.tsx under app/(main), as its address (a `[name]` segment stands for any value). */
 function pageAddresses(): string[] {
     const root = join(process.cwd(), 'app', '(main)');
     return readdirSync(root, { recursive: true, encoding: 'utf-8' })
@@ -19,12 +19,50 @@ function pageAddresses(): string[] {
         .sort();
 }
 
+const isPlaceholder = (segment: string) => /^\[.+\]$/.test(segment);
+
+/** Whether `address` lies at or under `base`, segment by segment; a placeholder segment of either fits any value. */
+function fitsUnder(address: string, base: string): boolean {
+    const have = address.split('/');
+    const want = base.split('/');
+    return (
+        have.length >= want.length &&
+        want.every((segment, i) => segment === have[i] || isPlaceholder(segment) || isPlaceholder(have[i]))
+    );
+}
+
+/** Whether a page serves `address`: same length, each segment equal or a placeholder. */
+const serves = (page: string, address: string) =>
+    page.split('/').length === address.split('/').length && fitsUnder(address, page);
+
 describe('the legacy registry', () => {
-    it('has an entry for every page under app/(main)', () => {
+    // Since lane F4 moved the pages under /tasks/..., only the kept addresses live elsewhere.
+    it('finds every page under app/(main) at a kept address or under /tasks', () => {
         const pages = pageAddresses();
-        expect(pages.length).toBeGreaterThan(100);
-        const missing = pages.filter(address => !REGISTRY.entries.some(entry => entry.old === address));
-        expect(missing).toEqual([]);
+        expect(pages.length).toBeGreaterThan(80);
+        expect(pages.filter(page => !page.startsWith('/tasks/')).sort()).toEqual([...KEPT].sort());
+    });
+
+    it('finds every page under /tasks at a contract view address or a record under one', () => {
+        const stray = pageAddresses()
+            .filter(page => page.startsWith('/tasks/'))
+            .filter(page => !viewAddresses.some(address => fitsUnder(page, address)));
+        expect(stray).toEqual([]);
+    });
+
+    it("has a page for every legacy entry's new address and every view address", () => {
+        const pages = pageAddresses();
+        const targets = [...REGISTRY.entries.map(entry => entry.new), ...viewAddresses];
+        expect(targets.filter(target => !pages.some(page => serves(page, target)))).toEqual([]);
+    });
+
+    it('checks pages as patterns: a placeholder page serves every value, nothing else', () => {
+        expect(serves('/tasks/ohla-journey-dashboard/[section]', '/tasks/ohla-journey-dashboard/headline')).toBe(true);
+        expect(serves('/tasks/it-incidents/[oid]', '/tasks/it-incidents/[oid]')).toBe(true);
+        expect(serves('/tasks/it-incidents', '/tasks/it-incidents/[oid]')).toBe(false);
+        expect(fitsUnder('/tasks/it-incidents/[oid]', '/tasks/it-incidents')).toBe(true);
+        expect(fitsUnder('/tasks/it-incidentsx', '/tasks/it-incidents')).toBe(false);
+        expect(fitsUnder('/tasks/workers', '/tasks/workers/workers')).toBe(false);
     });
 
     it('holds every entry of the contract legacy list, unchanged, and nothing else', () => {

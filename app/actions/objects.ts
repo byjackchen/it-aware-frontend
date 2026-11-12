@@ -613,7 +613,7 @@ export async function createArticleAction(formData: FormData) {
             source_url: source_url || undefined,
             is_active,
         });
-        revalidatePath('/data/articles');
+        revalidatePath('/tasks/it-knowledge/articles');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -648,8 +648,8 @@ export async function updateArticleAction(oid: string, formData: FormData) {
             source_url: source_url || undefined,
             is_active,
         });
-        revalidatePath('/data/articles');
-        revalidatePath(`/data/articles/${oid}`);
+        revalidatePath('/tasks/it-knowledge/articles');
+        revalidatePath(`/tasks/it-knowledge/articles/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -667,7 +667,7 @@ export async function deleteArticleAction(oid: string) {
 
     try {
         await deleteArticle(oid);
-        revalidatePath('/data/articles');
+        revalidatePath('/tasks/it-knowledge/articles');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -754,7 +754,7 @@ export async function createIncidentAction(formData: FormData) {
             updated_at: updated_at?.trim() || undefined,
             effective_at: effective_at?.trim() || undefined,
         });
-        revalidatePath('/data/incidents');
+        revalidatePath('/tasks/it-incidents');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -830,8 +830,8 @@ export async function updateIncidentAction(oid: string, formData: FormData) {
             updated_at: updated_at?.trim() || undefined,
             effective_at: effective_at?.trim() || undefined,
         });
-        revalidatePath('/data/incidents');
-        revalidatePath(`/data/incidents/${oid}`);
+        revalidatePath('/tasks/it-incidents');
+        revalidatePath(`/tasks/it-incidents/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -849,7 +849,7 @@ export async function deleteIncidentAction(oid: string) {
 
     try {
         await deleteIncident(oid);
-        revalidatePath('/data/incidents');
+        revalidatePath('/tasks/it-incidents');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -942,7 +942,7 @@ export async function createRequestAction(formData: FormData) {
             updated_at: updated_at?.trim() || undefined,
             effective_at: effective_at?.trim() || undefined,
         });
-        revalidatePath('/data/requests');
+        revalidatePath('/tasks/it-requests');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1022,8 +1022,8 @@ export async function updateRequestAction(oid: string, formData: FormData) {
             updated_at: updated_at?.trim() || undefined,
             effective_at: effective_at?.trim() || undefined,
         });
-        revalidatePath('/data/requests');
-        revalidatePath(`/data/requests/${oid}`);
+        revalidatePath('/tasks/it-requests');
+        revalidatePath(`/tasks/it-requests/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1041,7 +1041,7 @@ export async function deleteRequestAction(oid: string) {
 
     try {
         await deleteRequest(oid);
-        revalidatePath('/data/requests');
+        revalidatePath('/tasks/it-requests');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1060,8 +1060,8 @@ export async function deleteInteractionAction(oid: string) {
 
     try {
         await deleteInteraction(oid);
-        revalidatePath('/data/interactions');
-        revalidatePath(`/data/interactions/${oid}`);
+        revalidatePath('/tasks/it-interactions');
+        revalidatePath(`/tasks/it-interactions/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1118,7 +1118,7 @@ export async function createAnalysisAction(formData: FormData) {
             service_catalog_oid: service_catalog_oid || undefined,
             configuration_item_oid: configuration_item_oid || undefined,
         });
-        revalidatePath('/data/analyses');
+        revalidatePath('/tasks/survey-analysis-dashboard');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1163,8 +1163,8 @@ export async function updateAnalysisAction(oid: string, formData: FormData) {
             service_catalog_oid: service_catalog_oid === '' ? null : service_catalog_oid ?? undefined,
             configuration_item_oid: configuration_item_oid === '' ? null : configuration_item_oid ?? undefined,
         });
-        revalidatePath('/data/analyses');
-        revalidatePath(`/data/analyses/${oid}`);
+        revalidatePath('/tasks/survey-analysis-dashboard');
+        revalidatePath(`/tasks/survey-analysis-dashboard/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1182,7 +1182,7 @@ export async function deleteAnalysisAction(oid: string) {
 
     try {
         await deleteAnalysis(oid);
-        revalidatePath('/data/analyses');
+        revalidatePath('/tasks/survey-analysis-dashboard');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1223,7 +1223,7 @@ export async function createScenarioAction(formData: FormData) {
             effective_at,
             scenario_profile,
         });
-        revalidatePath('/data/scenarios');
+        revalidatePath('/tasks/it-service-catalog/scenarios');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1256,8 +1256,8 @@ export async function updateScenarioAction(oid: string, formData: FormData) {
             scenario_type: scenario_type || undefined,
             scenario_profile,
         });
-        revalidatePath('/data/scenarios');
-        revalidatePath(`/data/scenarios/${oid}`);
+        revalidatePath('/tasks/it-service-catalog/scenarios');
+        revalidatePath(`/tasks/it-service-catalog/scenarios/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1275,7 +1275,7 @@ export async function deleteScenarioAction(oid: string) {
 
     try {
         await deleteScenario(oid);
-        revalidatePath('/data/scenarios');
+        revalidatePath('/tasks/it-service-catalog/scenarios');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {
@@ -1301,7 +1301,7 @@ export async function createSystemAction(formData: FormData) {
             contact_worker_oid: contactWorkerOid || undefined,
             description: description || undefined,
         });
-        revalidatePath('/data/systems');
+        revalidatePath('/tasks/it-hardware/systems');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return { success: true, system };
@@ -1326,8 +1326,8 @@ export async function updateSystemAction(oid: string, formData: FormData) {
             description: (formData.get('description') as string) || undefined,
             is_active: formData.get('is_active') !== null ? formData.get('is_active') === 'true' : undefined,
         });
-        revalidatePath('/data/systems');
-        revalidatePath(`/data/systems/${oid}`);
+        revalidatePath('/tasks/it-hardware/systems');
+        revalidatePath(`/tasks/it-hardware/systems/${oid}`);
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return { success: true, system };
@@ -1346,7 +1346,7 @@ export async function deleteSystemAction(oid: string) {
 
     try {
         await deleteSystem(oid);
-        revalidatePath('/data/systems');
+        revalidatePath('/tasks/it-hardware/systems');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
         return { success: true };

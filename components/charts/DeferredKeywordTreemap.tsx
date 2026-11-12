@@ -15,7 +15,7 @@ import type { ComponentProps } from 'react';
 
 const KeywordTreemap = dynamic(
     () =>
-        import('@/app/(main)/campaign/survey-analytics/charts/KeywordTreemap').then(
+        import('@/app/(main)/tasks/it-operations-dashboard/csat/charts/KeywordTreemap').then(
             (m) => m.KeywordTreemap,
         ),
     {

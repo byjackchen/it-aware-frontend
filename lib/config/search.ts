@@ -14,32 +14,32 @@ export interface ObjectTypeConfig {
 
 export const SEARCH_CONFIG: Record<string, ObjectTypeConfig> = {
     organization: {
-        route: '/data/organizations',
+        route: '/tasks/workers/organizations',
         icon: Building2,
         labelKey: 'organizations',
     },
     location: {
-        route: '/data/locations',
+        route: '/tasks/workers/locations',
         icon: MapPin,
         labelKey: 'locations',
     },
     worker: {
-        route: '/data/workers',
+        route: '/tasks/workers/workers',
         icon: User,
         labelKey: 'workers',
     },
     service_catalog: {
-        route: '/data/service-catalogs',
+        route: '/tasks/it-service-catalog/service-catalogs',
         icon: Layers,
         labelKey: 'serviceCatalogs',
     },
     article: {
-        route: '/data/articles',
+        route: '/tasks/it-knowledge/articles',
         icon: FileText,
         labelKey: 'articles',
     },
     request: {
-        route: '/data/requests',
+        route: '/tasks/it-requests',
         icon: ClipboardList,
         labelKey: 'requests',
     },

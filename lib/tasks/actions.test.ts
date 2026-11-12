@@ -43,7 +43,7 @@ it("saves a user's profile and redraws the account page and the home", async () 
   const update = { start_task: 'it-incidents', home_tasks: ['persona-dashboard'] };
   expect(await saveAccountProfile('abc', update)).toEqual({ success: true });
   expect(api.putAccountProfile).toHaveBeenCalledWith('abc', update);
-  expect(revalidated).toEqual(['/auth/accounts/abc', '/home']);
+  expect(revalidated).toEqual(['/tasks/access/accounts/abc', '/home']);
 
   vi.mocked(api.putAccountProfile).mockRejectedValueOnce(new Error('Unknown task codes'));
   expect(await saveAccountProfile('abc', update)).toEqual({ error: 'Unknown task codes' });

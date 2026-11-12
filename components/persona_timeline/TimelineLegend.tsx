@@ -1,6 +1,6 @@
 'use client';
 
-import type { PersonaActivityEventType } from '@/app/(main)/persona/types';
+import type { PersonaActivityEventType } from '@/app/(main)/tasks/persona-dashboard/types';
 import { EVENT_COLORS, SCENARIO_COLOR, TIMELINE_TYPES } from './constants';
 
 interface TimelineLegendProps {

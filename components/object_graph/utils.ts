@@ -16,15 +16,15 @@ export function getTypeColor(objectType: string): { bg: string; border: string }
 
 export function getObjectPath(objectType: string, oid: string, stableId?: string): string {
     switch (objectType) {
-        case 'organization': return `/data/organizations/${oid}`;
-        case 'location': return `/data/locations/${oid}`;
-        case 'worker': return `/data/workers/${stableId || oid}`;
-        case 'article': return `/data/articles/${oid}`;
-        case 'incident': return `/data/incidents/${oid}`;
-        case 'request': return `/data/requests/${oid}`;
-        case 'interaction': return `/data/interactions/${oid}`;
-        case 'service_catalog': return `/data/service-catalogs/${oid}`;
-        case 'scenario': return `/data/scenarios/${oid}`;
+        case 'organization': return `/tasks/workers/organizations/${oid}`;
+        case 'location': return `/tasks/workers/locations/${oid}`;
+        case 'worker': return `/tasks/workers/workers/${stableId || oid}`;
+        case 'article': return `/tasks/it-knowledge/articles/${oid}`;
+        case 'incident': return `/tasks/it-incidents/${oid}`;
+        case 'request': return `/tasks/it-requests/${oid}`;
+        case 'interaction': return `/tasks/it-interactions/${oid}`;
+        case 'service_catalog': return `/tasks/it-service-catalog/service-catalogs/${oid}`;
+        case 'scenario': return `/tasks/it-service-catalog/scenarios/${oid}`;
         default: return '#';
     }
 }

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu'
 import { RUNTIME_CONFIG } from '@/lib/config/runtime'
 import { legacyRedirect } from '@/lib/legacy/redirect'
+import { taskRootRedirect } from '@/lib/tasks/task-root'
 
 const BACKEND_DOMAIN = RUNTIME_CONFIG.backend.domain
 
@@ -139,10 +140,16 @@ export async function middleware(request: NextRequest) {
   }
 
   // An old page address goes to its task address, before any auth work
-  // (lib/legacy/README.md; off until the pages move).
+  // (lib/legacy/README.md).
   const legacy = legacyRedirect(request)
   if (legacy) {
     return legacy
+  }
+
+  // A multi-view task's own address opens its first view (lib/tasks/task-root.ts).
+  const taskRoot = taskRootRedirect(request)
+  if (taskRoot) {
+    return taskRoot
   }
 
   const hasAccessToken = request.cookies.has(COOKIES.ACCESS)

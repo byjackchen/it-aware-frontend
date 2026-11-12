@@ -12,7 +12,7 @@ import {
     TICK_LABEL_WIDTH,
 } from './constants';
 import type { TimelineGeometry, TimelineHeatBin, TimelineHoverPayload, TimelineRenderedEvent, TimelineScenarioBox } from './types';
-import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/persona/types';
+import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
 import { formatExactTimestamp, formatHeatInterval, formatTickDate, hexToRgba } from './utils';
 
 interface TimelineCanvasProps {

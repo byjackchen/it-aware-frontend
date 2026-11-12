@@ -40,7 +40,7 @@ export function KnowledgeItemCard({ article }: KnowledgeItemCardProps) {
 
     return (
         <Link
-            href={`/data/articles/${article.oid}`}
+            href={`/tasks/it-knowledge/articles/${article.oid}`}
             className={`
                 block p-4 rounded-lg border transition-all duration-200
                 ${isLight

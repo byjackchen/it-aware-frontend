@@ -22,8 +22,8 @@ import {
     TIMELINE_TOP_PADDING,
 } from './constants';
 import type { TimelineGeometry, TimelineRenderedEvent, TimelineScenarioBox } from './types';
-import type { PersonaActivityEvent, TimelineWindowState } from '@/app/(main)/persona/types';
-import type { ScenarioWithEdges } from '@/app/(main)/persona/usePersonaScenarios';
+import type { PersonaActivityEvent, TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
+import type { ScenarioWithEdges } from '@/app/(main)/tasks/persona-dashboard/usePersonaScenarios';
 import { buildEventLabel, clamp, formatTickDate, getEventBoxSize, parseTimestamp, toRangeRatio } from './utils';
 
 interface UseTimelineGeometryParams {
@@ -117,7 +117,7 @@ export function useTimelineGeometry({
                 width,
                 height: SCENARIO_BOX_HEIGHT,
                 label,
-                href: `/data/scenarios/${scenario.oid}`,
+                href: `/tasks/it-service-catalog/scenarios/${scenario.oid}`,
                 linkedActivityIds,
             };
         });
