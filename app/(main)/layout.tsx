@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers/Providers";
 import { NavigationProvider } from "@/components/navigation/NavigationProvider";
 import { RouteProgressBar } from "@/components/navigation/RouteProgressBar";
 import { TaskOpenRecorder } from "@/components/tasks/TaskOpenRecorder";
+import { LegacyMenuList } from "@/components/legacy/LegacyMenuList";
 import { getTaskHome, getTasksMine } from "@/lib/api/tasks";
 
 /**
@@ -35,7 +36,16 @@ export default async function MainLayout({
         <TaskOpenRecorder />
         <TopBar />
         <MainContent held={held} pinned={pinned}>
-          {children}
+          {pinned === null ? (
+            // The task UI is off (or the home failed): the old-style menu from the
+            // legacy registry, beside the page. Retired with lib/legacy/.
+            <div className="flex">
+              <LegacyMenuList />
+              <div className="min-w-0 flex-1">{children}</div>
+            </div>
+          ) : (
+            children
+          )}
         </MainContent>
       </NavigationProvider>
     </Providers>
