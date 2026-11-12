@@ -70,7 +70,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
     [t('job.status'), job.paused ? t('status.paused') : t('status.active')],
     [t('job.schedule'), <span key="s" className="font-mono">{job.schedule ?? '—'}</span>],
     [t('job.nextRun'), <When key="n" iso={job.next_run} />],
-    [t('job.lastRun'), <StateBadge key="l" state={job.last_run?.state ?? null} />],
+    [t('job.lastRun'), <StateBadge key="l" state={job.last_run?.state ?? null} empty={t('status.noRun')} />],
     [t('job.tags'), job.tags.join(', ') || '—'],
   ];
 

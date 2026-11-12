@@ -105,7 +105,7 @@ export function JobsList({ data }: { data: JobsResponse }) {
                   </td>
                   <td className={`${tdClass} font-mono text-gray-400`}>{job.schedule ?? '—'}</td>
                   <td className={`${tdClass} text-gray-400`}><When iso={job.next_run} /></td>
-                  <td className={tdClass}><StateBadge state={job.last_run?.state ?? null} /></td>
+                  <td className={tdClass}><StateBadge state={job.last_run?.state ?? null} empty={t('status.noRun')} /></td>
                   <td className={`${tdClass} text-gray-400`}>
                     <When iso={job.last_run ? job.last_run.start ?? job.last_run.run_after : null} />
                   </td>

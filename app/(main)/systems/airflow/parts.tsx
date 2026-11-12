@@ -76,11 +76,11 @@ const TONE_CLASS: Record<Tone, string> = {
   none: 'bg-gray-500/15 text-gray-400',
 };
 
-export function StateBadge({ state }: { state: string | null }) {
-  const t = useTranslations('Jobs');
+/** A run or step state; `empty` stands in when there is none (a job with no run says so). */
+export function StateBadge({ state, empty = '—' }: { state: string | null; empty?: string }) {
   return (
     <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${TONE_CLASS[stateTone(state)]}`}>
-      {state ?? t('status.noRun')}
+      {state ?? empty}
     </span>
   );
 }

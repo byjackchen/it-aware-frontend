@@ -1,8 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import { USERNAME } from './env';
+import { JOBS_BASE as BASE } from '../lib/jobs/paths';
 
 /**
- * Manage Jobs (/systems/airflow): IT-Aware's Airflow jobs, against the backend's
+ * Manage Jobs (at JOBS_BASE, lib/jobs/paths.ts): IT-Aware's Airflow jobs, against the backend's
  * Airflow double (it-aware-backend ci/e2e/fixtures/airflow_world.json). The
  * double keeps nothing, so an action is checked by its answer and by the row the
  * backend wrote to the action record (real Postgres), not by a re-read job state.
@@ -11,7 +12,6 @@ import { USERNAME } from './env';
  *   services_trigger_notification_batch   on the run policy: run now refused
  */
 
-const BASE = '/systems/airflow';
 const RUN = 'scheduled__2026-06-01T00:00:00+00:00';
 
 async function open(page: Page, query = '') {
