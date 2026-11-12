@@ -55,6 +55,9 @@ function checkSignature(key: string, timestamp: string, signature: string, extHe
  */
 export async function getIdentityFromHeaders(headers: TaihuHeaders): Promise<TaihuIdentity> {
     const key = RUNTIME_CONFIG.taihu.paasToken
+    if (!key) {
+        throw new Error('TAIHU_PAAS_TOKEN is not set - Taihu authentication is unavailable')
+    }
     const extHeaders = [headers['x-rio-seq'] || '', '', '', '']
 
     if (!checkSignature(key, headers.timestamp || '', headers.signature || '', extHeaders)) {
