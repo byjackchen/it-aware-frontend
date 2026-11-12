@@ -143,8 +143,13 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await page.getByPlaceholder('Search tasks and records...').fill('service cat');
     const tasks = page.getByTestId('search-group-task');
     const task = 'Maintain IT Service Catalog';
+    // The bar shows the pin at once; wait until the backend has it before leaving the page.
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === 'POST' && 'next-action' in response.request().headers()
+    );
     await tasks.getByRole('button', { name: `Pin ${task}`, exact: true }).click();
     await expect(tasks.getByRole('button', { name: `Unpin ${task}`, exact: true })).toBeVisible();
+    await saved;
 
     await openHome(page);
     const pinned = page.getByTestId('home-pinned');

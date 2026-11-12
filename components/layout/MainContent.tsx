@@ -9,8 +9,7 @@ import { TaskFrame, type TaskFrameProps } from '@/components/tasks/TaskFrame';
 export function MainContent({ children, held, pinned }: TaskFrameProps & { children: React.ReactNode }) {
     return (
         <main className="relative pt-[calc(4rem+var(--env-banner-h,0px))] min-h-screen">
-            {/* Drawn afresh when the pins change, so a pin made elsewhere shows here. */}
-            <TaskFrame key={pinned?.join(',') ?? ''} held={held} pinned={pinned} />
+            <TaskFrame held={held} pinned={pinned} />
             {children}
         </main>
     );

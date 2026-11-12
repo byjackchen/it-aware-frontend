@@ -8,7 +8,7 @@
  * page that is no task's (the home).
  */
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Pin, PinOff } from 'lucide-react';
@@ -32,8 +32,6 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
     const t = useTranslations('TaskFrame');
     const { theme } = useTheme();
     const isLight = theme === 'light';
-    // Pins changed here, by task code, until the layout's data is fetched again.
-    const [pins, setPins] = useState<Record<string, boolean>>({});
     const [isPending, startTransition] = useTransition();
 
     const page = resolvePage(pathname);
@@ -42,17 +40,14 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
     const name = named(task.name, locale);
     const mine = held?.find(candidate => candidate.code === task.code);
     const views = mine ? task.views.filter(candidate => mine.views.some(own => own.slug === candidate.slug)) : [];
-    const isPinned = pins[task.code] ?? pinned?.includes(task.code) ?? false;
+    // The pin shows what is stored: it changes once the backend has it and
+    // the layout's data is fetched again; until then the button waits.
+    const isPinned = pinned?.includes(task.code) ?? false;
 
     const togglePin = () => {
-        setPins(current => ({ ...current, [task.code]: !isPinned }));
         startTransition(async () => {
             const outcome = await setTaskPinned(task.code, !isPinned);
-            if ('error' in outcome) {
-                setPins(current => ({ ...current, [task.code]: isPinned }));
-            } else {
-                router.refresh();
-            }
+            if (!('error' in outcome)) router.refresh();
         });
     };
 
