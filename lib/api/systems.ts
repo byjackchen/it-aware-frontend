@@ -12,13 +12,11 @@ import type {
   LLMRoute,
   LLMRouteCreate,
   LLMRouteUpdate,
-  AirflowDagsResponse,
   LLMModelTestResult,
   TaskKeyInfo,
 } from '@/lib/types/systems';
 
 const BASE = `${RUNTIME_CONFIG.backend.domain}/systems/llm_proxy`;
-const SYSTEMS_BASE = `${RUNTIME_CONFIG.backend.domain}/systems`;
 
 interface ListEnvelope<T> {
   items: T[];
@@ -79,9 +77,4 @@ export async function deleteRoute(oid: string): Promise<void> {
 // ── Known task keys (Routes UI picker) ────────────────────────────────────────
 export async function getTaskKeys(): Promise<TaskKeyInfo[]> {
   return (await fetchApi<ListEnvelope<TaskKeyInfo>>(`${BASE}/task-keys`)).items;
-}
-
-// ── Airflow (read-only DAG monitoring) ───────────────────────────────────────
-export async function getAirflowDags(): Promise<AirflowDagsResponse> {
-  return fetchApi<AirflowDagsResponse>(`${SYSTEMS_BASE}/airflow/dags`);
 }
