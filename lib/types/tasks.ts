@@ -10,6 +10,28 @@ export interface TaskNames {
     zh: string;
 }
 
+/** A grouping: it orders and titles tasks, and has no address and no part in access. */
+export interface Grouping {
+    code: string;
+    name: TaskNames;
+}
+
+/** A permission rule: `any` (one of the codes) or `all`. */
+export interface TaskRule {
+    check: 'any' | 'all';
+    codes: string[];
+}
+
+/** One page inside a task, shown as a tab. */
+export interface TaskView {
+    slug: string;
+    name: TaskNames;
+    keywords: string[];
+    requires: TaskRule;
+    /** `/tasks/<task>` for a one-view task, `/tasks/<task>/<slug>` otherwise. */
+    address: string;
+}
+
 export interface ServiceLine {
     code: string;
     name: TaskNames;
