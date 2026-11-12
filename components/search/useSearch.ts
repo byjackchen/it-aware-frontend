@@ -5,7 +5,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { RegistryEntry } from '@/lib/types/objects';
+import { useLocale } from 'next-intl';
+import type { SearchGroup, SearchResponse } from '@/lib/types/search';
 
 interface UseSearchOptions {
     debounceMs?: number;
@@ -16,7 +17,7 @@ interface UseSearchOptions {
 interface UseSearchReturn {
     query: string;
     setQuery: (query: string) => void;
-    results: RegistryEntry[];
+    results: SearchGroup[];
     isLoading: boolean;
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
@@ -27,7 +28,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     const { debounceMs = 300, minLength = 1, limit = 20 } = options;
 
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<RegistryEntry[]>([]);
+    const [results, setResults] = useState<SearchGroup[]>([]);
+    const lang = useLocale().startsWith('zh') ? 'zh' : 'en';
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -61,6 +63,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
             try {
                 const params = new URLSearchParams({
                     q: query.trim(),
+                    lang,
                     limit: String(limit),
                 });
 
@@ -69,8 +72,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    setResults(data);
+                    const data: SearchResponse = await response.json();
+                    setResults(data.groups);
                 }
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
@@ -88,7 +91,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
             clearTimeout(timeoutId);
             abortController.abort();
         };
-    }, [query, debounceMs, minLength, limit]);
+    }, [query, debounceMs, minLength, limit, lang]);
 
     return {
         query,

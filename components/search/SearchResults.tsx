@@ -2,24 +2,21 @@
 
 /**
  * Search results dropdown component.
- * Groups results by object type and renders clickable items.
+ * Renders the groups the search answers with (tasks, then records by kind);
+ * each result opens its address.
  */
 
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
-import { Loader2 } from 'lucide-react';
+import { FileText, ListChecks, Loader2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
-import { SEARCH_CONFIG, getObjectDetailUrl } from '@/lib/config/search';
-import type { RegistryEntry } from '@/lib/types/objects';
+import { SEARCH_CONFIG } from '@/lib/config/search';
+import type { SearchGroup, SearchResult } from '@/lib/types/search';
 
 interface SearchResultsProps {
-    results: RegistryEntry[];
+    results: SearchGroup[];
     isLoading: boolean;
     onSelect: () => void;
-}
-
-interface GroupedResults {
-    [objectType: string]: RegistryEntry[];
 }
 
 export function SearchResults({ results, isLoading, onSelect }: SearchResultsProps) {
@@ -28,20 +25,8 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
     const t = useTranslations('GlobalSearch');
     const isLight = theme === 'light';
 
-    // Group results by object type
-    const grouped = results.reduce<GroupedResults>((acc, item) => {
-        if (!acc[item.object_type]) {
-            acc[item.object_type] = [];
-        }
-        acc[item.object_type].push(item);
-        return acc;
-    }, {});
-
-    const objectTypes = Object.keys(grouped);
-
-    const handleClick = (item: RegistryEntry) => {
-        const url = getObjectDetailUrl(item.object_type, item.oid);
-        router.push(url);
+    const handleClick = (item: SearchResult) => {
+        router.push(item.opens);
         onSelect();
     };
 
@@ -63,33 +48,38 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
     }
 
     return (
-        <div className="max-h-80 overflow-y-auto">
-            {objectTypes.map((type) => {
-                const config = SEARCH_CONFIG[type];
-                if (!config) return null;
-
-                const Icon = config.icon;
-                const items = grouped[type];
+        <div className="max-h-80 overflow-y-auto" data-testid="search-results">
+            {results.map((group) => {
+                const config = SEARCH_CONFIG[group.kind];
+                const Icon = config?.icon ?? (group.kind === 'task' ? ListChecks : FileText);
 
                 return (
-                    <div key={type}>
+                    <div key={group.kind} data-testid={`search-group-${group.kind}`}>
                         {/* Group header */}
                         <div className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium ${isLight ? 'bg-slate-50 text-slate-500' : 'bg-white/5 text-gray-500'}`}>
                             <Icon className="w-3.5 h-3.5" />
-                            <span>{t(config.labelKey)}</span>
+                            <span>{group.label ?? (config ? t(config.labelKey) : group.kind)}</span>
                             <span className={`ml-auto ${isLight ? 'text-slate-400' : 'text-gray-600'}`}>
-                                {items.length}
+                                {group.results.length}
                             </span>
                         </div>
 
                         {/* Items */}
-                        {items.map((item) => (
+                        {group.results.map((item) => (
                             <button
-                                key={item.oid}
+                                key={item.id}
                                 onClick={() => handleClick(item)}
                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-gray-200 hover:bg-white/5'}`}
                             >
-                                {item.descriptor}
+                                {item.title}
+                                {item.subtitle && (
+                                    <>
+                                        {' '}
+                                        <span className={`ml-1 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {item.subtitle}
+                                        </span>
+                                    </>
+                                )}
                             </button>
                         ))}
                     </div>

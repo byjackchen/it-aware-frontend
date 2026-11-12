@@ -567,24 +567,6 @@
         "total": 8
       }
     },
-    "app/api/search/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 19
-      },
-      "lines": {
-        "covered": 0,
-        "total": 19
-      },
-      "functions": {
-        "covered": 0,
-        "total": 3
-      },
-      "branches": {
-        "covered": 0,
-        "total": 8
-      }
-    },
     "app/api/services/chatbot/react/route.ts": {
       "statements": {
         "covered": 0,
@@ -709,24 +691,6 @@
       "branches": {
         "covered": 0,
         "total": 12
-      }
-    },
-    "lib/api/errors.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 3
-      },
-      "lines": {
-        "covered": 0,
-        "total": 3
-      },
-      "functions": {
-        "covered": 0,
-        "total": 1
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
       }
     },
     "lib/api/exports.ts": {
