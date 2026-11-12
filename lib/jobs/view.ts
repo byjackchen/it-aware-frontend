@@ -103,6 +103,8 @@ export interface ParameterField {
   description: string | null;
   /** The form's starting value: text, or a checkbox's state. */
   initial: string | boolean;
+  /** Whether the job gives the parameter a default (then `initial` shows it). */
+  hasDefault: boolean;
 }
 
 function schemaType(schema: Record<string, unknown>): string | null {
@@ -128,16 +130,19 @@ export function parameterFields(parameters: JobParameter[]): ParameterField[] {
     else if (p.default == null) initial = '';
     else if (kind === 'json') initial = JSON.stringify(p.default);
     else initial = String(p.default);
-    return { name: p.name, kind, description: p.description, initial };
+    return { name: p.name, kind, description: p.description, initial, hasDefault: p.default != null };
   });
 }
 
 export type ParsedParameters = { ok: true; values: Record<string, unknown> } | { ok: false; invalid: string[] };
 
 /**
- * The parameters to send, from the form's values. An empty number or JSON
- * field, or an empty string field with no default, is left out (the job's
- * default applies); a value that does not read as its kind is reported by name.
+ * The parameters to send, from the form's values. Only what the person changed
+ * is sent: a field left at the job's default is left out, and Airflow applies
+ * the default itself. The backend masks a secret-looking default (`***`), so
+ * sending defaults back would replace the real value with the mask. An empty
+ * number or JSON field, or an empty string field with no default, is left out
+ * too; a value that does not read as its kind is reported by name.
  */
 export function parameterValues(
   fields: ParameterField[],
@@ -146,7 +151,9 @@ export function parameterValues(
   const values: Record<string, unknown> = {};
   const invalid: string[] = [];
   for (const field of fields) {
-    const raw = form[field.name] ?? field.initial;
+    const changed = form[field.name];
+    if (field.hasDefault && (changed === undefined || changed === field.initial)) continue;
+    const raw = changed ?? field.initial;
     if (field.kind === 'boolean') {
       values[field.name] = raw === true;
       continue;

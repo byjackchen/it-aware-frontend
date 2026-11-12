@@ -119,7 +119,10 @@ it('reads the form back into the parameters to send', () => {
     param('note', { type: 'string' }, ''),
     param('ids', { type: 'array' }),
   ]);
-  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { window_hours: 2, dry_run: true } });
+  // Defaults left as they are are not sent: Airflow applies them (since the
+  // backend masks secret-looking defaults, review 2026-11-12).
+  expect(parameterValues(fields, {})).toEqual({ ok: true, values: {} });
+  expect(parameterValues(fields, { window_hours: '2', dry_run: true })).toEqual({ ok: true, values: {} });
   expect(parameterValues(fields, { window_hours: '3', ratio: '0.5', dry_run: false, note: 'n', ids: '[1]' })).toEqual({
     ok: true, values: { window_hours: 3, ratio: 0.5, dry_run: false, note: 'n', ids: [1] },
   });
@@ -147,9 +150,23 @@ it('leaves out an empty string field with no default, and sends one that clears 
     param('note', { type: 'string' }),
     param('label', { type: 'string' }, 'x'),
   ]);
-  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { label: 'x' } });
+  expect(parameterValues(fields, {})).toEqual({ ok: true, values: {} }); // label keeps its default in Airflow
   expect(parameterValues(fields, { label: '' })).toEqual({ ok: true, values: { label: '' } });
   expect(parameterValues(fields, { note: 'n', notification_batch_oid: 'b' })).toEqual({
-    ok: true, values: { notification_batch_oid: 'b', note: 'n', label: 'x' },
+    ok: true, values: { notification_batch_oid: 'b', note: 'n' },
+  });
+});
+
+it('never sends a masked default back, and sends a value typed over it', () => {
+  const fields = parameterFields([
+    param('api_key', { type: 'string' }, '***'),
+    param('dsn', { type: 'string' }, 'redis://u:***@cache:6379'),
+    param('flag', { type: 'boolean' }),
+  ]);
+  expect(fields.map((f) => f.hasDefault)).toEqual([true, true, false]);
+  // A checkbox with no default is still sent as shown: there is no default to fall back on.
+  expect(parameterValues(fields, {})).toEqual({ ok: true, values: { flag: false } });
+  expect(parameterValues(fields, { api_key: 'new-key', flag: true })).toEqual({
+    ok: true, values: { api_key: 'new-key', flag: true },
   });
 });
