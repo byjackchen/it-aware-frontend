@@ -2925,6 +2925,156 @@
     },
     "noData": "当前周期无可用数据。"
   },
+  "Jobs": {
+    "title": "管理作业",
+    "help": "IT-Aware 的 Airflow 作业：查看运行与日志，暂停、恢复或立即运行，并恢复一次运行。每个操作都会记录。",
+    "refresh": "刷新",
+    "tabs": {
+      "jobs": "作业",
+      "actions": "操作记录"
+    },
+    "allJobs": "全部作业",
+    "none": "—",
+    "loadFailed": "无法加载：{message}",
+    "unreachable": {
+      "title": "无法连接 Airflow",
+      "body": "IT-Aware 暂时无法读取 Airflow，因此未显示任何作业。请稍后再试。",
+      "notConfigured": "当前环境未配置 Airflow。"
+    },
+    "status": {
+      "active": "运行中",
+      "paused": "已暂停",
+      "loadErrors": "加载错误",
+      "loadErrorsHelp": "Airflow 无法加载该作业的文件。",
+      "noRun": "无运行"
+    },
+    "list": {
+      "search": "按名称、描述或标签筛选",
+      "stateFilter": "状态",
+      "filter": {
+        "all": "全部状态",
+        "active": "运行中",
+        "paused": "已暂停",
+        "running": "正在运行",
+        "failed": "上次运行失败",
+        "load_errors": "加载错误"
+      },
+      "count": "共 {total} 个作业，显示 {shown} 个",
+      "empty": "Airflow 中没有作业。",
+      "noMatch": "没有符合筛选条件的作业。",
+      "columns": {
+        "job": "作业",
+        "status": "状态",
+        "schedule": "调度",
+        "nextRun": "下次运行",
+        "lastRun": "上次运行",
+        "lastRunTime": "上次运行时间",
+        "duration": "耗时",
+        "tags": "标签"
+      }
+    },
+    "job": {
+      "schedule": "调度",
+      "nextRun": "下次运行",
+      "tags": "标签",
+      "status": "状态",
+      "lastRun": "上次运行",
+      "runs": "运行记录",
+      "runsEmpty": "该作业没有运行记录。",
+      "recordLink": "该作业的操作",
+      "columns": {
+        "run": "运行",
+        "state": "状态",
+        "type": "类型",
+        "runAfter": "计划时间",
+        "start": "开始",
+        "end": "结束",
+        "duration": "耗时"
+      }
+    },
+    "pager": {
+      "page": "第 {page} / {pages} 页",
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "run": {
+      "title": "运行 {run}",
+      "parameters": "启动参数",
+      "noParameters": "无参数。",
+      "steps": "步骤",
+      "noSteps": "该运行没有步骤。",
+      "columns": {
+        "step": "步骤",
+        "state": "状态",
+        "start": "开始",
+        "end": "结束",
+        "duration": "耗时",
+        "try": "尝试",
+        "log": "日志"
+      },
+      "tryLink": "第 {n} 次",
+      "noLog": "未运行"
+    },
+    "log": {
+      "title": "{step} 的日志，第 {try} 次尝试",
+      "close": "关闭",
+      "empty": "日志为空。",
+      "truncated": "日志较长：仅显示末尾部分。",
+      "loadMore": "加载更多",
+      "failed": "无法读取日志：{message}"
+    },
+    "actions": {
+      "pause": "暂停",
+      "resume": "恢复",
+      "run": "立即运行",
+      "retry_failed": "重试失败步骤",
+      "stop": "停止运行",
+      "confirmTitle": "确认",
+      "confirm": "确认",
+      "cancel": "取消",
+      "working": "处理中…",
+      "confirmPause": "暂停 {job} 的调度？恢复之前不会启动计划运行。",
+      "confirmResume": "恢复 {job} 的调度？",
+      "confirmRun": "立即启动 {job} 的一次运行？",
+      "confirmRetry": "重新运行 {job} 的运行 {run} 中失败的步骤？",
+      "confirmStop": "停止 {job} 的运行 {run}？该运行将被标记为失败，剩余部分停止。",
+      "parameters": "参数",
+      "noParameters": "该作业未定义参数。",
+      "invalidParameters": "无效的值：{names}",
+      "done": "{action}：已记录，结果为 {outcome}。",
+      "unavailable": "{action} 在此不可用：{message}",
+      "failed": "{action} 失败：{message}",
+      "runRefused": "该作业不允许手动运行：{reason}",
+      "retryRefused": "该作业不允许重试：{reason}"
+    },
+    "record": {
+      "forJob": "{job} 的操作",
+      "empty": "尚无操作记录。",
+      "showAll": "显示全部作业",
+      "columns": {
+        "when": "时间",
+        "who": "操作人",
+        "what": "操作",
+        "job": "作业",
+        "run": "运行",
+        "outcome": "结果"
+      },
+      "action": {
+        "pause": "暂停",
+        "resume": "恢复",
+        "run": "立即运行",
+        "retry_failed": "重试失败步骤",
+        "stop": "停止"
+      },
+      "outcome": {
+        "pending": "待定",
+        "succeeded": "成功",
+        "failed": "失败",
+        "refused": "已拒绝"
+      },
+      "pendingHelp": "在 Airflow 应答之前记录；其应答未被记录。"
+    }
+  },
   "Systems": {
     "title": "系统",
     "subtitle": "LLM 代理配置",
@@ -2985,24 +3135,6 @@
       "inactiveModel": "（未启用）",
       "noActiveModels": "没有启用的模型，请先添加或启用一个模型。",
       "inactiveWarn": "该模型未启用 —— 此任务会改用默认模型。"
-    },
-    "airflow": {
-      "title": "Airflow DAG",
-      "help": "实时从 Airflow 拉取的 DAG 运行状态(只读)。",
-      "refresh": "刷新",
-      "empty": "未找到 DAG。",
-      "unavailable": "当前无法连接 Airflow。",
-      "notConfigured": "Airflow 未配置(IT_AWARE_AIRFLOW_BASE_URL)。",
-      "dag": "DAG",
-      "status": "状态",
-      "schedule": "调度",
-      "lastRun": "最近运行",
-      "lastRunTime": "最近运行时间",
-      "duration": "时长",
-      "paused": "已暂停",
-      "active": "启用",
-      "noRun": "无运行记录",
-      "importError": "DAG 存在导入错误"
     },
     "agentAccess": {
       "title": "Agent 接入",
