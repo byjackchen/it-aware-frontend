@@ -46,6 +46,11 @@ test.describe('old page addresses', () => {
   }
 });
 
+test("a multi-view task's own address answers 307 to its first view, query kept", async () => {
+  expect(await redirectOf('/tasks/it-tickets?range=7d')).toEqual({ status: 307, to: '/tasks/it-tickets/active?range=7d' });
+  expect(await redirectOf('/tasks/workers')).toEqual({ status: 307, to: '/tasks/workers/workers' });
+});
+
 test.describe('addresses that are not redirected', () => {
   test('the kept addresses go on to the sign-in check', async () => {
     for (const kept of ['/', '/home', '/access-denied']) {
@@ -53,7 +58,7 @@ test.describe('addresses that are not redirected', () => {
     }
   });
 
-  test('a new task address goes on to the sign-in check', async () => {
+  test('a new view address goes on to the sign-in check', async () => {
     expect(await redirectOf('/tasks/it-incidents')).toEqual({ status: 307, to: '/login' });
   });
 

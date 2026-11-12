@@ -94,7 +94,7 @@ export function KnowledgeOverview({ catalogs, articles }: KnowledgeOverviewProps
                     </div>
                     {articles.length > 6 && (
                         <Link
-                            href="/tasks/it-knowledge/library"
+                            href="/tasks/it-knowledge/articles"
                             className={`
                                 flex items-center gap-1 text-sm font-medium
                                 ${isLight
