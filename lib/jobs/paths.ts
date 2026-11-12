@@ -1,0 +1,78 @@
+/**
+ * Where Manage Jobs lives, and how its one page picks a screen.
+ *
+ * Every screen is the one page at JOBS_BASE, chosen by search parameters:
+ *   (none)                         the job list
+ *   ?tab=actions[&job=][&page=]    the action record (optionally one job's)
+ *   ?job=<id>[&page=]              a job and its runs
+ *   ?job=<id>&run=<id>[&step=<id>&try=<n>&map=<i>]   a run, its steps, one step's log
+ * Moving the page means changing JOBS_BASE only.
+ */
+
+export const JOBS_BASE = '/systems/airflow';
+
+/** Runs per page of a job, and record rows per page. */
+export const RUNS_PAGE_SIZE = 25;
+export const ACTIONS_PAGE_SIZE = 50;
+
+export interface JobsLink {
+  tab?: 'actions';
+  job?: string;
+  run?: string;
+  step?: string;
+  try?: number;
+  map?: number;
+  page?: number;
+}
+
+/** The address of a screen; ids are encoded by URLSearchParams. */
+export function jobsHref(link: JobsLink = {}): string {
+  const query = new URLSearchParams();
+  if (link.tab) query.set('tab', link.tab);
+  if (link.job) query.set('job', link.job);
+  if (link.run) query.set('run', link.run);
+  if (link.step) query.set('step', link.step);
+  if (link.try !== undefined) query.set('try', String(link.try));
+  if (link.map !== undefined && link.map !== -1) query.set('map', String(link.map));
+  if (link.page && link.page > 1) query.set('page', String(link.page));
+  const text = query.toString();
+  return text ? `${JOBS_BASE}?${text}` : JOBS_BASE;
+}
+
+export type JobsView =
+  | { kind: 'list' }
+  | { kind: 'actions'; job: string | null; page: number }
+  | { kind: 'job'; job: string; page: number }
+  | { kind: 'run'; job: string; run: string; step: { id: string; try: number; map: number } | null };
+
+type Params = Record<string, string | string[] | undefined>;
+
+function one(params: Params, name: string): string | null {
+  const value = params[name];
+  const first = Array.isArray(value) ? value[0] : value;
+  return first ? first : null;
+}
+
+function integer(text: string | null, fallback: number, min: number): number {
+  const n = text === null ? NaN : Number(text);
+  return Number.isInteger(n) && n >= min ? n : fallback;
+}
+
+/** The screen the page's search parameters ask for. */
+export function parseJobsView(params: Params): JobsView {
+  const job = one(params, 'job');
+  const page = integer(one(params, 'page'), 1, 1);
+  if (one(params, 'tab') === 'actions') return { kind: 'actions', job, page };
+  if (!job) return { kind: 'list' };
+  const run = one(params, 'run');
+  if (!run) return { kind: 'job', job, page };
+  const step = one(params, 'step');
+  return {
+    kind: 'run',
+    job,
+    run,
+    step: step
+      ? { id: step, try: integer(one(params, 'try'), 1, 0), map: integer(one(params, 'map'), -1, -1) }
+      : null,
+  };
+}
