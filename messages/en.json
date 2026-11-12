@@ -461,7 +461,7 @@
       }
     },
     "GlobalSearch": {
-      "placeholder": "Search Data Objects...",
+      "placeholder": "Search tasks and records...",
       "noResults": "No results found",
       "searching": "Searching...",
       "organizations": "Organizations",
@@ -1855,7 +1855,7 @@
     "unpin": "Unpin from home",
     "pinTask": "Pin {name}",
     "unpinTask": "Unpin {name}",
-    "placeholder": "Search Data Objects...",
+    "placeholder": "Search tasks and records...",
     "noResults": "No results found",
     "searching": "Searching...",
     "organizations": "Organizations",
