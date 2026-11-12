@@ -3252,6 +3252,156 @@
     },
     "noData": "No data available for this period."
   },
+  "Jobs": {
+    "title": "Manage Jobs",
+    "help": "IT-Aware's Airflow jobs: see their runs and logs, pause, resume or run them now, and recover a run. Every action is recorded.",
+    "refresh": "Refresh",
+    "tabs": {
+      "jobs": "Jobs",
+      "actions": "Action Record"
+    },
+    "allJobs": "All jobs",
+    "none": "—",
+    "loadFailed": "Could not load this: {message}",
+    "unreachable": {
+      "title": "Airflow is unreachable",
+      "body": "IT-Aware could not read Airflow just now, so no jobs are shown. Try again in a moment.",
+      "notConfigured": "Airflow is not configured for this environment."
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "loadErrors": "Load errors",
+      "loadErrorsHelp": "Airflow could not load this job's file.",
+      "noRun": "No runs"
+    },
+    "list": {
+      "search": "Filter by name, description or tag",
+      "stateFilter": "State",
+      "filter": {
+        "all": "All states",
+        "active": "Active",
+        "paused": "Paused",
+        "running": "Running",
+        "failed": "Last run failed",
+        "load_errors": "Load errors"
+      },
+      "count": "{shown} of {total} jobs",
+      "empty": "Airflow has no jobs.",
+      "noMatch": "No job matches the filter.",
+      "columns": {
+        "job": "Job",
+        "status": "Status",
+        "schedule": "Schedule",
+        "nextRun": "Next run",
+        "lastRun": "Last run",
+        "lastRunTime": "Last run time",
+        "duration": "Duration",
+        "tags": "Tags"
+      }
+    },
+    "job": {
+      "schedule": "Schedule",
+      "nextRun": "Next run",
+      "tags": "Tags",
+      "status": "Status",
+      "lastRun": "Last run",
+      "runs": "Runs",
+      "runsEmpty": "This job has no runs.",
+      "recordLink": "Actions on this job",
+      "columns": {
+        "run": "Run",
+        "state": "State",
+        "type": "Type",
+        "runAfter": "Run after",
+        "start": "Started",
+        "end": "Ended",
+        "duration": "Duration"
+      }
+    },
+    "pager": {
+      "page": "Page {page} of {pages}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "run": {
+      "title": "Run {run}",
+      "parameters": "Started with",
+      "noParameters": "No parameters.",
+      "steps": "Steps",
+      "noSteps": "This run has no steps.",
+      "columns": {
+        "step": "Step",
+        "state": "State",
+        "start": "Started",
+        "end": "Ended",
+        "duration": "Duration",
+        "try": "Try",
+        "log": "Log"
+      },
+      "tryLink": "Try {n}",
+      "noLog": "Not run"
+    },
+    "log": {
+      "title": "Log of {step}, try {try}",
+      "close": "Close",
+      "empty": "The log is empty.",
+      "truncated": "This log is long: only its end is shown.",
+      "loadMore": "Load more",
+      "failed": "The log could not be read: {message}"
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "run": "Run now",
+      "retry_failed": "Retry failed steps",
+      "stop": "Stop run",
+      "confirmTitle": "Confirm",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "working": "Working…",
+      "confirmPause": "Pause the schedule of {job}? No scheduled run starts until it is resumed.",
+      "confirmResume": "Resume the schedule of {job}?",
+      "confirmRun": "Start a run of {job} now?",
+      "confirmRetry": "Run the failed steps of {job}, run {run}, again?",
+      "confirmStop": "Stop {job}, run {run}? The run is marked failed and what is left of it stops.",
+      "parameters": "Parameters",
+      "noParameters": "This job defines no parameters.",
+      "invalidParameters": "Not a valid value: {names}",
+      "done": "{action}: recorded as {outcome}.",
+      "unavailable": "{action} is unavailable here: {message}",
+      "failed": "{action} failed: {message}",
+      "runRefused": "Run now is not allowed for this job: {reason}",
+      "retryRefused": "Retrying is not allowed for this job: {reason}"
+    },
+    "record": {
+      "forJob": "Actions on {job}",
+      "empty": "No action is recorded yet.",
+      "showAll": "Show every job",
+      "columns": {
+        "when": "When",
+        "who": "Who",
+        "what": "What",
+        "job": "Job",
+        "run": "Run",
+        "outcome": "Outcome"
+      },
+      "action": {
+        "pause": "Pause",
+        "resume": "Resume",
+        "run": "Run now",
+        "retry_failed": "Retry failed",
+        "stop": "Stop"
+      },
+      "outcome": {
+        "pending": "Pending",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "refused": "Refused"
+      },
+      "pendingHelp": "Recorded before Airflow answered; its answer was not recorded."
+    }
+  },
   "Systems": {
     "title": "Systems",
     "subtitle": "LLM Proxy configuration",
@@ -3312,24 +3462,6 @@
       "inactiveModel": "(inactive)",
       "noActiveModels": "No active model. Add or activate a model first.",
       "inactiveWarn": "This model is inactive — the task runs on the default model instead."
-    },
-    "airflow": {
-      "title": "Airflow DAGs",
-      "help": "DAG run status pulled live from Airflow (read-only).",
-      "refresh": "Refresh",
-      "empty": "No DAGs found.",
-      "unavailable": "Airflow is currently unreachable.",
-      "notConfigured": "Airflow is not configured (IT_AWARE_AIRFLOW_BASE_URL).",
-      "dag": "DAG",
-      "status": "Status",
-      "schedule": "Schedule",
-      "lastRun": "Last Run",
-      "lastRunTime": "Last Run Time",
-      "duration": "Duration",
-      "paused": "Paused",
-      "active": "Active",
-      "noRun": "No runs",
-      "importError": "DAG has import errors"
     },
     "agentAccess": {
       "title": "Agent access",

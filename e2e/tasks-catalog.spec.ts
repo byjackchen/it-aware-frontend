@@ -85,9 +85,9 @@ test.describe('Tasks 1: task access', () => {
     // where the task opens for it (its first view it has, from /tasks/mine); a
     // redirect (to the login or access-denied page) or an error answer is
     // reported. It does not see what a page loads after it renders.
-    // Not asked: the Airflow page, whose server render asks Airflow for its
-    // DAGs, which the hermetic stack's double does not answer.
-    const notAsked = ['/systems/airflow'];
+    // Every task page is asked: the Manage Jobs page, once left out because the
+    // double did not answer its DAG list, now reads the backend's Airflow double.
+    const notAsked: string[] = [];
     const notOpening: { username: string; task: string; opens: string; answer: string }[] = [];
     const notSignedIn: string[] = [];
     let opened = 0;
