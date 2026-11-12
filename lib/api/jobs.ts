@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { redirect, unstable_rethrow } from 'next/navigation';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { ApiError } from '@/lib/api/errors';
+import { INVALID_ID_MESSAGE, isJobsId } from '@/lib/jobs/paths';
 import type {
   ActionsResponse,
   JobActionRecord,
@@ -86,7 +87,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-const id = encodeURIComponent;
+/** An id for a path: refused before any fetch when the backend would refuse it (422 invalid_id). */
+function id(value: string): string {
+  if (!isJobsId(value)) throw new JobsApiError(INVALID_ID_MESSAGE, 422, 'invalid_id');
+  return encodeURIComponent(value);
+}
 
 /** A query string; every caller sends at least one value. */
 function query(values: Record<string, string | number | null | undefined>): string {
@@ -99,23 +104,23 @@ function query(values: Record<string, string | number | null | undefined>): stri
 
 // ── View ─────────────────────────────────────────────────────────────────────
 
-export function listJobs(): Promise<JobsResponse> {
+export async function listJobs(): Promise<JobsResponse> {
   return call('');
 }
 
-export function getJob(jobId: string): Promise<JobDetail> {
+export async function getJob(jobId: string): Promise<JobDetail> {
   return call(`/${id(jobId)}`);
 }
 
-export function listRuns(jobId: string, limit: number, offset: number): Promise<RunsResponse> {
+export async function listRuns(jobId: string, limit: number, offset: number): Promise<RunsResponse> {
   return call(`/${id(jobId)}/runs${query({ limit, offset })}`);
 }
 
-export function getRun(jobId: string, runId: string): Promise<RunDetail> {
+export async function getRun(jobId: string, runId: string): Promise<RunDetail> {
   return call(`/${id(jobId)}/runs/${id(runId)}`);
 }
 
-export function getStepLog(
+export async function getStepLog(
   jobId: string,
   runId: string,
   stepId: string,
@@ -125,28 +130,28 @@ export function getStepLog(
   return call(`/${id(jobId)}/runs/${id(runId)}/steps/${id(stepId)}/log${q}`);
 }
 
-export function listActions(jobId: string | null, limit: number, offset: number): Promise<ActionsResponse> {
+export async function listActions(jobId: string | null, limit: number, offset: number): Promise<ActionsResponse> {
   return call(`/actions${query({ job_id: jobId, limit, offset })}`);
 }
 
 // ── Control and recovery (each recorded by the backend) ──────────────────────
 
-export function pauseJob(jobId: string): Promise<JobActionRecord> {
+export async function pauseJob(jobId: string): Promise<JobActionRecord> {
   return call(`/${id(jobId)}/pause`, { method: 'POST' });
 }
 
-export function resumeJob(jobId: string): Promise<JobActionRecord> {
+export async function resumeJob(jobId: string): Promise<JobActionRecord> {
   return call(`/${id(jobId)}/resume`, { method: 'POST' });
 }
 
-export function runJob(jobId: string, parameters: Record<string, unknown>): Promise<JobActionRecord> {
+export async function runJob(jobId: string, parameters: Record<string, unknown>): Promise<JobActionRecord> {
   return call(`/${id(jobId)}/runs`, { method: 'POST', body: JSON.stringify({ parameters }) });
 }
 
-export function retryFailed(jobId: string, runId: string): Promise<JobActionRecord> {
+export async function retryFailed(jobId: string, runId: string): Promise<JobActionRecord> {
   return call(`/${id(jobId)}/runs/${id(runId)}/retry-failed`, { method: 'POST' });
 }
 
-export function stopRun(jobId: string, runId: string): Promise<JobActionRecord> {
+export async function stopRun(jobId: string, runId: string): Promise<JobActionRecord> {
   return call(`/${id(jobId)}/runs/${id(runId)}/stop`, { method: 'POST' });
 }

@@ -39,3 +39,13 @@ it('round-trips a link through its own search parameters', () => {
     kind: 'run', job: 'gate_digest', run: RUN, step: { id: 'digest', try: 2, map: -1 },
   });
 });
+
+it('refuses an id the backend would refuse, before any screen is read', async () => {
+  const { isJobsId } = await import('@/lib/jobs/paths');
+  for (const ok of ['gate_digest', RUN, 'a.b', '.a', 'a@b~c-d', 'x'.repeat(250)]) expect(isJobsId(ok)).toBe(true);
+  for (const bad of ['.', '..', '...', '', 'a/b', 'a b', 'a%2e', 'é', 'x'.repeat(251)]) expect(isJobsId(bad)).toBe(false);
+  expect(parseJobsView({ job: '..' })).toEqual({ kind: 'invalid', id: '..' });
+  expect(parseJobsView({ job: 'a', run: '.' })).toEqual({ kind: 'invalid', id: '.' });
+  expect(parseJobsView({ job: 'a', run: RUN, step: '../x' })).toEqual({ kind: 'invalid', id: '../x' });
+  expect(parseJobsView({ tab: 'actions', job: '..' })).toEqual({ kind: 'invalid', id: '..' });
+});

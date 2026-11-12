@@ -13,7 +13,7 @@ import {
   listJobs,
   listRuns,
 } from '@/lib/api/jobs';
-import { ACTIONS_PAGE_SIZE, parseJobsView, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
+import { ACTIONS_PAGE_SIZE, INVALID_ID_MESSAGE, parseJobsView, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
 import { ActionRecord } from './ActionRecord';
 import { JobsList } from './JobsList';
 import { JobView } from './JobView';
@@ -29,6 +29,15 @@ interface PageProps {
 
 export default async function ManageJobsPage({ searchParams }: PageProps) {
   const view = parseJobsView(await searchParams);
+
+  // An id the backend would refuse (`.`, `..`, characters outside its set) is never asked for.
+  if (view.kind === 'invalid') {
+    return (
+      <JobsFrame tab="jobs">
+        <LoadFailure failure={{ status: 422, code: 'invalid_id', message: INVALID_ID_MESSAGE }} />
+      </JobsFrame>
+    );
+  }
 
   if (view.kind === 'actions') {
     const record = await attempt(() => listActions(view.job, ACTIONS_PAGE_SIZE, (view.page - 1) * ACTIONS_PAGE_SIZE));

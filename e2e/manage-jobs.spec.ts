@@ -106,8 +106,33 @@ test.describe('Manage Jobs', () => {
     const hours = dialog.getByRole('spinbutton', { name: 'window_hours' });
     await expect(hours).toHaveValue('2');
     await hours.fill('3');
+    // Hold the server action's answer, to see the page while the run is being started.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const thePage = (url: URL) => url.pathname === BASE;
+    await page.route(
+      thePage,
+      async (route) => {
+        if (route.request().method() === 'POST') await held;
+        await route.continue();
+      },
+    );
     await dialog.getByRole('button', { name: 'Confirm' }).click();
+    // Under way: it cannot be confirmed again, dismissed, or another action asked.
+    await expect(dialog.getByRole('button', { name: 'Working…' })).toBeDisabled();
+    // Cancel, and the close button (labelled Cancel too).
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toHaveCount(2);
+    await expect(dialog.getByRole('button', { name: 'Cancel' }).first()).toBeDisabled();
+    await expect(dialog.getByRole('button', { name: 'Cancel' }).last()).toBeDisabled();
+    await page.mouse.click(5, 5);
+    await expect(dialog).toBeVisible();
+    await expect(page.getByTestId('job-actions').getByRole('button', { name: 'Run now' })).toBeDisabled();
+    await expect(page.getByTestId('job-actions').getByRole('button', { name: 'Pause' })).toBeDisabled();
+    release();
     await expect(page.getByTestId('job-action-outcome')).toHaveText('Run now: recorded as Succeeded.');
+    await expect(dialog).toHaveCount(0);
+    await page.unroute(thePage);
+    await expect(page.getByTestId('job-actions').getByRole('button', { name: 'Run now' })).toBeEnabled();
 
     await open(page, `?job=gate_digest&run=${encodeURIComponent(RUN)}`);
     await page.getByTestId('run-actions').getByRole('button', { name: 'Retry failed steps' }).click();

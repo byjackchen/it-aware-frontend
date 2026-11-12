@@ -15,6 +15,19 @@ export const JOBS_BASE = '/systems/airflow';
 export const RUNS_PAGE_SIZE = 25;
 export const ACTIONS_PAGE_SIZE = 50;
 
+/**
+ * A job, run or step id as the backend accepts it (app/jobs/service.py
+ * ID_PATTERN): letters, digits and `_ - . ~ : + @`, at least one not a dot, at
+ * most 250 characters. So `.` and `..` never reach a path.
+ */
+const ID = /^[A-Za-z0-9_.~:+@-]*[A-Za-z0-9_~:+@-][A-Za-z0-9_.~:+@-]*$/;
+const ID_MAX = 250;
+export const INVALID_ID_MESSAGE = 'Not a job, run or step id.';
+
+export function isJobsId(value: string): boolean {
+  return value.length <= ID_MAX && ID.test(value);
+}
+
 export interface JobsLink {
   tab?: 'actions';
   job?: string;
@@ -43,7 +56,8 @@ export type JobsView =
   | { kind: 'list' }
   | { kind: 'actions'; job: string | null; page: number }
   | { kind: 'job'; job: string; page: number }
-  | { kind: 'run'; job: string; run: string; step: { id: string; try: number; map: number } | null };
+  | { kind: 'run'; job: string; run: string; step: { id: string; try: number; map: number } | null }
+  | { kind: 'invalid'; id: string };
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -60,6 +74,8 @@ function integer(text: string | null, fallback: number, min: number): number {
 
 /** The screen the page's search parameters ask for. */
 export function parseJobsView(params: Params): JobsView {
+  const invalid = ['job', 'run', 'step'].map((name) => one(params, name)).find((id) => id !== null && !isJobsId(id));
+  if (invalid !== undefined) return { kind: 'invalid', id: invalid as string };
   const job = one(params, 'job');
   const page = integer(one(params, 'page'), 1, 1);
   if (one(params, 'tab') === 'actions') return { kind: 'actions', job, page };

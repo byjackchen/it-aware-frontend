@@ -166,10 +166,18 @@ export function useJobActions() {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [unavailable, setUnavailable] = useState<Partial<Record<ActionKey, string>>>({});
   const [pending, startTransition] = useTransition();
+  // While an action is under way the dialog stays, and nothing else can be asked:
+  // a slow "Run now" cannot be confirmed twice.
+  const dismiss = () => {
+    if (!pending) setAsking(null);
+  };
+  const ask = (next: Asking) => {
+    if (!pending) setAsking(next);
+  };
 
   const confirm = () => {
     const current = asking;
-    if (!current) return;
+    if (!current || pending) return;
     const call = current.prepare();
     if (typeof call === 'string') {
       setDialogError(call);
@@ -200,7 +208,7 @@ export function useJobActions() {
         </Notice>
       )}
       {asking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAsking(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={dismiss}>
           <div
             role="dialog"
             aria-modal="true"
@@ -210,7 +218,12 @@ export function useJobActions() {
           >
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold theme-text-primary">{t(`actions.${asking.key}`)}</h2>
-              <button onClick={() => setAsking(null)} className="text-gray-400 hover:text-white" aria-label={t('actions.cancel')}>
+              <button
+                onClick={dismiss}
+                disabled={pending}
+                className="text-gray-400 hover:text-white disabled:opacity-40"
+                aria-label={t('actions.cancel')}
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -218,7 +231,11 @@ export function useJobActions() {
             {asking.body}
             {dialogError && <p role="alert" className="mt-3 text-sm text-red-400">{dialogError}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setAsking(null)} className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5">
+              <button
+                onClick={dismiss}
+                disabled={pending}
+                className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 disabled:opacity-40"
+              >
                 {t('actions.cancel')}
               </button>
               <button
@@ -236,7 +253,7 @@ export function useJobActions() {
     </>
   );
 
-  return { canRun: hasPermission(JOBS_RUN_PERMISSION), ask: setAsking, unavailable, view };
+  return { canRun: hasPermission(JOBS_RUN_PERMISSION), ask, busy: pending, unavailable, view };
 }
 
 /** An action's button: disabled, with the reason beside it, when it can't be taken. */
@@ -244,11 +261,14 @@ export function ActionButton({
   label,
   onClick,
   refusal,
+  busy = false,
   tone = 'default',
 }: {
   label: string;
   onClick: () => void;
   refusal?: string | null;
+  /** An action is under way on this page: every action waits for it. */
+  busy?: boolean;
   tone?: 'default' | 'danger';
 }) {
   const colour = tone === 'danger' ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30';
@@ -256,7 +276,7 @@ export function ActionButton({
     <span className="inline-flex flex-col items-start gap-1">
       <button
         onClick={onClick}
-        disabled={!!refusal}
+        disabled={!!refusal || busy}
         title={refusal ?? undefined}
         className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${colour}`}
       >

@@ -110,3 +110,21 @@ it('turns a caught error into the failure to show, and throws Next.js signals on
     ok: false, failure: { status: 0, code: null, message: 'no' },
   });
 });
+
+it('refuses a dot-segment or out-of-set id with the backend\'s 422, and fetches nothing', async () => {
+  const fetchMock = stub({});
+  for (const call of [
+    () => api.getJob('..'),
+    () => api.listRuns('.', 25, 0),
+    () => api.getRun('j', '..'),
+    () => api.getStepLog('j', RUN, '..', { tryNumber: 1, mapIndex: -1 }),
+    () => api.pauseJob('a/b'),
+    () => api.resumeJob('..'),
+    () => api.runJob('..', {}),
+    () => api.retryFailed('j', '.'),
+    () => api.stopRun('..', RUN),
+  ]) {
+    await expect(call()).rejects.toEqual(new JobsApiError('Not a job, run or step id.', 422, 'invalid_id'));
+  }
+  expect(fetchMock).not.toHaveBeenCalled();
+});

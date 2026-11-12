@@ -135,9 +135,9 @@ export function parameterFields(parameters: JobParameter[]): ParameterField[] {
 export type ParsedParameters = { ok: true; values: Record<string, unknown> } | { ok: false; invalid: string[] };
 
 /**
- * The parameters to send, from the form's values. An empty number or JSON field
- * is left out (the job's default applies); a value that does not read as its
- * kind is reported by name.
+ * The parameters to send, from the form's values. An empty number or JSON
+ * field, or an empty string field with no default, is left out (the job's
+ * default applies); a value that does not read as its kind is reported by name.
  */
 export function parameterValues(
   fields: ParameterField[],
@@ -152,8 +152,10 @@ export function parameterValues(
       continue;
     }
     const text = String(raw);
+    // An empty string with no default is left out, as an empty number or JSON
+    // field is; an empty string that replaces a default is sent.
     if (field.kind === 'string') {
-      values[field.name] = text;
+      if (text !== '' || field.initial !== '') values[field.name] = text;
       continue;
     }
     if (text.trim() === '') continue;
