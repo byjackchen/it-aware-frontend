@@ -48,7 +48,7 @@ function RunNowForm({ fields, valuesRef }: { fields: ParameterField[]; valuesRef
 /** One job: what it is, its controls, and its runs (paged). */
 export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsResponse; page: number }) {
   const t = useTranslations('Jobs');
-  const { canRun, ask, unavailable, view } = useJobActions();
+  const { canRun, ask, busy, unavailable, view } = useJobActions();
   const fields = parameterFields(job.parameters);
   const formValuesRef = useRef<FormValues>({});
 
@@ -96,6 +96,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
           <div className="flex flex-wrap items-start gap-2" data-testid="job-actions">
             {job.paused ? (
               <ActionButton
+                busy={busy}
                 label={t('actions.resume')}
                 refusal={unavailable.resume}
                 onClick={() =>
@@ -104,6 +105,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
               />
             ) : (
               <ActionButton
+                busy={busy}
                 label={t('actions.pause')}
                 refusal={unavailable.pause}
                 onClick={() =>
@@ -112,6 +114,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
               />
             )}
             <ActionButton
+              busy={busy}
               label={t('actions.run')}
               refusal={
                 job.manual_run_allowed

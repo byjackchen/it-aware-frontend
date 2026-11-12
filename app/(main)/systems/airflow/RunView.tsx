@@ -74,7 +74,7 @@ function StepLogPanel({ job, run, step }: { job: Job; run: RunDetail; step: Open
 /** One run: its steps, each step's log by try, and its recovery actions. */
 export function RunView({ job, run, step }: { job: Job; run: RunDetail; step: OpenStep | null }) {
   const t = useTranslations('Jobs');
-  const { canRun, ask, unavailable, view } = useJobActions();
+  const { canRun, ask, busy, unavailable, view } = useJobActions();
   const offerRetry = hasFailedSteps(run, run.steps);
   const offerStop = isUnfinished(run);
   const parameters = Object.entries(run.parameters);
@@ -99,6 +99,7 @@ export function RunView({ job, run, step }: { job: Job; run: RunDetail; step: Op
           <div className="flex flex-wrap items-start gap-2" data-testid="run-actions">
             {offerRetry && (
               <ActionButton
+                busy={busy}
                 label={t('actions.retry_failed')}
                 refusal={
                   job.retry_failed_allowed
@@ -116,6 +117,7 @@ export function RunView({ job, run, step }: { job: Job; run: RunDetail; step: Op
             )}
             {offerStop && (
               <ActionButton
+                busy={busy}
                 label={t('actions.stop')}
                 tone="danger"
                 refusal={unavailable.stop}
