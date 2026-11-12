@@ -73,9 +73,12 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
                             >
                                 {item.title}
                                 {item.subtitle && (
-                                    <span className={`ml-2 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                        {item.subtitle}
-                                    </span>
+                                    <>
+                                        {' '}
+                                        <span className={`ml-1 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {item.subtitle}
+                                        </span>
+                                    </>
                                 )}
                             </button>
                         ))}
