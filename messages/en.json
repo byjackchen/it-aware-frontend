@@ -12,6 +12,19 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "tasks": {
+      "title": "Task access",
+      "subtitle": "Who has what tasks, from the task catalog and each group's permissions",
+      "byGroup": "By group",
+      "byPerson": "By person",
+      "filter": "Filter…",
+      "pick": "Pick a group or a person to see its tasks",
+      "noTasks": "No tasks",
+      "taskCount": "{count} tasks",
+      "groups": "Groups",
+      "inactive": "Inactive",
+      "scopeNote": "The scope beside a task is how its rows are narrowed for this person."
+    },
     "common": {
       "save": "Save",
       "create": "Create",

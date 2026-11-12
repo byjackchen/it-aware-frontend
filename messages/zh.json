@@ -6,6 +6,19 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "tasks": {
+      "title": "任务访问",
+      "subtitle": "谁有哪些任务：来自任务目录和各用户组的权限",
+      "byGroup": "按用户组",
+      "byPerson": "按人",
+      "filter": "筛选…",
+      "pick": "选择一个用户组或一个人，查看其任务",
+      "noTasks": "没有任务",
+      "taskCount": "{count} 个任务",
+      "groups": "用户组",
+      "inactive": "已停用",
+      "scopeNote": "任务旁的范围表示这个人在该任务里能看到哪些数据行。"
+    },
     "common": {
       "save": "保存",
       "create": "创建",
