@@ -5,19 +5,57 @@
 import { fetchApi } from '@/lib/api/core';
 import { ApiError } from '@/lib/api/errors';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import type { TaskAccess } from '@/lib/types/tasks';
+import type { AccountProfile, ProfileUpdate, TaskAccess, TaskHome } from '@/lib/types/tasks';
 
-/**
- * Who has what tasks. Null when the backend answers 404: its switch
- * (IT_AWARE_TASKS_ENABLED) is off, or it is a backend from before Tasks 1.
- */
-export async function getTaskAccess(): Promise<TaskAccess | null> {
+const backend = (path: string) => `${RUNTIME_CONFIG.backend.domain}${path}`;
+
+/** The answer, or null when the backend answers 404: the feature's switch is off, or the backend predates it. */
+async function unlessOff<T>(path: string): Promise<T | null> {
     try {
-        return await fetchApi<TaskAccess>(`${RUNTIME_CONFIG.backend.domain}/tasks/access`);
+        return await fetchApi<T>(backend(path));
     } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
             return null;
         }
         throw error;
     }
+}
+
+/** Who has what tasks. Null while the backend's tasks switch (IT_AWARE_TASKS_ENABLED) is off. */
+export async function getTaskAccess(): Promise<TaskAccess | null> {
+    return unlessOff<TaskAccess>('/tasks/access');
+}
+
+/** The signed-in person's home. Null while the backend's tasks switch is off. */
+export async function getTaskHome(): Promise<TaskHome | null> {
+    return unlessOff<TaskHome>('/tasks/home');
+}
+
+export async function pinTask(code: string): Promise<void> {
+    await fetchApi(backend(`/tasks/pins/${encodeURIComponent(code)}`), { method: 'PUT' });
+}
+
+export async function unpinTask(code: string): Promise<void> {
+    await fetchApi(backend(`/tasks/pins/${encodeURIComponent(code)}`), { method: 'DELETE' });
+}
+
+/** Tell the backend the person opened the page at `path`; it keeps it when the page is a task of theirs. */
+export async function recordOpened(path: string): Promise<void> {
+    await fetchApi(backend('/tasks/recent'), { method: 'POST', body: JSON.stringify({ path }) });
+}
+
+/**
+ * The profile an admin set for a user account. Null while the backend's
+ * profile switch (IT_AWARE_PROFILES_ENABLED) is off, or for an account that
+ * is gone.
+ */
+export async function getAccountProfile(oid: string): Promise<AccountProfile | null> {
+    return unlessOff<AccountProfile>(`/auth/config/accounts/${oid}/profile`);
+}
+
+export async function putAccountProfile(oid: string, update: ProfileUpdate): Promise<AccountProfile> {
+    return fetchApi<AccountProfile>(backend(`/auth/config/accounts/${oid}/profile`), {
+        method: 'PUT',
+        body: JSON.stringify(update),
+    });
 }

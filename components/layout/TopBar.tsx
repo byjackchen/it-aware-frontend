@@ -2,7 +2,7 @@
 
 import { NavLink } from '@/components/navigation/NavLink';
 import { useState, useRef } from 'react';
-import { Bell, BookOpen, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, Wrench, Cpu, Bot } from 'lucide-react';
+import { Bell, BookOpen, Home, Database, Gauge, LayoutDashboard, LogOut, Shield, UserCircle, Layers, ChevronDown, Megaphone, Headset, Wrench, Cpu, Bot } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -205,10 +205,21 @@ export function TopBar() {
         <div className="flex items-center gap-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
-              <span className="text-white font-bold text-lg">IA</span>
-            </div>
-            <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+            {/* The logo goes to the person's start page; the house to their home. */}
+            <NavLink href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+                <span className="text-white font-bold text-lg">IA</span>
+              </div>
+              <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+            </NavLink>
+            <NavLink
+              href="/home"
+              aria-label={t('home')}
+              title={t('home')}
+              className={`p-2 rounded-full transition-all duration-300 ${isLight ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-900/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+            >
+              <Home className="w-5 h-5" />
+            </NavLink>
           </div>
 
           {/* Main Navigation - Only show authorized items */}

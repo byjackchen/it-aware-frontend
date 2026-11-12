@@ -68,6 +68,7 @@ Who has what tasks. Requires both `auth:account_groups:read` and `auth:group_per
   ],
   "accounts": [
     {
+      "oid": "<the account's oid>",
       "username": "some.user",
       "account_type": "user",
       "is_active": true,
@@ -79,6 +80,37 @@ Who has what tasks. Requires both `auth:account_groups:read` and `auth:group_per
 ```
 
 A group's `tasks` are those its own permissions grant. An account's `groups` lists every group it is in, including a scoped group that does not count for it. `401` without a sign-in, `403` without the two permissions.
+
+## The home page (Tasks 3)
+
+The signed-in person's home, their own pins and their recent tasks. Pins and recents are stored per account in `auth.account_home`; the tasks an admin set come from the profile (`/auth/config/accounts/{oid}/profile`, in `api_specs_auth.md`), which the person never reads. Every list holds only tasks the person has now: a stored code they no longer have is left out, not deleted.
+
+### GET /tasks/home
+
+```json
+{
+  "start": "/data/incidents",
+  "admin_set": ["<task>"],
+  "pinned": ["<task>"],
+  "recent": ["<task>"],
+  "other": ["<task>"]
+}
+```
+
+- `start`: the address of the profile's start task, when one is set and the person has it; otherwise `null`, and the person lands on the home page.
+- `admin_set`: the profile's home tasks, in the admin's order. Empty while `IT_AWARE_PROFILES_ENABLED` is off.
+- `pinned`: in the order pinned. `recent`: the last opened first, at most 8.
+- `other`: the person's tasks that are neither set by the admin nor pinned, in catalog order.
+
+Each `<task>` is a catalog entry, as in `GET /tasks/mine`. `401` without a sign-in.
+
+### PUT /tasks/pins/{code}, DELETE /tasks/pins/{code}
+
+Pin or unpin a task for the caller. `204`. `PUT` answers `404` for a code that is not a task the caller has. Both can be repeated.
+
+### POST /tasks/recent
+
+Body `{"path": "/data/incidents/abc"}`: the page the caller opened. The task whose address the path is, or lies under (the deepest one), becomes the caller's most recent. `204` always; a path that is no task of the caller's is not kept.
 
 ## Reporting-only check
 

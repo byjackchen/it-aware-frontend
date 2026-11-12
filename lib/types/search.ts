@@ -10,6 +10,8 @@ export interface SearchResult {
     subtitle: string | null;
     /** The address the result opens. */
     opens: string;
+    /** A task: whether the person pinned it to their home. Absent or null for a record. */
+    pinned?: boolean | null;
 }
 
 export interface SearchGroup {
