@@ -25,7 +25,7 @@ Indexes: `occurred_at`; `(task, occurred_at)`; `(account_oid, occurred_at)`; `(t
 
 What writes it:
 
-- **`sign_in`**: a successful `POST /auth/session/token` (either grant), the one place a person's sign-in completes. A refused sign-in writes nothing. **A token refresh (`POST /auth/session/refresh`) writes no event**, so a person whose session is kept alive by refreshes shows one sign-in, not one a day; their activity shows through the tasks they open. The service routes (`/auth/service/*`) are not sign-ins of a person and write nothing. Nothing is written while `IT_AWARE_TASKS_ENABLED` is off.
+- **`sign_in`**: a successful `POST /auth/session/token` (either grant), the one place a person's sign-in completes. A refused sign-in writes nothing. **A token refresh (`POST /auth/session/refresh`) writes no event**, so a person whose session is kept alive by refreshes shows one sign-in, not one a day; their activity shows through the tasks they open. The service routes (`/auth/service/*`) are not sign-ins of a person and write nothing.
 - **`task_open`**: `POST /tasks/recent`, for a task the caller has; the same account, task and view within 60 seconds is written once. The rules are in [tasks](api_specs_tasks.md#post-tasksrecent).
 
 Writing is **fail-soft**: an event that cannot be written (for instance before migration 0140 has run) is logged as `usage: a <kind> event was not written (<error type>)` and the sign-in or the page is not affected. The write runs in a savepoint of the request's session, so a failure undoes only itself. It never waits long: inside the savepoint it first sets, for that transaction only, `lock_timeout` to 250 ms and `statement_timeout` to 2 s, so a write that meets a lock (a migration holding the table, say) gives up and the sign-in or the page goes on.
@@ -40,7 +40,7 @@ The 60-second rule holds for two requests at once: a `task_open` write first tak
 
 Migration `0140` creates the permission and gives it to every group that holds `systems:jobs:read` (or `systems:jobs:*`) when it runs: the groups migration `0138` gave the job read permission to, as they stand now. A wider wildcard (`*:*:*`, `systems:*:*`) already matches the new code.
 
-Every endpoint answers `404` while `IT_AWARE_TASKS_ENABLED` is `false`, as the task endpoints do; `401` without a sign-in; `403` without the permission.
+Every endpoint answers `401` without a sign-in and `403` without the permission.
 
 ## The window
 

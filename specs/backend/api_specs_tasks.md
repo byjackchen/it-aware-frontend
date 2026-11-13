@@ -6,8 +6,6 @@ A **task** is one thing a person can see or do in IT-Aware, named with the words
 
 A task has **views**: the pages inside it, which the frontend shows as tabs. Each view has its own permission rule and address. A **grouping** (Data, Analytics, Operations, Administration) only orders and titles tasks: it has no address and no part in access.
 
-Every endpoint answers `404` when the setting `IT_AWARE_TASKS_ENABLED` is `false` (default `true`), except `POST /tasks/metrics/refresh`, which the hourly job calls: it answers `200` with `"enabled": false` and computes nothing.
-
 ## The task contract
 
 | Field | Type | Meaning |
@@ -208,11 +206,11 @@ Computes every registered metric for the whole organization and upserts its row.
 {"enabled": true, "refreshed": ["it-tickets.active"], "kept": {"jobs.failed": "failed: RuntimeError"}}
 ```
 
-- `enabled`: `false` while `IT_AWARE_TASKS_ENABLED` is off. Then nothing is computed, both lists are empty, and the answer is still `200` (this route is not behind the switch's `404`), so the job ends clean instead of failing every hour.
+- `enabled`: always `true`. The switch it reported is retired; the field is kept so the answer's shape does not change.
 - `refreshed`: the metrics whose row was written.
 - `kept`: the metrics that kept their last row, each with why: `no value` (a rate with nothing to count yet) or `failed: <error type>` (the cause is in the backend log). One metric failing does not stop the others; when Airflow cannot be read, `jobs.failed` is kept. A page computation two metrics share runs once per refresh, also when it fails.
 
-**The job.** `refresh_task_metrics` sends this call once an hour, once per run, with a 15-minute timeout and no second send (two refreshes must not run at a time); a failed run is not retried, the next hour's run is. The run is red when the call fails or is refused, when any `kept` reason is a failure, or when `refreshed` is empty; `no value` alone is not a failure. With `"enabled": false` the run is green and its log says the tasks are switched off.
+**The job.** `refresh_task_metrics` sends this call once an hour, once per run, with a 15-minute timeout and no second send (two refreshes must not run at a time); a failed run is not retried, the next hour's run is. The run is red when the call fails or is refused, when any `kept` reason is a failure, or when `refreshed` is empty; `no value` alone is not a failure.
 
 ## Reporting-only check
 
