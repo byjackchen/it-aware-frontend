@@ -2,11 +2,11 @@
 
 ## Overview
 
-A **task** is one thing a person can see or do in IT-Aware, named with the words they would type. The **task catalog** lists every task; it is reviewed configuration in this repo (`app/tasks/tasks.json`, beside the grouping list `groupings.json`), changed by a reviewed commit and read once at start. Both files are written from the frozen contract `app/tasks/contract-v3.json` (the task catalog refactor, frozen 2026-11-12) by `scripts/tasks_from_contract.py`; a unit test fails when they disagree with it. It holds 23 tasks in four groupings, with 62 views.
+A **task** is one thing a person can see or do in IT-Aware, named with the words they would type. The **task catalog** lists every task; it is reviewed configuration in this repo (`app/tasks/tasks.json`, beside the grouping list `groupings.json`), changed by a reviewed commit and read once at start. Both files are written from the frozen contract `app/tasks/contract-v3.json` (the task catalog refactor, frozen 2026-11-12) by `scripts/tasks_from_contract.py`; a unit test fails when they disagree with it. It holds 24 tasks in four groupings, with 65 views. One task was added to the contract copy after it was frozen: `usages` (View Usages, migration 0140; its API is in [usage](api_specs_usage.md)); it has no old code and no legacy address.
 
 A task has **views**: the pages inside it, which the frontend shows as tabs. Each view has its own permission rule and address. A **grouping** (Data, Analytics, Operations, Administration) only orders and titles tasks: it has no address and no part in access.
 
-Every endpoint answers `404` when the setting `IT_AWARE_TASKS_ENABLED` is `false` (default `true`).
+Every endpoint answers `404` when the setting `IT_AWARE_TASKS_ENABLED` is `false` (default `true`), except `POST /tasks/metrics/refresh`, which the hourly job calls: it answers `200` with `"enabled": false` and computes nothing.
 
 ## The task contract
 
@@ -145,7 +145,14 @@ Pin or unpin a task for the caller. `204`. `PUT` answers `404` for a code that i
 
 ### POST /tasks/recent
 
-Body `{"task": "it-incidents"}`: the task the caller opened. Opening any of a task's views counts as opening the task; the frontend reads the task from the page's address (`/tasks/<task>/…`). The task becomes the caller's most recent. `204` always; a code that is no task of the caller's is not kept. Any other field is refused (`422`).
+Body `{"task": "it-incidents", "view": "incidents"}`: the task the caller opened, and the slug of the view they opened it at. `view` is optional. Opening any of a task's views counts as opening the task; the frontend reads the task and the view from the page's address (`/tasks/<task>/…`). The task becomes the caller's most recent. `204` always; a code that is no task of the caller's is not kept. Any other field is refused (`422`).
+
+Each call also writes one **usage event** (`task_open`, in `systems.usage_events`: the account, the task, the view and the time; see [usage](api_specs_usage.md)):
+
+- only for a task the caller has; a code that is no task of theirs writes none;
+- a `view` that is not one of the caller's views of that task is stored as no view (`null`); the open still counts;
+- the same account, task and view again within 60 seconds is the page drawn again, not a new open, and writes none (a missing `view` is compared as one value);
+- fail-soft: an event that cannot be written is logged by its kind and the answer is still `204`. It is written after the recents, inside a savepoint of the same session, and gives up after 250 ms on a lock.
 
 ## Key metrics on the task cards
 
