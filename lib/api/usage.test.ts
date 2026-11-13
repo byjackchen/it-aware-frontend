@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { getUnusedAccess, getUsageByTask, getUsageOverview, load } from '@/lib/api/usage';
+import { getPersonUsage, getTaskPeople, getUnusedAccess, getUsageByTask, getUsageOverview, getUsagePeople, load } from '@/lib/api/usage';
 import { ApiError } from '@/lib/api/errors';
 
 /** The View Usages client (lib/api/usage.ts) against a stubbed backend. */
@@ -29,15 +29,21 @@ function stub(body: unknown, status = 200) {
   return fetchMock;
 }
 
-it('reads the three views with the session cookie and the window', async () => {
+it('reads the views and who used what with the session cookie and the window', async () => {
   const fetchMock = stub({ days: 7 });
   expect(await getUsageOverview(7)).toEqual({ days: 7 });
   await getUsageByTask(90);
   await getUnusedAccess('it-incidents', 30, 50, 100);
+  await getTaskPeople('it-incidents', 7, 50, 50);
+  await getUsagePeople(90, 50, 0);
+  await getPersonUsage('QUFB/QUFB', 30);
   expect(fetchMock.mock.calls.map(([url]) => String(url).replace(/^.*\/usage/, '/usage'))).toEqual([
     '/usage/overview?days=7',
     '/usage/tasks?days=90',
     '/usage/unused-access?task=it-incidents&days=30&limit=50&offset=100',
+    '/usage/tasks/it-incidents/people?days=7&limit=50&offset=50',
+    '/usage/people?days=90&limit=50&offset=0',
+    '/usage/people/QUFB%2FQUFB?days=30',
   ]);
   expect(fetchMock.mock.calls[0][1].headers.Cookie).toBe('it_aware_access=test-token');
 });

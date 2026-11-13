@@ -7,7 +7,7 @@ import { redirect, unstable_rethrow } from 'next/navigation';
 import { fetchApi } from '@/lib/api/core';
 import { ApiError } from '@/lib/api/errors';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import type { UnusedAccess, UsageByTask, UsageOverview } from '@/lib/types/usage';
+import type { PersonUsage, TaskPeople, UnusedAccess, UsageByTask, UsageOverview, UsagePeople } from '@/lib/types/usage';
 
 const BASE = `${RUNTIME_CONFIG.backend.domain}/usage`;
 
@@ -22,6 +22,26 @@ export async function getUsageByTask(days: number): Promise<UsageByTask> {
 export async function getUnusedAccess(task: string, days: number, limit: number, offset: number): Promise<UnusedAccess> {
   const query = new URLSearchParams({ task, days: String(days), limit: String(limit), offset: String(offset) });
   return fetchApi(`${BASE}/unused-access?${query}`);
+}
+
+/** A list's window and page, as the paged reads take them. */
+function paged(days: number, limit: number, offset: number): URLSearchParams {
+  return new URLSearchParams({ days: String(days), limit: String(limit), offset: String(offset) });
+}
+
+/** The people who opened one task in the window. */
+export async function getTaskPeople(task: string, days: number, limit: number, offset: number): Promise<TaskPeople> {
+  return fetchApi(`${BASE}/tasks/${encodeURIComponent(task)}/people?${paged(days, limit, offset)}`);
+}
+
+/** Everyone active in the window. */
+export async function getUsagePeople(days: number, limit: number, offset: number): Promise<UsagePeople> {
+  return fetchApi(`${BASE}/people?${paged(days, limit, offset)}`);
+}
+
+/** One person's sign-ins and the tasks they opened in the window. */
+export async function getPersonUsage(oid: string, days: number): Promise<PersonUsage> {
+  return fetchApi(`${BASE}/people/${encodeURIComponent(oid)}?days=${days}`);
 }
 
 /**

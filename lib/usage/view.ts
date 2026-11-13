@@ -1,14 +1,23 @@
 /**
- * View Usages: where its three views live, how their search parameters are
- * read, and the By Task table's rows, share, sorting and filter.
+ * View Usages: where its four views and their sub-pages live, how their search
+ * parameters are read, the By Task table's rows, share, sorting and filter,
+ * and the shaping of who used what.
  *
  *   /tasks/usages/overview[?days=]
  *   /tasks/usages/tasks[?days=]
+ *   /tasks/usages/tasks/<task>[?days=][&page=]     the people who opened one task
+ *   /tasks/usages/people[?days=][&page=]
+ *   /tasks/usages/people/<oid>[?days=]             one person
  *   /tasks/usages/unused-access[?task=<code>][&days=][&page=]
+ *
+ * A sub-page lies under its view's address (the catalog's rule for a record
+ * or sub-page), so it is that view's: its tab is marked and opening it counts
+ * as opening the view.
  */
 
 import { TASKS, groupingName, named } from '@/lib/tasks/catalog';
-import type { TaskUsage } from '@/lib/types/usage';
+import type { Task } from '@/lib/types/tasks';
+import type { PersonTask, TaskUsage } from '@/lib/types/usage';
 
 // ── The window and the addresses ─────────────────────────────────────────────
 
@@ -19,6 +28,9 @@ export const DEFAULT_DAYS: WindowDays = 30;
 
 /** Accounts per page of Unused Access. */
 export const UNUSED_PAGE_SIZE = 50;
+
+/** People per page of By Person and of the people of a task. */
+export const PEOPLE_PAGE_SIZE = 50;
 
 export type UsageParams = Record<string, string | string[] | undefined>;
 
@@ -60,16 +72,25 @@ export function parseTask(params: UsageParams): string | null {
   return TASKS.some((task) => task.code === code) ? code : null;
 }
 
-export type UsageViewSlug = 'overview' | 'tasks' | 'unused-access';
+export type UsageViewSlug = 'overview' | 'tasks' | 'people' | 'unused-access';
 
-/** The address of a view; the default window and the first page are left out. */
-export function usageHref(view: UsageViewSlug, link: { days?: number; task?: string | null; page?: number } = {}): string {
+export interface UsageLink {
+  days?: number;
+  task?: string | null;
+  page?: number;
+  /** A sub-page of the view: a task's code under By Task, a person's oid under By Person. */
+  sub?: string | null;
+}
+
+/** The address of a view or one of its sub-pages; the default window and the first page are left out. */
+export function usageHref(view: UsageViewSlug, link: UsageLink = {}): string {
   const query = new URLSearchParams();
   if (link.task) query.set('task', link.task);
   if (link.days && link.days !== DEFAULT_DAYS) query.set('days', String(link.days));
   if (link.page && link.page > 1) query.set('page', String(link.page));
   const text = query.toString();
-  return `/tasks/usages/${view}${text ? `?${text}` : ''}`;
+  const sub = link.sub ? `/${encodeURIComponent(link.sub)}` : '';
+  return `/tasks/usages/${view}${sub}${text ? `?${text}` : ''}`;
 }
 
 // ── By Task ──────────────────────────────────────────────────────────────────
@@ -146,4 +167,59 @@ export function sortRows(rows: TaskRow[], sort: Sort, locale: string): TaskRow[]
 /** The tasks nobody opened in the window. */
 export function neverOpened(rows: TaskRow[]): TaskRow[] {
   return rows.filter((row) => row.opens === 0);
+}
+
+// ── Who used what ────────────────────────────────────────────────────────────
+
+/** A task's name in the current language; its code when the catalog no longer has it. */
+export function taskName(code: string, locale: string): string {
+  const task = TASKS.find((candidate) => candidate.code === code);
+  return task ? named(task.name, locale) : code;
+}
+
+/** The names of a task's views, in the order given: the catalog's name, or the slug the catalog lacks. */
+export function viewNames(code: string, slugs: string[], locale: string): string[] {
+  const views = TASKS.find((candidate) => candidate.code === code)?.views ?? [];
+  return slugs.map((slug) => {
+    const view = views.find((candidate) => candidate.slug === slug);
+    return view ? named(view.name, locale) : slug;
+  });
+}
+
+export interface PersonTaskRow extends PersonTask {
+  /** The catalog's name, or the code as recorded. */
+  name: string;
+  /** Whether the catalog still has the task. */
+  known: boolean;
+  /** Where the task opens for the viewer; null when they do not hold it, or it is no task now. */
+  address: string | null;
+  /** The views opened, by name. */
+  viewNames: string[];
+}
+
+/** One person's tasks, in the order given, named, with the viewer's own address of the tasks they hold. */
+export function personTaskRows(tasks: PersonTask[], held: Task[] | null, locale: string): PersonTaskRow[] {
+  return tasks.map((usage) => {
+    const known = TASKS.some((candidate) => candidate.code === usage.task);
+    const mine = held?.find((candidate) => candidate.code === usage.task);
+    return {
+      ...usage,
+      name: taskName(usage.task, locale),
+      known,
+      address: known && mine ? mine.address : null,
+      viewNames: viewNames(usage.task, usage.views, locale),
+    };
+  });
+}
+
+/** A label beside an account: a message key of `Usage.labels`, or the backend's own word for a type it has no message for. */
+export type AccountLabel = { key: 'inactive' | 'integration' } | { text: string };
+
+/** What tells an account apart from a real, active user: inactive, and a type other than `user`. */
+export function accountLabels(account: { active: boolean; account_type: string }): AccountLabel[] {
+  const labels: AccountLabel[] = [];
+  if (!account.active) labels.push({ key: 'inactive' });
+  if (account.account_type === 'integration') labels.push({ key: 'integration' });
+  else if (account.account_type !== 'user') labels.push({ text: account.account_type });
+  return labels;
 }

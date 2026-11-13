@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accountLabels,
   DEFAULT_SORT,
   formatShare,
   MAX_PAGE,
@@ -9,13 +10,17 @@ import {
   parseDays,
   parsePage,
   parseTask,
+  personTaskRows,
   share,
   sortRows,
+  taskName,
   taskRows,
   usageHref,
+  viewNames,
   windowQuery,
 } from '@/lib/usage/view';
-import type { TaskUsage } from '@/lib/types/usage';
+import type { Task } from '@/lib/types/tasks';
+import type { PersonTask, TaskUsage } from '@/lib/types/usage';
 
 /** View Usages: the day selector, the addresses, and the By Task table's logic (lib/usage/view.ts). */
 
@@ -72,6 +77,13 @@ describe('the day selector', () => {
       '/tasks/usages/unused-access?task=jobs&days=90&page=2',
     );
     expect(usageHref('unused-access', { task: null, page: 1 })).toBe('/tasks/usages/unused-access');
+  });
+
+  it("builds a sub-page's address under its view, the code or oid escaped", () => {
+    expect(usageHref('tasks', { sub: 'it-incidents' })).toBe('/tasks/usages/tasks/it-incidents');
+    expect(usageHref('tasks', { sub: 'jobs', days: 7, page: 2 })).toBe('/tasks/usages/tasks/jobs?days=7&page=2');
+    expect(usageHref('people', { sub: 'QUFB/QU?', days: 90 })).toBe('/tasks/usages/people/QUFB%2FQU%3F?days=90');
+    expect(usageHref('people', { sub: null, page: 3 })).toBe('/tasks/usages/people?page=3');
   });
 });
 
@@ -164,5 +176,57 @@ describe('the By Task rows', () => {
 
   it('filter to the tasks nobody opened in the window', () => {
     expect(codes(neverOpened(rows))).toEqual(['jobs', 'usages']);
+  });
+});
+
+describe('who used what', () => {
+  it('names a task, or shows the code the catalog no longer has', () => {
+    expect(taskName('jobs', 'en')).toBe('Manage Jobs');
+    expect(taskName('jobs', 'zh')).toBe('管理作业');
+    expect(taskName('survey-link', 'en')).toBe('survey-link');
+  });
+
+  it("names a task's views, and shows a slug the catalog lacks", () => {
+    expect(viewNames('usages', ['people', 'tasks'], 'en')).toEqual(['By Person', 'By Task']);
+    expect(viewNames('usages', ['people'], 'zh')).toEqual(['按人员']);
+    expect(viewNames('usages', ['gone'], 'en')).toEqual(['gone']);
+    expect(viewNames('retired-task', ['list'], 'en')).toEqual(['list']);
+    expect(viewNames('jobs', [], 'en')).toEqual([]);
+  });
+
+  const opened: PersonTask[] = [
+    { task: 'workers', opens: 5, views: ['organizations', 'workers'], last_opened_at: '2026-11-12T08:00:00Z' },
+    { task: 'jobs', opens: 2, views: [], last_opened_at: '2026-11-11T08:00:00Z' },
+    { task: 'survey-link', opens: 1, views: ['lookup'], last_opened_at: '2026-11-01T08:00:00Z' },
+  ];
+  const held = [{ code: 'workers', address: '/tasks/workers/organizations' }] as Task[];
+
+  it("shapes one person's tasks: named, linked where the viewer holds them, in the order given", () => {
+    const rows = personTaskRows(opened, held, 'en');
+    expect(rows.map((row) => row.task)).toEqual(['workers', 'jobs', 'survey-link']);
+    expect(rows[0]).toMatchObject({
+      name: 'Maintain Workers and Organizations', known: true, address: '/tasks/workers/organizations',
+      viewNames: ['Organizations', 'Workers'], opens: 5,
+    });
+    // Held by nobody here: named, not linked.
+    expect(rows[1]).toMatchObject({ name: 'Manage Jobs', known: true, address: null, viewNames: [] });
+    // A code no longer in the catalog: shown as it was recorded.
+    expect(rows[2]).toMatchObject({ name: 'survey-link', known: false, address: null, viewNames: ['lookup'] });
+  });
+
+  it('links nothing when the tasks the viewer holds are unknown', () => {
+    expect(personTaskRows(opened, null, 'zh').map((row) => [row.name, row.address])).toEqual([
+      ['维护员工与组织', null],
+      ['管理作业', null],
+      ['survey-link', null],
+    ]);
+  });
+
+  it('labels an inactive account and one that is not a user', () => {
+    expect(accountLabels({ active: true, account_type: 'user' })).toEqual([]);
+    expect(accountLabels({ active: false, account_type: 'user' })).toEqual([{ key: 'inactive' }]);
+    expect(accountLabels({ active: true, account_type: 'integration' })).toEqual([{ key: 'integration' }]);
+    expect(accountLabels({ active: false, account_type: 'integration' })).toEqual([{ key: 'inactive' }, { key: 'integration' }]);
+    expect(accountLabels({ active: true, account_type: 'service' })).toEqual([{ text: 'service' }]);
   });
 });
