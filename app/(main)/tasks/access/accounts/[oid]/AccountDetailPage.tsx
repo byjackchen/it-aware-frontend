@@ -406,7 +406,7 @@ export function AccountDetailPage({
                                 <div className="flex items-center justify-between p-3 rounded-lg theme-surface">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                                            <Cpu className="w-5 h-5 text-cyan-400" />
+                                            <Cpu className="w-5 h-5 text-accent" />
                                         </div>
                                         <div>
                                             <div className="font-medium text-ink">{linkedSystem.name}</div>
@@ -430,7 +430,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={() => setIsLinkingSystem(true)}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-accent text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Link className="w-3.5 h-3.5" />
                                         <span>Link System</span>

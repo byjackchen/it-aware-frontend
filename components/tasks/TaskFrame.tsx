@@ -2,7 +2,8 @@
 
 /**
  * The task frame: on a page that belongs to a task, a header with the task's
- * name, its grouping as a small caption, a pin toggle, and, when the person
+ * name, its grouping as a small caption, a pin toggle (the star of the home
+ * and of search), and, when the person
  * has more than one of the task's views, a tab per view. It replaces the
  * global sidebar: each task carries its own navigation. Renders nothing on a
  * page that is no task's (the home).
@@ -11,7 +12,7 @@
 import { useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Pin, PinOff } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { NavLink } from '@/components/navigation/NavLink';
 import { setTaskPinned } from '@/app/actions/tasks';
 import { useTheme } from '@/lib/contexts/theme-context';
@@ -101,7 +102,7 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
                             : 'border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
                         }`}
                 >
-                    {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                    <Star className="w-3.5 h-3.5" fill={isPinned ? 'currentColor' : 'none'} />
                     <span>{t(isPinned ? 'unpin' : 'pin')}</span>
                 </button>
             )}

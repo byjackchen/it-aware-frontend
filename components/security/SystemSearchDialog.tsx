@@ -87,7 +87,7 @@ export function SystemSearchDialog({
                                     >
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${system.is_active ? 'bg-cyan-500/20' : 'bg-gray-500/20'
                                             }`}>
-                                            <Cpu className={`w-5 h-5 ${system.is_active ? 'text-cyan-400' : 'text-ink-2'
+                                            <Cpu className={`w-5 h-5 ${system.is_active ? 'text-accent' : 'text-ink-2'
                                                 }`} />
                                         </div>
                                         <div className="flex-1 min-w-0">

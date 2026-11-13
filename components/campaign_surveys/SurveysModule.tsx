@@ -926,7 +926,7 @@ export function SurveysModule() {
             <div className="h-[calc(100vh-4rem)] p-4 overflow-hidden">
                 <div className="h-full min-h-0 grid grid-cols-[360px_1fr] gap-4">
                     <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                        <header className="p-4 border-b border-white/10 space-y-3">
+                        <header className="p-4 border-b border-line space-y-3">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                     <ClipboardCheck className="w-4 h-4 text-blue-300" />
@@ -986,14 +986,14 @@ export function SurveysModule() {
                                 className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                             >
                                 {isSurveysLoading && filteredSurveys.length === 0 ? (
-                                    <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                    <div className="p-4 text-sm text-ink-2 inline-flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         {t('list.loading')}
                                     </div>
                                 ) : surveysError ? (
                                     <div className="p-4 text-sm text-rose-300">{surveysError}</div>
                                 ) : filteredSurveys.length === 0 ? (
-                                    <div className="p-4 text-sm text-gray-400">{t('list.empty')}</div>
+                                    <div className="p-4 text-sm text-ink-2">{t('list.empty')}</div>
                                 ) : (
                                     filteredSurveys.map((item) => {
                                         const selected = item.oid === selectedSurveyBatchOid;
@@ -1002,7 +1002,7 @@ export function SurveysModule() {
                                                 key={item.oid}
                                                 type="button"
                                                 onClick={() => setQueryParam('surveyBatch', item.oid)}
-                                                className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 ${selected ? 'bg-blue-500/10' : ''}`}
+                                                className={`w-full text-left px-4 py-3 border-b border-line hover:bg-hover ${selected ? 'bg-blue-500/10' : ''}`}
                                             >
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.name}</p>
@@ -1039,12 +1039,12 @@ export function SurveysModule() {
 
                     <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         {!selectedSurveyBatch ? (
-                            <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                            <div className="h-full flex items-center justify-center text-sm text-ink-2">
                                 {t('details.selectSurvey')}
                             </div>
                         ) : (
                             <>
-                                <header className="p-4 border-b border-white/10 space-y-3">
+                                <header className="p-4 border-b border-line space-y-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedSurveyBatch.name}</h2>
@@ -1169,7 +1169,7 @@ export function SurveysModule() {
                                     )}
 
                                     {isObjectEditing ? (
-                                        <div className="space-y-3 rounded-lg border border-white/10 p-3">
+                                        <div className="space-y-3 rounded-lg border border-line p-3">
                                             <div>
                                                 <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('edit.fields.name')}</label>
                                                 <input
@@ -1285,7 +1285,7 @@ export function SurveysModule() {
                                                         width={720}
                                                         height={360}
                                                         unoptimized
-                                                        className="h-auto max-h-44 w-auto rounded-md border border-white/10 object-contain"
+                                                        className="h-auto max-h-44 w-auto rounded-md border border-line object-contain"
                                                     />
                                                 ) : (
                                                     <p className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
@@ -1625,16 +1625,16 @@ export function SurveysModule() {
                                         className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                                     >
                                         {isDetailsLoading && filteredDetails.length === 0 ? (
-                                            <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                            <div className="p-4 text-sm text-ink-2 inline-flex items-center gap-2">
                                                 <Loader2 className="w-4 h-4 animate-spin" />
                                                 {t('details.loading')}
                                             </div>
                                         ) : detailsError ? (
                                             <div className="p-4 text-sm text-rose-300">{detailsError}</div>
                                         ) : filteredDetails.length === 0 ? (
-                                            <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
+                                            <div className="p-4 text-sm text-ink-2">{t('details.empty')}</div>
                                         ) : (
-                                            <div className="divide-y divide-white/5">
+                                            <div className="divide-y divide-line">
                                                 {filteredDetails.map((detail) => {
                                                     const isSelected = detail.oid === selectedSurveyOid;
                                                     return (
@@ -1642,7 +1642,7 @@ export function SurveysModule() {
                                                             key={detail.oid}
                                                             type="button"
                                                             onClick={() => openEditRowEditor(detail)}
-                                                            className={`w-full text-left px-4 py-3 hover:bg-white/5 ${isSelected ? 'bg-blue-500/10' : ''}`}
+                                                            className={`w-full text-left px-4 py-3 hover:bg-hover ${isSelected ? 'bg-blue-500/10' : ''}`}
                                                         >
                                                             <div className="flex items-center justify-between gap-2">
                                                                 <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
