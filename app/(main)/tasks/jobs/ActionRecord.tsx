@@ -77,7 +77,7 @@ export function ActionRecord({ data, job, page }: { data: ActionsResponse; job: 
           </table>
         </div>
       )}
-      <Pager page={page} total={data.total} size={ACTIONS_PAGE_SIZE} link={job ? { tab: 'actions', job } : { tab: 'actions' }} />
+      <Pager page={page} total={data.total} size={ACTIONS_PAGE_SIZE} href={(to) => jobsHref({ tab: 'actions', job: job ?? undefined, page: to })} />
     </>
   );
 }

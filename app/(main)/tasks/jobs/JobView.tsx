@@ -178,7 +178,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
           </table>
         </div>
       )}
-      <Pager page={page} total={runs.total} size={RUNS_PAGE_SIZE} link={{ job: job.id }} />
+      <Pager page={page} total={runs.total} size={RUNS_PAGE_SIZE} href={(to) => jobsHref({ job: job.id, page: to })} />
     </>
   );
 }

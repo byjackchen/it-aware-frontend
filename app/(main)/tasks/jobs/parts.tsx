@@ -13,7 +13,7 @@ import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, Workflow, X } from 'lu
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { usePermissions } from '@/lib/contexts/user-context';
 import { formatLocalDateTime } from '@/lib/utils/datetime';
-import { jobsHref, type JobsLink } from '@/lib/jobs/paths';
+import { jobsHref } from '@/lib/jobs/paths';
 import { formatDuration, isUnavailable, JOBS_RUN_PERMISSION, stateTone, type Tone } from '@/lib/jobs/view';
 import type { JobsResult } from '@/app/actions/jobs';
 import type { JobActionRecord, JobsFailure } from '@/lib/types/jobs';
@@ -116,16 +116,17 @@ export function LoadFailure({ failure }: { failure: JobsFailure }) {
   return <Notice tone="error">{t('loadFailed', { message: failure.message })}</Notice>;
 }
 
-export function Pager({ page, total, size, link }: { page: number; total: number; size: number; link: JobsLink }) {
+/** Previous, the page, next; `href` answers a page's address. Shared with View Usages. */
+export function Pager({ page, total, size, href }: { page: number; total: number; size: number; href: (page: number) => string }) {
   const t = useTranslations('Jobs.pager');
   const pages = Math.max(1, Math.ceil(total / size));
   if (pages <= 1) return null;
   const linkClass = 'rounded-lg px-3 py-1 text-sm text-accent hover:bg-hover';
   return (
     <div className="mt-3 flex items-center justify-end gap-2 text-sm text-ink-2">
-      {page > 1 && <Link className={linkClass} href={jobsHref({ ...link, page: page - 1 })}>{t('previous')}</Link>}
+      {page > 1 && <Link className={linkClass} href={href(page - 1)}>{t('previous')}</Link>}
       <span>{t('page', { page, pages })}</span>
-      {page < pages && <Link className={linkClass} href={jobsHref({ ...link, page: page + 1 })}>{t('next')}</Link>}
+      {page < pages && <Link className={linkClass} href={href(page + 1)}>{t('next')}</Link>}
     </div>
   );
 }
