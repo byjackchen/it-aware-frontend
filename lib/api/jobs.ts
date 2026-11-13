@@ -16,6 +16,7 @@ import type {
   JobActionRecord,
   JobDetail,
   JobsFailure,
+  JobsLoad,
   JobsResponse,
   RunDetail,
   RunsResponse,
@@ -132,6 +133,11 @@ export async function getStepLog(
 
 export async function listActions(jobId: string | null, limit: number, offset: number): Promise<ActionsResponse> {
   return call(`/actions${query({ job_id: jobId, limit, offset })}`);
+}
+
+/** The load of the last `days` UTC days: runs and run time by day, by hour and by job. */
+export async function getJobsLoad(days: number): Promise<JobsLoad> {
+  return call(`/load${query({ days })}`);
 }
 
 // ── Control and recovery (each recorded by the backend) ──────────────────────

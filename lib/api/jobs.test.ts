@@ -39,6 +39,7 @@ it('reads with the session cookie, and encodes every id in the path', async () =
   await api.getStepLog('gate_digest', RUN, 'digest', { tryNumber: 1, mapIndex: 3, token: 'abc' });
   await api.listActions(null, 50, 0);
   await api.listActions('gate_digest', 50, 100);
+  await api.getJobsLoad(30);
   const urls = fetchMock.mock.calls.map(([url]) => String(url).replace(/^.*\/jobs/, '/jobs'));
   expect(urls).toEqual([
     '/jobs',
@@ -49,6 +50,7 @@ it('reads with the session cookie, and encodes every id in the path', async () =
     `/jobs/gate_digest/runs/${ENC}/steps/digest/log?try=1&map_index=3&token=abc`,
     '/jobs/actions?limit=50&offset=0',
     '/jobs/actions?job_id=gate_digest&limit=50&offset=100',
+    '/jobs/load?days=30',
   ]);
   expect(fetchMock.mock.calls[0][1].headers.Cookie).toBe('it_aware_access=test-token');
   expect(fetchMock.mock.calls[0][1].cache).toBe('no-store');
