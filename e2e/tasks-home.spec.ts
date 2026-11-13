@@ -9,8 +9,8 @@ import type { TaskMetrics } from '../lib/types/tasks';
  * sets on the account page. The specs act as the synthetic admin, who is also a
  * user with every task. Each spec leaves the pins and the profile as it found them.
  *
- * Changed with the catalog v3 (TODO00000140 A14, lane F1): 23 tasks with
- * views in place of 63 pages, grouped by grouping; the start task is a code;
+ * Changed with the catalog v3 (TODO00000140 A14, lane F1): tasks with
+ * views (24 since View Usages) in place of 63 pages, grouped by grouping; the start task is a code;
  * the global sidebar gave way to the task frame.
  *
  * Changed with the home face-lift (feat/home-search-light): a greeting in place

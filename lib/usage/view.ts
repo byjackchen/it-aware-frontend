@@ -34,10 +34,24 @@ export function parseDays(params: UsageParams): WindowDays {
   return WINDOWS.find((days) => days === asked) ?? DEFAULT_DAYS;
 }
 
-/** The page the address asks for, from 1. */
+/** No list is asked for beyond this page, whatever the address says. */
+export const MAX_PAGE = 10_000;
+
+/** The page the address asks for, from 1 to MAX_PAGE. */
 export function parsePage(params: UsageParams): number {
   const page = Number(one(params, 'page'));
-  return Number.isInteger(page) && page >= 1 ? page : 1;
+  return Number.isInteger(page) && page >= 1 ? Math.min(page, MAX_PAGE) : 1;
+}
+
+/** How many pages `total` rows make; an empty list still has its first page. */
+export function pageCount(total: number, size: number): number {
+  return Math.max(1, Math.ceil(total / size));
+}
+
+/** The window as the address carries it from one of the task's views to another: `?days=7`, or nothing for the default. */
+export function windowQuery(params: { get(name: string): string | null }): string {
+  const days = parseDays({ days: params.get('days') ?? undefined });
+  return days === DEFAULT_DAYS ? '' : `?days=${days}`;
 }
 
 /** The task the address asks for; null for none, or a code that is no task of the catalog. */
@@ -114,20 +128,18 @@ export function nextSort(current: Sort, key: SortKey): Sort {
   return { key, direction: TEXT_KEYS.includes(key) ? 'ascending' : 'descending' };
 }
 
-/** A value to compare: a missing share or time sorts below every real one. */
-function sortValue(row: TaskRow, key: SortKey): string | number {
-  const value = row[key];
-  return value ?? (key === 'share' ? -1 : '');
-}
-
-/** The rows sorted; equal rows keep the order given (the catalog's). */
-export function sortRows(rows: TaskRow[], sort: Sort): TaskRow[] {
+/**
+ * The rows sorted, text in the order of the language shown. A missing share or
+ * time comes last in both directions; equal rows keep the order given (the
+ * catalog's).
+ */
+export function sortRows(rows: TaskRow[], sort: Sort, locale: string): TaskRow[] {
   const sign = sort.direction === 'ascending' ? 1 : -1;
   return [...rows].sort((a, b) => {
-    const x = sortValue(a, sort.key);
-    const y = sortValue(b, sort.key);
-    const order = typeof x === 'string' ? x.localeCompare(String(y)) : x - Number(y);
-    return sign * order;
+    const x = a[sort.key];
+    const y = b[sort.key];
+    if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+    return sign * (typeof x === 'string' ? x.localeCompare(String(y), locale) : x - Number(y));
   });
 }
 

@@ -14,7 +14,7 @@ export default async function UsageByTaskPage({ searchParams }: { searchParams: 
   const days = parseDays(await searchParams);
   const usage = await load(() => getUsageByTask(days));
   return (
-    <UsageFrame view="tasks" days={days} window={usage.ok ? usage.data : undefined}>
+    <UsageFrame view="tasks" days={days} range={usage.ok ? usage.data : undefined}>
       {usage.ok ? <UsageByTaskTable data={usage.data} days={days} /> : <LoadFailure message={usage.message} />}
     </UsageFrame>
   );

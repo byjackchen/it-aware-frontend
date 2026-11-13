@@ -1,5 +1,5 @@
 /**
- * Server-side client for View Usages (backend `/usage`, specs/api_specs_usage.md).
+ * Server-side client for View Usages (backend `/usage`, specs/backend/api_specs_usage.md).
  * Every read needs `systems:usage:read`.
  */
 

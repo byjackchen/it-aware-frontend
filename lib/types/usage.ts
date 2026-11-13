@@ -1,5 +1,5 @@
 /**
- * View Usages: the backend's `/usage` API (it-aware-backend specs/api_specs_usage.md).
+ * View Usages: the backend's `/usage` API (specs/backend/api_specs_usage.md).
  * Sign-ins and opened tasks, counted over a window of whole UTC days.
  */
 

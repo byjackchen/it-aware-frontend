@@ -10,13 +10,14 @@
  */
 
 import { useTransition } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Star } from 'lucide-react';
 import { NavLink } from '@/components/navigation/NavLink';
 import { setTaskPinned } from '@/app/actions/tasks';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { groupingName, named, pageHref, resolvePage } from '@/lib/tasks/catalog';
+import { windowQuery } from '@/lib/usage/view';
 import type { Task } from '@/lib/types/tasks';
 
 export interface TaskFrameProps {
@@ -28,6 +29,7 @@ export interface TaskFrameProps {
 
 export function TaskFrame({ held, pinned }: TaskFrameProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('TaskFrame');
@@ -44,6 +46,8 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
     // The pin shows what is stored: it changes once the backend has it and
     // the layout's data is fetched again; until then the button waits.
     const isPinned = pinned?.includes(task.code) ?? false;
+    // View Usages' three views share one window (7, 30 or 90 days): its tabs carry it along.
+    const kept = task.code === 'usages' ? windowQuery(searchParams) : '';
 
     const togglePin = () => {
         startTransition(async () => {
@@ -73,7 +77,7 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
                         return (
                             <NavLink
                                 key={candidate.slug}
-                                href={pageHref(candidate.address)}
+                                href={`${pageHref(candidate.address)}${kept}`}
                                 aria-current={active ? 'page' : undefined}
                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${active
                                     ? 'sidebar-active'

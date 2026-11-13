@@ -15,7 +15,7 @@ export default async function UsageOverviewPage({ searchParams }: { searchParams
   const days = parseDays(await searchParams);
   const overview = await load(() => getUsageOverview(days));
   return (
-    <UsageFrame view="overview" days={days} window={overview.ok ? overview.data : undefined}>
+    <UsageFrame view="overview" days={days} range={overview.ok ? overview.data : undefined}>
       {overview.ok ? <UsageOverviewView data={overview.data} /> : <LoadFailure message={overview.message} />}
     </UsageFrame>
   );

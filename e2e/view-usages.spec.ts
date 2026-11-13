@@ -73,7 +73,8 @@ test.describe('View Usages', () => {
     expect(await stat(page, 'signIns')).toBeGreaterThanOrEqual(1);
     expect(await stat(page, 'taskOpens')).toBeGreaterThanOrEqual(2);
     await expect(page.getByTestId('usage-stat-activeWindow')).toContainText('Active people, last 30 days');
-    await expect(page.getByTestId('usage-tracking-since')).toHaveText(/^Tracking since \d{4}-\d{2}-\d{2}\./);
+    await expect(page.getByTestId('usage-tracking-since')).toHaveText(/^Tracking since \d{4}-\d{2}-\d{2} \(UTC day\)\./);
+    await expect(page.getByTestId('usage-stat-activeToday')).toContainText('Active people today (UTC)');
     await expect(page.getByTestId('usage-empty')).toHaveCount(0);
     // The daily chart draws its two series.
     const chart = page.getByTestId('usage-daily-chart');
@@ -90,6 +91,46 @@ test.describe('View Usages', () => {
     await expect(page.getByTestId('usage-stat-activeWindow')).toContainText('Active people, last 7 days');
     await expect(page.getByTestId('usage-window')).toHaveText(/^\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2} \(UTC days\)$/);
     expect(await stat(page, 'taskOpens')).toBeGreaterThanOrEqual(2);
+
+    // The task's tabs carry the window along; the default one is left out of the address.
+    const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of View Usages' });
+    await expect(views.getByRole('link', { name: 'Unused Access' })).toHaveAttribute('href', `${BASE}/unused-access?days=7`);
+    await views.getByRole('link', { name: 'By Task' }).click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/tasks\\?days=7$`));
+    await expect(windows.getByRole('link', { name: '7 days' })).toHaveAttribute('aria-current', 'page');
+    await windows.getByRole('link', { name: '30 days' }).click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/tasks$`));
+    await expect(views.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', `${BASE}/overview`);
+  });
+
+  test("moving between a view's records is one open; another view is another", async ({ page }) => {
+    // What the frame tells the backend: one server action per open, with the task and the view.
+    const told: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.headers()['next-action']) told.push(request.postData() ?? '');
+    });
+    const opens = (task: string, view: string) => told.filter((body) => body === JSON.stringify([task, view])).length;
+
+    await openTask(page, '/tasks/workers/organizations');
+    await expect.poll(() => opens('workers', 'organizations')).toBe(1);
+
+    // To a record of the same view, without a page load: still the one open.
+    await page.getByPlaceholder('Search tasks and records...').fill('Gate Org');
+    await page.getByTestId('search-group-organization').getByRole('button', { name: 'Gate Org A', exact: true }).click();
+    await expect(page).toHaveURL(/\/tasks\/workers\/organizations\/[\w-]{22}$/);
+    await page.waitForLoadState('networkidle');
+    // And back to the list, by the frame's own tab.
+    const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of Maintain Workers and Organizations' });
+    await views.getByRole('link', { name: 'Organizations' }).click();
+    await expect(page).toHaveURL(/\/tasks\/workers\/organizations$/);
+    await page.waitForLoadState('networkidle');
+    expect(opens('workers', 'organizations')).toBe(1);
+
+    // Another view of the task is another open.
+    await views.getByRole('link', { name: 'Locations' }).click();
+    await expect(page).toHaveURL(/\/tasks\/workers\/locations$/);
+    await expect.poll(() => opens('workers', 'locations')).toBe(1);
+    expect(opens('workers', 'organizations')).toBe(1);
   });
 
   test('by task: every task, opens first; sortable; filtered to the ones nobody opened', async ({ page }) => {
@@ -152,15 +193,14 @@ test.describe('View Usages', () => {
     await expect(page.getByText('Pick a task to see who holds it without opening it.')).toBeVisible();
     await expect(page.getByTestId('unused-summary')).toHaveCount(0);
 
-    // The picker names every task of the catalog. It answers once the page has
-    // hydrated, which can be after goto returns: pick until the address has the task.
+    // The picker names every task of the catalog. Choosing one asks for nothing:
+    // the list is read on Show (a form the browser sends itself).
     const picker = page.getByRole('combobox', { name: 'Task', exact: true });
     await expect(picker.locator('option')).toHaveCount(TASKS.length + 1);
-    await expect(async () => {
-      await picker.selectOption('');
-      await picker.selectOption({ label: 'Maintain IT Service Catalog' });
-      await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=it-service-catalog$`), { timeout: 1_000 });
-    }).toPass({ timeout: 10_000 });
+    await picker.selectOption({ label: 'Maintain IT Service Catalog' });
+    await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access$`));
+    await page.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=it-service-catalog$`));
     await expect(picker).toHaveValue('it-service-catalog');
 
     // gate.alice holds the task (gate-readers) and never opened it.
@@ -182,6 +222,16 @@ test.describe('View Usages', () => {
     await page.getByRole('navigation', { name: 'Window' }).getByRole('link', { name: '90 days' }).click();
     await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=it-service-catalog&days=90$`));
     await expect(summary).toHaveText(/did not open it in the last 90 days$/);
+
+    // Show keeps the window picked.
+    await picker.selectOption({ label: 'Manage Jobs' });
+    await page.getByRole('button', { name: 'Show', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=jobs&days=90$`));
+
+    // A page past the end is the last page, whatever the address says.
+    await page.goto(`${BASE}/unused-access?task=it-service-catalog&page=99999999999`);
+    await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=it-service-catalog$`));
+    await expect(page.getByTestId('unused-table').locator('tbody tr').filter({ hasText: 'gate.alice' })).toHaveCount(1);
 
     // A code that is no task of the catalog is no pick.
     await page.goto(`${BASE}/unused-access?task=nowhere`);
@@ -208,8 +258,8 @@ test.describe('View Usages', () => {
     await expect(page.getByText('No results found').or(page.getByTestId('search-results'))).toBeVisible();
     await expect(page.getByRole('button', { name: /View Usages/ })).toHaveCount(0);
 
-    // Each view's address answers with the no-access page.
-    for (const view of ['overview', 'tasks', 'unused-access?task=it-incidents']) {
+    // Each view's address answers with the no-access page, with or without a task picked.
+    for (const view of ['overview', 'tasks', 'unused-access', 'unused-access?task=nowhere', 'unused-access?task=it-incidents']) {
       await page.goto(`${BASE}/${view}`);
       await expect(page).toHaveURL(/\/access-denied$/);
       await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();

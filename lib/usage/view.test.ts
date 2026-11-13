@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SORT,
   formatShare,
+  MAX_PAGE,
   neverOpened,
   nextSort,
+  pageCount,
   parseDays,
   parsePage,
   parseTask,
@@ -11,6 +13,7 @@ import {
   sortRows,
   taskRows,
   usageHref,
+  windowQuery,
 } from '@/lib/usage/view';
 import type { TaskUsage } from '@/lib/types/usage';
 
@@ -33,6 +36,26 @@ describe('the day selector', () => {
     expect(parsePage({ page: '0' })).toBe(1);
     expect(parsePage({ page: '1.5' })).toBe(1);
     expect(parsePage({ page: 'x' })).toBe(1);
+  });
+
+  it('never reads a page beyond the last one a list can be asked for', () => {
+    expect(parsePage({ page: String(MAX_PAGE) })).toBe(MAX_PAGE);
+    expect(parsePage({ page: '99999999999' })).toBe(MAX_PAGE);
+    expect(parsePage({ page: '1e300' })).toBe(MAX_PAGE);
+  });
+
+  it('counts the pages of a list; an empty list has its first page', () => {
+    expect(pageCount(0, 50)).toBe(1);
+    expect(pageCount(50, 50)).toBe(1);
+    expect(pageCount(51, 50)).toBe(2);
+  });
+
+  it("carries the window from one of the task's views to another, the default left out", () => {
+    expect(windowQuery(new URLSearchParams('days=7&task=jobs'))).toBe('?days=7');
+    expect(windowQuery(new URLSearchParams('days=90'))).toBe('?days=90');
+    expect(windowQuery(new URLSearchParams('days=30'))).toBe('');
+    expect(windowQuery(new URLSearchParams('days=14'))).toBe('');
+    expect(windowQuery(new URLSearchParams())).toBe('');
   });
 
   it('reads the task only when the catalog has it', () => {
@@ -95,23 +118,39 @@ describe('the By Task rows', () => {
 
   it('sort by opens, most first, by default; equal rows keep the catalog order', () => {
     expect(DEFAULT_SORT).toEqual({ key: 'opens', direction: 'descending' });
-    expect(codes(sortRows(rows, DEFAULT_SORT))).toEqual(['workers', 'it-incidents', 'retired-task', 'jobs', 'usages']);
-    expect(codes(sortRows(rows, { key: 'opens', direction: 'ascending' }))).toEqual([
+    expect(codes(sortRows(rows, DEFAULT_SORT, 'en'))).toEqual(['workers', 'it-incidents', 'retired-task', 'jobs', 'usages']);
+    expect(codes(sortRows(rows, { key: 'opens', direction: 'ascending' }, 'en'))).toEqual([
       'jobs', 'usages', 'it-incidents', 'retired-task', 'workers',
     ]);
     // The rows given are left as they were.
     expect(codes(rows)).toEqual(usage.map((row) => row.task));
   });
 
-  it('sort by name, and put a missing share or time below every real one', () => {
-    expect(codes(sortRows(rows, { key: 'name', direction: 'ascending' }))).toEqual([
+  it('sort by name, in the order of the language shown', () => {
+    expect(codes(sortRows(rows, { key: 'name', direction: 'ascending' }, 'en'))).toEqual([
       'workers', 'jobs', 'retired-task', 'it-incidents', 'usages',
     ]);
-    expect(codes(sortRows(rows, { key: 'share', direction: 'descending' }))).toEqual([
+    // Chinese names sort by pinyin for zh, not by code point.
+    const zh = taskRows(usage.slice(0, 4), 'zh');
+    expect(zh.map((row) => row.name)).toEqual(['查看 IT 事件', '维护员工与组织', '管理作业', '查看使用情况']);
+    expect(codes(sortRows(zh, { key: 'name', direction: 'ascending' }, 'zh'))).toEqual(
+      [...zh].sort((a, b) => a.name.localeCompare(b.name, 'zh')).map((row) => row.task),
+    );
+    expect(codes(sortRows(zh, { key: 'name', direction: 'ascending' }, 'zh'))[0]).toBe('it-incidents');
+  });
+
+  it('put a missing share or time last, in both directions', () => {
+    expect(codes(sortRows(rows, { key: 'share', direction: 'descending' }, 'en'))).toEqual([
       'workers', 'retired-task', 'it-incidents', 'jobs', 'usages',
     ]);
-    expect(codes(sortRows(rows, { key: 'last_opened_at', direction: 'descending' }))).toEqual([
+    expect(codes(sortRows(rows, { key: 'share', direction: 'ascending' }, 'en'))).toEqual([
+      'jobs', 'it-incidents', 'workers', 'retired-task', 'usages',
+    ]);
+    expect(codes(sortRows(rows, { key: 'last_opened_at', direction: 'descending' }, 'en'))).toEqual([
       'it-incidents', 'workers', 'jobs', 'usages', 'retired-task',
+    ]);
+    expect(codes(sortRows(rows, { key: 'last_opened_at', direction: 'ascending' }, 'en'))).toEqual([
+      'jobs', 'workers', 'it-incidents', 'usages', 'retired-task',
     ]);
   });
 

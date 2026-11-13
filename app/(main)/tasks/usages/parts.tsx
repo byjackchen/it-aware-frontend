@@ -22,11 +22,11 @@ interface UsageFrameProps {
   /** The task picked on Unused Access, kept when the window changes. */
   task?: string | null;
   /** The window the backend used, once it answered. */
-  window?: UsageWindow;
+  range?: UsageWindow;
   children: ReactNode;
 }
 
-export function UsageFrame({ view, days, task, window, children }: UsageFrameProps) {
+export function UsageFrame({ view, days, task, range, children }: UsageFrameProps) {
   const t = useTranslations('Usage');
   const locale = useLocale();
   const name = USAGES?.views.find((candidate) => candidate.slug === view)?.name;
@@ -54,9 +54,9 @@ export function UsageFrame({ view, days, task, window, children }: UsageFramePro
                 </Link>
               ))}
             </nav>
-            {window && (
+            {range && (
               <span className="text-xs text-muted" data-testid="usage-window">
-                {t('window.dates', { start: window.start, end: window.end })}
+                {t('window.dates', { start: range.start, end: range.end })}
               </span>
             )}
           </div>

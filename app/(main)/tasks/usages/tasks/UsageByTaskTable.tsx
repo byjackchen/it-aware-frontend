@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { tdClass, thClass, When } from '@/app/(main)/tasks/jobs/parts';
+import { tdClass, When } from '@/app/(main)/tasks/jobs/parts';
 import { pageHref } from '@/lib/tasks/catalog';
 import {
   DEFAULT_SORT,
@@ -29,6 +29,10 @@ const COLUMNS: { key: SortKey; numeric: boolean }[] = [
   { key: 'last_opened_at', numeric: false },
 ];
 
+/** A header cell; a column of numbers is headed on the right, over its numbers. */
+const th = (numeric: boolean) =>
+  `px-3 py-2 text-xs font-medium uppercase tracking-wide text-ink-2 ${numeric ? 'text-right' : 'text-left'}`;
+
 /** Every task with its usage in the window: sortable, and filtered to the ones nobody opened. */
 export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: WindowDays }) {
   const t = useTranslations('Usage.tasks');
@@ -37,7 +41,7 @@ export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: Wind
   const [unopenedOnly, setUnopenedOnly] = useState(false);
 
   const rows = taskRows(data.tasks, locale);
-  const shown = sortRows(unopenedOnly ? neverOpened(rows) : rows, sort);
+  const shown = sortRows(unopenedOnly ? neverOpened(rows) : rows, sort, locale);
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -58,7 +62,7 @@ export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: Wind
                   const active = sort.key === key;
                   const Arrow = sort.direction === 'ascending' ? ArrowUp : ArrowDown;
                   return (
-                    <th key={key} className={`${thClass} ${numeric ? 'text-right' : ''}`} aria-sort={active ? sort.direction : 'none'}>
+                    <th key={key} className={th(numeric)} aria-sort={active ? sort.direction : 'none'}>
                       <button
                         onClick={() => setSort(nextSort(sort, key))}
                         className={`inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink ${active ? 'text-ink' : ''}`}
@@ -69,7 +73,7 @@ export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: Wind
                     </th>
                   );
                 })}
-                <th className={thClass}>
+                <th className={th(true)}>
                   <span className="sr-only">{t('unusedAccess')}</span>
                 </th>
               </tr>

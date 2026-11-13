@@ -3434,7 +3434,7 @@
     },
     "loadFailed": "Could not load this: {message}",
     "overview": {
-      "activeToday": "Active people today",
+      "activeToday": "Active people today (UTC)",
       "activeLast7": "Active people, last 7 days",
       "activeWindow": "Active people, last {days} days",
       "signIns": "Sign-ins",
@@ -3445,7 +3445,7 @@
         "people": "Active people",
         "opens": "Task opens"
       },
-      "trackingSince": "Tracking since {date}.",
+      "trackingSince": "Tracking since {date} (UTC day).",
       "trackingHelp": "Days before it show zero because nothing was recorded then.",
       "empty": {
         "title": "No usage recorded yet",
@@ -3471,13 +3471,13 @@
     "unused": {
       "task": "Task",
       "pick": "Pick a task",
+      "show": "Show",
       "pickHelp": "Pick a task to see who holds it without opening it.",
       "summary": "{total} of {holders} holders did not open it in the last {days} days",
       "note": "People who lost access to the task are not listed.",
       "never": "Never",
       "noHolders": "Nobody holds this task.",
       "allUsed": "Every holder opened it in the window.",
-      "pageEmpty": "No one on this page.",
       "columns": {
         "username": "Username",
         "lastOpened": "Last opened"

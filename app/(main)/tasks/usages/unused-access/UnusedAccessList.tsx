@@ -16,7 +16,7 @@ export function UnusedAccessList({ data, page }: { data: UnusedAccess; page: num
       </p>
       <p className="mb-3 text-xs text-muted">{t('note')}</p>
       {data.accounts.length === 0 ? (
-        <p className="py-8 text-center text-muted">{t(data.holders === 0 ? 'noHolders' : data.total === 0 ? 'allUsed' : 'pageEmpty')}</p>
+        <p className="py-8 text-center text-muted">{t(data.holders === 0 ? 'noHolders' : 'allUsed')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="unused-table">
