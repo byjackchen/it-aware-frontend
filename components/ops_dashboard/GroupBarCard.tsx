@@ -29,6 +29,10 @@ export interface GroupBarCardProps {
     actionSlot?: React.ReactNode;
     /** Optional label prefix for the x-axis (e.g. "Tickets"). */
     xAxisLabel?: string;
+    /** A bar's value as the tooltip shows it (e.g. a duration with its unit); the count itself unless set. */
+    formatValue?: (row: GroupCount) => string;
+    /** Width of the category axis, in pixels, for longer names; 110 unless set. */
+    yAxisWidth?: number;
 }
 
 export function GroupBarCard({
@@ -43,13 +47,13 @@ export function GroupBarCard({
     emptyText = 'No data',
     actionSlot,
     xAxisLabel,
+    formatValue,
+    yAxisWidth = 110,
 }: GroupBarCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
 
     const cardBase = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5';
-    const titleCls = isLight ? 'text-slate-800' : 'text-white';
-    const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-400';
     const emptyCls = isLight ? 'text-slate-400' : 'text-gray-500';
 
     const axisStroke = isLight ? '#94a3b8' : '#64748b';
@@ -97,7 +101,7 @@ export function GroupBarCard({
                             dataKey="key"
                             stroke={axisStroke}
                             tick={{ fontSize: 11 }}
-                            width={110}
+                            width={yAxisWidth}
                         />
                         <Tooltip
                             contentStyle={{
@@ -109,7 +113,12 @@ export function GroupBarCard({
                             }}
                             itemStyle={{ color: isLight ? '#1e293b' : '#f1f5f9' }}
                             cursor={{ fill: isLight ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.12)' }}
-                            formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
+                            formatter={(value, _name, item) => [
+                                formatValue
+                                    ? formatValue((item as { payload: GroupCount }).payload)
+                                    : Number(value ?? 0).toLocaleString(),
+                                '',
+                            ]}
                         />
                         <Bar
                             dataKey="count"

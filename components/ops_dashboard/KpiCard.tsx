@@ -24,7 +24,8 @@ export interface KpiCardProps {
     label: string;
     /** Pre-formatted value. Pass numbers via `value.toLocaleString()`. */
     value: string | number;
-    subtitle?: string;
+    /** A line under the value: text, or a node such as a link. */
+    subtitle?: React.ReactNode;
     /** Optional delta — rendered in green/red/neutral based on sign. */
     delta?: {
         value: string;
