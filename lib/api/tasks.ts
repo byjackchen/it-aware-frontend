@@ -49,9 +49,12 @@ export async function unpinTask(code: string): Promise<void> {
     await fetchApi(backend(`/tasks/pins/${encodeURIComponent(code)}`), { method: 'DELETE' });
 }
 
-/** Tell the backend the person opened a page of the task `code`; it keeps it when the task is theirs. */
-export async function recordOpened(code: string): Promise<void> {
-    await fetchApi(backend('/tasks/recent'), { method: 'POST', body: JSON.stringify({ task: code }) });
+/**
+ * Tell the backend the person opened a page of the task `code`, at the view
+ * `view`; it keeps it when the task is theirs, and writes the usage event.
+ */
+export async function recordOpened(code: string, view: string): Promise<void> {
+    await fetchApi(backend('/tasks/recent'), { method: 'POST', body: JSON.stringify({ task: code, view }) });
 }
 
 /**

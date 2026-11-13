@@ -81,10 +81,10 @@ it('pins and unpins a task by its code', async () => {
 it('tells the backend which task was opened', async () => {
   const fetchMock = vi.fn().mockImplementation(async () => new Response(null, { status: 204 }));
   vi.stubGlobal('fetch', fetchMock);
-  await recordOpened('it-incidents');
+  await recordOpened('it-tickets', 'vip');
   const [url, init] = fetchMock.mock.calls[0];
   expect(String(url)).toMatch(/\/tasks\/recent$/);
-  expect([init.method, init.body]).toEqual(['POST', '{"task":"it-incidents"}']);
+  expect([init.method, init.body]).toEqual(['POST', '{"task":"it-tickets","view":"vip"}']);
 });
 
 it("reads and sets a user's profile", async () => {

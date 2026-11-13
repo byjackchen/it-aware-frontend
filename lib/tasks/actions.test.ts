@@ -37,11 +37,11 @@ it('answers with the error when a pin fails, and redraws nothing', async () => {
   expect(revalidated).toEqual([]);
 });
 
-it("notes an opened page's task and never fails on it", async () => {
-  await taskOpened('it-incidents');
-  expect(api.recordOpened).toHaveBeenCalledWith('it-incidents');
+it("notes an opened page's task and view, and never fails on it", async () => {
+  await taskOpened('it-tickets', 'vip');
+  expect(api.recordOpened).toHaveBeenCalledWith('it-tickets', 'vip');
   vi.mocked(api.recordOpened).mockRejectedValueOnce(new Error('Not Found'));
-  await expect(taskOpened('it-incidents')).resolves.toBeUndefined();
+  await expect(taskOpened('it-tickets', 'vip')).resolves.toBeUndefined();
 });
 
 it("saves a user's profile and redraws the account page and the home", async () => {
