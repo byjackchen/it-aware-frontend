@@ -188,7 +188,7 @@ export function OperationalAdvicePanel({ startDate, endDate }: Props) {
                     <p className="text-xs text-red-500 flex-1">{error}</p>
                     <button
                         onClick={() => generate(effectivePerspective, cacheKey)}
-                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 shrink-0"
+                        className="text-xs text-bad hover:text-red-800 dark:hover:text-red-300 flex items-center gap-1 shrink-0"
                     >
                         <RefreshCw className="w-3 h-3" /> 重试
                     </button>
