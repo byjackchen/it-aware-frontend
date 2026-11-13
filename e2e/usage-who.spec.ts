@@ -4,7 +4,7 @@ import { USERNAME } from './env';
 /**
  * View Usages, who used what (feat/usage-who-icons; backend 358c5ef, specs/backend
  * api_specs_usage.md "Who"): By Person and one person's usage, the people of
- * one task reached from By Task. The
+ * one task reached from By Task, and the icon each task is drawn with. The
  * stack records real events: the setup's sign-in, and every task page a spec
  * opens. The specs act as the synthetic admin (USERNAME, gate.admin in the
  * gate), who holds every task. Counts are at least, not exactly: the specs
@@ -117,5 +117,29 @@ test.describe('View Usages: who used what', () => {
     // A code that is no task: the backend's answer, on the page.
     await open(page, 'tasks/nowhere', 'People who opened nowhere');
     await expect(page.getByText(/^Could not load this: /)).toBeVisible();
+  });
+
+  test('each task is drawn with its icon on the home, in search and in the task frame', async ({ page }) => {
+    await page.goto('/home');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('home-greeting')).toHaveCount(1);
+
+    // View Usages (a card when pinned, a row in its grouping, and maybe in the recent too): its icon, not a letter.
+    const tile = page.locator('[data-task="usages"]').getByTestId('task-tile').first();
+    await expect(tile.locator('svg.lucide-chart-no-axes-column')).toHaveCount(1);
+    await expect(tile).toHaveText('');
+    // Every tile on the home draws an icon.
+    const tiles = page.getByTestId('task-tile');
+    expect(await tiles.count()).toBeGreaterThanOrEqual(24);
+    await expect(tiles.filter({ hasNot: page.locator('svg') })).toHaveCount(0);
+
+    // A task found in search.
+    await page.getByPlaceholder('Search tasks and records...').fill('view usages');
+    const hit = page.getByTestId('search-group-task').getByRole('button', { name: 'View Usages Administration', exact: true });
+    await expect(hit.getByTestId('task-tile').locator('svg.lucide-chart-no-axes-column')).toHaveCount(1);
+
+    // The task frame's header.
+    await page.goto('/tasks/it-incidents');
+    await expect(page.getByTestId('task-frame').getByTestId('task-tile').locator('svg.lucide-triangle-alert')).toHaveCount(1);
   });
 });

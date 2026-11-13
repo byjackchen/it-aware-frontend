@@ -7,7 +7,7 @@ import { API_URL } from './env';
  * Drift check of the task catalog (contract v3, section 6; TODO00000140 A14):
  * the backend's GET /tasks/catalog must say what the frontend's checked-in copy
  * (lib/tasks/contract-v3.json) says, in the fields the contract fixes: the
- * groupings, and per task its code, names, grouping and address, and per view
+ * groupings, and per task its code, names, grouping, address and icon, and per view
  * its slug, names, rule and address. The frontend's own fields (`old_code`,
  * `old_base`) and the backend's (`keywords`, `external_app`) are not compared.
  */
@@ -15,7 +15,7 @@ import { API_URL } from './env';
 interface Names { en: string; zh: string }
 interface Rule { check: string; codes: string[] }
 interface View { slug: string; name: Names; requires: Rule; address: string }
-interface Task { code: string; name: Names; grouping: string; address: string; views: View[] }
+interface Task { code: string; name: Names; grouping: string; address: string; icon: string; views: View[] }
 interface Catalog { groupings: { code: string; name: Names }[]; tasks: Task[] }
 
 /** The compared fields, in order. */
@@ -27,6 +27,7 @@ function compared(catalog: Catalog) {
       name: { en: task.name.en, zh: task.name.zh },
       grouping: task.grouping,
       address: task.address,
+      icon: task.icon,
       views: task.views.map((view) => ({
         slug: view.slug,
         name: { en: view.name.en, zh: view.name.zh },

@@ -123,7 +123,7 @@ export function HomePage({ home }: HomePageProps) {
                 className="relative flex min-h-[132px] flex-col gap-1.5 rounded-[14px] border border-line bg-surface p-4 pb-3.5 shadow-card hover:border-accent"
             >
                 <div className="flex items-start justify-between gap-2">
-                    <TaskTile name={named(task.name, locale)} />
+                    <TaskTile name={named(task.name, locale)} task={task.code} />
                     {own ? star(task) : (
                         <span data-testid="home-set-for-you" className="rounded-[9px] border border-line px-2 py-px text-[11px] text-muted">
                             {t('setForYou')}
@@ -145,7 +145,7 @@ export function HomePage({ home }: HomePageProps) {
     /** A task as a row of a list; `aside` is what the row shows at its right before the star. */
     const row = (task: Task, aside: React.ReactNode) => (
         <li key={task.code} data-testid="home-row" data-task={task.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 py-2.5 first:border-t-0">
-            <TaskTile name={named(task.name, locale)} small />
+            <TaskTile name={named(task.name, locale)} task={task.code} small />
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm">{link(task)}</div>
                 <div className="truncate text-xs text-muted">{otherName(task)}</div>

@@ -2,7 +2,7 @@
 
 /**
  * The task frame: on a page that belongs to a task, a header with the task's
- * name, its grouping as a small caption, a pin toggle (the star of the home
+ * icon tile, its name, its grouping as a small caption, a pin toggle (the star of the home
  * and of search), and, when the person
  * has more than one of the task's views, a tab per view. It replaces the
  * global sidebar: each task carries its own navigation. Renders nothing on a
@@ -14,6 +14,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Star } from 'lucide-react';
 import { NavLink } from '@/components/navigation/NavLink';
+import { TaskTile } from '@/components/tasks/TaskTile';
 import { setTaskPinned } from '@/app/actions/tasks';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { groupingName, named, pageHref, resolvePage } from '@/lib/tasks/catalog';
@@ -46,7 +47,7 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
     // The pin shows what is stored: it changes once the backend has it and
     // the layout's data is fetched again; until then the button waits.
     const isPinned = pinned?.includes(task.code) ?? false;
-    // View Usages' three views share one window (7, 30 or 90 days): its tabs carry it along.
+    // View Usages' views share one window (7, 30 or 90 days): its tabs carry it along.
     const kept = task.code === 'usages' ? windowQuery(searchParams) : '';
 
     const togglePin = () => {
@@ -61,13 +62,16 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
             data-testid="task-frame"
             className={`flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 border-b ${isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23]/60 border-white/10'}`}
         >
-            <div className="flex flex-col leading-tight">
-                <span className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                    {groupingName(task.grouping, locale)}
-                </span>
-                <span data-testid="task-frame-name" className={`text-base font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                    {name}
-                </span>
+            <div className="flex items-center gap-2.5">
+                <TaskTile name={name} task={task.code} small />
+                <div className="flex flex-col leading-tight">
+                    <span className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                        {groupingName(task.grouping, locale)}
+                    </span>
+                    <span data-testid="task-frame-name" className={`text-base font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                        {name}
+                    </span>
+                </div>
             </div>
 
             {views.length > 1 && (

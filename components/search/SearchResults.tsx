@@ -81,7 +81,7 @@ export function SearchResults({ found, query, isLoading, failed, pinFailed, acti
                 className={`flex items-center rounded-[10px] ${isActive ? 'bg-accent-soft' : ''}`}
             >
                 <button onClick={() => onOpen(item)} className="flex min-w-0 flex-1 items-center gap-3 px-2.5 py-2 text-left">
-                    <TaskTile name={item.title} small>{Icon && <Icon className="h-4 w-4" />}</TaskTile>
+                    <TaskTile name={item.title} task={kind === 'task' ? item.id : undefined} small>{Icon && <Icon className="h-4 w-4" />}</TaskTile>
                     <span className="min-w-0 flex-1">
                         <span className="block truncate font-semibold text-ink">{mark(item.title)}</span>
                         {item.subtitle && (
