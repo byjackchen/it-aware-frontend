@@ -196,7 +196,7 @@ export function LocationCreatePage({ locations }: LocationCreatePageProps) {
                         <button
                             type="button"
                             onClick={() => setIsActive(!isActive)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-good hover:bg-green-500/30' : 'bg-red-500/20 text-bad hover:bg-red-500/30'}`}
                         >
                             {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                             <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>

@@ -120,7 +120,7 @@ export function SystemDetailPage({ system, workers }: SystemDetailPageProps) {
                             <>
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                                     data-testid="system-edit-button"
                                 >
                                     <Pencil className="w-4 h-4" />
@@ -129,7 +129,7 @@ export function SystemDetailPage({ system, workers }: SystemDetailPageProps) {
                                 <button
                                     onClick={handleDelete}
                                     disabled={isPending}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                                     data-testid="system-delete-button"
                                 >
                                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -141,7 +141,7 @@ export function SystemDetailPage({ system, workers }: SystemDetailPageProps) {
                                 <button
                                     onClick={handleSave}
                                     disabled={isPending}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-good transition-colors disabled:opacity-50"
                                     data-testid="system-save-button"
                                 >
                                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

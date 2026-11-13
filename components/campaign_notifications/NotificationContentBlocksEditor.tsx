@@ -58,13 +58,13 @@ export function NotificationContentBlocksEditor({
     return (
         <div className="space-y-3">
             {blocks.map((block, index) => (
-                <div key={`${block.type}-${index}`} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
+                <div key={`${block.type}-${index}`} className="rounded-lg border border-line bg-field p-3 space-y-2">
                     <div className="flex items-center gap-2">
                         <select
                             value={block.type}
                             onChange={(event) => handleBlockTypeChange(index, event.target.value as NotificationContentBlock['type'])}
                             disabled={disabled}
-                            className="px-2 py-1 rounded-md bg-slate-900/80 border border-white/10 text-sm text-white"
+                            className="px-2 py-1 rounded-md bg-surface dark:bg-slate-900/80 border border-line text-sm text-ink"
                         >
                             <option value="text">{t('contentBlockTypes.text')}</option>
                             <option value="title">{t('contentBlockTypes.title')}</option>
@@ -74,7 +74,7 @@ export function NotificationContentBlocksEditor({
                             type="button"
                             onClick={() => handleDeleteBlock(index)}
                             disabled={disabled}
-                            className="ml-auto p-1.5 rounded-md text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                            className="ml-auto p-1.5 rounded-md text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -86,7 +86,7 @@ export function NotificationContentBlocksEditor({
                         disabled={disabled}
                         placeholder={t('content.blockText')}
                         rows={4}
-                        className="w-full px-3 py-2 rounded-md bg-slate-900/80 border border-white/10 text-sm text-white resize-y"
+                        className="w-full px-3 py-2 rounded-md bg-surface dark:bg-slate-900/80 border border-line text-sm text-ink resize-y"
                     />
 
                     {block.type === 'link' && (
@@ -96,7 +96,7 @@ export function NotificationContentBlocksEditor({
                             onChange={(event) => handleUrlChange(index, event.target.value)}
                             disabled={disabled}
                             placeholder={t('content.blockUrl')}
-                            className="w-full px-3 py-2 rounded-md bg-slate-900/80 border border-white/10 text-sm text-white"
+                            className="w-full px-3 py-2 rounded-md bg-surface dark:bg-slate-900/80 border border-line text-sm text-ink"
                         />
                     )}
                 </div>
@@ -106,7 +106,7 @@ export function NotificationContentBlocksEditor({
                 type="button"
                 onClick={handleAddBlock}
                 disabled={disabled}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20 disabled:opacity-50"
             >
                 <Plus className="w-4 h-4" />
                 <span>{t('content.addBlock')}</span>

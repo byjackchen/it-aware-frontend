@@ -426,7 +426,7 @@ export function CatalogDashboard() {
             key: 'stable_id',
             label: t('tables.number'),
             width: '120px',
-            render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+            render: (r) => <span className="font-mono text-accent">{r.stable_id}</span>,
         },
         { key: 'state', label: t('tables.state'), width: '130px' },
         { key: 'priority', label: t('tables.priority'), width: '90px' },
@@ -436,8 +436,8 @@ export function CatalogDashboard() {
             width: '110px',
             render: (r) => {
                 const cls =
-                    r._daysNoUpdate > 7 ? 'text-red-400 font-bold'
-                    : r._daysNoUpdate > 2 ? 'text-orange-400 font-semibold' : '';
+                    r._daysNoUpdate > 7 ? 'text-bad font-bold'
+                    : r._daysNoUpdate > 2 ? 'text-orange-800 dark:text-orange-400 font-semibold' : '';
                 return <span className={cls}>{r._daysNoUpdate}d</span>;
             },
             sortValue: (r) => r._daysNoUpdate,
@@ -488,7 +488,7 @@ export function CatalogDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                     {hasFilters && (
-                        <span className="text-xs text-blue-400">
+                        <span className="text-xs text-accent">
                             {t('pages.filteredCatalog', {
                                 filtered: filtered.length.toLocaleString(),
                                 total: catalogRows.length.toLocaleString(),

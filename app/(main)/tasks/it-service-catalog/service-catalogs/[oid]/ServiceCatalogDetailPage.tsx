@@ -137,7 +137,7 @@ export function ServiceCatalogDetailPage({
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-800 dark:text-purple-400 transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -146,7 +146,7 @@ export function ServiceCatalogDetailPage({
 
                     {/* Status Badge */}
                     {!isEditing && (
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${serviceCatalog.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${serviceCatalog.is_active ? 'bg-green-500/20 text-good' : 'bg-red-500/20 text-bad'}`}>
                             {serviceCatalog.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                             {serviceCatalog.is_active ? 'Active' : 'Inactive'}
                         </div>
@@ -243,15 +243,15 @@ export function ServiceCatalogDetailPage({
                             <button
                                 type="button"
                                 onClick={() => setIsActive(!isActive)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-good hover:bg-green-500/30' : 'bg-red-500/20 text-bad hover:bg-red-500/30'}`}
                             >
                                 {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                 <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
                             </button>
                         ) : (
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                {serviceCatalog.is_active ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
-                                <span className={`text-sm ${serviceCatalog.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                                {serviceCatalog.is_active ? <CheckCircle className="w-4 h-4 text-good" /> : <XCircle className="w-4 h-4 text-bad" />}
+                                <span className={`text-sm ${serviceCatalog.is_active ? 'text-good' : 'text-bad'}`}>
                                     {serviceCatalog.is_active ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
@@ -311,7 +311,7 @@ export function ServiceCatalogDetailPage({
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>{t('common.delete')} {t('serviceCatalogs.title')}</span>

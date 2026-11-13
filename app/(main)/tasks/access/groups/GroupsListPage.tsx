@@ -14,9 +14,9 @@ interface GroupsListPageProps {
 }
 
 const scopeTypeColors: Record<string, string> = {
-    unconstrained: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    self_scoped: 'bg-green-500/20 text-good border-green-500/30',
-    role_based: 'bg-blue-500/20 text-accent border-blue-500/30',
+    unconstrained: 'bg-purple-500/20 text-purple-800 dark:text-purple-400 border-purple-500/30',
+    self_scoped: 'bg-green-500/20 text-green-800 dark:text-green-400 border-green-500/30',
+    role_based: 'bg-blue-500/20 text-blue-800 dark:text-blue-400 border-blue-500/30',
 };
 
 export function GroupsListPage({ groups }: GroupsListPageProps) {

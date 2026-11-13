@@ -318,7 +318,7 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
                     </div>
 
                     <div className={`pt-4 border-t ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
-                        <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 disabled:opacity-50">
+                        <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad disabled:opacity-50">
                             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             <span>Delete Interaction</span>
                         </button>

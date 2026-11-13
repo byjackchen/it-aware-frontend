@@ -590,29 +590,29 @@ export function stringifySurveyAnswer(answerPayload: SurveyAnswerPayload | null)
 export function getSurveyBatchStatusClass(status: SurveyBatchStatus | string): string {
     switch (status) {
         case 'draft':
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
         case 'collecting':
-            return 'bg-blue-500/20 text-blue-300 border-blue-400/40';
+            return 'bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-400/40';
         case 'closed':
-            return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40';
+            return 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-400/40';
         case 'cancelled':
-            return 'bg-rose-500/20 text-rose-300 border-rose-400/40';
+            return 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-400/40';
         default:
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
     }
 }
 
 export function getSurveyStatusClass(status: SurveyStatus | string): string {
     switch (status) {
         case 'not_started':
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
         case 'submitted':
-            return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40';
+            return 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-400/40';
         case 'revoked':
-            return 'bg-amber-500/20 text-amber-300 border-amber-400/40';
+            return 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-400/40';
         case 'expired':
-            return 'bg-slate-600/20 text-slate-300 border-slate-500/40';
+            return 'bg-slate-600/20 text-ink-2 border-slate-500/40';
         default:
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
     }
 }

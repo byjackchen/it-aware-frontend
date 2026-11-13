@@ -126,7 +126,7 @@ export function SurveyCreateWizard() {
                     </div>
                 </div>
 
-                <div className="inline-flex rounded-lg border border-white/10 p-1">
+                <div className="inline-flex rounded-lg border border-line p-1">
                     <button
                         type="button"
                         onClick={() => {
@@ -154,7 +154,7 @@ export function SurveyCreateWizard() {
                 </div>
 
                 {error && (
-                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-100">
+                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-800 dark:text-rose-100">
                         {error}
                     </div>
                 )}

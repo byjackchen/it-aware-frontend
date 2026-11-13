@@ -121,13 +121,13 @@ function headlineNote(value: string, zh: boolean): string {
 
 function Tree({ value, zh, level = 0 }: { value: unknown; zh: boolean; level?: number }) {
   const [expanded, setExpanded] = useState(false);
-  if (value === null || value === undefined) return <span className="text-slate-400">—</span>;
+  if (value === null || value === undefined) return <span className="text-ink-2">—</span>;
   if (typeof value !== 'object') return <span className="break-words">{String(value)}</span>;
   if (Array.isArray(value)) {
-    if (!value.length) return <span className="text-slate-400">—</span>;
+    if (!value.length) return <span className="text-ink-2">—</span>;
     const shown = expanded ? value : value.slice(0, level === 0 ? 50 : 12);
     return <div className="space-y-1">{shown.map((item, i) => <div key={i} className="border-l border-slate-200 pl-3 dark:border-slate-700">
-      <span className="mr-2 text-xs text-slate-400">{i + 1}.</span><Tree value={item} zh={zh} level={level + 1} />
+      <span className="mr-2 text-xs text-ink-2">{i + 1}.</span><Tree value={item} zh={zh} level={level + 1} />
     </div>)}{shown.length < value.length && <button className="text-sm text-indigo-600" onClick={() => setExpanded(true)}>
       {zh ? `显示其余 ${value.length - shown.length} 项` : `Show ${value.length - shown.length} more`}</button>}</div>;
   }

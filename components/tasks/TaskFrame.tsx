@@ -96,7 +96,7 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
                     aria-pressed={isPinned}
                     title={t(isPinned ? 'unpinTask' : 'pinTask', { name })}
                     className={`ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs border disabled:opacity-50 ${isPinned
-                        ? 'border-blue-500/30 text-blue-400'
+                        ? 'border-blue-500/30 text-accent'
                         : isLight
                             ? 'border-slate-200 text-slate-500 hover:text-slate-800'
                             : 'border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'

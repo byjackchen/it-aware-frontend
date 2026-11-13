@@ -217,7 +217,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
 
                     <div className="flex items-center gap-3">
                         {!isEditing && (
-                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors">
+                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors">
                                 <Pencil className="w-4 h-4" />
                                 <span>Edit</span>
                             </button>
@@ -689,7 +689,7 @@ export function RequestDetailPage({ request, edges, workers, serviceCatalogs }: 
                         </div>
                     ) : (
                         <div className={`pt-4 border-t ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
-                            <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 disabled:opacity-50">
+                            <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad disabled:opacity-50">
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>Delete Request</span>
                             </button>

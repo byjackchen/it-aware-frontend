@@ -281,31 +281,31 @@ export function buildReceiverContentTemplateXlsx(): Uint8Array {
 export function getNotificationStatusClass(status: string): string {
     switch (status) {
         case 'ready':
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
         case 'running':
-            return 'bg-blue-500/20 text-blue-300 border-blue-400/40';
+            return 'bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-400/40';
         case 'partially_completed':
-            return 'bg-amber-500/20 text-amber-300 border-amber-400/40';
+            return 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-400/40';
         case 'completed':
-            return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40';
+            return 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-400/40';
         case 'cancelled':
-            return 'bg-rose-500/20 text-rose-300 border-rose-400/40';
+            return 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-400/40';
         default:
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
     }
 }
 
 export function getNotificationStatusRowClass(status: string): string {
     switch (status) {
         case 'created':
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
         case 'sent':
-            return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40';
+            return 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-400/40';
         case 'failed':
-            return 'bg-rose-500/20 text-rose-300 border-rose-400/40';
+            return 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-400/40';
         case 'cancelled':
-            return 'bg-rose-500/20 text-rose-300 border-rose-400/40';
+            return 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-400/40';
         default:
-            return 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+            return 'bg-slate-500/20 text-ink-2 border-slate-400/40';
     }
 }

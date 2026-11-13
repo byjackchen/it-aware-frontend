@@ -167,11 +167,11 @@ function buildHighlights(
 
 function Tooltip({ text, position = 'below' }: { text: string; position?: 'below' | 'right' }) {
     const popoverCls = position === 'right'
-        ? 'pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden w-64 -translate-y-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block'
-        : 'pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-[11px] leading-5 text-gray-300 shadow-lg group-hover:block';
+        ? 'pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden w-64 -translate-y-1/2 rounded-lg border border-line bg-panel dark:bg-slate-900 px-3 py-2 text-[11px] leading-5 text-ink-2 shadow-lg group-hover:block'
+        : 'pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-line bg-panel dark:bg-slate-900 px-3 py-2 text-[11px] leading-5 text-ink-2 shadow-lg group-hover:block';
     return (
         <span className="group relative inline-flex items-center">
-            <HelpCircle className="h-3.5 w-3.5 text-gray-400 transition-colors group-hover:text-white" />
+            <HelpCircle className="h-3.5 w-3.5 text-ink-2 transition-colors group-hover:text-ink" />
             <span className={popoverCls}>{text}</span>
         </span>
     );
@@ -217,7 +217,7 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
                 value={draftStart}
                 max={draftEnd}
                 onChange={(e) => setDraftStart(e.target.value)}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-100 focus:border-blue-500 focus:outline-none"
+                className="rounded-lg border border-line bg-field px-3 py-1.5 text-sm text-ink focus:border-blue-500 focus:outline-none"
             />
             <ArrowRight className="h-4 w-4 text-gray-500" />
             <input
@@ -226,10 +226,10 @@ function DateRangeControls({ startDate, endDate }: { startDate: string; endDate:
                 value={draftEnd}
                 min={draftStart}
                 onChange={(e) => setDraftEnd(e.target.value)}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-100 focus:border-blue-500 focus:outline-none"
+                className="rounded-lg border border-line bg-field px-3 py-1.5 text-sm text-ink focus:border-blue-500 focus:outline-none"
             />
             <span
-                className="text-xs px-2 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                className="text-xs px-2 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20"
                 title="Datetimes shown in this timezone. Report window is anchored on the date part; the time part is informational."
             >
                 {formatTzBadge(timezone)}
@@ -414,7 +414,7 @@ export function FAQMonthlyReport({ report, error }: Props) {
             <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                     <Eye className="mx-auto h-8 w-8 text-gray-500 animate-pulse" />
-                    <p className="mt-3 text-sm text-gray-400">{tFaq('error.loading')}</p>
+                    <p className="mt-3 text-sm text-ink-2">{tFaq('error.loading')}</p>
                 </div>
             </div>
         );

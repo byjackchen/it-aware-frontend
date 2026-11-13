@@ -89,7 +89,7 @@ export function SystemCreatePage() {
 
                 <form onSubmit={handleSubmit} className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                     {error && (
-                        <div className="p-3 rounded-lg bg-red-500/20 text-red-400 text-sm" role="alert">
+                        <div className="p-3 rounded-lg bg-red-500/20 text-bad text-sm" role="alert">
                             {error}
                         </div>
                     )}

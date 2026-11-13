@@ -240,9 +240,9 @@ export function DataTableCard<T>({
                                                 {sortable && (
                                                     isActive ? (
                                                         sortDir === 'asc' ? (
-                                                            <ChevronUp className="w-3 h-3 text-blue-400" />
+                                                            <ChevronUp className="w-3 h-3 text-accent" />
                                                         ) : (
-                                                            <ChevronDown className="w-3 h-3 text-blue-400" />
+                                                            <ChevronDown className="w-3 h-3 text-accent" />
                                                         )
                                                     ) : (
                                                         <ChevronsUpDown className="w-3 h-3 opacity-30" />

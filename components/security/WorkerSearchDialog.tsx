@@ -111,7 +111,7 @@ export function WorkerSearchDialog({
                                                     {worker.fullname}
                                                 </span>
                                                 {!worker.is_active && (
-                                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600/50 text-ink-2">
+                                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-500/20 dark:bg-gray-600/50 text-ink-2">
                                                         Inactive
                                                     </span>
                                                 )}
