@@ -3501,6 +3501,7 @@
     "help": {
       "overview": "How many people use IT-Aware: their sign-ins and the tasks they open, by UTC day.",
       "tasks": "Every task with how often it was opened, by how many people, and how many hold it.",
+      "people": "Everyone who signed in or opened a task in the window, the most task opens first.",
       "unused-access": "The people who hold a task but did not open it in the window."
     },
     "window": {
@@ -3534,6 +3535,7 @@
       "noMatch": "Every task was opened in the window.",
       "never": "Never",
       "unusedAccess": "Unused access",
+      "peopleOf": "{count, plural, one {# person} other {# people}} opened {task}",
       "columns": {
         "name": "Task",
         "grouping": "Grouping",
@@ -3556,6 +3558,45 @@
       "allUsed": "Every holder opened it in the window.",
       "columns": {
         "username": "Username",
+        "lastOpened": "Last opened"
+      }
+    },
+    "back": "Back to {view}",
+    "deletedAccount": "Deleted account",
+    "labels": {
+      "inactive": "Inactive",
+      "integration": "Integration"
+    },
+    "taskPeople": {
+      "title": "People who opened {task}",
+      "summary": "{total, plural, one {# person} other {# people}} opened it in the last {days} days",
+      "empty": "Nobody opened it in the window.",
+      "columns": {
+        "username": "Username",
+        "opens": "Opens",
+        "views": "Views opened",
+        "lastOpened": "Last opened"
+      }
+    },
+    "people": {
+      "summary": "{total, plural, one {# person} other {# people}} active in the last {days} days",
+      "empty": "Nobody signed in or opened a task in the window.",
+      "columns": {
+        "username": "Username",
+        "signIns": "Sign-ins",
+        "taskOpens": "Task opens",
+        "tasks": "Tasks",
+        "lastActive": "Last active"
+      }
+    },
+    "person": {
+      "unknown": "Person",
+      "summary": "{signIns, plural, one {# sign-in} other {# sign-ins}} and {tasks, plural, one {# task} other {# tasks}} opened in the last {days} days",
+      "empty": "No task opened in the window.",
+      "columns": {
+        "task": "Task",
+        "opens": "Opens",
+        "views": "Views opened",
         "lastOpened": "Last opened"
       }
     }

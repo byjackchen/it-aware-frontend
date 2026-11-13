@@ -52,11 +52,12 @@ test.describe('View Usages', () => {
     await page.getByTestId('search-group-task').getByRole('button', { name: 'View Usages Administration', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${BASE}/overview$`));
 
-    // The task frame carries its three views as tabs.
+    // The task frame carries its four views as tabs (By Person since the contract
+    // copy of backend 358c5ef, feat/usage-who-icons).
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('View Usages');
     const views = frame.getByRole('navigation', { name: 'Views of View Usages' });
-    await expect(views.getByRole('link')).toHaveText(['Overview', 'By Task', 'Unused Access']);
+    await expect(views.getByRole('link')).toHaveText(['Overview', 'By Task', 'By Person', 'Unused Access']);
     await expect(views.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
     await expect(views.getByRole('link', { name: 'By Task' })).toHaveAttribute('href', `${BASE}/tasks`);
   });
@@ -260,8 +261,19 @@ test.describe('View Usages', () => {
     await expect(page.getByText('No results found').or(page.getByTestId('search-results'))).toBeVisible();
     await expect(page.getByRole('button', { name: /View Usages/ })).toHaveCount(0);
 
-    // Each view's address answers with the no-access page, with or without a task picked.
-    for (const view of ['overview', 'tasks', 'unused-access', 'unused-access?task=nowhere', 'unused-access?task=it-incidents']) {
+    // Each view's address, and each sub-page's (a task's people, one person), answers with the
+    // no-access page, with or without a task picked.
+    for (const view of [
+      'overview',
+      'tasks',
+      'tasks/it-incidents',
+      'tasks/nowhere',
+      'people',
+      'people/QUFBQUFBQUFBQUFBQUFBQQ',
+      'unused-access',
+      'unused-access?task=nowhere',
+      'unused-access?task=it-incidents',
+    ]) {
       await page.goto(`${BASE}/${view}`);
       await expect(page).toHaveURL(/\/access-denied$/);
       await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();

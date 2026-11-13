@@ -48,6 +48,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/workers/workers",
+   "icon": "users",
    "views": [
     {
      "slug": "workers",
@@ -144,6 +145,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-incidents",
+   "icon": "triangle-alert",
    "views": [
     {
      "slug": "incidents",
@@ -177,6 +179,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-requests",
+   "icon": "clipboard-list",
    "views": [
     {
      "slug": "requests",
@@ -210,6 +213,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-interactions",
+   "icon": "messages-square",
    "views": [
     {
      "slug": "interactions",
@@ -243,6 +247,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-service-catalog/service-catalogs",
+   "icon": "book-open",
    "views": [
     {
      "slug": "service-catalogs",
@@ -297,6 +302,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-hardware/hardware",
+   "icon": "monitor",
    "views": [
     {
      "slug": "hardware",
@@ -372,6 +378,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/data-overview",
+   "icon": "layers",
    "views": [
     {
      "slug": "overview",
@@ -401,6 +408,7 @@
    "grouping": "data",
    "kind": "internal",
    "address": "/tasks/it-knowledge/library",
+   "icon": "library",
    "views": [
     {
      "slug": "library",
@@ -451,6 +459,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/it-operations-dashboard/overview",
+   "icon": "gauge",
    "views": [
     {
      "slug": "overview",
@@ -516,6 +525,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/ohla-chatbot-dashboard/overview",
+   "icon": "bot",
    "views": [
     {
      "slug": "overview",
@@ -642,6 +652,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/ohla-journey-dashboard/headline",
+   "icon": "route",
    "views": [
     {
      "slug": "headline",
@@ -798,6 +809,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/it-ssc-dashboard/overview",
+   "icon": "headset",
    "views": [
     {
      "slug": "overview",
@@ -865,6 +877,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/persona-dashboard",
+   "icon": "user-round-search",
    "views": [
     {
      "slug": "persona",
@@ -894,6 +907,7 @@
    "grouping": "analytics",
    "kind": "internal",
    "address": "/tasks/survey-analysis-dashboard",
+   "icon": "chart-pie",
    "views": [
     {
      "slug": "analyses",
@@ -927,6 +941,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/it-tickets/active",
+   "icon": "ticket",
    "views": [
     {
      "slug": "active",
@@ -1059,6 +1074,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/it-aging-work/incidents",
+   "icon": "hourglass",
    "views": [
     {
      "slug": "incidents",
@@ -1131,6 +1147,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/it-assets/overview",
+   "icon": "package",
    "views": [
     {
      "slug": "overview",
@@ -1223,6 +1240,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/notifications/batches",
+   "icon": "bell",
    "views": [
     {
      "slug": "batches",
@@ -1277,6 +1295,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/surveys/batches",
+   "icon": "clipboard-check",
    "views": [
     {
      "slug": "batches",
@@ -1331,6 +1350,7 @@
    "grouping": "operations",
    "kind": "internal",
    "address": "/tasks/it-csat-link",
+   "icon": "link",
    "keywords": [
     "csat",
     "it csat",
@@ -1369,6 +1389,7 @@
    "grouping": "administration",
    "kind": "internal",
    "address": "/tasks/access/accounts",
+   "icon": "key-round",
    "views": [
     {
      "slug": "accounts",
@@ -1467,6 +1488,7 @@
    "grouping": "administration",
    "kind": "internal",
    "address": "/tasks/jobs/jobs",
+   "icon": "timer",
    "views": [
     {
      "slug": "jobs",
@@ -1522,6 +1544,7 @@
    "grouping": "administration",
    "kind": "internal",
    "address": "/tasks/agent-access",
+   "icon": "terminal",
    "views": [
     {
      "slug": "access",
@@ -1554,6 +1577,7 @@
    "grouping": "administration",
    "kind": "internal",
    "address": "/tasks/usages/overview",
+   "icon": "chart-no-axes-column",
    "keywords": [
     "usage",
     "adoption",
@@ -1595,6 +1619,23 @@
      },
      "keywords": [],
      "address": "/tasks/usages/tasks"
+    },
+    {
+     "slug": "people",
+     "name": {
+      "en": "By Person",
+      "zh": "按人员"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:usage:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/usages/people"
     },
     {
      "slug": "unused-access",

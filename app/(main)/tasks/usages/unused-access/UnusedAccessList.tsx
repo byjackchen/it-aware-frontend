@@ -5,8 +5,13 @@ import { useTranslations } from 'next-intl';
 import { Pager, tdClass, thClass, When } from '@/app/(main)/tasks/jobs/parts';
 import { UNUSED_PAGE_SIZE, usageHref } from '@/lib/usage/view';
 import type { UnusedAccess } from '@/lib/types/usage';
+import { AccountLabels } from '../parts';
 
-/** The holders of a task who did not open it in the window, by username. */
+/**
+ * The holders of a task who did not open it in the window, by username. An
+ * inactive account and one that is not a user carry a label, so real users
+ * stand apart.
+ */
 export function UnusedAccessList({ data, page }: { data: UnusedAccess; page: number }) {
   const t = useTranslations('Usage.unused');
   return (
@@ -33,6 +38,7 @@ export function UnusedAccessList({ data, page }: { data: UnusedAccess; page: num
                     <Link href={`/tasks/access/accounts/${account.oid}`} className="text-accent hover:underline">
                       {account.username}
                     </Link>
+                    <AccountLabels account={account} />
                   </td>
                   <td className={`${tdClass} text-ink-2`}>
                     {account.last_opened_at ? <When iso={account.last_opened_at} /> : t('never')}

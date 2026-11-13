@@ -2,7 +2,7 @@
 
 ## Overview
 
-A **task** is one thing a person can see or do in IT-Aware, named with the words they would type. The **task catalog** lists every task; it is reviewed configuration in this repo (`app/tasks/tasks.json`, beside the grouping list `groupings.json`), changed by a reviewed commit and read once at start. Both files are written from the frozen contract `app/tasks/contract-v3.json` (the task catalog refactor, frozen 2026-11-12) by `scripts/tasks_from_contract.py`; a unit test fails when they disagree with it. It holds 24 tasks in four groupings, with 66 views. Added to the contract copy after it was frozen, with no old code and no legacy address: the task `usages` (View Usages, migration 0140; its API is in [usage](api_specs_usage.md)), and the view `load` (Load / 负载, `/tasks/jobs/load`; it requires what the task's Jobs view requires, `ui:navigation:systems`, so a person has both tabs or neither; its API, `GET /jobs/load` in [jobs](api_specs_jobs.md), is gated by `systems:jobs:read` like the other job reads) of the task `jobs`. With its second view, Manage Jobs' first view moved from `/tasks/jobs` to `/tasks/jobs/jobs` (the address rule for a task with several views), and the legacy addresses `/systems` and `/systems/airflow` point there. One task was renamed after the freeze: `survey-link` (Find Survey Link) is `it-csat-link`, **Find IT CSAT Link** / 查找 IT CSAT 链接, at `/tasks/it-csat-link`, with CSAT keywords and its view named CSAT Lookup; the name says IT, so the code starts with `it-`. Its permissions, its view's slug (`lookup`) and its legacy entry (`/ssc-cockpit/survey-lookup`, now pointing at the new address) are unchanged. Migration 0141 rewrites the saved code in `auth.account_home` (pinned, recent), `auth.account_profiles` (start task, home tasks) and `systems.usage_events` (task). `/tasks/survey-link` was never deployed, so it has no redirect.
+A **task** is one thing a person can see or do in IT-Aware, named with the words they would type. The **task catalog** lists every task; it is reviewed configuration in this repo (`app/tasks/tasks.json`, beside the grouping list `groupings.json`), changed by a reviewed commit and read once at start. Both files are written from the frozen contract `app/tasks/contract-v3.json` (the task catalog refactor, frozen 2026-11-12) by `scripts/tasks_from_contract.py`; a unit test fails when they disagree with it. It holds 24 tasks in four groupings, with 67 views. Every task has an **icon** (added to the contract copy on 2026-11-12, maintainer's choice: an icon per task; see [the icons](#icons)). Added to the contract copy after it was frozen, with no old code and no legacy address: the task `usages` (View Usages, migration 0140; its API is in [usage](api_specs_usage.md); its view `people`, By Person / 按人员, at `/tasks/usages/people`, came later, between `tasks` and `unused-access`, with the same rule, `systems:usage:read`), and the view `load` (Load / 负载, `/tasks/jobs/load`; it requires what the task's Jobs view requires, `ui:navigation:systems`, so a person has both tabs or neither; its API, `GET /jobs/load` in [jobs](api_specs_jobs.md), is gated by `systems:jobs:read` like the other job reads) of the task `jobs`. With its second view, Manage Jobs' first view moved from `/tasks/jobs` to `/tasks/jobs/jobs` (the address rule for a task with several views), and the legacy addresses `/systems` and `/systems/airflow` point there. One task was renamed after the freeze: `survey-link` (Find Survey Link) is `it-csat-link`, **Find IT CSAT Link** / 查找 IT CSAT 链接, at `/tasks/it-csat-link`, with CSAT keywords and its view named CSAT Lookup; the name says IT, so the code starts with `it-`. Its permissions, its view's slug (`lookup`) and its legacy entry (`/ssc-cockpit/survey-lookup`, now pointing at the new address) are unchanged. Migration 0141 rewrites the saved code in `auth.account_home` (pinned, recent), `auth.account_profiles` (start task, home tasks) and `systems.usage_events` (task). `/tasks/survey-link` was never deployed, so it has no redirect.
 
 A task has **views**: the pages inside it, which the frontend shows as tabs. Each view has its own permission rule and address. A **grouping** (Data, Analytics, Operations, Administration) only orders and titles tasks: it has no address and no part in access.
 
@@ -16,6 +16,7 @@ A task has **views**: the pages inside it, which the frontend shows as tabs. Eac
 | `kind` | `internal` \| `external` | `internal`: page and backend are IT-Aware's. `external`: the page is in IT-Aware's frontend and its backend is another app, not reached through this backend |
 | `external_app` | string \| null | The other app, for an `external` task; null otherwise |
 | `address` | string | Where the task opens: its first view's address |
+| `icon` | string | The lucide icon the frontend draws it with, lowercase kebab-case; required ([icons](#icons)) |
 | `keywords` | string[] | Extra words to find the task by |
 | `views` | view[] | The pages inside it, in order; at least one |
 
@@ -219,3 +220,36 @@ Computes every registered metric for the whole organization and upserts its row.
 ## Reporting-only check
 
 `uv run python -m app.tasks.checks` prints every API route that names no permission in its declaration.
+
+## Icons
+
+`icon` is a field of every task, in the contract copy, `tasks.json` and every answer that carries a task (`GET /tasks/catalog`, `/tasks/mine`, `/tasks/access`, `/tasks/home`); it was added to them, nothing else changed. It names the icon the frontend draws the task with: a [lucide](https://lucide.dev/icons/) icon name, as `lucide-react` takes it in kebab-case. The catalog refuses a task without one, and one that is not lowercase kebab-case (`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`). No two tasks share one (`tests/tasks/test_catalog.py`).
+
+| Task | Icon |
+|---|---|
+| `workers` | `users` |
+| `it-incidents` | `triangle-alert` |
+| `it-requests` | `clipboard-list` |
+| `it-interactions` | `messages-square` |
+| `it-service-catalog` | `book-open` |
+| `it-hardware` | `monitor` |
+| `data-overview` | `layers` |
+| `it-knowledge` | `library` |
+| `it-operations-dashboard` | `gauge` |
+| `ohla-chatbot-dashboard` | `bot` |
+| `ohla-journey-dashboard` | `route` |
+| `it-ssc-dashboard` | `headset` |
+| `persona-dashboard` | `user-round-search` |
+| `survey-analysis-dashboard` | `chart-pie` |
+| `it-tickets` | `ticket` |
+| `it-aging-work` | `hourglass` |
+| `it-assets` | `package` |
+| `notifications` | `bell` |
+| `surveys` | `clipboard-check` |
+| `it-csat-link` | `link` |
+| `access` | `key-round` |
+| `jobs` | `timer` |
+| `agent-access` | `terminal` |
+| `usages` | `chart-no-axes-column` |
+
+Whether each name exists in the `lucide-react` version the frontend installs is the frontend's to check: `triangle-alert`, `user-round-search` and `chart-no-axes-column` are names of newer lucide releases.

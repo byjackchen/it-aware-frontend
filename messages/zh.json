@@ -3179,6 +3179,7 @@
     "help": {
       "overview": "有多少人在使用 IT-Aware:按 UTC 日统计的登录次数与打开的任务。",
       "tasks": "每个任务被打开的次数、打开它的人数,以及拥有它的人数。",
+      "people": "所选时间段内登录过或打开过任务的每个人,任务打开次数最多的在前。",
       "unused-access": "拥有某个任务、但在所选时间段内没有打开过它的人。"
     },
     "window": {
@@ -3212,6 +3213,7 @@
       "noMatch": "时间段内每个任务都被打开过。",
       "never": "从未",
       "unusedAccess": "未使用的权限",
+      "peopleOf": "{count} 人打开过{task}",
       "columns": {
         "name": "任务",
         "grouping": "分组",
@@ -3234,6 +3236,45 @@
       "allUsed": "时间段内每位拥有者都打开过它。",
       "columns": {
         "username": "用户名",
+        "lastOpened": "最近打开"
+      }
+    },
+    "back": "返回{view}",
+    "deletedAccount": "已删除的账号",
+    "labels": {
+      "inactive": "已停用",
+      "integration": "集成"
+    },
+    "taskPeople": {
+      "title": "打开过{task}的人",
+      "summary": "近 {days} 天内有 {total} 人打开过它",
+      "empty": "时间段内没有人打开过它。",
+      "columns": {
+        "username": "用户名",
+        "opens": "打开次数",
+        "views": "打开的视图",
+        "lastOpened": "最近打开"
+      }
+    },
+    "people": {
+      "summary": "近 {days} 天内有 {total} 人活跃",
+      "empty": "时间段内没有人登录或打开任务。",
+      "columns": {
+        "username": "用户名",
+        "signIns": "登录次数",
+        "taskOpens": "任务打开次数",
+        "tasks": "任务数",
+        "lastActive": "最近活跃"
+      }
+    },
+    "person": {
+      "unknown": "人员",
+      "summary": "近 {days} 天内登录 {signIns} 次,打开过 {tasks} 个任务",
+      "empty": "时间段内没有打开过任务。",
+      "columns": {
+        "task": "任务",
+        "opens": "打开次数",
+        "views": "打开的视图",
         "lastOpened": "最近打开"
       }
     }

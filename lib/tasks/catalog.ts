@@ -27,6 +27,8 @@ export interface ContractTask {
     grouping: string;
     kind: string;
     address: string;
+    /** The lucide icon the task is drawn with, kebab-case (lib/tasks/icons.ts). */
+    icon: string;
     views: ContractView[];
 }
 

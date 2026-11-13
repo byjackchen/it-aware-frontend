@@ -6,7 +6,7 @@ Every old page address (the 108 pages under `app/(main)` before the task catalog
 
 The source is the contract's `legacy` list (`lib/tasks/contract-v3.json`). The unit tests check that every page under `app/(main)` is a kept address or lies under `/tasks/` at a view address or a record under one, that every new address has a page, that no code outside `lib/legacy/` names an old address (`no-old-addresses.test.ts`), that every contract entry is here unchanged, that every new address is a kept address, a view's address or a record under one, that every view's old address resolves to that view, and that the committed `registry.json` is exactly what the builder makes.
 
-A view added since the move (View Usages' three, `old_base: null` in the contract) never had an old address: it has no entry and no redirect.
+A view added since the move (View Usages' four, Manage Jobs' Load, `old_base: null` in the contract) never had an old address: it has no entry and no redirect.
 
 ## The move
 
