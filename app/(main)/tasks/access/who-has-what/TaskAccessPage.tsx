@@ -98,7 +98,7 @@ export function TaskAccessPage({ access }: TaskAccessPageProps) {
                                 aria-selected={view === option}
                                 onClick={() => switchView(option)}
                                 className={`px-4 py-2 text-sm font-medium transition-colors ${view === option
-                                    ? 'bg-blue-500/20 text-accent'
+                                    ? 'bg-btn-accent text-accent'
                                     : 'text-ink-2 hover:bg-hover'
                                     }`}
                             >

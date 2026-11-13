@@ -64,7 +64,7 @@ export function AssignmentManager<T>({
         {!isAdding && unassigned.length > 0 && (
           <button
             onClick={() => setIsAdding(true)}
-            className="p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
+            className="p-1.5 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
             title={t('assignments.addTitle', { title: title.toLowerCase() })}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -90,7 +90,7 @@ export function AssignmentManager<T>({
           <button
             onClick={handleAssign}
             disabled={!selectedId || isPending}
-            className="px-3 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent text-sm transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent text-sm transition-colors disabled:opacity-50"
           >
             {isPending && pendingId === selectedId ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -128,7 +128,7 @@ export function AssignmentManager<T>({
                 <button
                   onClick={() => handleRemove(id)}
                   disabled={isPending && pendingId === id}
-                  className="p-0.5 rounded hover:bg-red-500/20 hover:text-bad transition-colors disabled:opacity-50 theme-text-muted"
+                  className="p-0.5 rounded hover:bg-btn-danger hover:text-bad transition-colors disabled:opacity-50 theme-text-muted"
                 >
                   {isPending && pendingId === id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

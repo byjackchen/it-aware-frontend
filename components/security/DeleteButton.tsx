@@ -34,7 +34,7 @@ export function DeleteButton({ onDelete }: DeleteButtonProps) {
         <button
           onClick={handleDelete}
           disabled={isPending}
-          className="px-3 py-1.5 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 text-sm rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad transition-colors disabled:opacity-50"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.yes')}
         </button>

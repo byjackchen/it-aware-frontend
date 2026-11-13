@@ -33,7 +33,7 @@ export function EntityList<T>({
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <button
           onClick={onCreateClick}
-          className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
+          className="p-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
           title="Create new"
         >
           <Plus className="w-4 h-4" />

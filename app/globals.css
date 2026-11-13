@@ -54,6 +54,11 @@
   --btn-neutral-bg: #e9edf3;
   --btn-neutral-bg-hover: #dbe1ea;
   --btn-neutral-text: #4a5668;
+  /* Tinted buttons: the accent and the bad text on them are at least 4.5:1, hovered too */
+  --btn-accent-bg: #e8f1fd;
+  --btn-accent-bg-hover: #dbe9fc;
+  --btn-danger-bg: #fdecea;
+  --btn-danger-bg-hover: #fce6e3;
 
   /* List items */
   --list-divider: #e3e8ef;
@@ -132,6 +137,11 @@
   --btn-neutral-bg: rgba(255, 255, 255, 0.1);
   --btn-neutral-bg-hover: rgba(255, 255, 255, 0.2);
   --btn-neutral-text: #9ca3af;
+  /* Tinted buttons: Tailwind's blue-500 and red-500 at 20% and 30%, as they were */
+  --btn-accent-bg: color-mix(in oklab, var(--color-blue-500) 20%, transparent);
+  --btn-accent-bg-hover: color-mix(in oklab, var(--color-blue-500) 30%, transparent);
+  --btn-danger-bg: color-mix(in oklab, var(--color-red-500) 20%, transparent);
+  --btn-danger-bg-hover: color-mix(in oklab, var(--color-red-500) 30%, transparent);
   
   /* List items */
   --list-divider: rgba(255, 255, 255, 0.05);
@@ -193,6 +203,10 @@
   --color-bad: var(--bad);
   --color-warn: var(--warn);
   --shadow-card: var(--card-shadow);
+  --color-btn-accent: var(--btn-accent-bg);
+  --color-btn-accent-hover: var(--btn-accent-bg-hover);
+  --color-btn-danger: var(--btn-danger-bg);
+  --color-btn-danger-hover: var(--btn-danger-bg-hover);
 }
 
 /* ========================================

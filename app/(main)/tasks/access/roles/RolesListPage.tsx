@@ -36,7 +36,7 @@ export function RolesListPage({ roles }: RolesListPageProps) {
                     </div>
                     <button
                         onClick={handleCreateClick}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.create')}</span>

@@ -199,7 +199,7 @@ export function AccountDetailPage({
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -374,7 +374,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={handleUnlinkWorker}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Unlink className="w-3.5 h-3.5" />
                                         <span>{t('accounts.unlink')}</span>
@@ -386,7 +386,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={() => setIsLinkingWorker(true)}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Link className="w-3.5 h-3.5" />
                                         <span>{t('accounts.linkWorker')}</span>
@@ -418,7 +418,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={handleUnlinkSystem}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Unlink className="w-3.5 h-3.5" />
                                         <span>{t('accounts.unlink')}</span>
@@ -457,7 +457,7 @@ export function AccountDetailPage({
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -69,7 +69,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -183,7 +183,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
