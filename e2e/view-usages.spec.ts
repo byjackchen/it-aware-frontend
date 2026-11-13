@@ -148,9 +148,13 @@ test.describe('View Usages', () => {
     expect(opens).toEqual([...opens].sort((a, b) => b - a));
     expect(opens[0]).toBeGreaterThanOrEqual(1);
 
-    // A row names its task and links to it, and to its unused access.
+    // A row names its task and links to it, and to its unused access. (Exact: since 799680e
+    // its People number is a link too, named "<n> people opened <task>".)
     const workers = table.getByTestId('usage-task-row-workers');
-    await expect(workers.getByRole('link', { name: 'Maintain Workers and Organizations' })).toHaveAttribute('href', '/tasks/workers/workers');
+    await expect(workers.getByRole('link', { name: 'Maintain Workers and Organizations', exact: true })).toHaveAttribute(
+      'href',
+      '/tasks/workers/workers',
+    );
     await expect(workers).toContainText('Data');
     expect(Number(await workers.getByTestId('usage-task-opens').innerText())).toBeGreaterThanOrEqual(1);
     await expect(workers.getByTestId('usage-task-share')).toHaveText(/^\d{1,3}%$/);
