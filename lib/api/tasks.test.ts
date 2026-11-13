@@ -127,18 +127,35 @@ it("the home's metrics route passes the backend's metrics on", async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(metrics)));
   const answer = await metricsRoute();
   expect(answer.status).toBe(200);
+  expect(answer.headers.get('Cache-Control')).toBe('private, no-store');
   expect(await answer.json()).toEqual(metrics);
+});
+
+it("the home's metrics route answers 401, unlogged, when the sign-in has ended", async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Not authenticated' }, { status: 401 })));
+  const answer = await metricsRoute();
+  expect(answer.status).toBe(401);
+  expect(answer.headers.get('Cache-Control')).toBe('private, no-store');
+  expect(await answer.json()).toEqual({ metrics: [] });
+  expect(logged).not.toHaveBeenCalled();
+  logged.mockRestore();
 });
 
 it("the home's metrics route answers no metrics when the backend has none or fails, so the cards stay plain", async () => {
   vi.stubGlobal('fetch', off());
-  expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
+  const empty = await metricsRoute();
+  expect(empty.status).toBe(200);
+  expect(await empty.json()).toEqual({ metrics: [] });
 
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'boom' }, { status: 500 })));
   expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')));
-  expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
+  const failed = await metricsRoute();
+  expect(failed.status).toBe(200);
+  expect(failed.headers.get('Cache-Control')).toBe('private, no-store');
+  expect(await failed.json()).toEqual({ metrics: [] });
   expect(logged).toHaveBeenCalledTimes(2);
   logged.mockRestore();
 });

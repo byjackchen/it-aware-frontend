@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ago, metricChange, metricValue, metricsByTask } from '@/lib/tasks/metrics';
+import { ago, metricChange, metricValue, metricsByTask, oldestComputed } from '@/lib/tasks/metrics';
 import type { TaskMetric } from '@/lib/types/tasks';
 
 const metric = (task: string, code: string, more: Partial<TaskMetric> = {}): TaskMetric => ({
@@ -17,6 +17,49 @@ describe("a card's metrics", () => {
         expect(byTask.get('it-tickets')!.map(held => held.code)).toEqual(['active', 'sla']);
         expect(byTask.get('it-incidents')!.map(held => held.code)).toEqual(['open']);
         expect(metricsByTask([]).size).toBe(0);
+    });
+});
+
+describe('a malformed metric', () => {
+    const good = metric('it-tickets', 'active');
+    const shown = (entries: unknown) => [...metricsByTask(entries).values()].flat();
+
+    it.each([
+        ['no value', { ...good, value: undefined }],
+        ['a value that is no number', { ...good, value: '41' }],
+        ['a value that is not finite', { ...good, value: Number.NaN }],
+        ['an infinite value', { ...good, value: Number.POSITIVE_INFINITY }],
+        ['a null value', { ...good, value: null }],
+        ['no computed_at', { ...good, computed_at: undefined }],
+        ['a computed_at that is no time', { ...good, computed_at: 'yesterday-ish' }],
+        ['no period', { ...good, period: undefined }],
+        ['a null period', { ...good, period: null }],
+        ['a period without a kind', { ...good, period: { start: '2026-11-01', end: '2026-11-12' } }],
+        ['no label', { ...good, label: undefined }],
+        ['a null label', { ...good, label: null }],
+        ['a label in one language only', { ...good, label: { en: 'Active' } }],
+        ['a label with no English', { ...good, label: { zh: '活跃' } }],
+        ['no task', { ...good, task: undefined }],
+        ['no code', { ...good, code: undefined }],
+        ['null', null],
+        ['a string', 'metric'],
+    ])('is left out, the good ones kept: %s', (_shape, bad) => {
+        expect(shown([bad, good])).toEqual([good]);
+    });
+
+    it('is nothing at all when the answer has no list', () => {
+        expect(shown(undefined)).toEqual([]);
+        expect(shown(null)).toEqual([]);
+        expect(shown({ metrics: [good] })).toEqual([]);
+    });
+});
+
+describe('when a card was updated', () => {
+    it("is the earliest of its metrics' times", () => {
+        const at = (computed_at: string) => metric('it-tickets', computed_at, { computed_at });
+        expect(oldestComputed([at('2026-11-12T08:00:00Z')])).toBe('2026-11-12T08:00:00Z');
+        expect(oldestComputed([at('2026-11-12T08:00:00Z'), at('2026-11-12T07:00:00Z')])).toBe('2026-11-12T07:00:00Z');
+        expect(oldestComputed([at('2026-11-12T07:00:00Z'), at('2026-11-12T08:00:00Z')])).toBe('2026-11-12T07:00:00Z');
     });
 });
 

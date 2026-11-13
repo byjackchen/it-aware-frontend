@@ -11,10 +11,32 @@ export const METRICS_PER_TASK = 2;
 /** At and above this, a count is written in compact form (1.2M). */
 const COMPACT_FROM = 100_000;
 
-/** Each task's metrics, in the order the backend answered them, at most two a task. */
-export function metricsByTask(metrics: TaskMetric[]): Map<string, TaskMetric[]> {
+const isNames = (names: unknown): boolean =>
+    typeof (names as TaskMetric['label'] | null)?.en === 'string' && typeof (names as TaskMetric['label']).zh === 'string';
+
+/**
+ * Whether an entry of the answer can be shown: it names its task, has a
+ * finite value, a label, a period, and a `computed_at` that is a time. The one
+ * place a malformed metric is dropped, so no card ever has to draw one.
+ */
+function isMetric(entry: unknown): entry is TaskMetric {
+    const metric = entry as Partial<TaskMetric> | null;
+    return typeof metric?.task === 'string'
+        && typeof metric.code === 'string'
+        && typeof metric.value === 'number' && Number.isFinite(metric.value)
+        && isNames(metric.label)
+        && typeof metric.period?.kind === 'string'
+        && typeof metric.computed_at === 'string' && !Number.isNaN(Date.parse(metric.computed_at));
+}
+
+/**
+ * Each task's metrics, in the order the backend answered them, at most two a
+ * task. `metrics` is the answer's list as it came: anything that is no list,
+ * and every malformed entry, is left out.
+ */
+export function metricsByTask(metrics: unknown): Map<string, TaskMetric[]> {
     const byTask = new Map<string, TaskMetric[]>();
-    for (const metric of metrics) {
+    for (const metric of Array.isArray(metrics) ? metrics.filter(isMetric) : []) {
         const held = byTask.get(metric.task) ?? [];
         if (held.length < METRICS_PER_TASK) byTask.set(metric.task, [...held, metric]);
     }
@@ -52,6 +74,11 @@ export function metricChange(metric: Pick<TaskMetric, 'value' | 'unit' | 'previo
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+
+/** The earliest of the metrics' `computed_at`: what a card says it was updated. */
+export function oldestComputed(metrics: TaskMetric[]): string {
+    return metrics.map(metric => metric.computed_at).reduce((oldest, at) => (Date.parse(at) < Date.parse(oldest) ? at : oldest));
+}
 
 /** How long before `now` an instant was, in the person's language: "5 minutes ago", "yesterday". */
 export function ago(instant: string, now: Date, locale: string): string {
