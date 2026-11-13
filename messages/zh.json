@@ -1142,47 +1142,6 @@
   },
   "Dashboard": {
     "title": "数据概览",
-    "subtitle": "跨所有数据对象资源的实时汇总指标。",
-    "refresh": "刷新",
-    "loading": "正在加载看板统计...",
-    "loadFailed": "看板统计加载失败，请刷新重试。",
-    "generatedAt": "更新时间：{time}",
-    "summary": {
-      "totalAcrossResources": "资源总计",
-      "activeCapable": "活跃数（支持激活状态的资源）",
-      "availableResources": "可用资源"
-    },
-    "groups": {
-      "hierarchies": "层级",
-      "objects": "对象",
-      "activities": "活动",
-      "campaigns": "运营活动",
-      "insights": "洞察"
-    },
-    "resources": {
-      "organizations": "组织",
-      "locations": "地点",
-      "service-catalogs": "服务目录",
-      "workers": "员工",
-      "articles": "文章",
-      "incidents": "事件",
-      "requests": "请求",
-      "interactions": "交互事件",
-      "surveys": "问卷批次",
-      "notifications": "通知批次",
-      "analyses": "分析"
-    },
-    "metrics": {
-      "total": "总数",
-      "active": "活跃",
-      "inactive": "未激活"
-    },
-    "status": {
-      "ok": "可用",
-      "forbidden": "无权限",
-      "error": "不可用"
-    },
-    "comingSoon": "看板即将推出",
     "layers": {
       "title": "IT-Aware 的数据分层：原始 → 派生 → 事务",
       "flow": "来源 → <b>1 原始</b> → 重建为 → <b>2 派生</b> ← 一同读取 → <b>3 事务</b> ← 人和 IT-Aware",
@@ -1237,8 +1196,7 @@
         "staging": "旧落地区",
         "systems": "平台记录"
       },
-      "counted": "统计于{time}",
-      "loadFailed": "无法加载数据分层：{message}"
+      "counted": "统计于{time}"
     }
   },
   "Data": {

@@ -7,7 +7,6 @@
 
 import Link from 'next/link';
 import { useLocale, useNow, useTranslations } from 'next-intl';
-import { AlertTriangle } from 'lucide-react';
 import { countedAgo, shapeLayers, type LayerNote, type TagKey } from '@/lib/data-layers/view';
 import type { DataLayers, LayerCode } from '@/lib/types/data-layers';
 import type { Task } from '@/lib/types/tasks';
@@ -30,7 +29,7 @@ const TAG_CLASS: Record<TagKey, string> = {
 function Tag({ tag }: { tag: TagKey }) {
   const t = useTranslations('Dashboard.layers.tags');
   return (
-    <span data-testid="layer-tag" className={`ml-1.5 whitespace-nowrap rounded-lg px-1.5 py-px text-[11px] ${TAG_CLASS[tag]}`}>
+    <span data-testid="layer-tag" className={`whitespace-nowrap rounded-lg px-1.5 py-px text-[11px] ${TAG_CLASS[tag]}`}>
       {t(tag)}
     </span>
   );
@@ -102,7 +101,7 @@ export function LayerColumns({ data, held }: LayerColumnsProps) {
                       <li key={row.table} data-testid="layer-table" data-table={row.table} className="flex justify-between gap-2.5 border-t border-line py-1.5">
                         <div className="min-w-0">
                           <code className="break-all font-mono text-xs text-ink">{row.table}</code>
-                          {row.tag && <Tag tag={row.tag} />}
+                          {row.tag && <> <Tag tag={row.tag} /></>}
                           {row.link && (
                             <Link href={row.link.href} className="mt-px block text-xs text-accent hover:underline">
                               → {row.link.name}
@@ -123,16 +122,5 @@ export function LayerColumns({ data, held }: LayerColumnsProps) {
         <p className="text-xs text-muted" data-testid="data-layers-counted">{t('counted', { time: counted })}</p>
       )}
     </section>
-  );
-}
-
-/** The layers could not be read: said in place of the columns, with the backend's own message. */
-export function LayersFailure({ message }: { message: string }) {
-  const t = useTranslations('Dashboard.layers');
-  return (
-    <div role="alert" data-testid="data-layers-failed" className="flex items-start gap-2 rounded-lg border border-bad/30 bg-bad/10 px-4 py-3 text-sm text-bad">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-      <div>{t('loadFailed', { message })}</div>
-    </div>
   );
 }

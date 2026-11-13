@@ -225,24 +225,6 @@
         "total": 30
       }
     },
-    "app/api/dashboard/object-stats/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 97
-      },
-      "lines": {
-        "covered": 0,
-        "total": 85
-      },
-      "functions": {
-        "covered": 0,
-        "total": 21
-      },
-      "branches": {
-        "covered": 0,
-        "total": 72
-      }
-    },
     "app/api/dashboard/survey-analytics/analysis-classification/route.ts": {
       "statements": {
         "covered": 0,
@@ -1033,24 +1015,6 @@
       "branches": {
         "covered": 0,
         "total": 14
-      }
-    },
-    "lib/hooks/useDashboardStats.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 54
-      },
-      "lines": {
-        "covered": 0,
-        "total": 53
-      },
-      "functions": {
-        "covered": 0,
-        "total": 8
-      },
-      "branches": {
-        "covered": 0,
-        "total": 19
       }
     },
     "lib/hooks/useInfiniteResource.ts": {

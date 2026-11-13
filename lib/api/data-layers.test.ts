@@ -45,7 +45,7 @@ it('sends a signed-out person to the login page, and one without the permission 
   expect(redirected).toEqual(['/login', '/access-denied']);
 });
 
-it('answers the message of any other failure, to show in place of the columns', async () => {
+it('answers the message of any other failure, for the page to report', async () => {
   stub({ detail: 'counting failed' }, 500);
   expect(await load(getDataLayers)).toEqual({ ok: false, message: 'counting failed' });
 });

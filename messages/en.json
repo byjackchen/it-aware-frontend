@@ -1462,47 +1462,6 @@
   },
   "Dashboard": {
     "title": "Data Overview",
-    "subtitle": "Live high-level metrics across all data object resources.",
-    "refresh": "Refresh",
-    "loading": "Loading dashboard stats...",
-    "loadFailed": "Failed to load dashboard stats. Try refreshing.",
-    "generatedAt": "Updated at {time}",
-    "summary": {
-      "totalAcrossResources": "Total Across Resources",
-      "activeCapable": "Active (Active-Capable Resources)",
-      "availableResources": "Resources Available"
-    },
-    "groups": {
-      "hierarchies": "Hierarchies",
-      "objects": "Objects",
-      "activities": "Activities",
-      "campaigns": "Campaigns",
-      "insights": "Insights"
-    },
-    "resources": {
-      "organizations": "Organizations",
-      "locations": "Locations",
-      "service-catalogs": "Service Catalogs",
-      "workers": "Workers",
-      "articles": "Articles",
-      "incidents": "Incidents",
-      "requests": "Requests",
-      "interactions": "Interactions",
-      "surveys": "Survey Batches",
-      "notifications": "Notification Batches",
-      "analyses": "Analyses"
-    },
-    "metrics": {
-      "total": "Total",
-      "active": "Active",
-      "inactive": "Inactive"
-    },
-    "status": {
-      "ok": "Available",
-      "forbidden": "No Access",
-      "error": "Unavailable"
-    },
-    "comingSoon": "Dashboards coming soon",
     "layers": {
       "title": "IT-Aware's data by layer: raw → derived → transactional",
       "flow": "Sources → <b>1 Raw</b> → rebuilt into → <b>2 Derived</b> ← read together with → <b>3 Transactional</b> ← people and IT-Aware",
@@ -1557,8 +1516,7 @@
         "staging": "Older landing area",
         "systems": "Platform records"
       },
-      "counted": "Counted {time}",
-      "loadFailed": "Could not load the data layers: {message}"
+      "counted": "Counted {time}"
     }
   },
   "Data": {

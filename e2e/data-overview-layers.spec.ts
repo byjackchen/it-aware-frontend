@@ -3,10 +3,9 @@ import { PASSWORD } from './env';
 import { TASKS } from '../lib/tasks/catalog';
 
 /**
- * Data Overview by layer (feat/data-overview-layers): the record tiles, then
- * IT-Aware's tables under the three layers of the target data model, read from
- * the backend's GET /data/layers (specs/backend/api_specs_data_layers.md). The
- * specs act as the synthetic admin, who holds every task; ohla-drift-admin
+ * Data Overview by layer (feat/data-overview-layers): IT-Aware's tables under
+ * the three layers of the target data model, read from the backend's
+ * GET /data/layers (specs/backend/api_specs_data_layers.md). The specs act as the synthetic admin, who holds every task; ohla-drift-admin
  * holds only objects:interactions:read, so not this task.
  */
 
@@ -22,15 +21,9 @@ async function open(page: Page) {
 }
 
 test.describe('Data Overview by layer', () => {
-  test('a holder sees the record tiles and the three layers in flow order, with their tables', async ({ page }) => {
+  test('a holder sees the three layers in flow order, with their tables', async ({ page }) => {
     await open(page);
     await expect(page.getByText("IT-Aware's data by layer: raw → derived → transactional")).toBeVisible();
-
-    // The record counts stay, as a row of tiles over the layers; a tile links to its object's page.
-    const tiles = page.getByTestId('object-tiles');
-    await expect(tiles.getByRole('listitem')).toHaveCount(11);
-    await expect(tiles.getByTestId('object-tile-workers').getByRole('link')).toHaveAttribute('href', '/tasks/workers/workers');
-    await expect(tiles.getByTestId('object-tile-workers')).toContainText(/Workers\s*[\d,]+/);
 
     // The flow, then the three layers in its order.
     const layers = page.getByTestId('data-layers');
