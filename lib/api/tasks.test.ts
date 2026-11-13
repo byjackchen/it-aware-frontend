@@ -100,3 +100,45 @@ it("reads and sets a user's profile", async () => {
   vi.stubGlobal('fetch', off());
   expect(await getAccountProfile('abc')).toBeNull();
 });
+
+// --- The key metrics on the home's task cards ----------------------------------------
+
+import { getTaskMetrics } from '@/lib/api/tasks';
+import { GET as metricsRoute } from '@/app/api/tasks/metrics/route';
+
+const metrics = {
+  metrics: [{
+    task: 'it-tickets', code: 'active', label: { en: 'active', zh: '进行中' }, unit: 'count', value: 128,
+    period: { start: '2026-11-12', end: '2026-11-12', kind: 'now' }, previous_value: 122, computed_at: '2026-11-12T08:00:00Z',
+  }],
+};
+
+it("reads the metrics of the person's tasks, and answers null from a backend without them", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(Response.json(metrics));
+  vi.stubGlobal('fetch', fetchMock);
+  expect(await getTaskMetrics()).toEqual(metrics);
+  expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/tasks\/metrics$/);
+
+  vi.stubGlobal('fetch', off());
+  expect(await getTaskMetrics()).toBeNull();
+});
+
+it("the home's metrics route passes the backend's metrics on", async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(metrics)));
+  const answer = await metricsRoute();
+  expect(answer.status).toBe(200);
+  expect(await answer.json()).toEqual(metrics);
+});
+
+it("the home's metrics route answers no metrics when the backend has none or fails, so the cards stay plain", async () => {
+  vi.stubGlobal('fetch', off());
+  expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
+
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'boom' }, { status: 500 })));
+  expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')));
+  expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });
+  expect(logged).toHaveBeenCalledTimes(2);
+  logged.mockRestore();
+});

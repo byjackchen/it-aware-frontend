@@ -5,7 +5,7 @@
 import { fetchApi } from '@/lib/api/core';
 import { ApiError } from '@/lib/api/errors';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import type { AccountProfile, ProfileUpdate, TaskAccess, TaskHome, TasksMine } from '@/lib/types/tasks';
+import type { AccountProfile, ProfileUpdate, TaskAccess, TaskHome, TaskMetrics, TasksMine } from '@/lib/types/tasks';
 
 const backend = (path: string) => `${RUNTIME_CONFIG.backend.domain}${path}`;
 
@@ -34,6 +34,11 @@ export async function getTaskHome(): Promise<TaskHome | null> {
 /** The signed-in person's tasks, each with only their views. Null while the backend's tasks switch is off. */
 export async function getTasksMine(): Promise<TasksMine | null> {
     return unlessOff<TasksMine>('/tasks/mine');
+}
+
+/** The key metrics of the signed-in person's tasks. Null from a backend that has none (404). */
+export async function getTaskMetrics(): Promise<TaskMetrics | null> {
+    return unlessOff<TaskMetrics>('/tasks/metrics');
 }
 
 export async function pinTask(code: string): Promise<void> {

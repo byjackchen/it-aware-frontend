@@ -91,6 +91,26 @@ export interface TaskHome {
     other: Task[];
 }
 
+/** One key metric of a task, for its card on the home (GET /tasks/metrics). */
+export interface TaskMetric {
+    /** The task's code. */
+    task: string;
+    code: string;
+    label: TaskNames;
+    unit: 'count' | 'percent';
+    value: number;
+    period: { start: string; end: string; kind: 'now' | 'month' | 'last_7_days' };
+    /** The value of the period before; null when there is none to compare with. */
+    previous_value: number | null;
+    /** When the backend computed it (ISO datetime). */
+    computed_at: string;
+}
+
+/** GET /tasks/metrics: the key metrics of the caller's tasks. */
+export interface TaskMetrics {
+    metrics: TaskMetric[];
+}
+
 /** What an admin sets for a user: the customization part of the profile. */
 export interface ProfileUpdate {
     start_task: string | null;
