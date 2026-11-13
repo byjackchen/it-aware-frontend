@@ -155,21 +155,24 @@ Query: `days`, one of `7`, `30`, `90` (default `7`); anything else is `422`. The
              "average_seconds": 742.9, "longest_seconds": 912.0}]}
 ```
 
-- **Which runs.** The runs of every job that **started** in the window, read from Airflow's all-jobs listing (`GET /api/v2/dags/~/dagRuns` with `start_date_gte` the window's first midnight UTC, `start_date_lte` the moment of asking, `order_by=-start_date`), 100 a page, the pages after the first four at a time, all with one Airflow token (one sign-in to Airflow per read). A run that has not started (queued) is not in it. Only a run's job id, run id, state, start and end are used: no parameters, conf or log is read. Job ids go out as Airflow gives them.
-- **Seconds.** A finished run is one in state `success` or `failed` with an end; its seconds are end − start (never under 0). Any other run (queued, running, or without an end) counts in `runs` as `other`, with 0 seconds. Every seconds value is rounded to a tenth.
-- **`totals`.** `runs` every run counted, `failed` the failed ones, `run_seconds` the sum, `average_seconds` the mean over finished runs (`null` when none finished), `longest` the longest finished run (`null` when none; of equally long runs the first by job id, then run id).
+- **Which runs.** The runs of every job that **started** in the window, read from Airflow's all-jobs listing (`GET /api/v2/dags/~/dagRuns` with `start_date_gte` the window's first midnight UTC, `start_date_lte` the moment of asking, `order_by=-start_date`), 100 a page, the pages after the first four at a time, all with one Airflow token (one sign-in to Airflow per read). A run that has not started (queued) is not in it. Only a run's job id, run id, state, start and end are used: no parameters, conf or log is read. Job ids go out as Airflow gives them. A run listed on two pages (one that moved while the pages were read) is counted once, by job id and run id; an item in the listing that is not a run is skipped.
+- **Seconds.** A `success` or `failed` run with an end has a time: its seconds are end − start. A `failed` run with no end counts as `failed` with no time. Any other run (queued, running, a `success` with no end, or one whose end is before its start) counts as `other` with no time. A run with no time adds 0 seconds and is left out of the averages and the longest. Every seconds value is rounded to a tenth.
+- **`totals`.** `runs` every run counted, `failed` the failed ones, `run_seconds` the sum, `average_seconds` the mean over the runs with a time (`null` when there is none), `longest` the longest of them (`null` when none; of equally long runs the first by job id, then run id).
 - **`daily`.** One entry per UTC day of the window, oldest first, days without runs included (zeros). A run counts on the day it started.
 - **`hourly`.** Always 24 entries, `hour` 0 to 23: the UTC hour a run started in, summed over the whole window.
-- **`jobs`.** Every job with at least one run in the window, by `run_seconds`, most first, then by job id. `average_seconds` and `longest_seconds` are over its finished runs, `null` when it has none.
+- **`jobs`.** Every job with at least one run in the window, by `run_seconds`, most first, then by job id. `average_seconds` and `longest_seconds` are over its runs with a time, `null` when it has none.
 - **The bound.** At most 20,000 runs are read (200 pages). When Airflow has more in the window, `partial` is `true` and `runs_read` is the number read: the newest, so the most recent days are complete and the oldest days are short or empty. Otherwise `runs_read` equals `totals.runs`.
-- **Kept for 5 minutes.** The answer is cached in Redis for 300 seconds under a key that names only the window (`jobs:load:v1:<days>:<end date>`): it is the same for every holder of `systems:jobs:read` and holds nothing about the caller. So a run that just finished can take up to 5 minutes to show. Without Redis every call reads Airflow.
-- **Fail-soft**, as the job list is. When Airflow cannot be read (not configured, unreachable, refusing the service account, or answering an error) the answer is `200` with only:
+- **The time bound.** One read of Airflow takes at most 45 seconds in all, and each request of it (the sign-in, a page) at most 15. A page that fails stops the pages still being read. Past either bound the answer is the fail-soft one below.
+- **Kept for 5 minutes.** The answer is cached in Redis for 300 seconds under a key that names only the window (`jobs:load:v1:<days>:<end date>`): it is the same for every holder of `systems:jobs:read` and holds nothing about the caller. So a run that just finished can take up to 5 minutes to show. Callers who ask for the same window while it is being read (in the same backend process) wait for that one read instead of starting another. Without Redis each call after it reads Airflow again.
+- **Fail-soft**, as the job list is. When Airflow cannot be read (not configured, unreachable, refusing the service account, answering an error, or too slow) the answer is `200` with only:
 
 ```json
 {"available": false, "base_url_configured": true}
 ```
 
 `base_url_configured` is `false` when no Airflow address is set. A normal answer has no `available` key; an unavailable answer is never cached.
+
+`/jobs/load` is this read, never a job: a job whose id is literally `load` cannot be opened at `GET /jobs/load` (as one named `actions` cannot at `GET /jobs/actions`); its runs, a run and its controls (`/jobs/load/runs`, …) still answer.
 
 **A job's own durations** need no further endpoint: `GET /jobs/{id}/runs` (above) already answers each run's `state`, `start`, `end` and `duration_s`, up to 100 a page (`limit=30` for the last 30 runs), newest first.
 
