@@ -1502,7 +1502,64 @@
       "forbidden": "No Access",
       "error": "Unavailable"
     },
-    "comingSoon": "Dashboards coming soon"
+    "comingSoon": "Dashboards coming soon",
+    "layers": {
+      "title": "IT-Aware's data by layer: raw → derived → transactional",
+      "flow": "Sources → <b>1 Raw</b> → rebuilt into → <b>2 Derived</b> ← read together with → <b>3 Transactional</b> ← people and IT-Aware",
+      "names": {
+        "raw": "Raw data",
+        "derived": "Derived data",
+        "transactional": "Transactional data"
+      },
+      "descriptions": {
+        "raw": "What each source sent, kept as received. Append-only. Nobody reads it through a page; it exists so everything else can be rebuilt.",
+        "derived": "Rebuilt from raw: the copy of what each source said, and what jobs computed from it (classifications, profiles, clusters, links, metrics).",
+        "transactional": "What IT-Aware itself creates: accounts and access, notifications, surveys, settings, usage and action records, and the marks people add to synced records."
+      },
+      "writtenBy": {
+        "raw": "Written by: each source's landing step",
+        "derived": "Written by: sync and derive jobs only",
+        "transactional": "Written by: people and IT-Aware's own processes"
+      },
+      "totals": {
+        "tables": "tables",
+        "rows": "rows",
+        "rowsApproximate": "rows (approx.)"
+      },
+      "notes": {
+        "unused": "Not in use yet: the raw record table is empty. Today sources land in the older landing area below, which raw replaces.",
+        "toSplit": "{count, plural, one {# table is} other {# tables are}} marked <tag></tag>: they hold what the source said together with marks people added. The marks move to Transactional.",
+        "toArrive": "Still to arrive here: the marks people add to synced records, from the {count, plural, one {# table} other {# tables}} marked <tag></tag>."
+      },
+      "tags": {
+        "source_copy": "Source copy",
+        "computed": "Computed",
+        "mixed": "To split",
+        "landing": "Older landing",
+        "raw": "Raw"
+      },
+      "subjects": {
+        "activities": "Tickets and interactions",
+        "auth": "Accounts and access",
+        "campaigns": "Notifications and surveys",
+        "edges": "Record links",
+        "hierarchies": "Organizations, locations, service catalog",
+        "insights": "Insights",
+        "journeys": "Journeys",
+        "knowledges": "Knowledge",
+        "metrics": "Metrics",
+        "networks": "Network scans",
+        "objects": "Workers, hardware, systems",
+        "ohla_journey": "Ohla Journey",
+        "raw": "Raw records",
+        "registry": "Record index",
+        "shadow": "Shadow runs",
+        "staging": "Older landing area",
+        "systems": "Platform records"
+      },
+      "counted": "Counted {time}",
+      "loadFailed": "Could not load the data layers: {message}"
+    }
   },
   "Data": {
     "common": {
