@@ -163,9 +163,9 @@ A **metric** is one number a task's own page already computes, shown on the task
 | `jobs.failed` | `jobs` | count | now | Jobs in `GET /jobs` whose last run's state is `failed` |
 | `data-overview.records` | `data-overview` | count | now | The sum of the unfiltered totals of the eleven lists the Data Overview page counts (organizations, locations, service catalogs, workers, articles, incidents, requests, interactions, survey batches, notification batches, analyses) |
 
-Periods are UTC days: `now` is the day of the refresh, `month` the calendar month, `last_7_days` the day of the refresh and the six before it.
+Periods are UTC days: `now` is the day of the refresh, `month` the calendar month, `last_7_days` the day of the refresh and the six before it. The SSC page itself picks its month from the server's local date (as it did before the metrics), so around a month's end the card and the page can show different months for some hours; the numbers of one month are the same in both.
 
-**Stored values.** `metrics.metric_values` (migration 0139) holds one row per metric, period and dimension: `metric_code`, `period_start`, `period_end`, `dimension_type`, `dimension_key`, `numerator`, `denominator` (set for a percent), `value`, `computed_at`, `definition_version`; those first five columns are its key. Every row today is the whole organization's: `dimension_type` `organization`, `dimension_key` empty. The refresh upserts the row of the period that is running, so a period that has ended keeps its last value.
+**Stored values.** `metrics.metric_values` (migration 0139) holds one row per metric, period and dimension: `metric_code`, `period_start`, `period_end`, `dimension_type`, `dimension_key`, `numerator`, `denominator` (set for a percent), `value`, `computed_at`, `definition_version`; those first five columns are its key. Every row today is the whole organization's: `dimension_type` `organization`, `dimension_key` empty. The refresh upserts the row of the period that is running. For a `month` and a `last_7_days` metric it also computes the period right before again and upserts that row, so data that arrived after the period ended is in the value the card compares with. A `now` metric is a snapshot of its day and cannot be taken again: a day that has ended keeps its last value.
 
 **Who sees a metric.** The stored number is the whole organization's, so a caller gets a metric only when both hold: they have its task (as in `GET /tasks/home`), and every permission the number is computed from reaches them through an `unconstrained` counted group. A person who holds the task with a `self_scoped` or `role_based` scope on that data gets no number.
 
@@ -190,19 +190,22 @@ Periods are UTC days: `now` is the day of the refresh, `month` the calendar mont
 
 - Only the caller's metrics, in registry order. `401` without a sign-in.
 - `unit` is `count` (an integer `value`) or `percent` (0 to 100, one decimal). `period.kind` is `now`, `month` or `last_7_days`.
-- The row shown is the metric's newest period. A metric with no row, or whose row was computed more than 24 hours ago, is left out.
+- Only the row of the period that is running now is shown. A metric with no such row (not refreshed yet in this period, or no value yet), or whose row was computed more than 24 hours ago, is left out; an earlier period's row is never shown in its place. So a `now` metric is absent from the start of a UTC day until that day's first refresh.
 - `previous_value`: the value of the period right before (the day before, the month before, the seven days before), when that row exists and was computed with the same `definition_version`; otherwise `null`.
 
 ### POST /tasks/metrics/refresh
 
-Computes every registered metric for the whole organization and upserts its row. Needs `systems:jobs:run`; the hourly job `refresh_task_metrics` calls it with the job account. `403` without the permission.
+Computes every registered metric for the whole organization and upserts its row. Needs `systems:jobs:run`; the hourly job `refresh_task_metrics` calls it with the job account. `401` without a sign-in, `403` without the permission.
 
 ```json
-{"refreshed": ["it-tickets.active"], "kept": {"jobs.failed": "failed: RuntimeError"}}
+{"enabled": true, "refreshed": ["it-tickets.active"], "kept": {"jobs.failed": "failed: RuntimeError"}}
 ```
 
+- `enabled`: `false` while `IT_AWARE_TASKS_ENABLED` is off. Then nothing is computed, both lists are empty, and the answer is still `200` (this route is not behind the switch's `404`), so the job ends clean instead of failing every hour.
 - `refreshed`: the metrics whose row was written.
-- `kept`: the metrics that kept their last row, each with why: `no value` (a rate with nothing to count yet) or `failed: <error type>` (the cause is in the backend log). One metric failing does not stop the others; when Airflow cannot be read, `jobs.failed` is kept.
+- `kept`: the metrics that kept their last row, each with why: `no value` (a rate with nothing to count yet) or `failed: <error type>` (the cause is in the backend log). One metric failing does not stop the others; when Airflow cannot be read, `jobs.failed` is kept. A page computation two metrics share runs once per refresh, also when it fails.
+
+**The job.** `refresh_task_metrics` sends this call once an hour, once per run, with a 15-minute timeout and no second send (two refreshes must not run at a time); a failed run is not retried, the next hour's run is. The run is red when the call fails or is refused, when any `kept` reason is a failure, or when `refreshed` is empty; `no value` alone is not a failure. With `"enabled": false` the run is green and its log says the tasks are switched off.
 
 ## Reporting-only check
 
