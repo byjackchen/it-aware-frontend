@@ -10,6 +10,7 @@ import "./globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { ThemeProvider } from '@/lib/contexts/theme-context';
+import { THEME_COOKIE_NAME, themeFrom } from '@/lib/theme';
 import { cookies } from 'next/headers';
 import { EnvBanner, ENV_BANNER_HEIGHT_PX } from '@/components/layout/EnvBanner';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
@@ -29,8 +30,7 @@ export default async function RootLayout({
 
   // Get theme from cookie for initial server render
   const cookieStore = await cookies();
-  const themeCookie = cookieStore.get('it-aware-theme');
-  const initialTheme = themeCookie?.value === 'light' ? 'light' : 'dark';
+  const initialTheme = themeFrom(cookieStore.get(THEME_COOKIE_NAME)?.value);
 
   // Providing all messages to the client side
   const messages = await getMessages();
@@ -69,7 +69,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>
+          <ThemeProvider initialTheme={initialTheme}>
             {showEnvBanner && <EnvBanner env={itAwareEnv} />}
             {children}
           </ThemeProvider>

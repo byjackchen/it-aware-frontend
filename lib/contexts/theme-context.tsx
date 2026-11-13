@@ -1,8 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-
-type Theme = 'dark' | 'light';
+import { THEME_COOKIE_NAME, type Theme } from '@/lib/theme';
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,35 +11,22 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_COOKIE_NAME = 'it-aware-theme';
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
-
-function getThemeFromCookie(): Theme {
-  if (typeof document === 'undefined') return 'dark';
-  const match = document.cookie.match(new RegExp(`(^| )${THEME_COOKIE_NAME}=([^;]+)`));
-  const theme = match ? match[2] : null;
-  return theme === 'light' ? 'light' : 'dark';
-}
 
 function setThemeCookie(theme: Theme) {
   document.cookie = `${THEME_COOKIE_NAME}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
-  const [mounted, setMounted] = useState(false);
-
-  // Initialize theme from cookie on mount
-  useEffect(() => {
-    const savedTheme = getThemeFromCookie();
-    setThemeState(savedTheme);
-    setMounted(true);
-  }, []);
+/**
+ * `initialTheme` is the theme the root layout read from the cookie (light for
+ * anyone who has not chosen), so the server's markup and the first paint
+ * already have it.
+ */
+export function ThemeProvider({ children, initialTheme }: React.PropsWithChildren<{ initialTheme: Theme }>) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
 
   // Apply theme class to document
   useEffect(() => {
-    if (!mounted) return;
-    
     const root = document.documentElement;
     root.classList.remove('dark', 'light');
     root.classList.add(theme);
@@ -48,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Also update body class for gradient background
     document.body.classList.remove('theme-dark', 'theme-light');
     document.body.classList.add(`theme-${theme}`);
-  }, [theme, mounted]);
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

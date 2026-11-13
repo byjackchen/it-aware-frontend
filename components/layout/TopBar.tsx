@@ -48,16 +48,16 @@ export function TopBar() {
       }`}
     >
       {/* Main Navigation Row */}
-      <div className="h-16 flex items-center justify-between flex-shrink-0">
+      <div className="h-16 flex items-center justify-between gap-6 flex-shrink-0">
         <div className="flex items-center gap-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
             {/* The logo goes to the person's start page; the house to their home. */}
             <NavLink href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+              <div className="w-9 h-9 brand-mark rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-lg">IA</span>
               </div>
-              <span className={`text-xl font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+              <span className={`text-xl font-semibold whitespace-nowrap ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
             </NavLink>
             <NavLink
               href="/home"
@@ -82,7 +82,7 @@ export function TopBar() {
 
           {/* User Profile Dropdown */}
           <div className="relative group">
-            <button className={`w-9 h-9 bg-gradient-to-br from-blue-500/30 to-purple-500/30 border rounded-full flex items-center justify-center font-medium text-sm hover:from-blue-500/50 hover:to-purple-500/50 transition-all duration-300 ${isLight ? 'border-slate-300 text-slate-700' : 'border-white/20 text-white'}`}>
+            <button className={`w-9 h-9 border rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300 ${isLight ? 'bg-accent border-accent text-white hover:opacity-90' : 'bg-gradient-to-br from-blue-500/30 to-purple-500/30 hover:from-blue-500/50 hover:to-purple-500/50 border-white/20 text-white'}`}>
               {initials}
             </button>
 

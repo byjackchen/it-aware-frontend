@@ -10,8 +10,88 @@
    CSS Variables - Theme System
    ======================================== */
 
-/* Dark theme (default) */
+/* Light theme (the default: anyone who has not chosen a theme sees it).
+   Soft grey page, white surfaces, thin borders, a subtle shadow and one blue
+   accent. Nothing is translucent: the "glass" look is the dark theme's. */
 :root,
+.light,
+.theme-light {
+  /* Base colors */
+  --background: #f4f6f9;
+  --foreground: #16202e;
+
+  /* Surfaces the dark theme draws as glass: solid white here */
+  --glass-bg: #ffffff;
+  --glass-border: #e3e8ef;
+  --glass-shadow: 0 1px 2px rgba(16, 32, 56, 0.06), 0 4px 14px rgba(16, 32, 56, 0.06);
+
+  /* Text colors (each at least 4.5:1 on white and on the page grey) */
+  --text-primary: #16202e;
+  --text-secondary: #4a5668;
+  --text-muted: #5b6779;
+  --text-label: #16202e;
+  --text-placeholder: #667385;
+
+  /* Card and surface */
+  --card-bg: #ffffff;
+  --surface-bg: #ffffff;
+  --surface-hover: #eef2f7;
+
+  /* Borders */
+  --border-color: #e3e8ef;
+  --border-subtle: #e3e8ef;
+  --border-input: #cfd6e0;
+  --border-panel: #e3e8ef;
+
+  /* Form elements */
+  --input-bg: #ffffff;
+  --input-bg-readonly: #eef2f7;
+  --input-text: #16202e;
+  --input-border: #cfd6e0;
+  --input-focus-border: #0b62d6;
+
+  /* Buttons */
+  --btn-neutral-bg: #e9edf3;
+  --btn-neutral-bg-hover: #dbe1ea;
+  --btn-neutral-text: #4a5668;
+
+  /* List items */
+  --list-divider: #e3e8ef;
+  --list-hover: #eef2f7;
+  --list-selected: #e8f1fd;
+  --list-selected-text: #0b62d6;
+
+  /* Tags and badges */
+  --tag-bg: #eef2f7;
+  --tag-border: #e3e8ef;
+  --tag-text: #16202e;
+
+  /* Select dropdown */
+  --select-option-bg: #ffffff;
+  --select-option-text: #16202e;
+
+  /* Checkbox */
+  --checkbox-border: #cfd6e0;
+  --checkbox-bg: #ffffff;
+
+  /* Empty state */
+  --empty-bg: #eef2f7;
+  --empty-icon: #667385;
+
+  /* Accent, opaque panels (popovers) and the card shadow */
+  --accent: #0b62d6;
+  --accent-soft: #e8f1fd;
+  --panel-bg: #ffffff;
+  --card-shadow: 0 1px 2px rgba(16, 32, 56, 0.06), 0 4px 14px rgba(16, 32, 56, 0.06);
+  --mark-bg: #fff1b8;
+
+  /* Status text: good, bad, warning (each at least 4.5:1 on white) */
+  --good: #0a7d4f;
+  --bad: #c0392b;
+  --warn: #8a5a00;
+}
+
+/* Dark theme */
 .dark,
 .theme-dark {
   /* Base colors */
@@ -75,72 +155,18 @@
   /* Empty state */
   --empty-bg: rgba(255, 255, 255, 0.05);
   --empty-icon: #6b7280;
-}
 
-/* Light theme */
-.light,
-.theme-light {
-  /* Base colors */
-  --background: #f8fafc;
-  --foreground: #1e293b;
-  
-  /* Glass effect */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(148, 163, 184, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.2);
-  
-  /* Text colors */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-label: #1e293b;
-  --text-placeholder: #94a3b8;
-  
-  /* Card and surface */
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --surface-bg: rgba(255, 255, 255, 0.9);
-  --surface-hover: rgba(99, 102, 241, 0.08);
-  
-  /* Borders */
-  --border-color: rgba(148, 163, 184, 0.3);
-  --border-subtle: rgba(148, 163, 184, 0.2);
-  --border-input: rgba(148, 163, 184, 0.4);
-  --border-panel: rgba(203, 213, 225, 1);
-  
-  /* Form elements */
-  --input-bg: rgba(255, 255, 255, 1);
-  --input-bg-readonly: rgba(241, 245, 249, 1);
-  --input-text: #1e293b;
-  --input-border: rgba(203, 213, 225, 1);
-  --input-focus-border: #3b82f6;
-  
-  /* Buttons */
-  --btn-neutral-bg: rgba(226, 232, 240, 1);
-  --btn-neutral-bg-hover: rgba(203, 213, 225, 1);
-  --btn-neutral-text: #475569;
-  
-  /* List items */
-  --list-divider: rgba(226, 232, 240, 1);
-  --list-hover: rgba(99, 102, 241, 0.08);
-  --list-selected: rgba(59, 130, 246, 0.15);
-  --list-selected-text: #3b82f6;
-  
-  /* Tags and badges */
-  --tag-bg: rgba(99, 102, 241, 0.1);
-  --tag-border: rgba(99, 102, 241, 0.2);
-  --tag-text: #1e293b;
-  
-  /* Select dropdown */
-  --select-option-bg: #ffffff;
-  --select-option-text: #1e293b;
-  
-  /* Checkbox */
-  --checkbox-border: rgba(203, 213, 225, 1);
-  --checkbox-bg: #ffffff;
-  
-  /* Empty state */
-  --empty-bg: rgba(241, 245, 249, 1);
-  --empty-icon: #94a3b8;
+  /* Accent, opaque panels (popovers) and the card shadow */
+  --accent: #60a5fa;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --panel-bg: #17172f;
+  --card-shadow: none;
+  --mark-bg: rgba(250, 204, 21, 0.3);
+
+  /* Status text: good, bad, warning */
+  --good: #4ade80;
+  --bad: #f87171;
+  --warn: #fbbf24;
 }
 
 @theme inline {
@@ -148,6 +174,25 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* The theme's variables as utilities (bg-surface, text-ink, border-line,
+     text-accent, shadow-card ...): one class serves both themes. */
+  --color-page: var(--background);
+  --color-surface: var(--card-bg);
+  --color-panel: var(--panel-bg);
+  --color-field: var(--input-bg-readonly);
+  --color-hover: var(--surface-hover);
+  --color-ink: var(--text-primary);
+  --color-ink-2: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border-panel);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-mark: var(--mark-bg);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --shadow-card: var(--card-shadow);
 }
 
 /* ========================================
@@ -173,7 +218,7 @@
   min-height: 100vh;
 }
 
-/* Light theme gradient */
+/* Light theme: a flat soft grey page, no gradient */
 .light .gradient-bg,
 .light.gradient-bg,
 .light .gradient-bg-animated,
@@ -182,8 +227,7 @@
 .theme-light.gradient-bg,
 .theme-light .gradient-bg-animated,
 .theme-light.gradient-bg-animated {
-  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 25%, #f1f5f9 50%, #dbeafe 75%, #f8fafc 100%);
-  background-attachment: fixed;
+  background: var(--background);
   min-height: 100vh;
 }
 
@@ -239,6 +283,34 @@
   border-color: var(--glass-border);
 }
 
+/* Light theme: the glass surfaces are plain white cards (nothing behind
+   them to blur), and the accent button is one solid blue. */
+.theme-light .glass,
+.theme-light .glass-dark,
+.theme-light .glass-card,
+.theme-light .btn-glass,
+.theme-light .btn-glass-outline {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.theme-light .btn-glass {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.theme-light .btn-glass:hover {
+  background: #0952b5;
+  box-shadow: none;
+  transform: none;
+}
+
+.theme-light .glow-blue,
+.theme-light .glow-purple,
+.theme-light .glow-cyan {
+  box-shadow: none;
+}
+
 /* ========================================
    Glow Effects
    ======================================== */
@@ -271,6 +343,25 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Light theme: the gradient text is the one blue accent */
+.theme-light .text-gradient {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--accent);
+}
+
+/* The brand's square mark (top bar, login): a gradient that glows in the
+   dark theme, the solid accent in the light one. */
+.brand-mark {
+  background: linear-gradient(to bottom right, #3b82f6, #9333ea);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.theme-light .brand-mark {
+  background: var(--accent);
+  box-shadow: none;
 }
 
 /* ========================================
@@ -463,6 +554,12 @@
 a:focus-visible,
 button:focus-visible {
   outline: none;
+}
+
+/* The current view's tab in the task frame, and the current entry of the old-style menu */
+.sidebar-active {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 /* Active nav item */
