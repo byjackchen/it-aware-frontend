@@ -4,10 +4,10 @@
  * /tasks/usages/tasks/<task>, reached from the People number of its row.
  */
 
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { getTaskPeople, load } from '@/lib/api/usage';
-import { pageCount, parseDays, parsePage, PEOPLE_PAGE_SIZE, taskName, usageHref, type UsageParams } from '@/lib/usage/view';
+import { getTaskPeople, getUsagePeople, load } from '@/lib/api/usage';
+import { isSegment, pageCount, parseDays, parsePage, PEOPLE_PAGE_SIZE, taskName, usageHref, type UsageParams } from '@/lib/usage/view';
 import { LoadFailure, UsageFrame } from '../../parts';
 import { TaskPeopleList } from './TaskPeopleList';
 
@@ -22,6 +22,12 @@ export default async function TaskPeoplePage({ params, searchParams }: TaskPeopl
   const [{ task }, query] = await Promise.all([params, searchParams]);
   const days = parseDays(query);
   const page = parsePage(query);
+  // A segment that cannot be a task code names nothing, and is never sent on; a
+  // person without the permission still gets the no-access page first.
+  if (!isSegment(task)) {
+    await load(() => getUsagePeople(days, 1, 0));
+    notFound();
+  }
   const t = await getTranslations('Usage.taskPeople');
   const name = taskName(task, await getLocale());
 

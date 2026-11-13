@@ -171,6 +171,14 @@ export function neverOpened(rows: TaskRow[]): TaskRow[] {
 
 // ── Who used what ────────────────────────────────────────────────────────────
 
+/**
+ * Whether a sub-page's segment can be a task code or an oid (letters, digits,
+ * `_`, `-`): anything else names nothing, and is never sent to the backend.
+ */
+export function isSegment(value: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(value);
+}
+
 /** A task's name in the current language; its code when the catalog no longer has it. */
 export function taskName(code: string, locale: string): string {
   const task = TASKS.find((candidate) => candidate.code === code);

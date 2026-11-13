@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   accountLabels,
   DEFAULT_SORT,
+  isSegment,
   formatShare,
   MAX_PAGE,
   neverOpened,
@@ -180,6 +181,13 @@ describe('the By Task rows', () => {
 });
 
 describe('who used what', () => {
+  it('takes a task code or an oid as a segment, and nothing that could leave it', () => {
+    expect(isSegment('it-incidents')).toBe(true);
+    expect(isSegment('QUFBQUFBQUFBQUFBQUFBQQ')).toBe(true);
+    expect(isSegment('a_B-9')).toBe(true);
+    for (const bad of ['', '.', '..', '%2E', 'a.b', 'a/b', 'a b', 'ä']) expect(isSegment(bad)).toBe(false);
+  });
+
   it('names a task, or shows the code the catalog no longer has', () => {
     expect(taskName('jobs', 'en')).toBe('Manage Jobs');
     expect(taskName('jobs', 'zh')).toBe('管理作业');

@@ -7,6 +7,7 @@ import { redirect, unstable_rethrow } from 'next/navigation';
 import { fetchApi } from '@/lib/api/core';
 import { ApiError } from '@/lib/api/errors';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
+import { isSegment } from '@/lib/usage/view';
 import type { PersonUsage, TaskPeople, UnusedAccess, UsageByTask, UsageOverview, UsagePeople } from '@/lib/types/usage';
 
 const BASE = `${RUNTIME_CONFIG.backend.domain}/usage`;
@@ -29,9 +30,19 @@ function paged(days: number, limit: number, offset: number): URLSearchParams {
   return new URLSearchParams({ days: String(days), limit: String(limit), offset: String(offset) });
 }
 
+/**
+ * A task code or an oid as one segment of a backend path. Only letters, digits,
+ * `_` and `-` pass: a `.` or `..` segment would be collapsed by the URL parser
+ * (also when escaped as %2E) and reach another endpoint.
+ */
+function segment(value: string): string {
+  if (!isSegment(value)) throw new Error(`Not a task code or oid: ${JSON.stringify(value)}`);
+  return value;
+}
+
 /** The people who opened one task in the window. */
 export async function getTaskPeople(task: string, days: number, limit: number, offset: number): Promise<TaskPeople> {
-  return fetchApi(`${BASE}/tasks/${encodeURIComponent(task)}/people?${paged(days, limit, offset)}`);
+  return fetchApi(`${BASE}/tasks/${segment(task)}/people?${paged(days, limit, offset)}`);
 }
 
 /** Everyone active in the window. */
@@ -41,7 +52,7 @@ export async function getUsagePeople(days: number, limit: number, offset: number
 
 /** One person's sign-ins and the tasks they opened in the window. */
 export async function getPersonUsage(oid: string, days: number): Promise<PersonUsage> {
-  return fetchApi(`${BASE}/people/${encodeURIComponent(oid)}?days=${days}`);
+  return fetchApi(`${BASE}/people/${segment(oid)}?days=${days}`);
 }
 
 /**
