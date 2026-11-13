@@ -17,8 +17,8 @@ import { TaskTile } from '@/components/tasks/TaskTile';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { byGrouping, groupingName, named, pageHref } from '@/lib/tasks/catalog';
 import { greetingAt, hourIn, pinnedRow } from '@/lib/tasks/home';
-import { ago, metricChange, metricValue, metricsByTask } from '@/lib/tasks/metrics';
-import type { Task, TaskHome, TaskMetric, TaskMetrics } from '@/lib/types/tasks';
+import { ago, metricChange, metricValue, metricsByTask, oldestComputed } from '@/lib/tasks/metrics';
+import type { Task, TaskHome, TaskMetric } from '@/lib/types/tasks';
 
 interface HomePageProps {
     home: TaskHome;
@@ -42,7 +42,7 @@ export function HomePage({ home }: HomePageProps) {
         let shown = true;
         fetch('/api/tasks/metrics')
             .then(response => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-            .then((answer: TaskMetrics) => { if (shown) setMetrics(metricsByTask(answer.metrics)); })
+            .then((answer: { metrics?: unknown } | null) => { if (shown) setMetrics(metricsByTask(answer?.metrics)); })
             .catch(() => { /* The cards stay plain. */ });
         return () => { shown = false; };
     }, []);
@@ -97,10 +97,21 @@ export function HomePage({ home }: HomePageProps) {
                     {named(held.label, locale)}
                     {period && `${t('metrics.join')}${t(`metrics.period.${period}`)}`}
                 </span>
-                {change && <span className="text-xs text-ink-2">{change}</span>}
+                {change && (
+                    <span className="text-xs text-ink-2">
+                        {held.unit === 'percent' ? t('metrics.points', { change }) : change}
+                    </span>
+                )}
             </div>
         );
     };
+
+    /** When the card's numbers were computed: small, but there without a pointer to hover. */
+    const updated = (held: TaskMetric[]) => (
+        <span data-testid="task-metrics-updated" className="text-[11px] text-muted">
+            {t('metrics.updated', { when: ago(oldestComputed(held), now, locale) })}
+        </span>
+    );
 
     const card = (task: Task, own: boolean) => {
         const held = metrics.get(task.code);
@@ -124,6 +135,7 @@ export function HomePage({ home }: HomePageProps) {
                 {held && (
                     <div className="mt-auto border-t border-dashed border-line pt-2">
                         {held.map(one => metric(one, true))}
+                        {updated(held)}
                     </div>
                 )}
             </li>
@@ -142,8 +154,9 @@ export function HomePage({ home }: HomePageProps) {
             {star(task)}
             {metrics.has(task.code) && (
                 // The metrics take their own line under the name, so a long label never squeezes it.
-                <div className="flex w-full flex-wrap gap-x-5 gap-y-0.5 pl-[42px]">
+                <div className="flex w-full flex-wrap items-baseline gap-x-5 gap-y-0.5 pl-[42px]">
                     {metrics.get(task.code)!.map(one => metric(one, false))}
+                    {updated(metrics.get(task.code)!)}
                 </div>
             )}
         </li>
@@ -172,7 +185,7 @@ export function HomePage({ home }: HomePageProps) {
                     {ready && new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: timezone }).format(now)}
                 </p>
             </header>
-            {error && <p role="alert" className="mt-4 text-sm text-red-500">{error}</p>}
+            {error && <p role="alert" className="mt-4 text-sm text-bad">{error}</p>}
 
             <section data-testid="home-pinned">
                 <h2 className={heading}>{t('pinned.title')} {pins.length > 0 && count(pins.length)}</h2>

@@ -118,6 +118,8 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     // Pinned from the frame, it is on the home; unpinned from the frame, it is gone.
     await frame.getByRole('button', { name: 'Pin to home', exact: true }).click();
     await expect(frame.getByRole('button', { name: 'Unpin from home', exact: true })).toBeVisible();
+    // The frame's pin is the star of the home and of search: filled once pinned.
+    await expect(frame.getByRole('button', { name: 'Unpin from home', exact: true }).locator('svg.lucide-star')).toHaveAttribute('fill', 'currentColor');
     await openHome(page);
     const pinned = page.getByTestId('home-pinned');
     await expect(pinned.getByRole('link', { name: 'Monitor IT Tickets', exact: true })).toHaveAttribute('href', '/tasks/it-tickets/active');
@@ -290,33 +292,43 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       { task: 'it-incidents', code: 'sla', label: { en: 'SLA met', zh: 'SLA 达成' }, unit: 'percent', value: 91.6, period: period('month'), previous_value: 92.8, computed_at },
       { task: 'it-incidents', code: 'third', label: { en: 'a third metric', zh: '第三个' }, unit: 'count', value: 1, period: period('now'), previous_value: null, computed_at },
       { task: 'data-overview', code: 'records', label: { en: 'records', zh: '记录' }, unit: 'count', value: 1234567, period: period('now'), previous_value: null, computed_at },
+      // Malformed entries are left out; they never break the page.
+      { task: 'workers', code: 'no-value', label: { en: 'broken', zh: '坏' }, unit: 'count', value: null, period: period('now'), previous_value: null, computed_at },
+      { task: 'workers', code: 'no-period', label: { en: 'broken', zh: '坏' }, unit: 'count', value: 1, previous_value: null, computed_at },
+      { task: 'workers', code: 'no-label', unit: 'count', value: 1, period: period('now'), previous_value: null, computed_at },
+      { task: 'workers', code: 'no-time', label: { en: 'broken', zh: '坏' }, unit: 'count', value: 1, period: period('now'), previous_value: null, computed_at: 'soon' },
     ] } }));
     await openHome(page);
 
     // At most two metrics a task: a count with thousands separators, a percent with one decimal.
     const incidents = page.getByTestId('home-other').locator('[data-task="it-incidents"]').getByTestId('task-metric');
-    await expect(incidents).toHaveText([/^3,412\s*opened, last 7 days\s*\+6$/, /^91\.6%\s*SLA met, this month\s*-1\.2$/]);
+    await expect(incidents).toHaveText([/^3,412\s*opened, last 7 days\s*\+6$/, /^91\.6%\s*SLA met, this month\s*-1\.2 pts$/]);
+    // When the numbers were computed is on the card itself, not only in a tooltip.
+    const incidentsRow = page.getByTestId('home-other').locator('[data-task="it-incidents"]');
+    await expect(incidentsRow.getByTestId('task-metrics-updated')).toHaveText('Updated 5 minutes ago');
     await expect(incidents.first()).toHaveAttribute('title', 'Updated 5 minutes ago');
     // A large count is written short; without an earlier value there is no change.
     const overview = page.getByTestId('home-other').locator('[data-task="data-overview"]').getByTestId('task-metric');
     await expect(overview).toHaveText([/^1\.2M\s*records, now$/]);
-    // A task with no metric keeps its plain card.
+    // A task with no metric, or only malformed ones, keeps its plain card.
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]')).toHaveCount(1);
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);
   });
 
-  test('the cards stay plain, and the home works, when the metrics call fails', async ({ page }) => {
-    await page.route('**/api/tasks/metrics', (route) => route.fulfill({ status: 500, body: 'boom' }));
+  for (const status of [500, 401]) {
+    test(`the cards stay plain, and the home works, when the metrics call answers ${status}`, async ({ page }) => {
+    await page.route('**/api/tasks/metrics', (route) => route.fulfill({ status, json: { metrics: [] } }));
     const failed = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/tasks/metrics');
     await openHome(page);
-    expect((await failed).status()).toBe(500);
+    expect((await failed).status()).toBe(status);
 
     await expect(page.getByTestId('task-metric')).toHaveCount(0);
     await expect(page.locator('main').getByRole('alert')).toHaveCount(0);
     const other = page.getByTestId('home-other');
     await expect(other.getByRole('link', { name: 'View IT Incidents', exact: true })).toHaveAttribute('href', '/tasks/it-incidents');
     await expect(other.getByRole('button', { name: 'Pin View IT Incidents', exact: true })).toBeEnabled();
-  });
+    });
+  }
 
   test("the backend's metrics show on the tasks' cards", async ({ page, context }) => {
     // The hourly job refresh_task_metrics computes the numbers; here the admin asks for the same refresh.
@@ -331,7 +343,9 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     page.on('request', (sent) => { if (new URL(sent.url()).pathname === '/api/tasks/metrics') asked.push(sent.url()); });
     const answered = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/tasks/metrics');
     await openHome(page);
-    const { metrics } = (await (await answered).json()) as TaskMetrics;
+    const answer = await answered;
+    expect(answer.headers()['cache-control']).toBe('private, no-store');
+    const { metrics } = (await answer.json()) as TaskMetrics;
     expect(asked).toHaveLength(1);
 
     // Monitor IT Tickets shows its two metrics, as the backend answered them: both counts of today.
@@ -343,6 +357,8 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       await expect(shown.nth(index)).toContainText(`${metricValue(metric, 'en')}${metric.label.en}, now`);
       await expect(shown.nth(index)).toHaveAttribute('title', /^Updated (this minute|\d+ minutes? ago)$/);
     }
+    await expect(page.getByTestId('home-other').locator('[data-task="it-tickets"]').getByTestId('task-metrics-updated'))
+      .toHaveText(/^Updated (this minute|\d+ minutes? ago)$/);
     // A task the registry has no metric for keeps its plain card.
     expect(metrics.some((metric) => metric.task === 'workers')).toBe(false);
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);
