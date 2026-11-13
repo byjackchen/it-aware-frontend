@@ -1,33 +1,33 @@
 'use client';
 
 /**
- * Search results dropdown component.
- * Renders the groups the search answers with (tasks, then records by kind);
- * each result opens its page. A task shows its grouping beside it, and can be
- * pinned to the home from here.
+ * The search panel: two sections, Tasks first and then Objects (the records,
+ * under a small heading per kind). Each result opens its page; a task shows
+ * its grouping beside it and can be pinned to the home from here. The result
+ * the arrow keys are on is marked, and the pointer moves it too.
  */
 
 import { useState } from 'react';
-import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
 import { useTranslations } from 'next-intl';
-import { FileText, ListChecks, Loader2, Pin, PinOff } from 'lucide-react';
+import { FileText, Loader2, Star } from 'lucide-react';
 import { setTaskPinned } from '@/app/actions/tasks';
-import { useTheme } from '@/lib/contexts/theme-context';
+import { TaskTile } from '@/components/tasks/TaskTile';
 import { SEARCH_CONFIG } from '@/lib/config/search';
-import { pageHref } from '@/lib/tasks/catalog';
-import type { SearchGroup, SearchResult } from '@/lib/types/search';
+import { marked, type SearchSections } from '@/lib/search/sections';
+import type { SearchResult } from '@/lib/types/search';
 
 interface SearchResultsProps {
-    results: SearchGroup[];
+    found: SearchSections;
+    query: string;
     isLoading: boolean;
-    onSelect: () => void;
+    /** The place in `found.flat` the arrow keys are on. */
+    active: number;
+    onActive: (index: number) => void;
+    onOpen: (item: SearchResult) => void;
 }
 
-export function SearchResults({ results, isLoading, onSelect }: SearchResultsProps) {
-    const { theme } = useTheme();
-    const router = useTransitionRouter();
+export function SearchResults({ found, query, isLoading, active, onActive, onOpen }: SearchResultsProps) {
     const t = useTranslations('GlobalSearch');
-    const isLight = theme === 'light';
     // Pins changed here, by task code; a result's own `pinned` holds until then.
     const [pins, setPins] = useState<Record<string, boolean>>({});
 
@@ -39,95 +39,114 @@ export function SearchResults({ results, isLoading, onSelect }: SearchResultsPro
         }
     };
 
-    const handleClick = (item: SearchResult) => {
-        router.push(pageHref(item.opens));
-        onSelect();
-    };
-
     if (isLoading) {
         return (
-            <div className={`flex items-center justify-center gap-2 py-4 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+            <div className="flex items-center justify-center gap-2 py-6 text-ink-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm">{t('searching')}</span>
             </div>
         );
     }
 
-    if (results.length === 0) {
-        return (
-            <div className={`py-4 text-center text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-                {t('noResults')}
-            </div>
-        );
+    if (found.flat.length === 0) {
+        return <div className="py-6 text-center text-sm text-ink-2">{t('noResults')}</div>;
     }
 
+    const mark = (text: string) =>
+        marked(text, query).map((part, index) =>
+            part.hit ? <mark key={index} className="rounded-[3px] bg-mark text-inherit">{part.text}</mark> : part.text
+        );
+
+    const hit = (item: SearchResult, kind: string) => {
+        const index = found.flat.indexOf(item);
+        const isActive = index === active;
+        const pinned = pins[item.id] ?? item.pinned;
+        const Icon = kind === 'task' ? null : SEARCH_CONFIG[kind]?.icon ?? FileText;
+        return (
+            <div
+                key={`${kind}:${item.id}`}
+                data-testid="search-hit"
+                data-active={isActive}
+                ref={isActive ? element => element?.scrollIntoView({ block: 'nearest' }) : undefined}
+                onMouseMove={() => { if (!isActive) onActive(index); }}
+                className={`flex items-center rounded-[10px] ${isActive ? 'bg-accent-soft' : ''}`}
+            >
+                <button onClick={() => onOpen(item)} className="flex min-w-0 flex-1 items-center gap-3 px-2.5 py-2 text-left">
+                    <TaskTile name={item.title} small>{Icon && <Icon className="h-4 w-4" />}</TaskTile>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold text-ink">{mark(item.title)}</span>
+                        {item.subtitle && (
+                            <>
+                                {' '}
+                                <span className="block truncate text-xs text-muted">{mark(item.subtitle)}</span>
+                            </>
+                        )}
+                    </span>
+                    {item.caption && (
+                        <>
+                            {' '}
+                            <span data-testid="search-caption" className="shrink-0 text-xs text-muted">{item.caption}</span>
+                        </>
+                    )}
+                </button>
+                {pinned != null && (
+                    <button
+                        onClick={() => togglePin(item, pinned)}
+                        aria-pressed={pinned}
+                        aria-label={t(pinned ? 'unpinTask' : 'pinTask', { name: item.title })}
+                        title={t(pinned ? 'unpin' : 'pin')}
+                        className={`mr-2 rounded-md p-1.5 ${pinned ? 'text-accent' : 'text-muted hover:text-ink'}`}
+                    >
+                        <Star className="h-4 w-4" fill={pinned ? 'currentColor' : 'none'} />
+                    </button>
+                )}
+            </div>
+        );
+    };
+
+    const heading = 'mb-2 flex items-baseline gap-2.5 text-[17px] font-semibold text-ink';
     return (
-        <div className="max-h-80 overflow-y-auto" data-testid="search-results">
-            {results.map((group) => {
-                const config = SEARCH_CONFIG[group.kind];
-                const Icon = config?.icon ?? (group.kind === 'task' ? ListChecks : FileText);
-
-                return (
-                    <div key={group.kind} data-testid={`search-group-${group.kind}`}>
-                        {/* Group header */}
-                        <div className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium ${isLight ? 'bg-slate-50 text-slate-500' : 'bg-white/5 text-gray-500'}`}>
-                            <Icon className="w-3.5 h-3.5" />
-                            <span>{group.label ?? (config ? t(config.labelKey) : group.kind)}</span>
-                            <span className={`ml-auto ${isLight ? 'text-slate-400' : 'text-gray-600'}`}>
-                                {group.results.length}
-                            </span>
-                        </div>
-
-                        {/* Items */}
-                        {group.results.map((item) => {
-                            const pinned = pins[item.id] ?? item.pinned;
+        <>
+            <div className="max-h-[min(70vh,34rem)] overflow-y-auto" data-testid="search-results">
+                {found.tasks.length > 0 && (
+                    <section className="px-5 pb-3 pt-3.5" data-testid="search-group-task">
+                        <h3 className={heading}>
+                            <span>{t('tasks')}</span>
+                            <small className="text-xs font-medium text-muted">{t('tasksCount', { count: found.tasks.length })}</small>
+                        </h3>
+                        {found.tasks.map(item => hit(item, 'task'))}
+                    </section>
+                )}
+                {found.objects.length > 0 && (
+                    <section
+                        className={`px-5 pb-3 pt-3.5 ${found.tasks.length > 0 ? 'border-t-8 border-page' : ''}`}
+                        data-testid="search-objects"
+                    >
+                        <h3 className={heading}>
+                            <span>{t('objects')}</span>
+                            <small className="text-xs font-medium text-muted">{t('objectsHint')}</small>
+                        </h3>
+                        {found.objects.map(group => {
+                            const config = SEARCH_CONFIG[group.kind];
                             return (
-                                <div
-                                    key={item.id}
-                                    className={`flex items-center transition-colors ${isLight ? 'hover:bg-slate-100' : 'hover:bg-white/5'}`}
-                                >
-                                    <button
-                                        onClick={() => handleClick(item)}
-                                        className={`flex-1 text-left px-4 py-2 text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}
-                                    >
-                                        {item.title}
-                                        {item.subtitle && (
-                                            <>
-                                                {' '}
-                                                <span className={`ml-1 text-xs ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                    {item.subtitle}
-                                                </span>
-                                            </>
-                                        )}
-                                        {item.caption && (
-                                            <>
-                                                {' '}
-                                                <span
-                                                    data-testid="search-caption"
-                                                    className={`ml-2 px-1.5 py-0.5 rounded text-[11px] ${isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-gray-500'}`}
-                                                >
-                                                    {item.caption}
-                                                </span>
-                                            </>
-                                        )}
-                                    </button>
-                                    {pinned != null && (
-                                        <button
-                                            onClick={() => togglePin(item, pinned)}
-                                            aria-pressed={pinned}
-                                            aria-label={t(pinned ? 'unpinTask' : 'pinTask', { name: item.title })}
-                                            title={t(pinned ? 'unpin' : 'pin')}
-                                            className={`mr-2 p-1.5 rounded-md ${pinned ? 'text-blue-400' : isLight ? 'text-slate-400 hover:text-slate-700' : 'text-gray-500 hover:text-white'}`}
-                                        >
-                                            {pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-                                        </button>
-                                    )}
+                                <div key={group.kind} data-testid={`search-group-${group.kind}`}>
+                                    <h4 className="mx-2.5 mb-0.5 mt-2.5 text-xs uppercase tracking-wider text-muted">
+                                        <span>{group.label ?? (config ? t(config.labelKey) : group.kind)}</span>
+                                        {' · '}
+                                        <span>{group.results.length}</span>
+                                    </h4>
+                                    {group.results.map(item => hit(item, group.kind))}
                                 </div>
                             );
                         })}
-                    </div>
-                );
-            })}
-        </div>
+                    </section>
+                )}
+            </div>
+            <div className="flex gap-4 border-t border-line bg-page px-5 py-2 text-xs text-muted">
+                <span>↑↓ {t('keyMove')}</span>
+                <span>↵ {t('keyOpen')}</span>
+                <span>esc {t('keyClose')}</span>
+            </div>
+        </>
     );
 }

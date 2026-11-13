@@ -54,6 +54,69 @@ test.describe('Tasks 2: search over tasks and records', () => {
     await expect(page).toHaveURL(/\/tasks\/workers\/organizations\/[\w-]{22}$/);
   });
 
+  test('the panel has two sections, Tasks then Objects, and the keyboard walks both', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const box = page.getByPlaceholder('Search tasks and records...');
+    // "/" puts the cursor in the box from anywhere on the page.
+    await page.keyboard.press('/');
+    await expect(box).toBeFocused();
+    await box.fill('incid');
+
+    const results = page.getByTestId('search-results');
+    await expect(results.getByRole('heading', { level: 3 })).toHaveText([/^Tasks\s*\d+ you can open$/, /^Objects\s*records you can see$/]);
+    const tasks = page.getByTestId('search-group-task').getByTestId('search-hit');
+    const objects = page.getByTestId('search-objects');
+    // The records are under a small heading per kind, with its count.
+    const incidents = objects.getByTestId('search-group-incident');
+    await expect(incidents.getByRole('heading', { level: 4 })).toHaveText(/^Incidents · \d+$/);
+    await expect(incidents.getByTestId('search-hit').first()).toContainText('incident');
+
+    // The first result is where the keys start; the arrows move through the tasks and on into the objects.
+    const active = results.locator('[data-testid="search-hit"][data-active="true"]');
+    await expect(active).toHaveCount(1);
+    await expect(tasks.first()).toHaveAttribute('data-active', 'true');
+    const taskCount = await tasks.count();
+    expect(taskCount).toBeGreaterThan(1);
+    for (let moved = 0; moved < taskCount; moved += 1) await box.press('ArrowDown');
+    await expect(objects.getByTestId('search-hit').first()).toHaveAttribute('data-active', 'true');
+    await box.press('ArrowUp');
+    await expect(tasks.last()).toHaveAttribute('data-active', 'true');
+    // Up from the first result goes round to the last one.
+    for (let moved = 1; moved < taskCount; moved += 1) await box.press('ArrowUp');
+    await expect(tasks.first()).toHaveAttribute('data-active', 'true');
+    await box.press('ArrowUp');
+    await expect(results.getByTestId('search-hit').last()).toHaveAttribute('data-active', 'true');
+    await expect(active).toHaveCount(1);
+
+    // Esc closes the panel and empties the box.
+    await box.press('Escape');
+    await expect(results).toHaveCount(0);
+    await expect(box).toHaveValue('');
+  });
+
+  test('Enter opens the result the arrow keys are on: a task, then a record', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const box = page.getByPlaceholder('Search tasks and records...');
+    await box.fill('incid');
+    const tasks = page.getByTestId('search-group-task').getByTestId('search-hit');
+    await expect(tasks.first()).toHaveAttribute('data-active', 'true');
+    // The second task is Monitor IT Tickets, found through its Incidents view: Enter opens that exact tab.
+    await box.press('ArrowDown');
+    await expect(tasks.nth(1)).toHaveAttribute('data-active', 'true');
+    await expect(tasks.nth(1)).toContainText('Monitor IT Tickets');
+    await box.press('Enter');
+    await expect(page).toHaveURL(/\/tasks\/it-tickets\/incidents$/);
+    await expect(page.getByTestId('search-results')).toHaveCount(0);
+
+    await box.fill('incid');
+    await expect(tasks.first()).toHaveAttribute('data-active', 'true');
+    const taskCount = await tasks.count();
+    for (let moved = 0; moved < taskCount; moved += 1) await box.press('ArrowDown');
+    await expect(page.getByTestId('search-objects').getByTestId('search-hit').first()).toHaveAttribute('data-active', 'true');
+    await box.press('Enter');
+    await expect(page).toHaveURL(/\/tasks\/it-incidents\/[\w-]{22}$/);
+  });
+
   test('a kind the bar could not reach before is found: incidents', async ({ page }) => {
     await page.goto('/tasks/workers/workers');
     await page.getByPlaceholder('Search tasks and records...').fill('synthetic incident');

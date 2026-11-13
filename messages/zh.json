@@ -1546,7 +1546,15 @@
     "workers": "员工",
     "serviceCatalogs": "服务目录",
     "articles": "文章",
-    "requests": "请求"
+    "requests": "请求",
+    "tasks": "任务",
+    "tasksCount": "你可以打开 {count} 个",
+    "objects": "对象",
+    "objectsHint": "你可以查看的记录",
+    "keyMove": "移动",
+    "keyOpen": "打开",
+    "keyClose": "关闭",
+    "clear": "清空搜索"
   },
   "Knowledge": {
     "sidebar": {

@@ -1,21 +1,25 @@
 'use client';
 
 /**
- * Global search bar component.
- * Self-contained search UI with input and results dropdown.
+ * The search bar in the middle of the top bar: a large box and, under it, a
+ * wider panel with the results (SearchResults). The arrow keys move through
+ * every result, Enter opens the one they are on, Esc closes; "/" puts the
+ * cursor in the box from anywhere on the page.
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
-import { useTheme } from '@/lib/contexts/theme-context';
+import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
+import { sections, step } from '@/lib/search/sections';
+import { pageHref } from '@/lib/tasks/catalog';
+import type { SearchGroup, SearchResult } from '@/lib/types/search';
 import { useSearch } from './useSearch';
 import { SearchResults } from './SearchResults';
 
 export function GlobalSearch() {
-    const { theme } = useTheme();
     const t = useTranslations('GlobalSearch');
-    const isLight = theme === 'light';
+    const router = useTransitionRouter();
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,6 +33,12 @@ export function GlobalSearch() {
         clear,
     } = useSearch({ debounceMs: 300, minLength: 2 });
 
+    const found = sections(results);
+    // Where the arrow keys are, for the results it was set on: new results start at the first.
+    const [cursor, setCursor] = useState<{ results: SearchGroup[]; index: number }>({ results, index: 0 });
+    const active = cursor.results === results ? cursor.index : 0;
+    const setActive = (index: number) => setCursor({ results, index });
+
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -40,13 +50,44 @@ export function GlobalSearch() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [setIsOpen]);
 
-    // Keyboard shortcuts
-    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    // "/" anywhere outside a field puts the cursor in the box.
+    useEffect(() => {
+        const handleSlash = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement;
+            if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+            if (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+            event.preventDefault();
+            inputRef.current?.focus();
+        };
+        document.addEventListener('keydown', handleSlash);
+        return () => document.removeEventListener('keydown', handleSlash);
+    }, []);
+
+    const close = () => {
+        clear();
+        inputRef.current?.blur();
+    };
+
+    const open = (item: SearchResult) => {
+        router.push(pageHref(item.opens));
+        close();
+    };
+
+    const showsPanel = isOpen && query.length >= 2;
+
+    const handleKeyDown = (event: React.KeyboardEvent) => {
         if (event.key === 'Escape') {
-            clear();
-            inputRef.current?.blur();
+            close();
+        } else if (!showsPanel || isLoading || found.flat.length === 0) {
+            return;
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            setActive(step(active, found.flat.length, event.key));
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            open(found.flat[active]);
         }
-    }, [clear]);
+    };
 
     const handleFocus = () => {
         if (query.length >= 2 && results.length > 0) {
@@ -54,16 +95,11 @@ export function GlobalSearch() {
         }
     };
 
-    const handleSelect = () => {
-        clear();
-        inputRef.current?.blur();
-    };
-
     return (
-        <div ref={containerRef} className="relative w-96">
+        <div ref={containerRef} className="relative mx-auto min-w-0 max-w-[720px] flex-1">
             {/* Search input */}
             <div className="relative">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isLight ? 'text-slate-400' : 'text-gray-500'}`} />
+                <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
                 <input
                     ref={inputRef}
                     type="text"
@@ -72,35 +108,32 @@ export function GlobalSearch() {
                     onFocus={handleFocus}
                     onKeyDown={handleKeyDown}
                     placeholder={t('placeholder')}
-                    className={`
-                        w-full pl-9 pr-8 py-2 text-sm rounded-lg transition-all duration-200
-                        ${isLight
-                            ? 'bg-slate-100 text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/30'
-                            : 'bg-white/10 text-white placeholder-gray-500 focus:bg-white/15 focus:ring-2 focus:ring-blue-500/30'
-                        }
-                        focus:outline-none
-                    `}
+                    aria-label={t('placeholder')}
+                    className="h-12 w-full rounded-full border-[1.5px] border-transparent bg-field pl-[3.25rem] pr-14 text-base text-ink placeholder:text-muted transition-all duration-200 focus:border-accent focus:bg-panel focus:shadow-[0_0_0_4px_var(--accent-soft)] focus:outline-none"
                 />
-                {query && (
+                {query ? (
                     <button
                         onClick={clear}
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-gray-500 hover:text-gray-300'}`}
+                        aria-label={t('clear')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted transition-colors hover:text-ink"
                     >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="h-4 w-4" />
                     </button>
+                ) : (
+                    <kbd className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 rounded-md border border-line bg-panel px-1.5 py-px font-sans text-xs text-muted">/</kbd>
                 )}
             </div>
 
-            {/* Results dropdown */}
-            {isOpen && query.length >= 2 && (
-                <div className={`
-                    absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border shadow-xl overflow-hidden
-                    ${isLight ? 'bg-white border-slate-200' : 'bg-gray-800 border-white/10'}
-                `}>
+            {/* The results panel, wider than the box */}
+            {showsPanel && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-2.5 overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_18px_50px_rgba(16,32,56,0.18)] lg:-left-[60px] lg:-right-[60px]">
                     <SearchResults
-                        results={results}
+                        found={found}
+                        query={query}
                         isLoading={isLoading}
-                        onSelect={handleSelect}
+                        active={active}
+                        onActive={setActive}
+                        onOpen={open}
                     />
                 </div>
             )}
