@@ -154,7 +154,7 @@ test.describe('View Usages', () => {
 
     // The picker names every task of the catalog. It answers once the page has
     // hydrated, which can be after goto returns: pick until the address has the task.
-    const picker = page.getByLabel('Task', { exact: true });
+    const picker = page.getByRole('combobox', { name: 'Task', exact: true });
     await expect(picker.locator('option')).toHaveCount(TASKS.length + 1);
     await expect(async () => {
       await picker.selectOption('');

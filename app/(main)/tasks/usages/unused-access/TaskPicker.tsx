@@ -16,6 +16,7 @@ export function TaskPicker({ task, days }: { task: string | null; days: WindowDa
         {t('task')}
         <select
           value={task ?? ''}
+          aria-label={t('task')}
           onChange={(e) => router.push(usageHref('unused-access', { task: e.target.value, days }))}
           className="theme-input min-w-72 rounded-lg px-3 py-2 text-sm"
         >
