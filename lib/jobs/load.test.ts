@@ -93,11 +93,13 @@ describe('the numbers', () => {
     expect(durationUnit(7200)).toBe('h');
   });
 
-  it('converts seconds to a unit, to one decimal', () => {
-    expect(inUnit(47.26, 's')).toBe(47.3);
+  it('converts seconds to a unit, unrounded', () => {
+    expect(inUnit(47.26, 's')).toBe(47.26);
     expect(inUnit(90, 'min')).toBe(1.5);
     expect(inUnit(5400, 'h')).toBe(1.5);
-    expect(inUnit(100, 'h')).toBe(0);
+    // A short run in a chart in hours stays above zero, so its bar is drawn.
+    expect(inUnit(36, 'h')).toBe(0.01);
+    expect(barFloor(inUnit(1, 'h'))).toBe(2);
   });
 });
 
@@ -122,12 +124,12 @@ describe('the charts', () => {
   it('labels the hours with two digits', () => {
     const { unit, rows } = hourlyRows([
       { hour: 0, runs: 12, run_seconds: 9000 },
-      { hour: 13, runs: 1, run_seconds: 30 },
+      { hour: 13, runs: 1, run_seconds: 36 },
     ]);
     expect(unit).toBe('h');
     expect(rows).toEqual([
       { hour: 0, label: '00', runs: 12, run_seconds: 9000, run_time: 2.5 },
-      { hour: 13, label: '13', runs: 1, run_seconds: 30, run_time: 0 },
+      { hour: 13, label: '13', runs: 1, run_seconds: 36, run_time: 0.01 },
     ]);
   });
 

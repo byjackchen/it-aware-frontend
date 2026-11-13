@@ -71,9 +71,13 @@ export function durationUnit(longestSeconds: number): DurationUnit {
   return longestSeconds < 7200 ? 'min' : 'h';
 }
 
-/** Seconds in a unit, to one decimal. */
+/**
+ * Seconds in a unit, unrounded: a bar is drawn at its true height, so a short
+ * run in a chart scaled in hours is still above zero (and drawn, barFloor). The
+ * tooltip shows the seconds in the jobs task's own format, never this value.
+ */
 export function inUnit(seconds: number, unit: DurationUnit): number {
-  return Math.round((seconds / UNIT_SECONDS[unit]) * 10) / 10;
+  return seconds / UNIT_SECONDS[unit];
 }
 
 function unitOf(seconds: number[]): DurationUnit {
