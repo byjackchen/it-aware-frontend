@@ -1142,47 +1142,64 @@
   },
   "Dashboard": {
     "title": "数据概览",
-    "subtitle": "跨所有数据对象资源的实时汇总指标。",
-    "refresh": "刷新",
-    "loading": "正在加载看板统计...",
-    "loadFailed": "看板统计加载失败，请刷新重试。",
-    "generatedAt": "更新时间：{time}",
-    "summary": {
-      "totalAcrossResources": "资源总计",
-      "activeCapable": "活跃数（支持激活状态的资源）",
-      "availableResources": "可用资源"
-    },
-    "groups": {
-      "hierarchies": "层级",
-      "objects": "对象",
-      "activities": "活动",
-      "campaigns": "运营活动",
-      "insights": "洞察"
-    },
-    "resources": {
-      "organizations": "组织",
-      "locations": "地点",
-      "service-catalogs": "服务目录",
-      "workers": "员工",
-      "articles": "文章",
-      "incidents": "事件",
-      "requests": "请求",
-      "interactions": "交互事件",
-      "surveys": "问卷批次",
-      "notifications": "通知批次",
-      "analyses": "分析"
-    },
-    "metrics": {
-      "total": "总数",
-      "active": "活跃",
-      "inactive": "未激活"
-    },
-    "status": {
-      "ok": "可用",
-      "forbidden": "无权限",
-      "error": "不可用"
-    },
-    "comingSoon": "看板即将推出"
+    "layers": {
+      "title": "IT-Aware 的数据分层：原始 → 派生 → 事务",
+      "flow": "来源 → <b>1 原始</b> → 重建为 → <b>2 派生</b> ← 一同读取 → <b>3 事务</b> ← 人和 IT-Aware",
+      "names": {
+        "raw": "原始数据",
+        "derived": "派生数据",
+        "transactional": "事务数据"
+      },
+      "descriptions": {
+        "raw": "各来源发来的内容，原样保存，只追加。没有页面直接读取它；它的存在是为了让其他一切都能重建。",
+        "derived": "由原始数据重建：各来源所述内容的副本，以及作业据此计算出的结果（分类、画像、聚类、关联、指标）。",
+        "transactional": "IT-Aware 自身产生的数据：账号与权限、通知、问卷、设置、使用与操作记录，以及人们在同步记录上添加的标记。"
+      },
+      "writtenBy": {
+        "raw": "写入方：各来源的落地步骤",
+        "derived": "写入方：仅同步与派生作业",
+        "transactional": "写入方：人和 IT-Aware 自身的流程"
+      },
+      "totals": {
+        "tables": "张表",
+        "rows": "行",
+        "rowsApproximate": "行（约）",
+        "landing": "旧落地区：{rows} 行"
+      },
+      "notes": {
+        "unused": "尚未启用：原始记录表为空。目前各来源落在旧落地区，原始层将取代它。",
+        "toSplit": "{count} 张表标记为<tag></tag>：它们把来源所述内容和人们添加的标记存在一起。这些标记将移到事务层。",
+        "toArrive": "尚待到达这里：人们在同步记录上添加的标记，来自 {count} 张标记为<tag></tag>的表。"
+      },
+      "tags": {
+        "source_copy": "来源副本",
+        "computed": "计算所得",
+        "mixed": "待拆分",
+        "landing": "旧落地区",
+        "raw": "原始"
+      },
+      "subjects": {
+        "activities": "工单与交互",
+        "auth": "账号与权限",
+        "campaigns": "通知与问卷",
+        "edges": "记录关联",
+        "hierarchies": "组织、地点、服务目录",
+        "insights": "洞察",
+        "journeys": "旅程",
+        "knowledges": "知识",
+        "metrics": "指标",
+        "networks": "网络扫描",
+        "objects": "员工、硬件、系统",
+        "ohla_journey": "Ohla Journey",
+        "raw": "原始记录",
+        "registry": "记录索引",
+        "shadow": "影子运行",
+        "staging": "旧落地区",
+        "systems": "平台记录"
+      },
+      "hidden": "{count} 张表仅管理员可见",
+      "counted": "统计于{time}"
+    }
   },
   "Data": {
     "common": {

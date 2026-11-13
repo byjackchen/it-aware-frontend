@@ -1462,47 +1462,64 @@
   },
   "Dashboard": {
     "title": "Data Overview",
-    "subtitle": "Live high-level metrics across all data object resources.",
-    "refresh": "Refresh",
-    "loading": "Loading dashboard stats...",
-    "loadFailed": "Failed to load dashboard stats. Try refreshing.",
-    "generatedAt": "Updated at {time}",
-    "summary": {
-      "totalAcrossResources": "Total Across Resources",
-      "activeCapable": "Active (Active-Capable Resources)",
-      "availableResources": "Resources Available"
-    },
-    "groups": {
-      "hierarchies": "Hierarchies",
-      "objects": "Objects",
-      "activities": "Activities",
-      "campaigns": "Campaigns",
-      "insights": "Insights"
-    },
-    "resources": {
-      "organizations": "Organizations",
-      "locations": "Locations",
-      "service-catalogs": "Service Catalogs",
-      "workers": "Workers",
-      "articles": "Articles",
-      "incidents": "Incidents",
-      "requests": "Requests",
-      "interactions": "Interactions",
-      "surveys": "Survey Batches",
-      "notifications": "Notification Batches",
-      "analyses": "Analyses"
-    },
-    "metrics": {
-      "total": "Total",
-      "active": "Active",
-      "inactive": "Inactive"
-    },
-    "status": {
-      "ok": "Available",
-      "forbidden": "No Access",
-      "error": "Unavailable"
-    },
-    "comingSoon": "Dashboards coming soon"
+    "layers": {
+      "title": "IT-Aware's data by layer: raw → derived → transactional",
+      "flow": "Sources → <b>1 Raw</b> → rebuilt into → <b>2 Derived</b> ← read together with → <b>3 Transactional</b> ← people and IT-Aware",
+      "names": {
+        "raw": "Raw data",
+        "derived": "Derived data",
+        "transactional": "Transactional data"
+      },
+      "descriptions": {
+        "raw": "What each source sent, kept as received. Append-only. Nobody reads it through a page; it exists so everything else can be rebuilt.",
+        "derived": "Rebuilt from raw: the copy of what each source said, and what jobs computed from it (classifications, profiles, clusters, links, metrics).",
+        "transactional": "What IT-Aware itself creates: accounts and access, notifications, surveys, settings, usage and action records, and the marks people add to synced records."
+      },
+      "writtenBy": {
+        "raw": "Written by: each source's landing step",
+        "derived": "Written by: sync and derive jobs only",
+        "transactional": "Written by: people and IT-Aware's own processes"
+      },
+      "totals": {
+        "tables": "tables",
+        "rows": "rows",
+        "rowsApproximate": "rows (approx.)",
+        "landing": "Older landing area: {rows} rows"
+      },
+      "notes": {
+        "unused": "Not in use yet: the raw record table is empty. Today sources land in the older landing area, which raw replaces.",
+        "toSplit": "{count, plural, one {# table is} other {# tables are}} marked <tag></tag>: they hold what the source said together with marks people added. The marks move to Transactional.",
+        "toArrive": "Still to arrive here: the marks people add to synced records, from the {count, plural, one {# table} other {# tables}} marked <tag></tag>."
+      },
+      "tags": {
+        "source_copy": "Source copy",
+        "computed": "Computed",
+        "mixed": "To split",
+        "landing": "Older landing",
+        "raw": "Raw"
+      },
+      "subjects": {
+        "activities": "Tickets and interactions",
+        "auth": "Accounts and access",
+        "campaigns": "Notifications and surveys",
+        "edges": "Record links",
+        "hierarchies": "Organizations, locations, service catalog",
+        "insights": "Insights",
+        "journeys": "Journeys",
+        "knowledges": "Knowledge",
+        "metrics": "Metrics",
+        "networks": "Network scans",
+        "objects": "Workers, hardware, systems",
+        "ohla_journey": "Ohla Journey",
+        "raw": "Raw records",
+        "registry": "Record index",
+        "shadow": "Shadow runs",
+        "staging": "Older landing area",
+        "systems": "Platform records"
+      },
+      "hidden": "{count, plural, one {# table is} other {# tables are}} shown to administrators only",
+      "counted": "Counted {time}"
+    }
   },
   "Data": {
     "common": {
