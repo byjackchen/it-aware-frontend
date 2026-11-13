@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 const groups = [
-  { kind: 'task', label: 'Tasks', results: [{ id: 'data.incidents', title: 'Incidents', subtitle: 'Data', opens: '/tasks/it-incidents', score: 0.9 }] },
+  { kind: 'task', label: 'Tasks', results: [{ id: 'it-incidents', title: 'View IT Incidents', subtitle: 'Data', opens: '/tasks/it-incidents', score: 0.9 }] },
 ];
 const entry = (object_type: string, oid: string, descriptor: string) =>
   ({ oid, object_type, descriptor, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' });
