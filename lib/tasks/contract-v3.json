@@ -1323,20 +1323,28 @@
    ]
   },
   {
-   "code": "survey-link",
+   "code": "it-csat-link",
    "name": {
     "en": "Find IT CSAT Link",
     "zh": "查找 IT CSAT 链接"
    },
    "grouping": "operations",
    "kind": "internal",
-   "address": "/tasks/survey-link",
+   "address": "/tasks/it-csat-link",
+   "keywords": [
+    "csat",
+    "it csat",
+    "csat link",
+    "satisfaction",
+    "满意度",
+    "CSAT 链接"
+   ],
    "views": [
     {
      "slug": "lookup",
      "name": {
-      "en": "Survey Lookup",
-      "zh": "调查链接查询"
+      "en": "CSAT Lookup",
+      "zh": "CSAT 链接查询"
      },
      "old_code": "ssc_cockpit.survey_lookup",
      "old_base": "/ssc-cockpit/survey-lookup",
@@ -1348,7 +1356,7 @@
       ]
      },
      "keywords": [],
-     "address": "/tasks/survey-link"
+     "address": "/tasks/it-csat-link"
     }
    ]
   },
@@ -2128,7 +2136,7 @@
   },
   {
    "old": "/ssc-cockpit/survey-lookup",
-   "new": "/tasks/survey-link",
+   "new": "/tasks/it-csat-link",
    "type": "view"
   },
   {

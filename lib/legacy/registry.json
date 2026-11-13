@@ -509,7 +509,7 @@
     },
     {
       "old": "/ssc-cockpit/survey-lookup",
-      "new": "/tasks/survey-link",
+      "new": "/tasks/it-csat-link",
       "type": "view"
     },
     {
