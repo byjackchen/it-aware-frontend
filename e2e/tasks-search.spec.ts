@@ -57,9 +57,13 @@ test.describe('Tasks 2: search over tasks and records', () => {
   test('the panel has two sections, Tasks then Objects, and the keyboard walks both', async ({ page }) => {
     await page.goto('/tasks/workers/workers');
     const box = page.getByPlaceholder('Search tasks and records...');
-    // "/" puts the cursor in the box from anywhere on the page.
-    await page.keyboard.press('/');
-    await expect(box).toBeFocused();
+    // "/" puts the cursor in the box from anywhere on the page. The page listens for the
+    // key once it has hydrated, which can be after goto returns: press until it is taken.
+    await expect(async () => {
+      await page.keyboard.press('/');
+      await expect(box).toBeFocused({ timeout: 500 });
+    }).toPass({ timeout: 10_000 });
+    await expect(box).toHaveValue('');
     await box.fill('incid');
 
     const results = page.getByTestId('search-results');
