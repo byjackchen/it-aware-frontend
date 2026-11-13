@@ -75,10 +75,22 @@ test.describe('Tasks 2: search over tasks and records', () => {
     const active = results.locator('[data-testid="search-hit"][data-active="true"]');
     await expect(active).toHaveCount(1);
     await expect(tasks.first()).toHaveAttribute('data-active', 'true');
+    // For a screen reader the box is a combobox, the panel its listbox, the selected result its active option.
+    await expect(box).toHaveRole('combobox');
+    await expect(box).toHaveAttribute('aria-expanded', 'true');
+    await expect(results).toHaveRole('listbox');
+    expect(await box.getAttribute('aria-controls')).toBe(await results.getAttribute('id'));
+    const selected = results.getByRole('option', { selected: true });
+    await expect(selected).toHaveCount(1);
+    expect(await box.getAttribute('aria-activedescendant')).toBe(await selected.getAttribute('id'));
+    await expect(results.getByRole('group', { name: 'Tasks', exact: true }).getByRole('option')).toHaveCount(await tasks.count());
+    await expect(results.getByRole('group', { name: 'Objects: Incidents', exact: true })).toHaveCount(1);
     const taskCount = await tasks.count();
     expect(taskCount).toBeGreaterThan(1);
     for (let moved = 0; moved < taskCount; moved += 1) await box.press('ArrowDown');
     await expect(objects.getByTestId('search-hit').first()).toHaveAttribute('data-active', 'true');
+    await expect(objects.getByTestId('search-hit').first()).toHaveAttribute('aria-selected', 'true');
+    expect(await box.getAttribute('aria-activedescendant')).toBe(await objects.getByTestId('search-hit').first().getAttribute('id'));
     await box.press('ArrowUp');
     await expect(tasks.last()).toHaveAttribute('data-active', 'true');
     // Up from the first result goes round to the last one.
@@ -92,6 +104,109 @@ test.describe('Tasks 2: search over tasks and records', () => {
     await box.press('Escape');
     await expect(results).toHaveCount(0);
     await expect(box).toHaveValue('');
+    await expect(box).toHaveAttribute('aria-expanded', 'false');
+
+    // A query of spaces around one letter is one letter: too short to search, so no panel.
+    await box.fill('  i  ');
+    await expect(box).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByText('No results found')).toHaveCount(0);
+  });
+
+  test('"/" is typed, not taken, inside a field', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const filter = page.getByPlaceholder('Search workers...');
+    await filter.click();
+    await page.keyboard.type('a/b');
+    await expect(filter).toHaveValue('a/b');
+    await expect(filter).toBeFocused();
+    // In the search box itself too.
+    const box = page.getByPlaceholder('Search tasks and records...');
+    await box.click();
+    await page.keyboard.type('x/y');
+    await expect(box).toHaveValue('x/y');
+  });
+
+  test('a pin made in the panel holds when the panel closes and opens again; Esc closes from inside it', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const box = page.getByPlaceholder('Search tasks and records...');
+    const tasks = page.getByTestId('search-group-task');
+    const task = 'Maintain IT Service Catalog';
+    const saved = () => page.waitForResponse(
+      (response) => response.request().method() === 'POST' && 'next-action' in response.request().headers()
+    );
+    await box.fill('service cat');
+
+    try {
+      let done = saved();
+      await tasks.getByRole('button', { name: `Pin ${task}`, exact: true }).click();
+      await expect(tasks.getByRole('button', { name: `Unpin ${task}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await done;
+
+      // Closed by a click outside and opened again on the same results: the star is still filled ...
+      await page.getByTestId('task-frame-name').click();
+      await expect(page.getByTestId('search-results')).toHaveCount(0);
+      await box.focus();
+      await expect(tasks.getByRole('button', { name: `Unpin ${task}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+      await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toHaveCount(0);
+
+      // ... and the next click unpins, as it says.
+      done = saved();
+      await tasks.getByRole('button', { name: `Unpin ${task}`, exact: true }).click();
+      await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toHaveAttribute('aria-pressed', 'false');
+      await done;
+      await page.getByTestId('task-frame-name').click();
+      await box.focus();
+      await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toHaveAttribute('aria-pressed', 'false');
+
+      // With the focus on a pin button inside the panel, Esc still closes it.
+      await tasks.getByRole('button', { name: `Pin ${task}`, exact: true }).focus();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('search-results')).toHaveCount(0);
+      await expect(box).toHaveValue('');
+    } finally {
+      await page.goto('/tasks/it-service-catalog/service-catalogs');
+      const unpin = page.getByTestId('task-frame').getByRole('button', { name: 'Unpin from home', exact: true });
+      if (await unpin.count()) {
+        await unpin.click();
+        await expect(page.getByTestId('task-frame').getByRole('button', { name: 'Pin to home', exact: true })).toBeVisible();
+      }
+    }
+  });
+
+  test('a pin that fails is put back, and the panel says so', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const box = page.getByPlaceholder('Search tasks and records...');
+    const tasks = page.getByTestId('search-group-task');
+    const task = 'Maintain IT Service Catalog';
+    await box.fill('service cat');
+    await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toBeVisible();
+
+    // The pin's request never reaches the server.
+    await page.route('**/*', (route) => ('next-action' in route.request().headers() ? route.abort() : route.continue()));
+    await tasks.getByRole('button', { name: `Pin ${task}`, exact: true }).click();
+    await expect(page.getByTestId('search-pin-failed')).toHaveText('The pin could not be changed. Try again.');
+    await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await page.unroute('**/*');
+
+    // A new query clears the message.
+    await box.fill('service cata');
+    await expect(tasks.getByRole('button', { name: `Pin ${task}`, exact: true })).toBeVisible();
+    await expect(page.getByTestId('search-pin-failed')).toHaveCount(0);
+  });
+
+  test('a search that fails says so, and is not "no results"', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    const box = page.getByPlaceholder('Search tasks and records...');
+    await page.route('**/api/search*', (route) => route.fulfill({ status: 502, json: { groups: [] } }));
+    await box.fill('incid');
+    await expect(page.getByTestId('search-failed')).toHaveText('Search failed. Try again.');
+    await expect(page.getByText('No results found')).toHaveCount(0);
+
+    // Nothing found is a different line.
+    await page.unroute('**/api/search*');
+    await box.fill('zzqqxxyy');
+    await expect(page.getByText('No results found')).toBeVisible();
+    await expect(page.getByTestId('search-failed')).toHaveCount(0);
   });
 
   test('Enter opens the result the arrow keys are on: a task, then a record', async ({ page }) => {

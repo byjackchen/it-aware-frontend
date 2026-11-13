@@ -1529,7 +1529,8 @@
         "month": "本月",
         "last7Days": "近 7 天"
       },
-      "updated": "更新于{when}"
+      "updated": "更新于{when}",
+      "points": "{change} 个百分点"
     }
   },
   "TaskFrame": {
@@ -1560,7 +1561,11 @@
     "keyMove": "移动",
     "keyOpen": "打开",
     "keyClose": "关闭",
-    "clear": "清空搜索"
+    "clear": "清空搜索",
+    "failed": "搜索失败，请重试。",
+    "pinFailed": "固定状态未能更改，请重试。",
+    "results": "搜索结果",
+    "objectsOf": "对象：{kind}"
   },
   "Knowledge": {
     "sidebar": {

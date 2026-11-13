@@ -62,17 +62,25 @@ it("falls back to today's record search when the backend's search is off", async
   expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get('lang')).toBe('en');
 });
 
-it('answers nothing when a search fails', async () => {
+it('answers 502 with no groups when a search fails, so the bar can tell it from no results', async () => {
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const failed = async () => {
+    const answer = await ask('q=gate');
+    return [answer.status, await answer.json()];
+  };
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({}, { status: 403 })));
-  expect(await (await ask('q=gate')).json()).toEqual({ groups: [] });
+  expect(await failed()).toEqual([502, { groups: [] }]);
 
   vi.stubGlobal('fetch', vi.fn()
     .mockResolvedValueOnce(Response.json({}, { status: 404 }))
     .mockResolvedValueOnce(Response.json({}, { status: 500 })));
-  expect(await (await ask('q=gate')).json()).toEqual({ groups: [] });
+  expect(await failed()).toEqual([502, { groups: [] }]);
 
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
-  expect(await (await ask('q=gate')).json()).toEqual({ groups: [] });
+  expect(await failed()).toEqual([502, { groups: [] }]);
   expect(errors).toHaveBeenCalledTimes(3);
+
+  // Nothing found is not a failure.
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ query: 'gate', groups: [] })));
+  expect(await failed()).toEqual([200, { groups: [] }]);
 });
