@@ -234,8 +234,10 @@ test.describe('View Usages', () => {
     await expect(page.getByTestId('unused-table').locator('tbody tr').filter({ hasText: 'gate.alice' })).toHaveCount(1);
 
     // A code that is no task of the catalog is no pick.
-    await page.goto(`${BASE}/unused-access?task=nowhere`);
+    // (While a page streams in, its markup is briefly there twice: open() waits for the one page.)
+    await open(page, 'unused-access?task=nowhere', 'Unused Access');
     await expect(page.getByText('Pick a task to see who holds it without opening it.')).toBeVisible();
+    await expect(page.getByTestId('unused-summary')).toHaveCount(0);
   });
 
   test('a person without the permission does not see the task, and gets no access at its address', async ({ browser }) => {
