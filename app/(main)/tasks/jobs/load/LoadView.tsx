@@ -224,6 +224,8 @@ export function LoadView({ data }: { data: JobsLoad | LoadUnavailable }) {
                 xKey="label"
                 xInterval={xInterval}
                 minPointSize={0}
+                maxBarSize={48}
+                allowDecimals={false}
                 height={260}
                 stackedKeys={[
                   { key: 'success', label: t('load.charts.success'), color: CHART_COLOR.good },
@@ -240,6 +242,7 @@ export function LoadView({ data }: { data: JobsLoad | LoadUnavailable }) {
                 xKey="label"
                 xInterval={xInterval}
                 minPointSize={0}
+                maxBarSize={48}
                 showLegend={false}
                 height={260}
                 stackedKeys={[{ key: 'run_time', label: t('load.charts.runTime'), color: CHART_COLOR.time }]}
@@ -253,6 +256,7 @@ export function LoadView({ data }: { data: JobsLoad | LoadUnavailable }) {
                 data={hourly.rows}
                 xKey="label"
                 minPointSize={0}
+                maxBarSize={48}
                 showLegend={false}
                 height={260}
                 stackedKeys={[{ key: 'run_time', label: t('load.charts.runTime'), color: CHART_COLOR.time }]}

@@ -6,7 +6,7 @@
   "address": "/tasks/<task> for a one-view task, /tasks/<task>/<view> otherwise; a record or sub-page follows the view part.",
   "kind": "internal or external; view or do is derived from the leading verb of the English name.",
   "views_in_catalog": "Views are listed in the backend catalog as data (name, keywords, rule) for search and access; they are not a level people browse.",
-  "legacy": "Every old page address has one entry in the frontend legacy registry; redirects and the old-style menu are generated from it."
+  "legacy": "Every old page address has one entry in the frontend legacy registry; redirects are generated from it."
  },
  "groupings": [
   {
@@ -1458,7 +1458,7 @@
    },
    "grouping": "administration",
    "kind": "internal",
-   "address": "/tasks/jobs",
+   "address": "/tasks/jobs/jobs",
    "views": [
     {
      "slug": "jobs",
@@ -1478,7 +1478,30 @@
       "Airflow",
       "Airflow 调度"
      ],
-     "address": "/tasks/jobs"
+     "address": "/tasks/jobs/jobs"
+    },
+    {
+     "slug": "load",
+     "name": {
+      "en": "Load",
+      "zh": "负载"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "ui:navigation:systems"
+      ]
+     },
+     "keywords": [
+      "load",
+      "duration",
+      "run time",
+      "负载",
+      "耗时"
+     ],
+     "address": "/tasks/jobs/load"
     }
    ]
   },
@@ -2110,7 +2133,7 @@
   },
   {
    "old": "/systems",
-   "new": "/tasks/jobs",
+   "new": "/tasks/jobs/jobs",
    "type": "special"
   },
   {
@@ -2120,7 +2143,7 @@
   },
   {
    "old": "/systems/airflow",
-   "new": "/tasks/jobs",
+   "new": "/tasks/jobs/jobs",
    "type": "view"
   },
   {

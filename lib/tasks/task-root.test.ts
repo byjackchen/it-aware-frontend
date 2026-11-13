@@ -33,6 +33,9 @@ describe("a multi-view task's own address", () => {
         expect(response?.status).toBe(307);
         expect(response?.headers.get('location')).toBe('http://localhost/tasks/it-tickets/active?range=7d');
         expect(taskRootRedirect(request('/tasks/it-incidents'))).toBeNull();
+        // Manage Jobs has two views since Load: a link to a job made before then still opens it.
+        const job = taskRootRedirect(request('/tasks/jobs?job=gate_digest'));
+        expect(job?.headers.get('location')).toBe('http://localhost/tasks/jobs/jobs?job=gate_digest');
     });
 
     it('is answered by the proxy before any auth work', async () => {

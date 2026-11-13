@@ -5,7 +5,6 @@
  *   /tasks/jobs/load[?days=7|30|90]
  */
 
-import { JOBS_BASE } from '@/lib/jobs/paths';
 import { stateTone } from '@/lib/jobs/view';
 import type { LoadDay, LoadHour, LoadJob, RunSummary } from '@/lib/types/jobs';
 
@@ -23,9 +22,12 @@ export function parseLoadDays(params: Record<string, string | string[] | undefin
   return LOAD_WINDOWS.find((days) => days === asked) ?? DEFAULT_LOAD_DAYS;
 }
 
-/** The view's address; the default window is left out. */
+/** The view's address (the catalog's, beside the Jobs view's JOBS_BASE). */
+export const LOAD_BASE = '/tasks/jobs/load';
+
+/** The address of the view with a window; the default window is left out. */
 export function loadHref(days: number = DEFAULT_LOAD_DAYS): string {
-  return days === DEFAULT_LOAD_DAYS ? `${JOBS_BASE}/load` : `${JOBS_BASE}/load?days=${days}`;
+  return days === DEFAULT_LOAD_DAYS ? LOAD_BASE : `${LOAD_BASE}?days=${days}`;
 }
 
 // ── Numbers ──────────────────────────────────────────────────────────────────
@@ -101,8 +103,8 @@ export interface RunBar {
 }
 
 /**
- * The runs a job's page loaded as its duration chart draws them: oldest first
- * (the backend lists newest first), without the runs that have no duration yet.
+ * A job's newest runs as its duration chart draws them: oldest first (the
+ * backend lists newest first), without the runs that have no duration yet.
  */
 export function runBars(runs: RunSummary[]): { unit: DurationUnit; rows: RunBar[] } {
   const done = runs.filter((run): run is RunSummary & { duration_s: number } => run.duration_s !== null).reverse();

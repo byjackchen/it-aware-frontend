@@ -64,6 +64,10 @@ export interface StackedBarPercentLineCardProps {
     minPointSize?: number
     /** Whether the legend is drawn; pass false for a chart of one series. */
     showLegend?: boolean
+    /** The widest a bar is drawn, in pixels, so a chart of few bars is not one slab; unbounded unless set. */
+    maxBarSize?: number
+    /** Whether the left axis may tick at fractions; pass false for bars of whole counts. */
+    allowDecimals?: boolean
 }
 
 function pctFmt(v: number | string) {
@@ -90,6 +94,8 @@ export function StackedBarPercentLineCard({
     formatValue,
     minPointSize = 3,
     showLegend = true,
+    allowDecimals = true,
+    maxBarSize,
 }: StackedBarPercentLineCardProps) {
     const { theme } = useTheme()
     const isLight = theme === 'light'
@@ -139,6 +145,7 @@ export function StackedBarPercentLineCard({
                         )}
                         <YAxis
                             yAxisId="left"
+                            allowDecimals={allowDecimals}
                             tick={{ fontSize: 11, fill: axisCls }}
                             label={
                                 leftAxisLabel
@@ -206,6 +213,7 @@ export function StackedBarPercentLineCard({
                                     fill={s.color}
                                     stackId="stack"
                                     minPointSize={minPointSize}
+                                    maxBarSize={maxBarSize}
                                 >
                                     {showBarLabels && (
                                         <LabelList

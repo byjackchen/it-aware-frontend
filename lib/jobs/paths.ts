@@ -9,11 +9,13 @@
  * Moving the page means changing JOBS_BASE only.
  */
 
-export const JOBS_BASE = '/tasks/jobs';
+export const JOBS_BASE = '/tasks/jobs/jobs';
 
 /** Runs per page of a job, and record rows per page. */
 export const RUNS_PAGE_SIZE = 25;
 export const ACTIONS_PAGE_SIZE = 50;
+/** The newest runs a job's duration chart draws. */
+export const CHART_RUNS = 30;
 
 /**
  * A job, run or step id as the backend accepts it (app/jobs/service.py

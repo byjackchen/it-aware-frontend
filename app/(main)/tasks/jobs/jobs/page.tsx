@@ -1,7 +1,8 @@
 /**
  * Manage Jobs: IT-Aware's Airflow jobs — view, control, recover, and the record
- * of who did what. One page; the screen is chosen by search parameters
- * (lib/jobs/paths.ts). The backend calls Airflow; the browser never does.
+ * of who did what: the task's Jobs view (its Load view is ../load). One page;
+ * the screen is chosen by search parameters (lib/jobs/paths.ts). The backend
+ * calls Airflow; the browser never does.
  */
 
 import {
@@ -13,12 +14,12 @@ import {
   listJobs,
   listRuns,
 } from '@/lib/api/jobs';
-import { ACTIONS_PAGE_SIZE, INVALID_ID_MESSAGE, parseJobsView, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
-import { ActionRecord } from './ActionRecord';
-import { JobsList } from './JobsList';
-import { JobView } from './JobView';
-import { JobsFrame, LoadFailure } from './parts';
-import { RunView } from './RunView';
+import { ACTIONS_PAGE_SIZE, CHART_RUNS, INVALID_ID_MESSAGE, parseJobsView, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
+import { ActionRecord } from '../ActionRecord';
+import { JobsList } from '../JobsList';
+import { JobView } from '../JobView';
+import { JobsFrame, LoadFailure } from '../parts';
+import { RunView } from '../RunView';
 
 // Always read Airflow fresh on load (and on router.refresh()).
 export const dynamic = 'force-dynamic';
@@ -58,9 +59,11 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
   }
 
   if (view.kind === 'job') {
-    const [job, runs] = await Promise.all([
+    // The chart draws the newest runs whatever page of them is listed; without them the page still shows.
+    const [job, runs, newest] = await Promise.all([
       attempt(() => getJob(view.job)),
       attempt(() => listRuns(view.job, RUNS_PAGE_SIZE, (view.page - 1) * RUNS_PAGE_SIZE)),
+      attempt(() => listRuns(view.job, CHART_RUNS, 0)),
     ]);
     return (
       <JobsFrame tab="jobs">
@@ -69,7 +72,7 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
         ) : !runs.ok ? (
           <LoadFailure failure={runs.failure} />
         ) : (
-          <JobView job={job.data} runs={runs.data} page={view.page} />
+          <JobView job={job.data} runs={runs.data} newest={newest.ok ? newest.data.runs : []} page={view.page} />
         )}
       </JobsFrame>
     );

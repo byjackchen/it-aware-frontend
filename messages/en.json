@@ -3334,7 +3334,7 @@
       },
       "runDurations": {
         "title": "Run durations",
-        "help": "The runs listed below that have ended, oldest first, {unit}",
+        "help": "The newest {count} runs that have ended, oldest first, {unit}",
         "ok": "Run time",
         "failed": "Failed run"
       }

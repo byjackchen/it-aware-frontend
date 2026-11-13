@@ -514,7 +514,7 @@
     },
     {
       "old": "/systems",
-      "new": "/tasks/jobs",
+      "new": "/tasks/jobs/jobs",
       "type": "special"
     },
     {
@@ -524,7 +524,7 @@
     },
     {
       "old": "/systems/airflow",
-      "new": "/tasks/jobs",
+      "new": "/tasks/jobs/jobs",
       "type": "view"
     },
     {
