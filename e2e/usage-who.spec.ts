@@ -4,7 +4,9 @@ import { USERNAME } from './env';
 /**
  * View Usages, who used what (feat/usage-who-icons; backend 358c5ef, specs/backend
  * api_specs_usage.md "Who"): By Person and one person's usage, the people of
- * one task reached from By Task, and the icon each task is drawn with. The
+ * one task reached from By Task, how a deleted, an inactive and an integration
+ * account are told apart (ci/e2e/world.py makes one of each), and the icon each
+ * task is drawn with. The
  * stack records real events: the setup's sign-in, and every task page a spec
  * opens. The specs act as the synthetic admin (USERNAME, gate.admin in the
  * gate), who holds every task. Counts are at least, not exactly: the specs
@@ -117,6 +119,47 @@ test.describe('View Usages: who used what', () => {
     // A code that is no task: the backend's answer, on the page.
     await open(page, 'tasks/nowhere', 'People who opened nowhere');
     await expect(page.getByText(/^Could not load this: /)).toBeVisible();
+
+    // A segment that can be no task code is not sent on: not found.
+    await page.goto(`${BASE}/tasks/a.b`);
+    await expect(page.getByText('This page could not be found.')).toBeVisible();
+
+    // A task nobody opened has no people to list: its 0 is no link.
+    await open(page, 'tasks', 'By Task');
+    const unopened = page.getByLabel('Never opened in the window');
+    await expect(async () => {
+      await unopened.check();
+      await expect(unopened).toBeChecked({ timeout: 500 });
+    }).toPass({ timeout: 10_000 });
+    const zero = page.getByTestId('usage-task-people');
+    expect(await zero.count()).toBeGreaterThanOrEqual(1);
+    await expect(zero.getByRole('link')).toHaveCount(0);
+    for (const text of await zero.allInnerTexts()) expect(text).toBe('0');
+  });
+
+  test('a deleted account, an inactive one and an integration one are told apart', async ({ page }) => {
+    // gate.gone signed in, opened Maintain Workers and Organizations, and was deleted.
+    await open(page, 'people?days=90', 'By Person');
+    const deleted = page.getByTestId('people-table').getByRole('link', { name: 'Deleted account', exact: true });
+    expect(await deleted.count()).toBeGreaterThanOrEqual(1);
+    await deleted.first().click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/people/[\\w-]{22}\\?days=90$`));
+    await expect(page.getByRole('heading', { level: 1, name: 'Deleted account', exact: true })).toHaveCount(1);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('person-task-workers')).toBeVisible();
+
+    // A segment that can be no oid names nobody: not found.
+    await page.goto(`${BASE}/people/..%2F..%2Fpeople`);
+    await expect(page.getByText('This page could not be found.')).toBeVisible();
+
+    // Unused Access labels the holders that are not active users; a real user carries none.
+    await open(page, 'unused-access?task=it-service-catalog', 'Unused Access');
+    const holder = (username: string) =>
+      page.getByTestId('unused-table').locator('tbody tr').filter({ has: page.getByRole('link', { name: username, exact: true }) });
+    await expect(holder('gate.sync').getByTestId('account-label')).toHaveText(['Integration']);
+    await expect(holder('gate.frank').getByTestId('account-label')).toHaveText(['Inactive']);
+    await expect(holder('gate.alice')).toHaveCount(1);
+    await expect(holder('gate.alice').getByTestId('account-label')).toHaveCount(0);
   });
 
   test('each task is drawn with its icon on the home, in search and in the task frame', async ({ page }) => {
