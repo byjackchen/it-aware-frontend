@@ -227,7 +227,7 @@ export function AccountDetailPage({
                                 </label>
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
                                     {isIntegrationAccount(account.account_type) ? (
-                                        <span className="flex items-center gap-1.5 text-purple-400">
+                                        <span className="flex items-center gap-1.5 text-purple-800 dark:text-purple-400">
                                             <Bot className="w-4 h-4" />
                                             <span>{t('accounts.typeIntegration')}</span>
                                         </span>
