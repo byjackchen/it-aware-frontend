@@ -1325,8 +1325,8 @@
   {
    "code": "survey-link",
    "name": {
-    "en": "Find Survey Link",
-    "zh": "查找问卷链接"
+    "en": "Find CSAT Link",
+    "zh": "查找 CSAT 链接"
    },
    "grouping": "operations",
    "kind": "internal",
