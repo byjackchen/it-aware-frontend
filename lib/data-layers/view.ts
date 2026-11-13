@@ -58,8 +58,8 @@ export interface LayerView {
   /** Its place in the flow, from 1. */
   step: number;
   tables: string;
+  /** Its total, with "≈" when one of its counts is an estimate. */
   rows: string;
-  /** One of its counts is an estimate, so its total is. */
   approximate: boolean;
   note: LayerNote | null;
   groups: { schema: string; subject: string; tables: TableView[] }[];
@@ -93,8 +93,8 @@ export function shapeLayers(data: DataLayers, { held, locale, subject }: ShapeOp
           layer: code,
           step: index + 1,
           tables: layer.tables.toLocaleString(locale),
-          rows: layer.rows.toLocaleString(locale),
-          approximate: tables.some((table) => table.approximate),
+          rows: formatRows(layer.rows, layer.approximate, locale),
+          approximate: layer.approximate,
           note,
           groups: layer.groups
             .map((group) => ({

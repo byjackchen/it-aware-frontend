@@ -5,7 +5,7 @@ import { TASKS } from '../lib/tasks/catalog';
 /**
  * Data Overview by layer (feat/data-overview-layers): IT-Aware's tables under
  * the three layers of the target data model, read from the backend's
- * GET /data/layers (specs/backend/api_specs_data_layers.md). The specs act as the synthetic admin, who holds every task; ohla-drift-admin
+ * GET /data/layers (specs/backend/api_specs_data_overview.md). The specs act as the synthetic admin, who holds every task; ohla-drift-admin
  * holds only objects:interactions:read, so not this task.
  */
 
@@ -41,6 +41,7 @@ test.describe('Data Overview by layer', () => {
       const total = Number(await layer.getByTestId('layer-tables').innerText());
       expect(total).toBeGreaterThanOrEqual(1);
       await expect(rows).toHaveCount(total);
+      await expect(layer.getByTestId('layer-rows')).toHaveText(/^≈?\d{1,3}(,\d{3})*$/);
       for (const count of await layer.getByTestId('layer-table-rows').allInnerTexts()) {
         expect(count).toMatch(/^(≈?\d{1,3}(,\d{3})*|—)$/);
       }

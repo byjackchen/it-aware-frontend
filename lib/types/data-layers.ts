@@ -1,6 +1,6 @@
 /**
  * Data Overview by layer: the backend's `GET /data/layers`
- * (specs/backend/api_specs_data_layers.md). Every table IT-Aware declares,
+ * (specs/backend/api_specs_data_overview.md). Every table IT-Aware declares,
  * once, in the layer it belongs to in the target data model, with a row count.
  */
 
@@ -29,7 +29,10 @@ export interface LayerGroup {
 export interface DataLayer {
   layer: LayerCode;
   tables: number;
+  /** The sum of the counts that are known. */
   rows: number;
+  /** One of its counts is an estimate, so the total is. */
+  approximate: boolean;
   groups: LayerGroup[];
 }
 

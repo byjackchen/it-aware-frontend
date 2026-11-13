@@ -23,12 +23,14 @@ const LAYERS: DataLayers = {
       layer: 'transactional',
       tables: 1,
       rows: 46,
+      approximate: false,
       groups: [{ schema: 'auth', tables: [table('auth.accounts', 'transactional', 46, { task: 'access' })] }],
     },
     {
       layer: 'raw',
       tables: 2,
       rows: 8187,
+      approximate: false,
       groups: [
         { schema: 'staging', tables: [table('staging.workers', 'landing', 8187)] },
         { schema: 'raw', tables: [table('raw.records', 'raw', 0)] },
@@ -38,6 +40,7 @@ const LAYERS: DataLayers = {
       layer: 'derived',
       tables: 5,
       rows: 1234567,
+      approximate: true,
       groups: [
         { schema: 'objects', tables: [table('objects.workers', 'mixed', 4052), table('objects.gone', 'computed', null)] },
         {
@@ -91,7 +94,7 @@ it('shows the three layers in flow order, with their totals', () => {
   const shaped = shapeLayers(LAYERS, { held: HELD, locale: 'en', subject });
   expect(shaped.map(({ layer, step, tables, rows, approximate }) => ({ layer, step, tables, rows, approximate }))).toEqual([
     { layer: 'raw', step: 1, tables: '2', rows: '8,187', approximate: false },
-    { layer: 'derived', step: 2, tables: '5', rows: '1,234,567', approximate: true },
+    { layer: 'derived', step: 2, tables: '5', rows: '≈1,234,567', approximate: true },
     { layer: 'transactional', step: 3, tables: '1', rows: '46', approximate: false },
   ]);
 });
@@ -123,9 +126,9 @@ it('notes what the data says: raw not in use, and how many tables are to split',
   const settled: DataLayers = {
     counted_at: LAYERS.counted_at,
     layers: [
-      { layer: 'raw', tables: 1, rows: 5, groups: [{ schema: 'raw', tables: [table('raw.records', 'raw', 5)] }] },
-      { layer: 'derived', tables: 1, rows: 1, groups: [{ schema: 'metrics', tables: [table('metrics.metric_values', 'computed', 1)] }] },
-      { layer: 'transactional', tables: 0, rows: 0, groups: [] },
+      { layer: 'raw', tables: 1, rows: 5, approximate: false, groups: [{ schema: 'raw', tables: [table('raw.records', 'raw', 5)] }] },
+      { layer: 'derived', tables: 1, rows: 1, approximate: false, groups: [{ schema: 'metrics', tables: [table('metrics.metric_values', 'computed', 1)] }] },
+      { layer: 'transactional', tables: 0, rows: 0, approximate: false, groups: [] },
     ],
   };
   expect(notes(settled)).toEqual([null, null, null]);

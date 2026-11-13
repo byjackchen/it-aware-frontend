@@ -1,6 +1,6 @@
 /**
  * Server-side client for Data Overview by layer (backend `GET /data/layers`,
- * specs/backend/api_specs_data_layers.md). The read needs the Data Overview
+ * specs/backend/api_specs_data_overview.md). The read needs the Data Overview
  * view's permission.
  */
 
