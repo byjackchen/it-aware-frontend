@@ -6,7 +6,7 @@ The task **Data Overview Dashboard** (`data-overview` in the [task catalog](api_
 
 Code: `app/data_overview/` (the service, the routes, the response shape); the layer of each table is `app/data_layers.py`. No table and no migration.
 
-The page's older object counts and the card metric `data-overview.records` are unchanged ([tasks](api_specs_tasks.md#key-metrics-on-the-task-cards)).
+The task's card shows three numbers from the same count pass: Raw, Derived, Transactional ([tasks](api_specs_tasks.md#key-metrics-on-the-task-cards)). The page's older object counts are other routes and are unchanged.
 
 ## Today's layer and the target layer
 
@@ -27,7 +27,20 @@ The answer carries both: the layer a table is listed under is the target, and `d
 
 The route needs what the catalog's `data-overview` task needs for its view: the rule is read from the catalog (`app/tasks/access.py` `rule` and `requirement`, for the view `overview`), not repeated in the route; a catalog without that view stops the backend at start with an error that names it. Today the rule is `ui:navigation:data`. `401` without a sign-in, `403` without the permission.
 
-The answer is the same for every holder: table names, layers and counts, with no data scope applied, because no row is read.
+The count pass is the same for every holder: table names, layers and counts, with no data scope applied, because no row is read. What a caller is **shown** of it depends on whether they are an administrator.
+
+## Sensitive schemas: administrators only
+
+The tables of four schemas are listed only for an administrator: `auth` (who may sign in and do what), `systems` (the platform's own records), `raw` and `staging` (what sources sent, as received). The list is one constant, `SENSITIVE` in `app/data_overview/service.py`.
+
+- **An administrator** is a caller who meets the catalog rule of the first view of the task `access` (Maintain Access, view `accounts`; today `ui:navigation:auth`). The rule is read from the catalog and checked for each request as a route's permission check would (wildcards included); it is not a condition of the route.
+- **Anyone else** who holds the page gets the same answer without the groups of those schemas in `groups`.
+- **The totals stay whole for everyone**: a layer's `tables`, `rows`, `approximate` and `declared_rows` cover every table, listed or not. They are aggregates and name no table.
+- `hidden_tables` says how many of the layer's tables the caller is not shown: `0` for an administrator, and always `tables` minus the tables listed.
+
+Today that hides, for a caller who is no administrator, all 6 tables of the raw layer and 16 of the transactional layer (`auth` 12, `systems` 4); no derived table is in a sensitive schema.
+
+The filter is applied after the cache: the kept answer holds every table and nothing of any account.
 
 ## GET /data/layers
 
@@ -42,6 +55,8 @@ No parameters.
       "tables": 6,
       "rows": 22464,
       "approximate": false,
+      "declared_rows": {"raw": 0, "landing": 22464},
+      "hidden_tables": 0,
       "groups": [
         {
           "schema": "raw",
@@ -57,22 +72,26 @@ No parameters.
         }
       ]
     },
-    {"layer": "derived", "tables": 31, "rows": 528051, "approximate": false, "groups": []},
-    {"layer": "transactional", "tables": 20, "rows": 14769, "approximate": false, "groups": []}
+    {"layer": "derived", "tables": 31, "rows": 528051, "approximate": false,
+     "declared_rows": {"source_copy": 100000, "computed": 160000, "mixed": 268051}, "hidden_tables": 0, "groups": []},
+    {"layer": "transactional", "tables": 20, "rows": 14769, "approximate": false,
+     "declared_rows": {"transactional": 14769}, "hidden_tables": 0, "groups": []}
   ]
 }
 ```
 
-(The example shortens the groups; the numbers are illustrative.)
+(An administrator's answer. The example shortens the groups; the numbers are illustrative.)
 
 | Field | Type | Meaning |
 |---|---|---|
 | `counted_at` | datetime (UTC) | When the tables were counted; up to five minutes ago (see the cache) |
 | `layers` | list | Always three, in the order `raw`, `derived`, `transactional`, also when a layer has no table |
-| `layers[].tables` | int | How many tables the layer lists |
+| `layers[].tables` | int | How many tables the layer has, listed for the caller or not |
 | `layers[].rows` | int | The sum of its tables' `rows` that are known (a `null` adds nothing; an estimate is added as it is) |
 | `layers[].approximate` | bool | `true` when any of its tables has `approximate: true`, so `rows` is not an exact sum. A table the database does not have does not set it |
-| `layers[].groups` | list | One per schema, by schema name; empty when the layer has no table |
+| `layers[].declared_rows` | object | The layer's rows by what its tables are declared as today: only the keys the layer has (`raw` and `landing` in raw; `source_copy`, `computed` and `mixed` in derived; `transactional` in transactional), in that order; `{}` for a layer with no table. Complete for every caller, and its values add up to `rows`. The page's raw number is `declared_rows.raw` of the raw layer |
+| `layers[].hidden_tables` | int | How many of the layer's tables this caller is not shown (see above); `0` for an administrator |
+| `layers[].groups` | list | One per schema, by schema name; without the sensitive schemas unless the caller is an administrator; empty when nothing is listed |
 | `groups[].schema` | string | The schema |
 | `groups[].tables` | list | Its tables, by name |
 | `tables[].table` | string | `schema.table` |
@@ -89,7 +108,7 @@ Every table declared in `app/data_layers.py` appears exactly once. A table the d
 
 **One pass at a time.** Callers who ask while a pass runs wait for that pass and get its answer; a second one is not started (per backend process: two processes can each run one). The pass has a database session of its own and goes on when a caller leaves.
 
-**Cache.** The answer is kept in Redis for 5 minutes under one key, `data-overview:layers:v1`, with no account in it (`app/clients/redis_cache.py`: without Redis, or when it fails, every call counts). `counted_at` says how old the numbers are.
+**Cache.** The count pass is kept in Redis for 5 minutes under one key, `data-overview:layers:v1`, with no account in it (`app/clients/redis_cache.py`: without Redis, or when it fails, every call counts). `counted_at` says how old the numbers are.
 
 **The task of a table.** `task` is the same for every caller, also for one who does not hold that task: the page links only the tasks the person has (`GET /tasks/mine`). The map is `TASK_OF` in `app/data_overview/service.py`, reviewed by hand; a unit test fails when a code is not in the catalog or a table is not declared. No raw-layer table has a task.
 
@@ -119,6 +138,6 @@ Every table declared in `app/data_layers.py` appears exactly once. A table the d
 
 ## Tests
 
-- Unit: `tests/test_data_layers.py` (the target of each declared layer), `tests/data_overview/` (shaping, counting with a scripted session, the deadline, the map's checks, the route, its rule, its cache and callers at once), `tests/tasks/test_access.py` (a view's rule as a route dependency, and the error without the view).
+- Unit: `tests/test_data_layers.py` (the target of each declared layer), `tests/data_overview/` (shaping, counting with a scripted session, the deadline, the map's checks, one caller's answer and the sensitive schemas, the route, its rule, who is an administrator, its cache and callers at once), `tests/tasks/test_access.py` (a view's rule as a route dependency, the error without the view, and whether an account meets a rule).
 - Database tier: `tests/db/test_data_overview_db.py` (exact counts on the seeded database, a declared table the database lacks, one dropped before its count, a locked table that falls back to the estimate).
-- E2E: `tests/e2e/test_journeys.py` `test_data_by_layer_lists_every_declared_table_once_for_a_holder` (401, 403, the three layers with every declared table once, the same tables for every holder).
+- E2E: `tests/e2e/test_journeys.py` `test_data_by_layer_lists_every_declared_table_once_for_an_administrator` (401, 403, the three layers with every declared table once) and `test_data_by_layer_keeps_the_sensitive_schemas_for_administrators` (a holder who is no administrator: none of the four schemas, `hidden_tables`, whole totals).

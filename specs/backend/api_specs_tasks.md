@@ -154,7 +154,7 @@ Each call also writes one **usage event** (`task_open`, in `systems.usage_events
 
 ## Key metrics on the task cards
 
-A **metric** is one number a task's own page already computes, shown on the task's card. The **metric registry** is reviewed code (`app/tasks/metrics.py`), checked once when first read: at most two metrics per task, in the order the card shows them, each naming a task of the catalog. A metric has no definition of its own: it calls the page's computation and takes one number from the result.
+A **metric** is one number a task's own page already computes, shown on the task's card. The **metric registry** is reviewed code (`app/tasks/metrics.py`), checked once when first read: at most three metrics per task, in the order the card shows them, each naming a task of the catalog. A metric has no definition of its own: it calls the page's computation and takes one number from the result.
 
 | Metric | Task | Unit | Period | The number, and where the page computes it |
 |---|---|---|---|---|
@@ -166,7 +166,11 @@ A **metric** is one number a task's own page already computes, shown on the task
 | `it-ssc-dashboard.interactions` | `it-ssc-dashboard` | count | month | `grand_total` of the FAQ month report |
 | `it-ssc-dashboard.visitors` | `it-ssc-dashboard` | count | month | `unique_visitors` of the FAQ month report |
 | `jobs.failed` | `jobs` | count | now | Jobs in `GET /jobs` whose last run's state is `failed` |
-| `data-overview.records` | `data-overview` | count | now | The sum of the unfiltered totals of the eleven lists the Data Overview page counts (organizations, locations, service catalogs, workers, articles, incidents, requests, interactions, survey batches, notification batches, analyses) |
+| `data-overview.raw` | `data-overview` | count | now | Label "Raw" / "原始". The rows of the tables declared `raw` in `app/data_layers.py` (today `raw.records`). The older landing tables (`landing`) are **not** in this number. It is 0 while raw is not in use, and 0 is stored and returned like any value |
+| `data-overview.derived` | `data-overview` | count | now | Label "Derived" / "派生". The rows of the tables declared `source_copy`, `computed` or `mixed` |
+| `data-overview.transactional` | `data-overview` | count | now | Label "Transactional" / "事务". The rows of the tables declared `transactional` |
+
+The three Data Overview numbers come from one count pass, the one behind the page's tables by layer ([data overview](api_specs_data_overview.md)): each is the sum of `declared_rows` for its declared layers, so a table counted by estimate adds its estimate and an uncounted one adds nothing. They need what the page itself needs, the rule of its view in the catalog (today `ui:navigation:data`), and nothing else. They replaced `data-overview.records` (the sum of eleven object lists): its stored rows stay in `metrics.metric_values` and are no longer returned.
 
 Periods are UTC days: `now` is the day of the refresh, `month` the calendar month, `last_7_days` the day of the refresh and the six before it. The SSC page itself picks its month from the server's local date (as it did before the metrics), so around a month's end the card and the page can show different months for some hours; the numbers of one month are the same in both.
 
