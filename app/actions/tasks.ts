@@ -35,7 +35,7 @@ export async function setTaskPinned(code: string, pinned: boolean): Promise<Outc
 /**
  * Note the task whose page the person opened, and the view it was opened at,
  * for "recent" on their home and for View Usages. It never fails the page:
- * with the tasks switch off, or any error, nothing is kept.
+ * on any error, nothing is kept.
  */
 export async function taskOpened(code: string, view: string): Promise<void> {
   try {

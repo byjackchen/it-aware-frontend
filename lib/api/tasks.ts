@@ -9,36 +9,24 @@ import type { AccountProfile, ProfileUpdate, TaskAccess, TaskHome, TaskMetrics, 
 
 const backend = (path: string) => `${RUNTIME_CONFIG.backend.domain}${path}`;
 
-/** The answer, or null when the backend answers 404: the feature's switch is off, or the backend predates it. */
-async function unlessOff<T>(path: string): Promise<T | null> {
-    try {
-        return await fetchApi<T>(backend(path));
-    } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-            return null;
-        }
-        throw error;
-    }
+/** Who has what tasks. */
+export async function getTaskAccess(): Promise<TaskAccess> {
+    return fetchApi<TaskAccess>(backend('/tasks/access'));
 }
 
-/** Who has what tasks. Null while the backend's tasks switch (IT_AWARE_TASKS_ENABLED) is off. */
-export async function getTaskAccess(): Promise<TaskAccess | null> {
-    return unlessOff<TaskAccess>('/tasks/access');
+/** The signed-in person's home. */
+export async function getTaskHome(): Promise<TaskHome> {
+    return fetchApi<TaskHome>(backend('/tasks/home'));
 }
 
-/** The signed-in person's home. Null while the backend's tasks switch is off. */
-export async function getTaskHome(): Promise<TaskHome | null> {
-    return unlessOff<TaskHome>('/tasks/home');
+/** The signed-in person's tasks, each with only their views. */
+export async function getTasksMine(): Promise<TasksMine> {
+    return fetchApi<TasksMine>(backend('/tasks/mine'));
 }
 
-/** The signed-in person's tasks, each with only their views. Null while the backend's tasks switch is off. */
-export async function getTasksMine(): Promise<TasksMine | null> {
-    return unlessOff<TasksMine>('/tasks/mine');
-}
-
-/** The key metrics of the signed-in person's tasks. Null from a backend that has none (404). */
-export async function getTaskMetrics(): Promise<TaskMetrics | null> {
-    return unlessOff<TaskMetrics>('/tasks/metrics');
+/** The key metrics of the signed-in person's tasks. */
+export async function getTaskMetrics(): Promise<TaskMetrics> {
+    return fetchApi<TaskMetrics>(backend('/tasks/metrics'));
 }
 
 export async function pinTask(code: string): Promise<void> {
@@ -63,7 +51,14 @@ export async function recordOpened(code: string, view: string): Promise<void> {
  * is gone.
  */
 export async function getAccountProfile(oid: string): Promise<AccountProfile | null> {
-    return unlessOff<AccountProfile>(`/auth/config/accounts/${oid}/profile`);
+    try {
+        return await fetchApi<AccountProfile>(backend(`/auth/config/accounts/${oid}/profile`));
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+            return null;
+        }
+        throw error;
+    }
 }
 
 export async function putAccountProfile(oid: string, update: ProfileUpdate): Promise<AccountProfile> {

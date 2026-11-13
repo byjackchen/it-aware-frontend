@@ -25,7 +25,7 @@ import type { ProfileCardProps } from './ProfileCard';
 
 /**
  * The customization part of a user's profile, with the tasks the user can
- * open. Null for an integration account, while a backend switch is off, or for
+ * open. Null for an integration account, while the backend's profile switch is off, or for
  * an admin who may not read who has what tasks: the page then shows what it
  * showed before.
  */

@@ -570,7 +570,7 @@ button:focus-visible {
   outline: none;
 }
 
-/* The current view's tab in the task frame, and the current entry of the old-style menu */
+/* The current view's tab in the task frame */
 .sidebar-active {
   background: var(--accent-soft);
   color: var(--accent);

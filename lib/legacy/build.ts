@@ -6,66 +6,23 @@
  * import and only erasable TypeScript.
  */
 
-export interface Name {
-    en: string;
-    zh: string;
-}
-
-export interface Requires {
-    check: 'any' | 'all';
-    codes: string[];
-}
-
 export type EntryType = 'kept' | 'area' | 'view' | 'record' | 'special' | 'pattern';
-
-interface ContractView {
-    slug: string;
-    name: Name;
-    /** The view's address before the move; null for a view added since, which has none. */
-    old_base: string | null;
-    requires: Requires;
-    address: string;
-}
-
-interface ContractTask {
-    code: string;
-    name: Name;
-    grouping: string;
-    views: ContractView[];
-}
 
 export interface Contract {
     version: number;
-    groupings: { code: string; name: Name }[];
-    tasks: ContractTask[];
     legacy: { old: string; new: string; type: string }[];
 }
 
-/** One link of the old-style menu: a contract view, at its old and new address. */
-export interface MenuItem {
-    old: string;
-    new: string;
-    label: Name;
-    task: string;
-    /** The view's place in the contract, which orders the menu. */
-    position: number;
-    requires: Requires;
-}
-
-/** One old page address (a pattern: `[oid]`, `[label]`, `[section]` stand for one segment). */
+/** One old page address (a pattern: `[oid]`, `[label]`, `[section]` stand for one segment) and where it goes. */
 export interface LegacyEntry {
     old: string;
     new: string;
     type: EntryType;
-    /** The contract views this old address shows, for the old-style menu. */
-    menu: MenuItem[];
 }
 
 export interface LegacyRegistry {
     source: string;
     version: number;
-    groupings: { code: string; name: Name }[];
-    tasks: { code: string; name: Name; grouping: string }[];
     entries: LegacyEntry[];
 }
 
@@ -129,37 +86,10 @@ export function findEntry<T extends { old: string }>(
 }
 
 export function buildRegistry(contract: Contract): LegacyRegistry {
-    const entries: LegacyEntry[] = contract.legacy.map(e => ({
-        old: e.old,
-        new: e.new,
-        type: e.type as EntryType,
-        menu: [],
-    }));
-    let position = 0;
-    for (const task of contract.tasks) {
-        for (const view of task.views) {
-            // A view added since the move has no old address: no redirect, and no place in the old-style menu.
-            if (view.old_base === null) continue;
-            const hit = findEntry(entries, view.old_base);
-            if (!hit) {
-                throw new Error(`no legacy entry for ${task.code}/${view.slug} (${view.old_base})`);
-            }
-            hit.entry.menu.push({
-                old: view.old_base,
-                new: view.address,
-                label: view.name,
-                task: task.code,
-                position: position++,
-                requires: view.requires,
-            });
-        }
-    }
     return {
         source: 'lib/tasks/contract-v3.json',
         version: contract.version,
-        groupings: contract.groupings.map(g => ({ code: g.code, name: g.name })),
-        tasks: contract.tasks.map(t => ({ code: t.code, name: t.name, grouping: t.grouping })),
-        entries,
+        entries: contract.legacy.map(e => ({ old: e.old, new: e.new, type: e.type as EntryType })),
     };
 }
 

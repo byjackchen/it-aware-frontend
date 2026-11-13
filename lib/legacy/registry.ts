@@ -1,6 +1,5 @@
 /**
- * The legacy registry: every old page address, its new task address, and the
- * old-style menu's links. Generated into registry.json from the contract's
+ * The legacy registry: every old page address and its new task address. Generated into registry.json from the contract's
  * `legacy` list (see README.md); this file only reads it.
  */
 

@@ -20,7 +20,3 @@ it('lands on the home page when no start task is set, or it is not among the tas
   expect(landingAddress(home)).toBe('/home');
   expect(landingAddress({ ...home, start: 'it-incidents' })).toBe('/home');
 });
-
-it('lands where people landed before, while the tasks switch is off', () => {
-  expect(landingAddress(null)).toBe('/tasks/data-overview');
-});

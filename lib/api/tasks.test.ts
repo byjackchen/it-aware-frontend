@@ -18,14 +18,11 @@ it('reads who has what tasks from the backend, with the session cookie', async (
   expect(init.headers.Cookie).toBe('it_aware_access=test-token');
 });
 
-it('answers null when the backend has the tasks switch off', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Not Found' }, { status: 404 })));
-  expect(await getTaskAccess()).toBeNull();
-});
-
-it('passes every other failure on', async () => {
+it('passes every failure on, a 404 like any other: the task routes are always there', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Permission denied' }, { status: 403 })));
   await expect(getTaskAccess()).rejects.toEqual(new ApiError('Permission denied', 403));
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Not Found' }, { status: 404 })));
+  await expect(getTaskAccess()).rejects.toEqual(new ApiError('Not Found', 404));
 });
 
 // --- Tasks 3: the home page, pins, recents and the admin-set profile ---------------
@@ -44,27 +41,27 @@ const home = { start: null, admin_set: [], pinned: [], recent: [], other: [] };
 const profile = {
   account_oid: 'abc', start_task: null, home_tasks: ['persona-dashboard'], updated_at: null, updated_by: null,
 };
-const off = () => vi.fn().mockResolvedValue(Response.json({ detail: 'Not Found' }, { status: 404 }));
+const notFound = () => vi.fn().mockResolvedValue(Response.json({ detail: 'Not Found' }, { status: 404 }));
 
-it("reads the person's home, and answers null while the switch is off", async () => {
+it("reads the person's home, and fails when the backend does", async () => {
   const fetchMock = vi.fn().mockResolvedValue(Response.json(home));
   vi.stubGlobal('fetch', fetchMock);
   expect(await getTaskHome()).toEqual(home);
   expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/tasks\/home$/);
 
-  vi.stubGlobal('fetch', off());
-  expect(await getTaskHome()).toBeNull();
+  vi.stubGlobal('fetch', notFound());
+  await expect(getTaskHome()).rejects.toEqual(new ApiError('Not Found', 404));
 });
 
-it("reads the person's tasks, and answers null while the switch is off", async () => {
+it("reads the person's tasks, and fails when the backend does", async () => {
   const mine = { tasks: [] };
   const fetchMock = vi.fn().mockResolvedValue(Response.json(mine));
   vi.stubGlobal('fetch', fetchMock);
   expect(await getTasksMine()).toEqual(mine);
   expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/tasks\/mine$/);
 
-  vi.stubGlobal('fetch', off());
-  expect(await getTasksMine()).toBeNull();
+  vi.stubGlobal('fetch', notFound());
+  await expect(getTasksMine()).rejects.toEqual(new ApiError('Not Found', 404));
 });
 
 it('pins and unpins a task by its code', async () => {
@@ -97,8 +94,11 @@ it("reads and sets a user's profile", async () => {
   expect(String(url)).toMatch(/\/auth\/config\/accounts\/abc\/profile$/);
   expect([init.method, JSON.parse(init.body)]).toEqual(['PUT', update]);
 
-  vi.stubGlobal('fetch', off());
+  // No profile: the backend's profile switch is off, or the account is gone.
+  vi.stubGlobal('fetch', notFound());
   expect(await getAccountProfile('abc')).toBeNull();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Permission denied' }, { status: 403 })));
+  await expect(getAccountProfile('abc')).rejects.toEqual(new ApiError('Permission denied', 403));
 });
 
 // --- The key metrics on the home's task cards ----------------------------------------
@@ -113,14 +113,14 @@ const metrics = {
   }],
 };
 
-it("reads the metrics of the person's tasks, and answers null from a backend without them", async () => {
+it("reads the metrics of the person's tasks, and fails when the backend does", async () => {
   const fetchMock = vi.fn().mockResolvedValue(Response.json(metrics));
   vi.stubGlobal('fetch', fetchMock);
   expect(await getTaskMetrics()).toEqual(metrics);
   expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/tasks\/metrics$/);
 
-  vi.stubGlobal('fetch', off());
-  expect(await getTaskMetrics()).toBeNull();
+  vi.stubGlobal('fetch', notFound());
+  await expect(getTaskMetrics()).rejects.toEqual(new ApiError('Not Found', 404));
 });
 
 it("the home's metrics route passes the backend's metrics on", async () => {
@@ -142,12 +142,7 @@ it("the home's metrics route answers 401, unlogged, when the sign-in has ended",
   logged.mockRestore();
 });
 
-it("the home's metrics route answers no metrics when the backend has none or fails, so the cards stay plain", async () => {
-  vi.stubGlobal('fetch', off());
-  const empty = await metricsRoute();
-  expect(empty.status).toBe(200);
-  expect(await empty.json()).toEqual({ metrics: [] });
-
+it("the home's metrics route answers no metrics when the backend fails, so the cards stay plain", async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'boom' }, { status: 500 })));
   expect(await (await metricsRoute()).json()).toEqual({ metrics: [] });

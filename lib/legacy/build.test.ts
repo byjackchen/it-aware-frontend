@@ -21,16 +21,11 @@ describe('the generated registry', () => {
         expect(serializeRegistry(built)).toBe(file);
     });
 
-    it('refuses a contract view that no legacy entry covers', () => {
-        const broken = structuredClone(contract) as Contract;
-        broken.legacy = broken.legacy.filter(e => e.old !== '/data/workers');
-        expect(() => buildRegistry(broken)).toThrow('no legacy entry for workers/workers (/data/workers)');
-    });
-
-    it('leaves a view with no old address (one added since the move) out of the menu, and still lists its task', () => {
+    it('holds what a redirect needs and nothing else: the old address, the new one, the type', () => {
         const built = buildRegistry(contract as Contract);
-        expect(built.tasks.map(task => task.code)).toContain('usages');
-        expect(built.entries.flatMap(entry => entry.menu).filter(item => item.task === 'usages')).toEqual([]);
+        expect(Object.keys(built)).toEqual(['source', 'version', 'entries']);
+        expect(built.entries).toHaveLength(108);
+        for (const entry of built.entries) expect(Object.keys(entry)).toEqual(['old', 'new', 'type']);
     });
 });
 
