@@ -929,7 +929,7 @@ export function SurveysModule() {
                         <header className="p-4 border-b border-line space-y-3">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                    <ClipboardCheck className="w-4 h-4 text-blue-300" />
+                                    <ClipboardCheck className="w-4 h-4 text-blue-800 dark:text-blue-300" />
                                     <h1 className={`text-sm font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('list.title')}</h1>
                                 </div>
                                 <button
@@ -991,7 +991,7 @@ export function SurveysModule() {
                                         {t('list.loading')}
                                     </div>
                                 ) : surveysError ? (
-                                    <div className="p-4 text-sm text-rose-300">{surveysError}</div>
+                                    <div className="p-4 text-sm text-rose-800 dark:text-rose-300">{surveysError}</div>
                                 ) : filteredSurveys.length === 0 ? (
                                     <div className="p-4 text-sm text-ink-2">{t('list.empty')}</div>
                                 ) : (
@@ -1060,7 +1060,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={() => handleBatchAction('publish')}
                                                         disabled={isBatchActionPending}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
                                                     >
                                                         {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                         <span>{t('details.actions.publishBatch')}</span>
@@ -1069,7 +1069,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={() => handleBatchAction('cancel')}
                                                         disabled={isBatchActionPending}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                         <span>{t('details.actions.cancelBatch')}</span>
@@ -1083,7 +1083,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={() => handleBatchAction('close')}
                                                         disabled={isBatchActionPending}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                                                     >
                                                         {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                         <span>{t('details.actions.closeBatch')}</span>
@@ -1092,7 +1092,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={() => handleBatchAction('cancel')}
                                                         disabled={isBatchActionPending}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                         <span>{t('details.actions.cancelBatch')}</span>
@@ -1105,7 +1105,7 @@ export function SurveysModule() {
                                                     type="button"
                                                     onClick={() => handleBatchAction('reopen')}
                                                     disabled={isBatchActionPending}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
                                                 >
                                                     {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                     <span>{t('details.actions.reopenBatch')}</span>
@@ -1120,7 +1120,7 @@ export function SurveysModule() {
                                                         setIsDeleteBatchModalOpen(true);
                                                     }}
                                                     disabled={isBatchActionPending}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                     <span>{t('details.actions.deleteBatch')}</span>
@@ -1139,7 +1139,7 @@ export function SurveysModule() {
                                                         setObjectImageBase64(selectedSurveyBatch.image_base64 ?? null);
                                                         setObjectImageFilename(null);
                                                     }}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                     <span>{t('details.actions.editObject')}</span>
@@ -1150,7 +1150,7 @@ export function SurveysModule() {
                                                 <button
                                                     type="button"
                                                     onClick={openCreateRowEditor}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                     <span>{t('details.actions.addRow')}</span>
@@ -1217,7 +1217,7 @@ export function SurveysModule() {
                                             </div>
 
                                             {objectError && (
-                                                <p className="text-xs text-rose-300">{objectError}</p>
+                                                <p className="text-xs text-rose-800 dark:text-rose-300">{objectError}</p>
                                             )}
 
                                             <div className="flex items-center justify-end gap-2">
@@ -1347,7 +1347,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={handleDeleteRow}
                                                         disabled={!isRowMetadataEditable || isRowSaving || isRowDeleting}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                                                         <span>{t('details.rowEditor.actions.delete')}</span>
@@ -1358,7 +1358,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={handleSubmitRowAction}
                                                         disabled={!canWrite || isRowSaving || isRowDeleting}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                                                         <span>{t('details.rowEditor.actions.submit')}</span>
@@ -1369,7 +1369,7 @@ export function SurveysModule() {
                                                         type="button"
                                                         onClick={handleRevokeRowAction}
                                                         disabled={!canWrite || isRowSaving || isRowDeleting}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-400/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                                                         <span>{t('details.rowEditor.actions.revoke')}</span>
@@ -1396,7 +1396,7 @@ export function SurveysModule() {
                                         </div>
 
                                         {rowError && (
-                                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                                                 {rowError}
                                             </div>
                                         )}
@@ -1630,7 +1630,7 @@ export function SurveysModule() {
                                                 {t('details.loading')}
                                             </div>
                                         ) : detailsError ? (
-                                            <div className="p-4 text-sm text-rose-300">{detailsError}</div>
+                                            <div className="p-4 text-sm text-rose-800 dark:text-rose-300">{detailsError}</div>
                                         ) : filteredDetails.length === 0 ? (
                                             <div className="p-4 text-sm text-ink-2">{t('details.empty')}</div>
                                         ) : (

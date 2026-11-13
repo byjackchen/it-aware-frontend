@@ -743,10 +743,10 @@ export function NotificationsModule() {
             <div className="h-[calc(100vh-4rem)] p-4 overflow-hidden">
                 <div className="h-full min-h-0 grid grid-cols-[360px_1fr] gap-4">
                     <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                        <header className="p-4 border-b border-white/10 space-y-3">
+                        <header className="p-4 border-b border-line space-y-3">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                    <Megaphone className="w-4 h-4 text-blue-300" />
+                                    <Megaphone className="w-4 h-4 text-blue-800 dark:text-blue-300" />
                                     <h1 className={`text-sm font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('list.title')}</h1>
                                 </div>
                                 <button
@@ -816,14 +816,14 @@ export function NotificationsModule() {
                                 className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                             >
                                 {isNotificationsLoading && filteredNotifications.length === 0 ? (
-                                    <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                    <div className="p-4 text-sm text-ink-2 inline-flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         {t('list.loading')}
                                     </div>
                                 ) : notificationsError ? (
-                                    <div className="p-4 text-sm text-rose-300">{notificationsError}</div>
+                                    <div className="p-4 text-sm text-rose-800 dark:text-rose-300">{notificationsError}</div>
                                 ) : filteredNotifications.length === 0 ? (
-                                    <div className="p-4 text-sm text-gray-400">{t('list.empty')}</div>
+                                    <div className="p-4 text-sm text-ink-2">{t('list.empty')}</div>
                                 ) : (
                                     filteredNotifications.map((item) => {
                                         const selected = item.oid === selectedNotificationBatchOid;
@@ -832,7 +832,7 @@ export function NotificationsModule() {
                                                 key={item.oid}
                                                 type="button"
                                                 onClick={() => setQueryParam('notificationBatch', item.oid)}
-                                                className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 ${selected ? 'bg-blue-500/10' : ''}`}
+                                                className={`w-full text-left px-4 py-3 border-b border-line hover:bg-hover ${selected ? 'bg-blue-500/10' : ''}`}
                                             >
                                                 <div className="flex items-center justify-between gap-2">
                                                     <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.name}</p>
@@ -870,12 +870,12 @@ export function NotificationsModule() {
 
                     <section className={`h-full min-h-0 rounded-xl border flex flex-col ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
                         {!selectedNotification ? (
-                            <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                            <div className="h-full flex items-center justify-center text-sm text-ink-2">
                                 {t('details.selectNotification')}
                             </div>
                         ) : (
                             <>
-                                <header className="p-4 border-b border-white/10 space-y-3">
+                                <header className="p-4 border-b border-line space-y-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedNotification.name}</h2>
@@ -890,7 +890,7 @@ export function NotificationsModule() {
                                                     type="button"
                                                     onClick={handleTrigger}
                                                     disabled={isBatchActionPending}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-emerald-400/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
                                                 >
                                                     {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                                     <span>{t('details.trigger')}</span>
@@ -902,7 +902,7 @@ export function NotificationsModule() {
                                                     type="button"
                                                     onClick={handleCancelBatch}
                                                     disabled={isBatchActionPending}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
                                                 >
                                                     {isBatchActionPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                                     <span>{t('details.actions.cancelBatch')}</span>
@@ -917,7 +917,7 @@ export function NotificationsModule() {
                                                         setIsDeleteBatchModalOpen(true);
                                                     }}
                                                     disabled={isBatchActionPending}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                     <span>{t('details.actions.deleteBatch')}</span>
@@ -937,7 +937,7 @@ export function NotificationsModule() {
                                                         setObjectImageBase64(selectedNotification.image_base64 ?? null);
                                                         setObjectImageFilename(null);
                                                     }}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                     <span>{t('details.actions.editObject')}</span>
@@ -948,7 +948,7 @@ export function NotificationsModule() {
                                                 <button
                                                     type="button"
                                                     onClick={openCreateRowEditor}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                     <span>{t('details.actions.addRow')}</span>
@@ -967,7 +967,7 @@ export function NotificationsModule() {
                                     )}
 
                                     {isObjectEditing ? (
-                                        <div className="space-y-3 rounded-lg border border-white/10 p-3">
+                                        <div className="space-y-3 rounded-lg border border-line p-3">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 <div>
                                                     <label className={`block text-xs mb-1 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('edit.fields.name')}</label>
@@ -1037,7 +1037,7 @@ export function NotificationsModule() {
                                             </div>
 
                                             {objectError && (
-                                                <p className="text-xs text-rose-300">{objectError}</p>
+                                                <p className="text-xs text-rose-800 dark:text-rose-300">{objectError}</p>
                                             )}
 
                                             <div className="flex items-center justify-end gap-2">
@@ -1116,7 +1116,7 @@ export function NotificationsModule() {
                                                         width={720}
                                                         height={360}
                                                         unoptimized
-                                                        className="h-auto max-h-44 w-auto rounded-md border border-white/10 object-contain"
+                                                        className="h-auto max-h-44 w-auto rounded-md border border-line object-contain"
                                                     />
                                                 ) : (
                                                     <p className={`text-xs ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
@@ -1178,7 +1178,7 @@ export function NotificationsModule() {
                                                         type="button"
                                                         onClick={handleDeleteRow}
                                                         disabled={!canWrite || !isBatchMetadataEditable || isRowSaving || isRowDeleting}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-rose-400/40 text-rose-800 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                                                     >
                                                         {isRowDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                                                         <span>{t('details.rowEditor.actions.delete')}</span>
@@ -1205,7 +1205,7 @@ export function NotificationsModule() {
                                         </div>
 
                                         {rowError && (
-                                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                                                 {rowError}
                                             </div>
                                         )}
@@ -1278,16 +1278,16 @@ export function NotificationsModule() {
                                         className="flex-1 min-w-0 h-full overflow-y-auto campaign-pane-scroll-no-native"
                                     >
                                         {isDetailsLoading && filteredDetails.length === 0 ? (
-                                            <div className="p-4 text-sm text-gray-300 inline-flex items-center gap-2">
+                                            <div className="p-4 text-sm text-ink-2 inline-flex items-center gap-2">
                                                 <Loader2 className="w-4 h-4 animate-spin" />
                                                 {t('details.loading')}
                                             </div>
                                         ) : detailsError ? (
-                                            <div className="p-4 text-sm text-rose-300">{detailsError}</div>
+                                            <div className="p-4 text-sm text-rose-800 dark:text-rose-300">{detailsError}</div>
                                         ) : filteredDetails.length === 0 ? (
-                                            <div className="p-4 text-sm text-gray-400">{t('details.empty')}</div>
+                                            <div className="p-4 text-sm text-ink-2">{t('details.empty')}</div>
                                         ) : (
-                                            <div className="divide-y divide-white/5">
+                                            <div className="divide-y divide-line">
                                                 {filteredDetails.map((detail) => {
                                                     const isSelected = detail.oid === selectedNotificationOid;
                                                     return (
@@ -1295,7 +1295,7 @@ export function NotificationsModule() {
                                                             key={detail.oid}
                                                             type="button"
                                                             onClick={() => openEditRowEditor(detail)}
-                                                            className={`w-full text-left px-4 py-3 hover:bg-white/5 ${isSelected ? 'bg-blue-500/10' : ''}`}
+                                                            className={`w-full text-left px-4 py-3 hover:bg-hover ${isSelected ? 'bg-blue-500/10' : ''}`}
                                                         >
                                                             <div className="flex items-center justify-between gap-2">
                                                                 <p className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{detail.receiver_stable_id}</p>
@@ -1310,7 +1310,7 @@ export function NotificationsModule() {
                                                                 {t('details.fields.scheduledAt')}: {formatDateTime(detail.scheduled_at)}
                                                             </p>
                                                             {detail.error_message && (
-                                                                <p className="text-xs mt-1 text-rose-300">{detail.error_message}</p>
+                                                                <p className="text-xs mt-1 text-rose-800 dark:text-rose-300">{detail.error_message}</p>
                                                             )}
                                                         </button>
                                                     );

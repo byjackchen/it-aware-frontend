@@ -187,13 +187,13 @@ export function NotificationDirectSpreadsheetCreate({
                 <button
                     type="button"
                     onClick={handleTemplateDownload}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-white/10 text-gray-200 hover:bg-white/10"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-line text-ink hover:bg-hover"
                 >
                     <Download className="w-4 h-4" />
                     <span>{t('directUpload.downloadTemplate')}</span>
                 </button>
 
-                <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer ${isWorkersLoading || workersError ? 'border-white/10 text-gray-500 cursor-not-allowed' : 'border-blue-400/40 text-blue-300 hover:bg-blue-500/20'}`}>
+                <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer ${isWorkersLoading || workersError ? 'border-line text-gray-500 cursor-not-allowed' : 'border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20'}`}>
                     <Upload className="w-4 h-4" />
                     <span>{t('directUpload.uploadFile')}</span>
                     <input
@@ -215,19 +215,19 @@ export function NotificationDirectSpreadsheetCreate({
             )}
 
             {workersError && (
-                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                     {workersError}
                 </div>
             )}
 
             {parseResult.fatalError && (
-                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                     {parseResult.fatalError}
                 </div>
             )}
 
             {submitError && (
-                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                <div className="rounded-md border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                     {submitError}
                 </div>
             )}
@@ -252,16 +252,16 @@ export function NotificationDirectSpreadsheetCreate({
 
             {parseResult.unmatchedStableIds.length > 0 && (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2">
-                    <p className="text-xs uppercase tracking-wide text-amber-200">{t('directUpload.unmatchedTitle')}</p>
-                    <p className="text-sm text-amber-100 mt-1 break-all">{parseResult.unmatchedStableIds.slice(0, 20).join(', ')}</p>
+                    <p className="text-xs uppercase tracking-wide text-amber-800 dark:text-amber-200">{t('directUpload.unmatchedTitle')}</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-100 mt-1 break-all">{parseResult.unmatchedStableIds.slice(0, 20).join(', ')}</p>
                 </div>
             )}
 
             {parseResult.rowErrors.length > 0 && (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2 space-y-1">
-                    <p className="text-xs uppercase tracking-wide text-amber-200">{t('directUpload.rowErrorsTitle')}</p>
+                    <p className="text-xs uppercase tracking-wide text-amber-800 dark:text-amber-200">{t('directUpload.rowErrorsTitle')}</p>
                     {parseResult.rowErrors.slice(0, 10).map((rowError) => (
-                        <p key={`${rowError.sourceRow}-${rowError.receiverStableId}`} className="text-sm text-amber-100">
+                        <p key={`${rowError.sourceRow}-${rowError.receiverStableId}`} className="text-sm text-amber-800 dark:text-amber-100">
                             {t('directUpload.rowErrorLine', {
                                 row: rowError.sourceRow,
                                 stableId: rowError.receiverStableId,
@@ -273,7 +273,7 @@ export function NotificationDirectSpreadsheetCreate({
             )}
 
             {previewRows.length > 0 && (
-                <div className="rounded-lg border border-white/10 overflow-hidden">
+                <div className="rounded-lg border border-line overflow-hidden">
                     <div className={`px-3 py-2 border-b text-sm ${isLight ? 'border-slate-200 text-slate-700' : 'border-white/10 text-gray-200'}`}>
                         {t('directUpload.previewTitle')}
                     </div>
@@ -288,7 +288,7 @@ export function NotificationDirectSpreadsheetCreate({
                             </thead>
                             <tbody>
                                 {previewRows.map((row) => (
-                                    <tr key={`${row.sourceRow}-${row.receiverStableId}`} className="border-t border-white/5">
+                                    <tr key={`${row.sourceRow}-${row.receiverStableId}`} className="border-t border-line">
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.sourceRow}</td>
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>{row.receiverStableId}</td>
                                         <td className={`px-3 py-1.5 ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{row.contentBlocks.length}</td>

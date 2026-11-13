@@ -64,7 +64,7 @@ export function DeleteBatchModal({
                 }`}
             >
                 <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-400">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-800 dark:text-rose-400">
                         <Trash2 className="h-4 w-4" />
                     </div>
                     <div className="flex-1">
@@ -98,7 +98,7 @@ export function DeleteBatchModal({
                 </div>
 
                 {error && (
-                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
                         {error}
                     </div>
                 )}
@@ -120,7 +120,7 @@ export function DeleteBatchModal({
                         type="button"
                         onClick={onConfirm}
                         disabled={isConfirmDisabled}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-rose-400/40 bg-rose-500/20 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 disabled:opacity-50"
                     >
                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         <span>{labels.confirm}</span>

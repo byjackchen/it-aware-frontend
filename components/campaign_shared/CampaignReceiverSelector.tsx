@@ -453,8 +453,8 @@ export function CampaignReceiverSelector({
                                 </button>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-400">{t('receivers.locationTreeHint')}</p>
-                        <div className="max-h-56 overflow-y-auto space-y-1 rounded-lg border border-white/10 p-2">
+                        <p className="text-xs text-ink-2">{t('receivers.locationTreeHint')}</p>
+                        <div className="max-h-56 overflow-y-auto space-y-1 rounded-lg border border-line p-2">
                             {locationTree.roots.length === 0 ? (
                                 <p className="text-xs text-gray-500">{t('receivers.noLocations')}</p>
                             ) : (
@@ -485,7 +485,7 @@ export function CampaignReceiverSelector({
                                 </button>
                             </div>
                         </div>
-                        <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-white/10 p-2">
+                        <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-line p-2">
                             {workerTypeOptions.map((workerType) => (
                                 <label key={workerType} className={`flex items-center gap-2 text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                                     <input
@@ -500,7 +500,7 @@ export function CampaignReceiverSelector({
                     </div>
                 </div>
 
-                <div className="rounded-lg border border-white/10 p-3 space-y-3">
+                <div className="rounded-lg border border-line p-3 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                         <p className={`text-sm ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
                             {t('receivers.autoSelectedCount', {
@@ -534,7 +534,7 @@ export function CampaignReceiverSelector({
                             <button
                                 type="button"
                                 onClick={handleManualAdd}
-                                className="px-3 py-1.5 text-sm rounded-md border border-blue-400/40 text-blue-300 hover:bg-blue-500/20"
+                                className="px-3 py-1.5 text-sm rounded-md border border-blue-400/40 text-blue-800 dark:text-blue-300 hover:bg-blue-500/20"
                             >
                                 {t('receivers.manualAdd')}
                             </button>
@@ -590,7 +590,7 @@ export function CampaignReceiverSelector({
             </div>
 
             {(isWorkersLoading || workersError) && (
-                <div className="text-sm text-gray-300">
+                <div className="text-sm text-ink-2">
                     {isWorkersLoading ? t('receivers.loadingWorkers') : workersError}
                 </div>
             )}
