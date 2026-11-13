@@ -138,9 +138,14 @@ export function HomePage({ home }: HomePageProps) {
                 <div className="truncate text-sm">{link(task)}</div>
                 <div className="truncate text-xs text-muted">{otherName(task)}</div>
             </div>
-            {metrics.get(task.code)?.map(one => metric(one, false))}
             {aside}
             {star(task)}
+            {metrics.has(task.code) && (
+                // The metrics take their own line under the name, so a long label never squeezes it.
+                <div className="flex w-full flex-wrap gap-x-5 gap-y-0.5 pl-[42px]">
+                    {metrics.get(task.code)!.map(one => metric(one, false))}
+                </div>
+            )}
         </li>
     );
 
