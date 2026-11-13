@@ -38,11 +38,15 @@ test.describe('Manage Jobs, Load', () => {
     await page.waitForLoadState('networkidle');
     const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of Manage Jobs' });
     await expect(views.getByRole('link')).toHaveText(['Jobs', 'Load']);
+    // The Jobs view's own tabs are named apart from the task's.
+    await expect(page.getByRole('navigation', { name: 'Manage Jobs', exact: true }).getByRole('link')).toHaveText(['Job list', 'Action Record']);
     await views.getByRole('link', { name: 'Load' }).click();
     await expect(page).toHaveURL(new RegExp(`${BASE}$`));
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('heading', { level: 1, name: 'Load', exact: true })).toHaveCount(1);
     await expect(views.getByRole('link', { name: 'Load' })).toHaveAttribute('aria-current', 'page');
+    // The backend keeps the load for five minutes: the page says how fresh it is.
+    await expect(page.getByText('Updated every 5 minutes.')).toBeVisible();
 
     // The tiles: four runs, one failed, 12m 30s in all; the longest names its job and links to it.
     await expect(page.getByTestId('load-stat-runs')).toContainText('Runs');
@@ -157,7 +161,7 @@ test.describe('Manage Jobs, Load', () => {
     // The job's one run failed after a minute: one bar, in the failed series.
     const chart = page.getByTestId('run-durations');
     await expect(chart.getByText('Run durations')).toBeVisible();
-    await expect(chart.getByText('The newest 30 runs that have ended, oldest first, in seconds')).toBeVisible();
+    await expect(chart.getByText('The newest run that has ended, in seconds')).toBeVisible();
     await expect(chart.locator('.recharts-legend-item')).toHaveText(['Failed run', 'Run time']);
     await expect(chart.locator('.recharts-bar-rectangle')).toHaveCount(1);
 
@@ -169,7 +173,7 @@ test.describe('Manage Jobs, Load', () => {
     await expect(page.getByTestId('run-durations')).toHaveCount(0);
   });
 
-  test('a person without the permission gets no access at the address', async ({ browser }) => {
+  test("a person without the permission gets no access at either view's address", async ({ browser }) => {
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
     await page.goto('/auth/login');
@@ -181,8 +185,9 @@ test.describe('Manage Jobs, Load', () => {
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('home-greeting')).toHaveCount(1);
 
-    for (const query of ['', '?days=30', '?days=nonsense']) {
-      await page.goto(`${BASE}${query}`);
+    // Both views of the task, whatever the address asks for.
+    for (const address of [BASE, `${BASE}?days=30`, `${BASE}?days=nonsense`, jobsHref(), jobsHref({ job: 'gate_digest' }), jobsHref({ tab: 'actions' })]) {
+      await page.goto(address);
       await expect(page).toHaveURL(/\/access-denied$/);
       await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
     }

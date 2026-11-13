@@ -3,17 +3,19 @@ import {
   dailyRows,
   DEFAULT_LOAD_SORT,
   durationUnit,
+  barFloor,
   formatFailureRate,
   hourlyRows,
   inUnit,
   loadHref,
+  loadScreen,
   nextLoadSort,
   parseLoadDays,
   runBars,
   sortLoadJobs,
   topJobs,
 } from '@/lib/jobs/load';
-import type { LoadJob, RunSummary } from '@/lib/types/jobs';
+import type { JobsLoad, LoadJob, RunSummary } from '@/lib/types/jobs';
 
 /** Manage Jobs, Load: the day selector, the numbers, the charts' rows and the table's sorting (lib/jobs/load.ts). */
 
@@ -44,12 +46,43 @@ describe('the day selector', () => {
   });
 });
 
+describe('what the view shows', () => {
+  const answer = (runs: number, over: Partial<JobsLoad> = {}): JobsLoad => ({
+    days: 7, start: '2026-11-06', end: '2026-11-12', partial: false, runs_read: runs,
+    totals: { runs, failed: 0, run_seconds: 0, average_seconds: null, longest: null },
+    daily: [], hourly: [], jobs: [], ...over,
+  });
+
+  it('says Airflow cannot be read, and whether it is configured', () => {
+    expect(loadScreen({ available: false, base_url_configured: true })).toEqual({ kind: 'unavailable', configured: true });
+    expect(loadScreen({ available: false, base_url_configured: false })).toEqual({ kind: 'unavailable', configured: false });
+  });
+
+  it('shows the empty state for a window with no runs, and the charts otherwise', () => {
+    expect(loadScreen(answer(0))).toEqual({ kind: 'empty', partial: null, load: answer(0) });
+    expect(loadScreen(answer(4))).toEqual({ kind: 'charts', partial: null, load: answer(4) });
+  });
+
+  it('notes the runs read when the window holds more', () => {
+    const partial = answer(25000, { partial: true, runs_read: 20000 });
+    expect(loadScreen(partial)).toEqual({ kind: 'charts', partial: 20000, load: partial });
+  });
+
+  it('draws a bar for any value above zero, and none for zero or nothing', () => {
+    expect(barFloor(0.04)).toBe(2);
+    expect(barFloor(12)).toBe(2);
+    expect(barFloor(0)).toBe(0);
+    expect(barFloor(null)).toBe(0);
+    expect(barFloor(undefined)).toBe(0);
+  });
+});
+
 describe('the numbers', () => {
-  it('gives the failure rate to one decimal, and a dash with no runs', () => {
+  it('gives the failure rate to one decimal, and none with no runs', () => {
     expect(formatFailureRate(3, 412)).toBe('0.7%');
     expect(formatFailureRate(0, 10)).toBe('0.0%');
     expect(formatFailureRate(5, 5)).toBe('100.0%');
-    expect(formatFailureRate(0, 0)).toBe('—');
+    expect(formatFailureRate(0, 0)).toBeNull();
   });
 
   it('picks seconds, minutes or hours by the longest value', () => {
@@ -141,22 +174,26 @@ describe('the table of jobs', () => {
 
   it('starts with the most run time first, equal jobs in the order given', () => {
     expect(DEFAULT_LOAD_SORT).toEqual({ key: 'run_seconds', direction: 'descending' });
-    expect(names(sortLoadJobs(jobs, DEFAULT_LOAD_SORT))).toEqual(['beta', 'alpha', 'gamma']);
+    expect(names(sortLoadJobs(jobs, DEFAULT_LOAD_SORT, 'en'))).toEqual(['beta', 'alpha', 'gamma']);
     expect(names(jobs)).toEqual(['beta', 'alpha', 'gamma']);
   });
 
   it('sorts names A to Z and numbers either way', () => {
-    expect(names(sortLoadJobs(jobs, { key: 'job', direction: 'ascending' }))).toEqual(['alpha', 'beta', 'gamma']);
-    expect(names(sortLoadJobs(jobs, { key: 'job', direction: 'descending' }))).toEqual(['gamma', 'beta', 'alpha']);
-    expect(names(sortLoadJobs(jobs, { key: 'runs', direction: 'descending' }))).toEqual(['alpha', 'beta', 'gamma']);
-    expect(names(sortLoadJobs(jobs, { key: 'failed', direction: 'ascending' }))).toEqual(['alpha', 'beta', 'gamma']);
+    expect(names(sortLoadJobs(jobs, { key: 'job', direction: 'ascending' }, 'en'))).toEqual(['alpha', 'beta', 'gamma']);
+    expect(names(sortLoadJobs(jobs, { key: 'job', direction: 'descending' }, 'en'))).toEqual(['gamma', 'beta', 'alpha']);
+    // Names sort as the language shown sorts them.
+    const accented = [job('z', 1), job('ä', 1)];
+    expect(names(sortLoadJobs(accented, { key: 'job', direction: 'ascending' }, 'de'))).toEqual(['ä', 'z']);
+    expect(names(sortLoadJobs(accented, { key: 'job', direction: 'ascending' }, 'sv'))).toEqual(['z', 'ä']);
+    expect(names(sortLoadJobs(jobs, { key: 'runs', direction: 'descending' }, 'en'))).toEqual(['alpha', 'beta', 'gamma']);
+    expect(names(sortLoadJobs(jobs, { key: 'failed', direction: 'ascending' }, 'en'))).toEqual(['alpha', 'beta', 'gamma']);
   });
 
   it('puts a missing average or longest last in both directions', () => {
-    expect(names(sortLoadJobs(jobs, { key: 'average_seconds', direction: 'descending' }))).toEqual(['beta', 'gamma', 'alpha']);
-    expect(names(sortLoadJobs(jobs, { key: 'average_seconds', direction: 'ascending' }))).toEqual(['gamma', 'beta', 'alpha']);
+    expect(names(sortLoadJobs(jobs, { key: 'average_seconds', direction: 'descending' }, 'en'))).toEqual(['beta', 'gamma', 'alpha']);
+    expect(names(sortLoadJobs(jobs, { key: 'average_seconds', direction: 'ascending' }, 'en'))).toEqual(['gamma', 'beta', 'alpha']);
     const none = [job('x', 1, { longest_seconds: null }), job('y', 1, { longest_seconds: null }), job('z', 1)];
-    expect(names(sortLoadJobs(none, { key: 'longest_seconds', direction: 'descending' }))).toEqual(['z', 'x', 'y']);
+    expect(names(sortLoadJobs(none, { key: 'longest_seconds', direction: 'descending' }, 'en'))).toEqual(['z', 'x', 'y']);
   });
 
   it('turns a column around on a second click; a new column starts A to Z or largest first', () => {

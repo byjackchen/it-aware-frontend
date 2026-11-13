@@ -6,7 +6,7 @@
  */
 
 import { stateTone } from '@/lib/jobs/view';
-import type { LoadDay, LoadHour, LoadJob, RunSummary } from '@/lib/types/jobs';
+import type { JobsLoad, LoadDay, LoadHour, LoadJob, LoadUnavailable, RunSummary } from '@/lib/types/jobs';
 
 // ── The window and the address ───────────────────────────────────────────────
 
@@ -30,11 +30,34 @@ export function loadHref(days: number = DEFAULT_LOAD_DAYS): string {
   return days === DEFAULT_LOAD_DAYS ? LOAD_BASE : `${LOAD_BASE}?days=${days}`;
 }
 
+// ── What the view shows ──────────────────────────────────────────────────────
+
+/**
+ * What the view shows for an answer: that Airflow can't be read (and whether it
+ * is configured at all); or the tiles, with the charts and the table when the
+ * window holds a run and the empty state when it holds none. `partial` is the
+ * number of runs read when the window holds more, else null; `load` is the
+ * answer itself.
+ */
+export type LoadScreen =
+  | { kind: 'unavailable'; configured: boolean }
+  | { kind: 'empty' | 'charts'; partial: number | null; load: JobsLoad };
+
+export function loadScreen(data: JobsLoad | LoadUnavailable): LoadScreen {
+  if (data.available === false) return { kind: 'unavailable', configured: data.base_url_configured };
+  return { kind: data.totals.runs === 0 ? 'empty' : 'charts', partial: data.partial ? data.runs_read : null, load: data };
+}
+
+/** The least height a bar is drawn at, in pixels: a value above zero is always seen, zero is not drawn. */
+export function barFloor(value: number | null | undefined): number {
+  return value ? 2 : 0;
+}
+
 // ── Numbers ──────────────────────────────────────────────────────────────────
 
-/** The failed runs as a share of all runs, `0.7%`; a dash when there were no runs. */
-export function formatFailureRate(failed: number, runs: number): string {
-  return runs > 0 ? `${((failed / runs) * 100).toFixed(1)}%` : '—';
+/** The failed runs as a share of all runs, `0.7%`; null when there were no runs. */
+export function formatFailureRate(failed: number, runs: number): string | null {
+  return runs > 0 ? `${((failed / runs) * 100).toFixed(1)}%` : null;
 }
 
 /** The unit a chart's run times are drawn in. */
@@ -145,13 +168,13 @@ export function nextLoadSort(current: LoadSort, key: LoadSortKey): LoadSort {
   return { key, direction: key === 'job' ? 'ascending' : 'descending' };
 }
 
-/** The jobs sorted. A missing average or longest comes last in both directions; equal jobs keep the order given. */
-export function sortLoadJobs(jobs: LoadJob[], sort: LoadSort): LoadJob[] {
+/** The jobs sorted, names in the order of the language shown. A missing average or longest comes last in both directions; equal jobs keep the order given. */
+export function sortLoadJobs(jobs: LoadJob[], sort: LoadSort, locale: string): LoadJob[] {
   const sign = sort.direction === 'ascending' ? 1 : -1;
   return [...jobs].sort((a, b) => {
     const x = a[sort.key];
     const y = b[sort.key];
     if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
-    return sign * (typeof x === 'string' ? x.localeCompare(String(y)) : x - Number(y));
+    return sign * (typeof x === 'string' ? x.localeCompare(String(y), locale) : x - Number(y));
   });
 }

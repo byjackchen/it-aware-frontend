@@ -140,6 +140,8 @@ export interface LoadJob {
 
 /** The load of the window's runs. `partial` means only the newest `runs_read` runs were read. */
 export interface JobsLoad {
+  /** Never in this answer: only the fail-soft one carries it (`false`). */
+  available?: undefined;
   days: number;
   start: string;
   end: string;

@@ -2,17 +2,18 @@
  * Manage Jobs: IT-Aware's Airflow jobs — view, control, recover, and the record
  * of who did what: the task's Jobs view (its Load view is ../load). One page;
  * the screen is chosen by search parameters (lib/jobs/paths.ts). The backend
- * calls Airflow; the browser never does.
+ * calls Airflow; the browser never does. A person without the permission (403)
+ * goes to the no-access page.
  */
 
 import {
-  attempt,
   getJob,
   getRun,
   getStepLog,
   listActions,
   listJobs,
   listRuns,
+  read,
 } from '@/lib/api/jobs';
 import { ACTIONS_PAGE_SIZE, CHART_RUNS, INVALID_ID_MESSAGE, parseJobsView, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
 import { ActionRecord } from '../ActionRecord';
@@ -41,7 +42,7 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
   }
 
   if (view.kind === 'actions') {
-    const record = await attempt(() => listActions(view.job, ACTIONS_PAGE_SIZE, (view.page - 1) * ACTIONS_PAGE_SIZE));
+    const record = await read(() => listActions(view.job, ACTIONS_PAGE_SIZE, (view.page - 1) * ACTIONS_PAGE_SIZE));
     return (
       <JobsFrame tab="actions">
         {record.ok ? <ActionRecord data={record.data} job={view.job} page={view.page} /> : <LoadFailure failure={record.failure} />}
@@ -50,7 +51,7 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
   }
 
   if (view.kind === 'list') {
-    const jobs = await attempt(listJobs);
+    const jobs = await read(listJobs);
     return (
       <JobsFrame tab="jobs">
         {jobs.ok ? <JobsList data={jobs.data} /> : <LoadFailure failure={jobs.failure} />}
@@ -59,12 +60,15 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
   }
 
   if (view.kind === 'job') {
-    // The chart draws the newest runs whatever page of them is listed; without them the page still shows.
-    const [job, runs, newest] = await Promise.all([
-      attempt(() => getJob(view.job)),
-      attempt(() => listRuns(view.job, RUNS_PAGE_SIZE, (view.page - 1) * RUNS_PAGE_SIZE)),
-      attempt(() => listRuns(view.job, CHART_RUNS, 0)),
+    // The chart draws the newest runs whatever page of them is listed. The first
+    // page is the start of those, so it is one read; a later page is its own,
+    // and the page still shows when the chart's read fails.
+    const [job, newest, later] = await Promise.all([
+      read(() => getJob(view.job)),
+      read(() => listRuns(view.job, CHART_RUNS, 0)),
+      view.page > 1 ? read(() => listRuns(view.job, RUNS_PAGE_SIZE, (view.page - 1) * RUNS_PAGE_SIZE)) : null,
     ]);
+    const runs = later ?? (newest.ok ? { ...newest, data: { ...newest.data, runs: newest.data.runs.slice(0, RUNS_PAGE_SIZE) } } : newest);
     return (
       <JobsFrame tab="jobs">
         {!job.ok ? (
@@ -80,9 +84,9 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
 
   const { step } = view;
   const [job, run, log] = await Promise.all([
-    attempt(() => getJob(view.job)),
-    attempt(() => getRun(view.job, view.run)),
-    step ? attempt(() => getStepLog(view.job, view.run, step.id, { tryNumber: step.try, mapIndex: step.map })) : null,
+    read(() => getJob(view.job)),
+    read(() => getRun(view.job, view.run)),
+    step ? read(() => getStepLog(view.job, view.run, step.id, { tryNumber: step.try, mapIndex: step.map })) : null,
   ]);
   return (
     <JobsFrame tab="jobs">

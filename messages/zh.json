@@ -1785,7 +1785,6 @@
     "opsOhlaOtherCase": "其它案例分析",
     "opsOhlaLatencyBreakdown": "延迟分解",
     "incidentReport": "工单分析报告",
-    "surveyLookup": "调查链接查询",
     "opsUnassigned": "未分派",
     "llmProxy": "LLM 代理",
     "llmRoutes": "任务路由",
@@ -2954,13 +2953,13 @@
     "help": "IT-Aware 的 Airflow 作业：查看运行与日志，暂停、恢复或立即运行，并恢复一次运行。每个操作都会记录。",
     "refresh": "刷新",
     "tabs": {
-      "jobs": "作业",
+      "jobs": "作业列表",
       "actions": "操作记录"
     },
     "allJobs": "全部作业",
     "load": {
       "title": "负载",
-      "help": "IT-Aware 的 Airflow 作业运行了多少次、耗时多久：按 UTC 日、按一天中的小时、按作业。",
+      "help": "IT-Aware 的 Airflow 作业运行了多少次、耗时多久：按 UTC 日、按一天中的小时、按作业。每 5 分钟更新一次。",
       "window": {
         "label": "时间窗口",
         "days": "{days} 天",
@@ -2997,7 +2996,8 @@
         "byHourHelp": "在每个 UTC 小时内开始的运行的运行时间，{unit}",
         "hourValue": "{time} · {runs} 次运行",
         "topJobs": "按耗时排列的作业",
-        "topJobsHelp": "总运行时间最长的 {count} 个作业，{unit}"
+        "noTime": "此窗口内还没有已结束的运行。",
+      "topJobsHelp": "总运行时间最长的 {count} 个作业，{unit}"
       },
       "table": {
         "title": "窗口内的全部作业",
@@ -3012,7 +3012,7 @@
       },
       "runDurations": {
         "title": "运行时长",
-        "help": "最新 {count} 次运行中已结束的，从旧到新，{unit}",
+        "help": "最新 {count} 次已结束的运行，从旧到新，{unit}",
         "ok": "运行时间",
         "failed": "失败的运行"
       }

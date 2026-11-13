@@ -7,8 +7,8 @@ import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { pauseJob, resumeJob, runJob } from '@/app/actions/jobs';
 import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard';
 import { useTimezone } from '@/lib/contexts/timezone-context';
-import { runBars } from '@/lib/jobs/load';
-import { CHART_RUNS, jobsHref, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
+import { barFloor, runBars } from '@/lib/jobs/load';
+import { jobsHref, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
 import { formatDuration, parameterFields, parameterValues, type ParameterField } from '@/lib/jobs/view';
 import { formatLocalDateTime } from '@/lib/utils/datetime';
 import type { JobDetail, RunsResponse, RunSummary } from '@/lib/types/jobs';
@@ -59,11 +59,11 @@ function RunDurations({ runs }: { runs: RunSummary[] }) {
     <div className="mb-4" data-testid="run-durations">
       <StackedBarPercentLineCard
         title={t('runDurations.title')}
-        subtitle={t('runDurations.help', { count: CHART_RUNS, unit: t(`unit.${unit}`) })}
+        subtitle={t('runDurations.help', { count: rows.length, unit: t(`unit.${unit}`) })}
         data={rows.map((row) => ({ ...row, label: formatLocalDateTime(row.start, timezone).replace('T', ' ').slice(5, 16) }))}
         xKey="label"
         xInterval="preserveStartEnd"
-        minPointSize={0}
+        minPointSize={barFloor}
         maxBarSize={48}
         height={200}
         stackedKeys={[

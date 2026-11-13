@@ -60,8 +60,8 @@ export interface StackedBarPercentLineCardProps {
     xInterval?: number | 'preserveStartEnd'
     /** A bar's value as the tooltip shows it, from the value, its row and the series key (e.g. a duration with its unit). */
     formatValue?: (value: number, row: Record<string, unknown>, key: string) => string
-    /** The least height of a bar segment, in pixels; 3 unless set (0 leaves an empty segment undrawn). */
-    minPointSize?: number
+    /** The least height of a bar segment, in pixels, or a function of its value; 3 unless set (0 leaves a segment undrawn). */
+    minPointSize?: number | ((value: number | null | undefined) => number)
     /** Whether the legend is drawn; pass false for a chart of one series. */
     showLegend?: boolean
     /** The widest a bar is drawn, in pixels, so a chart of few bars is not one slab; unbounded unless set. */

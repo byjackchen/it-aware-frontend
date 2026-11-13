@@ -31,6 +31,8 @@ export interface GroupBarCardProps {
     xAxisLabel?: string;
     /** A bar's value as the tooltip shows it (e.g. a duration with its unit); the count itself unless set. */
     formatValue?: (row: GroupCount) => string;
+    /** The least length of a bar, in pixels, so a small value beside a large one is still seen; 0 unless set. */
+    minPointSize?: number;
     /** Width of the category axis, in pixels, for longer names; 110 unless set. */
     yAxisWidth?: number;
 }
@@ -49,6 +51,7 @@ export function GroupBarCard({
     xAxisLabel,
     formatValue,
     yAxisWidth = 110,
+    minPointSize = 0,
 }: GroupBarCardProps) {
     const { theme } = useTheme();
     const isLight = theme === 'light';
@@ -123,6 +126,7 @@ export function GroupBarCard({
                         <Bar
                             dataKey="count"
                             radius={[0, 4, 4, 0]}
+                            minPointSize={minPointSize}
                             cursor={onBarClick ? 'pointer' : undefined}
                             onClick={
                                 onBarClick

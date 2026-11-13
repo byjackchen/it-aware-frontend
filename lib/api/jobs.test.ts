@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as api from '@/lib/api/jobs';
-import { JobsApiError, attempt, readFailure, toFailure } from '@/lib/api/jobs';
+import { JobsApiError, attempt, read, readFailure, toFailure } from '@/lib/api/jobs';
 
 /** The Manage Jobs client (lib/api/jobs.ts) against a stubbed backend. */
 
@@ -129,4 +129,19 @@ it('refuses a dot-segment or out-of-set id with the backend\'s 422, and fetches 
     await expect(call()).rejects.toEqual(new JobsApiError('Not a job, run or step id.', 422, 'invalid_id'));
   }
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it("sends a person without the permission to the no-access page from a page's read, and shows any other failure", async () => {
+  redirected.length = 0;
+  stub({ detail: 'Permission denied' }, 403);
+  await expect(read(() => api.getJobsLoad(7))).rejects.toThrow('NEXT_REDIRECT');
+  expect(redirected).toEqual(['/access-denied']);
+  stub({ detail: { code: 'not_found', message: 'No such job' } }, 404);
+  expect(await read(() => api.getJob('nowhere'))).toEqual({
+    ok: false,
+    failure: { status: 404, code: 'not_found', message: 'No such job' },
+  });
+  stub({ ok: 1 });
+  expect(await read(() => api.listJobs())).toEqual({ ok: true, data: { ok: 1 } });
+  expect(redirected).toEqual(['/access-denied']);
 });

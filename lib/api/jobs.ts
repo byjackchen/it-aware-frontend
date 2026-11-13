@@ -70,6 +70,16 @@ export async function attempt<T>(work: () => Promise<T>): Promise<{ ok: true; da
   }
 }
 
+/**
+ * Run a read for a page, as `attempt` does; a person without the permission
+ * (403) goes to the no-access page, as on every other task.
+ */
+export async function read<T>(work: () => Promise<T>): Promise<{ ok: true; data: T } | { ok: false; failure: JobsFailure }> {
+  const result = await attempt(work);
+  if (!result.ok && result.failure.status === 403) redirect('/access-denied');
+  return result;
+}
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const cookieHeader = (await cookies())
     .getAll()
