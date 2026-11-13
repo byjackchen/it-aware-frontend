@@ -61,8 +61,8 @@ export default async function ManageJobsPage({ searchParams }: PageProps) {
 
   if (view.kind === 'job') {
     // The chart draws the newest runs whatever page of them is listed. The first
-    // page is the start of those, so it is one read; a later page is its own,
-    // and the page still shows when the chart's read fails.
+    // page is the start of those, so it is one read, and the table fails with it;
+    // a later page is its own read, and shows when the chart's read fails.
     const [job, newest, later] = await Promise.all([
       read(() => getJob(view.job)),
       read(() => listRuns(view.job, CHART_RUNS, 0)),
