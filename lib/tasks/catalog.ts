@@ -79,9 +79,6 @@ export function groupingName(code: string, locale: string): string {
     return grouping ? named(grouping.name, locale) : code;
 }
 
-/** Above this many tasks, the home's "other tasks" are shown under their grouping. */
-export const GROUPED_ABOVE = 10;
-
 /**
  * Tasks under their grouping, in the catalog's grouping order; a grouping
  * with no task is left out, and an unknown grouping comes last.

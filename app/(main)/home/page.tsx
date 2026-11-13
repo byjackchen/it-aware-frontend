@@ -1,6 +1,6 @@
 /**
- * Home page - Server Component. The signed-in person's tasks: set by their
- * admin, pinned by them, recent, and the rest. While the backend's tasks
+ * Home page - Server Component. The signed-in person's tasks: pinned (by
+ * them, or set by their admin), recent, and the rest. While the backend's tasks
  * switch is off there is no home, and the address goes where people landed
  * before.
  */

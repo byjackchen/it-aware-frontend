@@ -1,5 +1,6 @@
-import { test, expect, request, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, request, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
 import { API_URL } from './env';
+import { metricValue } from '../lib/tasks/metrics';
 
 /**
  * Tasks 3 (TODO00000140): the home page, a person's own pins and recents, the
@@ -10,12 +11,22 @@ import { API_URL } from './env';
  * Changed with the catalog v3 (TODO00000140 A14, lane F1): 23 tasks with
  * views in place of 63 pages, grouped by grouping; the start task is a code;
  * the global sidebar gave way to the task frame.
+ *
+ * Changed with the home face-lift (feat/home-search-light): a greeting in place
+ * of the "Home" title, one Pinned row that mixes the person's own pins with the
+ * tasks an admin set, every other task under its grouping, and key metrics on
+ * the cards.
  */
 
-async function ownAccountOid(context: BrowserContext): Promise<string> {
+/** The backend, as the signed-in person. */
+async function backend(context: BrowserContext): Promise<APIRequestContext> {
   const session = (await context.cookies()).find((c) => c.name === 'it_aware_access');
   expect(session).toBeTruthy();
-  const api = await request.newContext({ extraHTTPHeaders: { Cookie: `it_aware_access=${session!.value}` } });
+  return request.newContext({ extraHTTPHeaders: { Cookie: `it_aware_access=${session!.value}` } });
+}
+
+async function ownAccountOid(context: BrowserContext): Promise<string> {
+  const api = await backend(context);
   const me = await api.get(`${API_URL}/auth/me`);
   expect(me.ok()).toBeTruthy();
   const oid = (await me.json()).account.oid as string;
@@ -27,7 +38,7 @@ async function ownAccountOid(context: BrowserContext): Promise<string> {
 async function openHome(page: Page) {
   await page.goto('/home');
   await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('heading', { name: 'Home', exact: true })).toHaveCount(1);
+  await expect(page.getByTestId('home-greeting')).toHaveCount(1);
 }
 
 /** Open a user's account page and wait until it is there once, with its requests done. */
@@ -41,18 +52,22 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
   test('with no start page set, a person lands on the home with their tasks', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByRole('heading', { name: 'Home', exact: true })).toHaveCount(1);
+    // The home greets the person by the time of day, with today's date.
+    await expect(page.getByTestId('home-greeting')).toHaveText(/^Good (morning|afternoon|evening)$/);
+    await expect(page.getByTestId('home-date')).toHaveText(/^\w+day, \w+ \d{1,2}$/);
 
-    // Nothing is set by an admin, so that part is not shown; the rest are.
-    await expect(page.getByTestId('home-adminSet')).toHaveCount(0);
+    // Nothing is pinned or set by an admin, so the Pinned row is empty; the rest are shown.
+    await expect(page.getByTestId('home-set-for-you')).toHaveCount(0);
     await expect(page.getByTestId('home-pinned').getByText('Pin a task below or from search.')).toBeVisible();
     const other = page.getByTestId('home-other');
     await expect(other.getByRole('link', { name: 'Maintain IT Service Catalog', exact: true })).toHaveAttribute('href', '/tasks/it-service-catalog/service-catalogs');
     // The task kinds are named Internal Task and External Task (maintainer, 2026-11-12:
     // "rename thoroughly the task kind: Internal Task, External Task").
     await expect(other.getByText('Internal Task').first()).toBeVisible();
-    // With more than about ten tasks, the others are under their groupings, in catalog order.
-    await expect(other.getByRole('heading', { level: 3 })).toHaveText(['Data', 'Analytics', 'Operations', 'Administration']);
+    // The other tasks are under their groupings, in catalog order.
+    await expect(other.getByRole('heading', { level: 2 })).toHaveText(
+      [/^All tasks · Data/, /^All tasks · Analytics/, /^All tasks · Operations/, /^All tasks · Administration/]
+    );
     await expect(page.getByTestId('home-grouping-analytics').getByRole('link', { name: 'Persona Dashboard', exact: true })).toBeVisible();
 
     // The top bar reaches the home from any page.
@@ -195,12 +210,14 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       await card.getByRole('button', { name: 'Save customization' }).click();
       await expect(card.getByRole('status')).toHaveText('Saved');
 
-      // The user lands on the start page, and the home shows what the admin set, with no pin on it.
+      // The user lands on the start page, and the home's Pinned row shows what the
+      // admin set, labelled "Set for you" and with no pin on it.
       await page.goto('/');
       await expect(page).toHaveURL(/\/tasks\/it-incidents$/);
       await openHome(page);
-      const adminSet = page.getByTestId('home-adminSet');
-      await expect(adminSet.getByText('Set for you by your admin')).toBeVisible();
+      const adminSet = page.getByTestId('home-pinned').getByTestId('home-card');
+      await expect(adminSet).toHaveCount(1);
+      await expect(adminSet.getByText('Set for you', { exact: true })).toBeVisible();
       await expect(adminSet.getByRole('link', { name: 'Maintain Workers and Organizations', exact: true })).toBeVisible();
       await expect(adminSet.getByRole('button')).toHaveCount(0);
       await expect(page.getByTestId('home-other').getByRole('link', { name: 'Maintain Workers and Organizations', exact: true })).toHaveCount(0);
@@ -219,7 +236,103 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
 
     await page.goto('/');
     await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByTestId('home-adminSet')).toHaveCount(0);
+    await expect(page.getByTestId('home-set-for-you')).toHaveCount(0);
+  });
+
+  test("the Pinned row mixes the person's own pins, first, with the tasks an admin set", async ({ page, context }) => {
+    const oid = await ownAccountOid(context);
+    const api = await backend(context);
+    const profile = `${API_URL}/auth/config/accounts/${oid}/profile`;
+    const cards = page.getByTestId('home-pinned').getByTestId('home-card');
+    const [catalog, incidents, workers] = ['Maintain IT Service Catalog', 'View IT Incidents', 'Maintain Workers and Organizations'];
+
+    try {
+      // An admin set two tasks; the person pinned two, one of them among the admin's.
+      expect((await api.put(profile, { data: { start_task: null, home_tasks: ['workers', 'it-incidents'] } })).ok()).toBeTruthy();
+      for (const code of ['it-service-catalog', 'it-incidents']) {
+        expect((await api.put(`${API_URL}/tasks/pins/${code}`)).ok()).toBeTruthy();
+      }
+
+      // Own pins first, in the order pinned, then the admin's; the task in both shows once, as the person's own.
+      await openHome(page);
+      await expect(cards.getByRole('link')).toHaveText([catalog, incidents, workers]);
+      await expect(cards.nth(0).getByRole('button', { name: `Unpin ${catalog}`, exact: true })).toBeVisible();
+      await expect(cards.nth(1).getByRole('button', { name: `Unpin ${incidents}`, exact: true })).toBeVisible();
+      await expect(cards.nth(2).getByText('Set for you', { exact: true })).toBeVisible();
+      await expect(cards.nth(2).getByRole('button')).toHaveCount(0);
+      await expect(page.getByTestId('home-set-for-you')).toHaveCount(1);
+      // A pinned or admin-set task is not listed again among the others.
+      await expect(page.getByTestId('home-other').getByRole('link', { name: incidents, exact: true })).toHaveCount(0);
+
+      // Unpinned, the task in both lists is back at its admin-set place, and cannot be unpinned there.
+      await cards.nth(1).getByRole('button', { name: `Unpin ${incidents}`, exact: true }).click();
+      await expect(cards.getByRole('link')).toHaveText([catalog, workers, incidents]);
+      await expect(cards.nth(2).getByText('Set for you', { exact: true })).toBeVisible();
+      await expect(cards.nth(2).getByRole('button')).toHaveCount(0);
+    } finally {
+      for (const code of ['it-service-catalog', 'it-incidents']) {
+        await api.delete(`${API_URL}/tasks/pins/${code}`);
+      }
+      await api.put(profile, { data: { start_task: null, home_tasks: [] } });
+      await api.dispose();
+    }
+
+    await openHome(page);
+    await expect(cards).toHaveCount(0);
+  });
+
+  test("a task's card shows its key metrics: value, period, change, and when it was updated", async ({ page }) => {
+    const period = (kind: string) => ({ start: '2026-11-01', end: '2026-11-12', kind });
+    const computed_at = new Date(Date.now() - 5 * 60_000).toISOString();
+    await page.route('**/api/tasks/metrics', (route) => route.fulfill({ json: { metrics: [
+      { task: 'it-incidents', code: 'opened', label: { en: 'opened', zh: '新开' }, unit: 'count', value: 3412, period: period('last_7_days'), previous_value: 3406, computed_at },
+      { task: 'it-incidents', code: 'sla', label: { en: 'SLA met', zh: 'SLA 达成' }, unit: 'percent', value: 91.6, period: period('month'), previous_value: 92.8, computed_at },
+      { task: 'it-incidents', code: 'third', label: { en: 'a third metric', zh: '第三个' }, unit: 'count', value: 1, period: period('now'), previous_value: null, computed_at },
+      { task: 'data-overview', code: 'records', label: { en: 'records', zh: '记录' }, unit: 'count', value: 1234567, period: period('now'), previous_value: null, computed_at },
+    ] } }));
+    await openHome(page);
+
+    // At most two metrics a task: a count with thousands separators, a percent with one decimal.
+    const incidents = page.getByTestId('home-other').locator('[data-task="it-incidents"]').getByTestId('task-metric');
+    await expect(incidents).toHaveText([/^3,412\s*opened, last 7 days\s*\+6$/, /^91\.6%\s*SLA met, this month\s*-1\.2$/]);
+    await expect(incidents.first()).toHaveAttribute('title', 'Updated 5 minutes ago');
+    // A large count is written short; without an earlier value there is no change.
+    const overview = page.getByTestId('home-other').locator('[data-task="data-overview"]').getByTestId('task-metric');
+    await expect(overview).toHaveText([/^1\.2M\s*records, now$/]);
+    // A task with no metric keeps its plain card.
+    await expect(page.getByTestId('home-other').locator('[data-task="workers"]')).toHaveCount(1);
+    await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);
+  });
+
+  test('the cards stay plain, and the home works, when the metrics call fails', async ({ page }) => {
+    await page.route('**/api/tasks/metrics', (route) => route.fulfill({ status: 500, body: 'boom' }));
+    const failed = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/tasks/metrics');
+    await openHome(page);
+    expect((await failed).status()).toBe(500);
+
+    await expect(page.getByTestId('task-metric')).toHaveCount(0);
+    await expect(page.locator('main').getByRole('alert')).toHaveCount(0);
+    const other = page.getByTestId('home-other');
+    await expect(other.getByRole('link', { name: 'View IT Incidents', exact: true })).toHaveAttribute('href', '/tasks/it-incidents');
+    await expect(other.getByRole('button', { name: 'Pin View IT Incidents', exact: true })).toBeEnabled();
+  });
+
+  test("the backend's metrics show on the tasks' cards", async ({ page }) => {
+    // The home asks for the metrics once, after its cards are drawn.
+    const asked: string[] = [];
+    page.on('request', (sent) => { if (new URL(sent.url()).pathname === '/api/tasks/metrics') asked.push(sent.url()); });
+    const answered = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/tasks/metrics');
+    await openHome(page);
+    const { metrics } = await (await answered).json();
+    expect(asked).toHaveLength(1);
+
+    // The hermetic backend computes at least one metric for the synthetic admin's tasks.
+    expect(metrics.length).toBeGreaterThan(0);
+    const first = metrics[0];
+    const shown = page.locator(`[data-task="${first.task}"]`).first().getByTestId('task-metric').first();
+    await expect(shown).toContainText(metricValue(first, 'en'));
+    await expect(shown).toContainText(first.label.en);
+    await expect(shown).toHaveAttribute('title', /^Updated /);
   });
 
   test("who has what tasks links a person to their profile page", async ({ page }) => {

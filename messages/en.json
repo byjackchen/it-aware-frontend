@@ -1823,20 +1823,18 @@
     }
   },
   "Home": {
-    "title": "Home",
-    "subtitle": "Your tasks. Search finds them too.",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
     "internal": "Internal Task",
     "external": "External Task",
-    "pin": "Pin",
-    "unpin": "Unpin",
     "pinTask": "Pin {name}",
     "unpinTask": "Unpin {name}",
-    "adminSet": {
-      "title": "Set for you by your admin",
-      "empty": "Nothing set."
-    },
+    "setForYou": "Set for you",
     "pinned": {
-      "title": "Pinned by you",
+      "title": "Pinned",
       "empty": "Pin a task below or from search."
     },
     "recent": {
@@ -1844,8 +1842,16 @@
       "empty": "Tasks you open show up here."
     },
     "other": {
-      "title": "Other tasks you have",
-      "empty": "None."
+      "title": "All tasks"
+    },
+    "metrics": {
+      "join": ", ",
+      "period": {
+        "now": "now",
+        "month": "this month",
+        "last7Days": "last 7 days"
+      },
+      "updated": "Updated {when}"
     }
   },
   "TaskFrame": {

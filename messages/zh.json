@@ -1501,20 +1501,18 @@
     }
   },
   "Home": {
-    "title": "首页",
-    "subtitle": "你的任务，也可以用搜索找到。",
+    "greeting": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好"
+    },
     "internal": "内部任务",
     "external": "外部任务",
-    "pin": "固定",
-    "unpin": "取消固定",
     "pinTask": "固定 {name}",
     "unpinTask": "取消固定 {name}",
-    "adminSet": {
-      "title": "管理员为你设置",
-      "empty": "未设置。"
-    },
+    "setForYou": "为你设置",
     "pinned": {
-      "title": "你固定的",
+      "title": "已固定",
       "empty": "在下方或搜索结果里固定一个任务。"
     },
     "recent": {
@@ -1522,8 +1520,16 @@
       "empty": "你打开过的任务会显示在这里。"
     },
     "other": {
-      "title": "你的其他任务",
-      "empty": "没有。"
+      "title": "全部任务"
+    },
+    "metrics": {
+      "join": "，",
+      "period": {
+        "now": "当前",
+        "month": "本月",
+        "last7Days": "近 7 天"
+      },
+      "updated": "更新于{when}"
     }
   },
   "TaskFrame": {
