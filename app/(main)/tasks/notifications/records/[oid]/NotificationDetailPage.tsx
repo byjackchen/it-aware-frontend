@@ -51,7 +51,7 @@ function ContentBlockRenderer({ block, isLight }: { block: NotificationContentBl
                     href={block.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-indigo-500 hover:text-indigo-400 underline underline-offset-4"
+                    className="inline-flex items-center gap-1 text-sm text-indigo-500 hover:text-indigo-800 dark:hover:text-indigo-400 underline underline-offset-4"
                 >
                     {block.text}
                     <ExternalLink className="w-3 h-3" />

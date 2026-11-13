@@ -38,7 +38,7 @@ export interface RegionMapProps {
 const RegionMapImpl = dynamic(() => import('./RegionMapImpl').then((m) => m.RegionMapImpl), {
     ssr: false,
     loading: () => (
-        <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">Loading map…</div>
+        <div className="h-full w-full flex items-center justify-center text-xs text-ink-2">Loading map…</div>
     ),
 });
 

@@ -106,7 +106,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
     return (
         <div className="space-y-3 p-4">
             {/* Header */}
-            <div className="flex gap-4 pb-2 border-b border-white/10">
+            <div className="flex gap-4 pb-2 border-b border-line">
                 <Skeleton className="h-4 w-1/4" />
                 <Skeleton className="h-4 w-1/4" />
                 <Skeleton className="h-4 w-1/4" />

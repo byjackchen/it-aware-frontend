@@ -90,7 +90,7 @@ export function TicketsPanel({
                 <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
                     {t('pages.hubTicketsSection')}
                 </p>
-                <span className="text-xs text-blue-400">
+                <span className="text-xs text-accent">
                     {t('pages.hubFilteredTickets', {
                         filtered: filteredCount.toLocaleString(),
                         total: totalActiveCount.toLocaleString(),

@@ -163,7 +163,7 @@ export function LocationDetailPage({
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -172,7 +172,7 @@ export function LocationDetailPage({
 
                     {/* Status Badge */}
                     {!isEditing && (
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${location.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${location.is_active ? 'bg-green-500/20 text-good' : 'bg-red-500/20 text-bad'}`}>
                             {location.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                             {location.is_active ? 'Active' : 'Inactive'}
                         </div>
@@ -209,7 +209,7 @@ export function LocationDetailPage({
                             <LocationTypeSelect value={type} onChange={setType} />
                         ) : (
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                <TypeIcon className={`w-4 h-4 ${typeConfig?.color || 'text-gray-400'}`} />
+                                <TypeIcon className={`w-4 h-4 ${typeConfig?.color || 'text-ink-2'}`} />
                                 <span className={`text-sm ${getLocationTypeLabel(type) === 'Invalid value'
                                     ? 'text-orange-500 font-medium'
                                     : (isLight ? 'text-slate-600' : 'text-gray-300')
@@ -310,15 +310,15 @@ export function LocationDetailPage({
                             <button
                                 type="button"
                                 onClick={() => setIsActive(!isActive)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-good hover:bg-green-500/30' : 'bg-red-500/20 text-bad hover:bg-red-500/30'}`}
                             >
                                 {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                 <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
                             </button>
                         ) : (
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                {location.is_active ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
-                                <span className={`text-sm ${location.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                                {location.is_active ? <CheckCircle className="w-4 h-4 text-good" /> : <XCircle className="w-4 h-4 text-bad" />}
+                                <span className={`text-sm ${location.is_active ? 'text-good' : 'text-bad'}`}>
                                     {location.is_active ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
@@ -378,7 +378,7 @@ export function LocationDetailPage({
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>{t('common.delete')} {t('locations.title')}</span>

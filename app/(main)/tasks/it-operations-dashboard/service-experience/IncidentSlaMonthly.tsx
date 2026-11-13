@@ -43,7 +43,7 @@ export function IncidentSlaMonthly({ report, error }: Props) {
             <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                     <AlertTriangle className="mx-auto h-8 w-8 text-gray-500 animate-pulse" />
-                    <p className="mt-3 text-sm text-gray-400">{t('error.loading')}</p>
+                    <p className="mt-3 text-sm text-ink-2">{t('error.loading')}</p>
                 </div>
             </div>
         );

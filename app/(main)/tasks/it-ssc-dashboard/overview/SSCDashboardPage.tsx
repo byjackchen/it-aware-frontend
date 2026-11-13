@@ -258,7 +258,7 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
                     onWorkerFilterChange={setWorkerFilter}
                     onApply={handleApplyFilters}
                 />
-                {filterError && <p role="alert" className="mb-3 text-sm text-red-400">{filterError}</p>}
+                {filterError && <p role="alert" className="mb-3 text-sm text-bad">{filterError}</p>}
             </div>
 
             {/* Stacked Panels — interactions above, incidents below.
@@ -270,7 +270,7 @@ function SSCDashboardContent({ initialWorkerMap, initialCatalogMap }: SSCDashboa
                 defaults to min-height:auto, which would stop each panel's
                 inner overflow-y-auto from ever scrolling. */}
             {appliedRangeError ? (
-                <p role="alert" className="mx-4 text-sm text-red-400">{appliedRangeError}</p>
+                <p role="alert" className="mx-4 text-sm text-bad">{appliedRangeError}</p>
             ) : <div className={`flex-1 flex flex-col mx-4 mb-0 rounded-t-xl overflow-hidden border ${
                 isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'
             }`}>

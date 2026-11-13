@@ -186,7 +186,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <div className="flex flex-wrap items-center gap-3 mb-3 shrink-0">
                 {searchKeys?.length ? (
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-2" />
                         <input
                             className={`pl-8 pr-3 py-1.5 text-xs rounded-lg border w-56 ${inputCls}`}
                             placeholder="Search current page..."
@@ -300,9 +300,9 @@ export function DataTable<T extends Record<string, unknown>>({
                                         {col.label}
                                         {sortKey === col.key ? (
                                             sortDir === 'asc' ? (
-                                                <ChevronUp className="w-3 h-3 text-blue-400" />
+                                                <ChevronUp className="w-3 h-3 text-accent" />
                                             ) : (
-                                                <ChevronDown className="w-3 h-3 text-blue-400" />
+                                                <ChevronDown className="w-3 h-3 text-accent" />
                                             )
                                         ) : (
                                             <ChevronsUpDown className="w-3 h-3 opacity-30" />

@@ -87,7 +87,7 @@ export function AssetsPanel({
                 <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
                     {t('pages.hubAssetsSection')}
                 </p>
-                <span className="text-xs text-blue-400">
+                <span className="text-xs text-accent">
                     {t('pages.hubFilteredAssets', {
                         filtered: filteredCount.toLocaleString(),
                         total: totalCount.toLocaleString(),

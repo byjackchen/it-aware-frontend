@@ -166,7 +166,7 @@ export function OrganizationDetailPage({
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -176,7 +176,7 @@ export function OrganizationDetailPage({
 
                 {/* Status Badge */}
                 {!isEditing && (
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${organization.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${organization.is_active ? 'bg-green-500/20 text-good' : 'bg-red-500/20 text-bad'}`}>
                         {organization.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                         {organization.is_active ? 'Active' : 'Inactive'}
                     </div>
@@ -289,15 +289,15 @@ export function OrganizationDetailPage({
                             <button
                                 type="button"
                                 onClick={() => setIsActive(!isActive)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-good hover:bg-green-500/30' : 'bg-red-500/20 text-bad hover:bg-red-500/30'}`}
                             >
                                 {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                 <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
                             </button>
                         ) : (
                             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                                {organization.is_active ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
-                                <span className={`text-sm ${organization.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                                {organization.is_active ? <CheckCircle className="w-4 h-4 text-good" /> : <XCircle className="w-4 h-4 text-bad" />}
+                                <span className={`text-sm ${organization.is_active ? 'text-good' : 'text-bad'}`}>
                                     {organization.is_active ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
@@ -345,7 +345,7 @@ export function OrganizationDetailPage({
                                         {JSON.stringify(organization.metadata, null, 2)}
                                     </pre>
                                 ) : (
-                                    <span className="text-gray-400 italic">No metadata</span>
+                                    <span className="text-ink-2 italic">No metadata</span>
                                 )}
                                 <div className="absolute top-2 right-2">
                                     <Code className={`w-4 h-4 ${isLight ? 'text-slate-300' : 'text-gray-600'}`} />
@@ -407,7 +407,7 @@ export function OrganizationDetailPage({
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>{t('common.delete')} {t('organizations.title')}</span>

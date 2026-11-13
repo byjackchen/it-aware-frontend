@@ -370,7 +370,7 @@ export function AssetHubDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                     {hasFilters && (
-                        <span className="text-xs text-blue-400">
+                        <span className="text-xs text-accent">
                             {t('pages.filteredCount', {
                                 filtered: filtered.length.toLocaleString(),
                                 total: rows.filter(isInScopeAsset).length.toLocaleString(),

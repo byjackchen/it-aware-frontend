@@ -36,16 +36,16 @@ function CodeBlock({ code }: { code: string }) {
         }
     };
     return (
-        <div className="group relative mt-2 rounded-lg border border-white/10 bg-black/20">
+        <div className="group relative mt-2 rounded-lg border border-line bg-field dark:bg-black/20">
             <pre className="overflow-x-auto p-3 pr-12 font-mono text-xs theme-text-primary">{code}</pre>
             <button
                 type="button"
                 onClick={copy}
                 title={t('copy')}
                 aria-label={t('copy')}
-                className="absolute right-2 top-2 rounded-md p-1.5 theme-text-muted hover:bg-white/10"
+                className="absolute right-2 top-2 rounded-md p-1.5 theme-text-muted hover:bg-hover"
             >
-                {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-good" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
         </div>
     );
@@ -54,7 +54,7 @@ function CodeBlock({ code }: { code: string }) {
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
     return (
         <li className="flex gap-3">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xs font-semibold text-blue-400">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xs font-semibold text-accent">
                 {n}
             </span>
             <div className="min-w-0 flex-1">
@@ -94,7 +94,7 @@ export function AgentAccessClient({ endpoints, cli }: Props) {
 
                 <section className="rounded-xl glass-card p-5">
                     <div className="flex items-center gap-2">
-                        <Plug className="h-5 w-5 text-blue-400" />
+                        <Plug className="h-5 w-5 text-accent" />
                         <h2 className="text-base font-semibold theme-text-primary">{t('mcp.title')}</h2>
                     </div>
                     <p className="mt-2 text-sm theme-text-secondary">{t('mcp.help')}</p>
@@ -108,7 +108,7 @@ export function AgentAccessClient({ endpoints, cli }: Props) {
                 <section className="rounded-xl glass-card p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                            <Terminal className="h-5 w-5 text-blue-400" />
+                            <Terminal className="h-5 w-5 text-accent" />
                             <h2 className="text-base font-semibold theme-text-primary">{t('cli.title')}</h2>
                         </div>
                         <a
@@ -130,7 +130,7 @@ export function AgentAccessClient({ endpoints, cli }: Props) {
                     </p>
                     <p className="mt-1 break-all font-mono text-[11px] theme-text-muted">sha256 {cli.sha256}</p>
 
-                    <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                    <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-warn">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>{t('cli.identityWarning')}</span>
                     </div>
@@ -142,7 +142,7 @@ export function AgentAccessClient({ endpoints, cli }: Props) {
                         </Step>
                         <Step n={2} title={t('cli.step2Title')}>
                             {t('cli.step2Help')}{' '}
-                            <Link href="/tasks/access/accounts" className="text-blue-400 hover:underline">
+                            <Link href="/tasks/access/accounts" className="text-accent hover:underline">
                                 {t('cli.step2Link')}
                             </Link>
                         </Step>

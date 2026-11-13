@@ -140,7 +140,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                                 </select>
                             </div>
 
-                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors">
+                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors">
                                 <Pencil className="w-4 h-4" />
                                 <span>{commonT('edit')}</span>
                             </button>
@@ -149,7 +149,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
 
                     {/* Status Badge */}
                     {!isEditing && (
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${article.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${article.is_active ? 'bg-green-500/20 text-good' : 'bg-red-500/20 text-bad'}`}>
                             {article.is_active ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                             {article.is_active ? 'Active' : 'Inactive'}
                         </div>
@@ -276,7 +276,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                             <button
                                 type="button"
                                 onClick={() => setIsActive(!isActive)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-green-500/20 text-good hover:bg-green-500/30' : 'bg-red-500/20 text-bad hover:bg-red-500/30'}`}
                             >
                                 {isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                 <span className="text-sm font-medium">{isActive ? 'Active' : 'Inactive'}</span>
@@ -295,7 +295,7 @@ export function ArticleDetailPage({ article, versions, edges, serviceCatalogs }:
                         </div>
                     ) : (
                         <div className={`pt-4 border-t ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
-                            <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 disabled:opacity-50">
+                            <button onClick={handleDelete} disabled={isPending} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad disabled:opacity-50">
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 <span>{commonT('delete')} {t('title')}</span>
                             </button>
