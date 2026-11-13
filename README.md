@@ -4,10 +4,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Theme
 
-Uses CSS variables with `dark`/`light` class toggling on `<html>` element.
+Uses CSS variables with `dark`/`light` class toggling on `<html>` element. Light is the default: a person sees dark only after choosing it.
 
 | File | Purpose |
 |------|---------|
+| `lib/theme.ts` | `themeFrom(cookie)`: the chosen theme, light for anyone who has not chosen; the root layout reads it for the first paint |
 | `lib/contexts/theme-context.tsx` | React context + cookie persistence (`it-aware-theme`) |
 | `components/layout/ThemeSwitcher.tsx` | Toggle button component |
 | `app/globals.css` | CSS variables (`.dark`, `.light`) and utility classes |
@@ -15,6 +16,7 @@ Uses CSS variables with `dark`/`light` class toggling on `<html>` element.
 **Usage:**
 - Use CSS variables: `var(--text-primary)`, `var(--glass-bg)`
 - Use utility classes: `.theme-text-primary`, `.theme-input`, `.glass-card`
+- Prefer the theme's Tailwind utilities, which need no light/dark branch: `bg-surface`, `bg-panel`, `text-ink`, `text-ink-2`, `text-muted`, `border-line`, `text-accent`, `bg-accent-soft`, `shadow-card`, `text-good`/`text-bad`/`text-warn` (`@theme inline` in `app/globals.css`)
 - Access in components: `const { theme, toggleTheme } = useTheme()`
 
 ### Internationalization

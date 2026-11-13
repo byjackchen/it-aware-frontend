@@ -147,6 +147,63 @@ Pin or unpin a task for the caller. `204`. `PUT` answers `404` for a code that i
 
 Body `{"task": "it-incidents"}`: the task the caller opened. Opening any of a task's views counts as opening the task; the frontend reads the task from the page's address (`/tasks/<task>/…`). The task becomes the caller's most recent. `204` always; a code that is no task of the caller's is not kept. Any other field is refused (`422`).
 
+## Key metrics on the task cards
+
+A **metric** is one number a task's own page already computes, shown on the task's card. The **metric registry** is reviewed code (`app/tasks/metrics.py`), checked once when first read: at most two metrics per task, in the order the card shows them, each naming a task of the catalog. A metric has no definition of its own: it calls the page's computation and takes one number from the result.
+
+| Metric | Task | Unit | Period | The number, and where the page computes it |
+|---|---|---|---|---|
+| `it-tickets.active` | `it-tickets` | count | now | `totalActive` of the hub report (`GET /dashboards/ops/hub`) |
+| `it-tickets.unassigned` | `it-tickets` | count | now | `unassigned` of the hub report |
+| `it-operations-dashboard.incident-sla-met` | `it-operations-dashboard` | percent | month | Completed incident SLAs not breached / completed incident SLAs: the "all SLA" cell of the incident SLA report, for the calendar month |
+| `ohla-chatbot-dashboard.interactions` | `ohla-chatbot-dashboard` | count | last_7_days | `total_interactions` of the overview (`GET /dashboards/chatbot/overview`) |
+| `ohla-chatbot-dashboard.users` | `ohla-chatbot-dashboard` | count | last_7_days | `distinct_users` of the overview |
+| `it-ssc-dashboard.interactions` | `it-ssc-dashboard` | count | month | `grand_total` of the FAQ month report |
+| `it-ssc-dashboard.visitors` | `it-ssc-dashboard` | count | month | `unique_visitors` of the FAQ month report |
+| `jobs.failed` | `jobs` | count | now | Jobs in `GET /jobs` whose last run's state is `failed` |
+| `data-overview.records` | `data-overview` | count | now | The sum of the unfiltered totals of the eleven lists the Data Overview page counts (organizations, locations, service catalogs, workers, articles, incidents, requests, interactions, survey batches, notification batches, analyses) |
+
+Periods are UTC days: `now` is the day of the refresh, `month` the calendar month, `last_7_days` the day of the refresh and the six before it.
+
+**Stored values.** `metrics.metric_values` (migration 0139) holds one row per metric, period and dimension: `metric_code`, `period_start`, `period_end`, `dimension_type`, `dimension_key`, `numerator`, `denominator` (set for a percent), `value`, `computed_at`, `definition_version`; those first five columns are its key. Every row today is the whole organization's: `dimension_type` `organization`, `dimension_key` empty. The refresh upserts the row of the period that is running, so a period that has ended keeps its last value.
+
+**Who sees a metric.** The stored number is the whole organization's, so a caller gets a metric only when both hold: they have its task (as in `GET /tasks/home`), and every permission the number is computed from reaches them through an `unconstrained` counted group. A person who holds the task with a `self_scoped` or `role_based` scope on that data gets no number.
+
+### GET /tasks/metrics
+
+```json
+{
+  "metrics": [
+    {
+      "task": "it-tickets",
+      "code": "it-tickets.active",
+      "label": {"en": "Active tickets", "zh": "活跃工单"},
+      "unit": "count",
+      "value": 41,
+      "period": {"start": "2026-11-12", "end": "2026-11-12", "kind": "now"},
+      "previous_value": 38,
+      "computed_at": "2026-11-12T10:00:04.512Z"
+    }
+  ]
+}
+```
+
+- Only the caller's metrics, in registry order. `401` without a sign-in.
+- `unit` is `count` (an integer `value`) or `percent` (0 to 100, one decimal). `period.kind` is `now`, `month` or `last_7_days`.
+- The row shown is the metric's newest period. A metric with no row, or whose row was computed more than 24 hours ago, is left out.
+- `previous_value`: the value of the period right before (the day before, the month before, the seven days before), when that row exists and was computed with the same `definition_version`; otherwise `null`.
+
+### POST /tasks/metrics/refresh
+
+Computes every registered metric for the whole organization and upserts its row. Needs `systems:jobs:run`; the hourly job `refresh_task_metrics` calls it with the job account. `403` without the permission.
+
+```json
+{"refreshed": ["it-tickets.active"], "kept": {"jobs.failed": "failed: RuntimeError"}}
+```
+
+- `refreshed`: the metrics whose row was written.
+- `kept`: the metrics that kept their last row, each with why: `no value` (a rate with nothing to count yet) or `failed: <error type>` (the cause is in the backend log). One metric failing does not stop the others; when Airflow cannot be read, `jobs.failed` is kept.
+
 ## Reporting-only check
 
 `uv run python -m app.tasks.checks` prints every API route that names no permission in its declaration.
