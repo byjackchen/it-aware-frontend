@@ -1,6 +1,7 @@
 import { test, expect, request, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
 import { API_URL } from './env';
 import { metricValue } from '../lib/tasks/metrics';
+import type { TaskMetrics } from '../lib/types/tasks';
 
 /**
  * Tasks 3 (TODO00000140): the home page, a person's own pins and recents, the
@@ -317,22 +318,34 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(other.getByRole('button', { name: 'Pin View IT Incidents', exact: true })).toBeEnabled();
   });
 
-  test("the backend's metrics show on the tasks' cards", async ({ page }) => {
+  test("the backend's metrics show on the tasks' cards", async ({ page, context }) => {
+    // The hourly job refresh_task_metrics computes the numbers; here the admin asks for the same refresh.
+    const api = await backend(context);
+    const refreshed = await api.post(`${API_URL}/tasks/metrics/refresh`);
+    expect(refreshed.ok()).toBeTruthy();
+    expect((await refreshed.json()).refreshed).toContain('it-tickets.active');
+    await api.dispose();
+
     // The home asks for the metrics once, after its cards are drawn.
     const asked: string[] = [];
     page.on('request', (sent) => { if (new URL(sent.url()).pathname === '/api/tasks/metrics') asked.push(sent.url()); });
     const answered = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/tasks/metrics');
     await openHome(page);
-    const { metrics } = await (await answered).json();
+    const { metrics } = (await (await answered).json()) as TaskMetrics;
     expect(asked).toHaveLength(1);
 
-    // The hermetic backend computes at least one metric for the synthetic admin's tasks.
-    expect(metrics.length).toBeGreaterThan(0);
-    const first = metrics[0];
-    const shown = page.locator(`[data-task="${first.task}"]`).first().getByTestId('task-metric').first();
-    await expect(shown).toContainText(metricValue(first, 'en'));
-    await expect(shown).toContainText(first.label.en);
-    await expect(shown).toHaveAttribute('title', /^Updated /);
+    // Monitor IT Tickets shows its two metrics, as the backend answered them: both counts of today.
+    const tickets = metrics.filter((metric) => metric.task === 'it-tickets');
+    expect(tickets.map((metric) => metric.code)).toEqual(['it-tickets.active', 'it-tickets.unassigned']);
+    const shown = page.getByTestId('home-other').locator('[data-task="it-tickets"]').getByTestId('task-metric');
+    await expect(shown).toHaveCount(2);
+    for (const [index, metric] of tickets.entries()) {
+      await expect(shown.nth(index)).toContainText(`${metricValue(metric, 'en')}${metric.label.en}, now`);
+      await expect(shown.nth(index)).toHaveAttribute('title', /^Updated (this minute|\d+ minutes? ago)$/);
+    }
+    // A task the registry has no metric for keeps its plain card.
+    expect(metrics.some((metric) => metric.task === 'workers')).toBe(false);
+    await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);
   });
 
   test("who has what tasks links a person to their profile page", async ({ page }) => {
