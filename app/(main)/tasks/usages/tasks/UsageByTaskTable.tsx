@@ -91,13 +91,17 @@ export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: Wind
                   <td className={`${tdClass} text-ink-2`}>{row.grouping || '—'}</td>
                   <td className={`${tdClass} text-right theme-text-primary`} data-testid="usage-task-opens">{row.opens.toLocaleString()}</td>
                   <td className={`${tdClass} text-right`} data-testid="usage-task-people">
-                    <Link
-                      href={usageHref('tasks', { sub: row.task, days })}
-                      aria-label={t('peopleOf', { count: row.people, task: row.name })}
-                      className="text-accent hover:underline"
-                    >
-                      {row.people.toLocaleString()}
-                    </Link>
+                    {row.people === 0 ? (
+                      <span className="theme-text-primary">0</span>
+                    ) : (
+                      <Link
+                        href={usageHref('tasks', { sub: row.task, days })}
+                        aria-label={t('peopleOf', { count: row.people, task: row.name })}
+                        className="text-accent hover:underline"
+                      >
+                        {row.people.toLocaleString()}
+                      </Link>
+                    )}
                   </td>
                   <td className={`${tdClass} text-right theme-text-primary`}>{row.holders.toLocaleString()}</td>
                   <td className={`${tdClass} text-right theme-text-primary`} data-testid="usage-task-share">{formatShare(row.share)}</td>
