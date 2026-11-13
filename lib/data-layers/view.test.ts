@@ -24,6 +24,8 @@ const LAYERS: DataLayers = {
       tables: 1,
       rows: 46,
       approximate: false,
+      declared_rows: { transactional: 46 },
+      hidden_tables: 0,
       groups: [{ schema: 'auth', tables: [table('auth.accounts', 'transactional', 46, { task: 'access' })] }],
     },
     {
@@ -31,6 +33,8 @@ const LAYERS: DataLayers = {
       tables: 2,
       rows: 8187,
       approximate: false,
+      declared_rows: { raw: 0, landing: 8187 },
+      hidden_tables: 0,
       groups: [
         { schema: 'staging', tables: [table('staging.workers', 'landing', 8187)] },
         { schema: 'raw', tables: [table('raw.records', 'raw', 0)] },
@@ -41,6 +45,8 @@ const LAYERS: DataLayers = {
       tables: 5,
       rows: 1234567,
       approximate: true,
+      declared_rows: { source_copy: 30092, computed: 3, mixed: 1204472 },
+      hidden_tables: 0,
       groups: [
         { schema: 'objects', tables: [table('objects.workers', 'mixed', 4052), table('objects.gone', 'computed', null)] },
         {
@@ -92,11 +98,32 @@ it('links a table to its task only when the person holds the task', () => {
 
 it('shows the three layers in flow order, with their totals', () => {
   const shaped = shapeLayers(LAYERS, { held: HELD, locale: 'en', subject });
-  expect(shaped.map(({ layer, step, tables, rows, approximate }) => ({ layer, step, tables, rows, approximate }))).toEqual([
-    { layer: 'raw', step: 1, tables: '2', rows: '8,187', approximate: false },
-    { layer: 'derived', step: 2, tables: '5', rows: '≈1,234,567', approximate: true },
-    { layer: 'transactional', step: 3, tables: '1', rows: '46', approximate: false },
+  const totals = shaped.map(({ layer, step, tables, rows, approximate, landing, hidden }) => ({ layer, step, tables, rows, approximate, landing, hidden }));
+  expect(totals).toEqual([
+    // Raw's headline is the raw table's rows; the older landing area is counted apart.
+    { layer: 'raw', step: 1, tables: '2', rows: '0', approximate: false, landing: '8,187', hidden: 0 },
+    { layer: 'derived', step: 2, tables: '5', rows: '≈1,234,567', approximate: true, landing: null, hidden: 0 },
+    { layer: 'transactional', step: 3, tables: '1', rows: '46', approximate: false, landing: null, hidden: 0 },
   ]);
+});
+
+it('keeps the totals whole for someone who is not shown every table', () => {
+  // What a holder who is no administrator gets: no raw, staging, auth or systems groups.
+  const shown: DataLayers = {
+    counted_at: LAYERS.counted_at,
+    layers: [
+      { layer: 'raw', tables: 6, rows: 22464, approximate: true, declared_rows: { raw: 0, landing: 22464 }, hidden_tables: 6, groups: [] },
+      { ...LAYERS.layers[2] },
+      { layer: 'transactional', tables: 20, rows: 14769, approximate: false, declared_rows: { transactional: 14769 }, hidden_tables: 16, groups: [
+        { schema: 'campaigns', tables: [table('campaigns.notifications', 'transactional', 14218, { task: 'notifications' })] },
+      ] },
+    ],
+  };
+  const [raw, derived, transactional] = shapeLayers(shown, { held: null, locale: 'zh', subject });
+  // The raw layer's estimate marks its headline too.
+  expect(raw).toMatchObject({ tables: '6', rows: '≈0', landing: '22,464', hidden: 6, groups: [], note: { kind: 'unused' } });
+  expect(derived).toMatchObject({ hidden: 0, note: { kind: 'toSplit', count: 2 } });
+  expect(transactional).toMatchObject({ tables: '20', rows: '14,769', hidden: 16, note: { kind: 'toArrive', count: 2 } });
 });
 
 it('groups a layer’s tables by subject, the subjects by name, an unknown schema under its own', () => {
@@ -126,18 +153,20 @@ it('notes what the data says: raw not in use, and how many tables are to split',
   const settled: DataLayers = {
     counted_at: LAYERS.counted_at,
     layers: [
-      { layer: 'raw', tables: 1, rows: 5, approximate: false, groups: [{ schema: 'raw', tables: [table('raw.records', 'raw', 5)] }] },
-      { layer: 'derived', tables: 1, rows: 1, approximate: false, groups: [{ schema: 'metrics', tables: [table('metrics.metric_values', 'computed', 1)] }] },
-      { layer: 'transactional', tables: 0, rows: 0, approximate: false, groups: [] },
+      { layer: 'raw', tables: 1, rows: 5, approximate: false, declared_rows: { raw: 5 }, hidden_tables: 0, groups: [{ schema: 'raw', tables: [table('raw.records', 'raw', 5)] }] },
+      { layer: 'derived', tables: 1, rows: 1, approximate: false, declared_rows: { computed: 1 }, hidden_tables: 0, groups: [{ schema: 'metrics', tables: [table('metrics.metric_values', 'computed', 1)] }] },
+      { layer: 'transactional', tables: 0, rows: 0, approximate: false, declared_rows: {}, hidden_tables: 0, groups: [] },
     ],
   };
   expect(notes(settled)).toEqual([null, null, null]);
 
-  // A raw table that is missing holds no row either; a raw layer with no raw table says nothing.
-  const missing: DataLayers = { ...settled, layers: [{ ...settled.layers[0], groups: [{ schema: 'raw', tables: [table('raw.records', 'raw', null)] }] }] };
-  expect(notes(missing)).toEqual([{ kind: 'unused' }]);
-  const landingOnly: DataLayers = { ...settled, layers: [{ ...settled.layers[0], groups: [{ schema: 'staging', tables: [table('staging.workers', 'landing', 0)] }] }] };
+  // The note reads the raw rows, not the tables listed; a raw layer with no raw table says nothing,
+  // and its headline is 0.
+  const unlisted: DataLayers = { ...settled, layers: [{ ...settled.layers[0], declared_rows: { raw: 0 }, groups: [] }] };
+  expect(notes(unlisted)).toEqual([{ kind: 'unused' }]);
+  const landingOnly: DataLayers = { ...settled, layers: [{ ...settled.layers[0], declared_rows: { landing: 0 } }] };
   expect(notes(landingOnly)).toEqual([null]);
+  expect(shapeLayers(landingOnly, { held: null, locale: 'en', subject })[0]).toMatchObject({ rows: '0', landing: '0' });
 });
 
 it('says how long ago the rows were counted', () => {

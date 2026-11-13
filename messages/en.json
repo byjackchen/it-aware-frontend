@@ -1483,10 +1483,11 @@
       "totals": {
         "tables": "tables",
         "rows": "rows",
-        "rowsApproximate": "rows (approx.)"
+        "rowsApproximate": "rows (approx.)",
+        "landing": "Older landing area: {rows} rows"
       },
       "notes": {
-        "unused": "Not in use yet: the raw record table is empty. Today sources land in the older landing area below, which raw replaces.",
+        "unused": "Not in use yet: the raw record table is empty. Today sources land in the older landing area, which raw replaces.",
         "toSplit": "{count, plural, one {# table is} other {# tables are}} marked <tag></tag>: they hold what the source said together with marks people added. The marks move to Transactional.",
         "toArrive": "Still to arrive here: the marks people add to synced records, from the {count, plural, one {# table} other {# tables}} marked <tag></tag>."
       },
@@ -1516,6 +1517,7 @@
         "staging": "Older landing area",
         "systems": "Platform records"
       },
+      "hidden": "{count, plural, one {# table is} other {# tables are}} shown to administrators only",
       "counted": "Counted {time}"
     }
   },

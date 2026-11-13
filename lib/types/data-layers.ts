@@ -28,11 +28,17 @@ export interface LayerGroup {
 
 export interface DataLayer {
   layer: LayerCode;
+  /** How many tables it has, shown to the caller or not. */
   tables: number;
   /** The sum of the counts that are known. */
   rows: number;
   /** One of its counts is an estimate, so the total is. */
   approximate: boolean;
+  /** Its rows by what its tables are declared as today: only the keys the layer has; they add up to `rows`. */
+  declared_rows: Partial<Record<Declared, number>>;
+  /** How many of its tables the caller is not shown (the sensitive schemas, for anyone but an administrator). */
+  hidden_tables: number;
+  /** The groups the caller is shown. */
   groups: LayerGroup[];
 }
 

@@ -40,7 +40,7 @@ export function taskLink(code: string | null, held: Task[] | null, locale: strin
 
 /**
  * What a layer's note box says, from the data:
- * - raw, `unused`: the tables declared raw hold no row yet;
+ * - raw, `unused`: the tables declared raw hold no row yet (`declared_rows.raw` is 0);
  * - derived, `toSplit`: `count` tables hold source data together with people's marks;
  * - transactional, `toArrive`: the marks of those `count` tables are still to arrive.
  */
@@ -58,9 +58,16 @@ export interface LayerView {
   /** Its place in the flow, from 1. */
   step: number;
   tables: string;
-  /** Its total, with "≈" when one of its counts is an estimate. */
+  /**
+   * Its headline rows, with "≈" when the layer's total is an estimate. For raw,
+   * the rows of the tables declared raw only: the older landing area is apart.
+   */
   rows: string;
   approximate: boolean;
+  /** Raw only: the rows of the older landing area; null for a layer without one. */
+  landing: string | null;
+  /** How many of its tables the person is not shown; 0 for an administrator. */
+  hidden: number;
   note: LayerNote | null;
   groups: { schema: string; subject: string; tables: TableView[] }[];
 }
@@ -75,6 +82,7 @@ interface ShapeOptions {
 
 /** The three layers in flow order, each with its note and its tables grouped by subject, the subjects by name. */
 export function shapeLayers(data: DataLayers, { held, locale, subject }: ShapeOptions): LayerView[] {
+  // No table to split is in a schema kept from anyone, so the tables listed have them all.
   const all = data.layers.flatMap((layer) => layer.groups.flatMap((group) => group.tables));
   const toSplit = all.filter((table) => table.declared === 'mixed').length;
 
@@ -82,19 +90,20 @@ export function shapeLayers(data: DataLayers, { held, locale, subject }: ShapeOp
     data.layers
       .filter((layer) => layer.layer === code)
       .map((layer) => {
-        const tables = layer.groups.flatMap((group) => group.tables);
-        const raw = tables.filter((table) => table.declared === 'raw');
-        const rawUnused = raw.length > 0 && raw.every((table) => !table.rows);
+        // The totals are whole for everyone; the raw note reads them, not the tables listed.
+        const declared = layer.declared_rows;
         const note: LayerNote | null =
           code === 'raw'
-            ? rawUnused ? { kind: 'unused' } : null
+            ? declared.raw === 0 ? { kind: 'unused' } : null
             : toSplit > 0 ? { kind: code === 'derived' ? 'toSplit' : 'toArrive', count: toSplit } : null;
         return {
           layer: code,
           step: index + 1,
           tables: layer.tables.toLocaleString(locale),
-          rows: formatRows(layer.rows, layer.approximate, locale),
+          rows: formatRows(code === 'raw' ? declared.raw ?? 0 : layer.rows, layer.approximate, locale),
           approximate: layer.approximate,
+          landing: declared.landing === undefined ? null : declared.landing.toLocaleString(locale),
+          hidden: layer.hidden_tables,
           note,
           groups: layer.groups
             .map((group) => ({

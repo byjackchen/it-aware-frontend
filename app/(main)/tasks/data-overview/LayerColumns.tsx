@@ -91,6 +91,9 @@ export function LayerColumns({ data, held }: LayerColumnsProps) {
                 <dt className="text-xs text-muted">{t(layer.approximate ? 'totals.rowsApproximate' : 'totals.rows')}</dt>
               </div>
             </dl>
+            {layer.landing !== null && (
+              <p className="px-4 pt-2 text-xs text-ink-2" data-testid="layer-landing">{t('totals.landing', { rows: layer.landing })}</p>
+            )}
             {layer.note && <Note note={layer.note} />}
             <div className="px-4 pb-3.5 pt-1.5">
               {layer.groups.map((group) => (
@@ -114,6 +117,9 @@ export function LayerColumns({ data, held }: LayerColumnsProps) {
                   </ul>
                 </div>
               ))}
+              {layer.hidden > 0 && (
+                <p className="mt-3 text-xs text-muted" data-testid="layer-hidden">{t('hidden', { count: layer.hidden })}</p>
+              )}
             </div>
           </section>
         ))}

@@ -1163,10 +1163,11 @@
       "totals": {
         "tables": "张表",
         "rows": "行",
-        "rowsApproximate": "行（约）"
+        "rowsApproximate": "行（约）",
+        "landing": "旧落地区：{rows} 行"
       },
       "notes": {
-        "unused": "尚未启用：原始记录表为空。目前各来源落在下方的旧落地区，原始层将取代它。",
+        "unused": "尚未启用：原始记录表为空。目前各来源落在旧落地区，原始层将取代它。",
         "toSplit": "{count} 张表标记为<tag></tag>：它们把来源所述内容和人们添加的标记存在一起。这些标记将移到事务层。",
         "toArrive": "尚待到达这里：人们在同步记录上添加的标记，来自 {count} 张标记为<tag></tag>的表。"
       },
@@ -1196,6 +1197,7 @@
         "staging": "旧落地区",
         "systems": "平台记录"
       },
+      "hidden": "{count} 张表仅管理员可见",
       "counted": "统计于{time}"
     }
   },

@@ -1,16 +1,38 @@
-import { test, expect, type Page } from '@playwright/test';
-import { PASSWORD } from './env';
+import { test, expect, request, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
+import { API_URL, PASSWORD } from './env';
 import { TASKS } from '../lib/tasks/catalog';
 
 /**
  * Data Overview by layer (feat/data-overview-layers): IT-Aware's tables under
  * the three layers of the target data model, read from the backend's
- * GET /data/layers (specs/backend/api_specs_data_overview.md). The specs act as the synthetic admin, who holds every task; ohla-drift-admin
- * holds only objects:interactions:read, so not this task.
+ * GET /data/layers (specs/backend/api_specs_data_overview.md). The specs act
+ * as the synthetic admin, who holds every task and is an administrator (meets
+ * Maintain Access's rule), so is shown every table. ohla-drift-admin holds only
+ * objects:interactions:read, so not this task. A holder who is no administrator
+ * is made for its own test, through the backend's API, and removed after it.
  */
 
 const ADDRESS = '/tasks/data-overview';
 const INCIDENTS = TASKS.find((task) => task.code === 'it-incidents')!;
+
+/** The backend's API as the signed-in admin of `context`. */
+async function backend(context: BrowserContext): Promise<APIRequestContext> {
+  const session = (await context.cookies()).find((cookie) => cookie.name === 'it_aware_access');
+  expect(session).toBeTruthy();
+  return request.newContext({ extraHTTPHeaders: { Cookie: `it_aware_access=${session!.value}` } });
+}
+
+/** Sign in as `username` in a fresh context, and wait for the landing on the home. */
+async function signIn(page: Page, username: string, password: string) {
+  await page.goto('/auth/login');
+  await page.locator('#username').fill(username);
+  await page.locator('#password').fill(password);
+  await page.getByRole('button', { name: /^Login$/ }).click();
+  // The landing first: a navigation started before it would race the login's own.
+  await page.waitForURL(/\/home$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByTestId('home-greeting')).toHaveCount(1);
+}
 
 /** Open the page and wait until it is there once (a streamed page is briefly there twice), with its requests done. */
 async function open(page: Page) {
@@ -21,7 +43,7 @@ async function open(page: Page) {
 }
 
 test.describe('Data Overview by layer', () => {
-  test('a holder sees the three layers in flow order, with their tables', async ({ page }) => {
+  test('an administrator sees the three layers in flow order, with every table', async ({ page }) => {
     await open(page);
     await expect(page.getByText("IT-Aware's data by layer: raw → derived → transactional")).toBeVisible();
 
@@ -36,19 +58,26 @@ test.describe('Data Overview by layer', () => {
     for (const code of ['raw', 'derived', 'transactional']) {
       const layer = layers.getByTestId(`data-layer-${code}`);
       await expect(layer).toContainText('Written by:');
-      // Its total is the tables listed under it, each with a count.
+      // An administrator is shown every table: its total is the tables listed under it, each with a count.
       const rows = layer.getByTestId('layer-table');
       const total = Number(await layer.getByTestId('layer-tables').innerText());
       expect(total).toBeGreaterThanOrEqual(1);
       await expect(rows).toHaveCount(total);
+      await expect(layer.getByTestId('layer-hidden')).toHaveCount(0);
       await expect(layer.getByTestId('layer-rows')).toHaveText(/^≈?\d{1,3}(,\d{3})*$/);
       for (const count of await layer.getByTestId('layer-table-rows').allInnerTexts()) {
         expect(count).toMatch(/^(≈?\d{1,3}(,\d{3})*|—)$/);
       }
     }
 
-    // Raw: the older landing area and the raw records, each under its subject, tagged.
+    // Raw: its headline is the raw records' rows, none yet; the older landing area is counted apart,
+    // and listed with the raw records, each under its subject, tagged.
     const raw = layers.getByTestId('data-layer-raw');
+    await expect(raw.getByTestId('layer-rows')).toHaveText(/^≈?0$/);
+    await expect(raw.getByTestId('layer-landing')).toHaveText(/^Older landing area: \d{1,3}(,\d{3})* rows$/);
+    await expect(raw.getByTestId('layer-note')).toHaveText(
+      'Not in use yet: the raw record table is empty. Today sources land in the older landing area, which raw replaces.',
+    );
     await expect(raw.getByTestId('layer-group-staging').getByRole('heading', { level: 3 })).toHaveText('Older landing area');
     await expect(raw.locator('[data-table="staging.workers"]').getByTestId('layer-tag')).toHaveText('Older landing');
     await expect(raw.getByTestId('layer-group-raw').getByRole('heading', { level: 3 })).toHaveText('Raw records');
@@ -83,17 +112,71 @@ test.describe('Data Overview by layer', () => {
     await expect(page.getByTestId('task-frame').getByTestId('task-frame-name')).toHaveText(INCIDENTS.name.en);
   });
 
+  test('a holder who is no administrator sees the totals whole, without the tables kept for administrators', async ({ browser, context }) => {
+    // A holder of the page and nothing else: a group with ui:navigation:data only (backend
+    // fd38d82: the auth, systems, raw and staging tables are listed for administrators only).
+    const api = await backend(context);
+    const username = 'gate-layers-reader';
+    const password = 'gate-layers-fake-password';
+    const ok = async (answer: Awaited<ReturnType<APIRequestContext['get']>>) => {
+      expect(answer.ok(), `${answer.url()} answered ${answer.status()}`).toBeTruthy();
+      return answer.json();
+    };
+    const permissions: { oid: string; permission_code: string }[] = await ok(await api.get(`${API_URL}/auth/config/permissions?limit=1000`));
+    const data = permissions.find((permission) => permission.permission_code === 'ui:navigation:data');
+    expect(data).toBeTruthy();
+    const group = await ok(await api.post(`${API_URL}/auth/config/groups`, { data: { name: 'gate-layers-readers', scope_type: 'unconstrained' } }));
+    let account: { oid: string } | null = null;
+    const reader = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      await ok(await api.post(`${API_URL}/auth/config/group_permissions`, { data: { group_oid: group.oid, permission_oid: data!.oid } }));
+      account = await ok(await api.post(`${API_URL}/auth/config/accounts`, { data: { username, password, account_type: 'user' } }));
+      await ok(await api.post(`${API_URL}/auth/config/account_groups`, { data: { account_oid: account!.oid, group_oid: group.oid } }));
+
+      const page = await reader.newPage();
+      await signIn(page, username, password);
+      await open(page);
+      const layers = page.getByTestId('data-layers');
+      await expect(layers.getByRole('heading', { level: 2 })).toHaveText(['Raw data', 'Derived data', 'Transactional data']);
+
+      // Raw: every table is kept for administrators; the totals and the note are still there.
+      const raw = layers.getByTestId('data-layer-raw');
+      const rawTables = Number(await raw.getByTestId('layer-tables').innerText());
+      expect(rawTables).toBeGreaterThanOrEqual(1);
+      await expect(raw.getByTestId('layer-table')).toHaveCount(0);
+      await expect(raw.getByTestId('layer-hidden')).toHaveText(
+        rawTables === 1 ? '1 table is shown to administrators only' : `${rawTables} tables are shown to administrators only`,
+      );
+      await expect(raw.getByTestId('layer-rows')).toHaveText(/^≈?0$/);
+      await expect(raw.getByTestId('layer-landing')).toHaveText(/^Older landing area: \d{1,3}(,\d{3})* rows$/);
+      await expect(raw.getByTestId('layer-note')).toContainText('Not in use yet');
+
+      // Derived: nothing is kept from them.
+      const derived = layers.getByTestId('data-layer-derived');
+      await expect(derived.getByTestId('layer-table')).toHaveCount(Number(await derived.getByTestId('layer-tables').innerText()));
+      await expect(derived.getByTestId('layer-hidden')).toHaveCount(0);
+
+      // Transactional: no accounts and no platform records; the line says how many are kept, and the rest are listed.
+      const transactional = layers.getByTestId('data-layer-transactional');
+      await expect(transactional.getByTestId('layer-group-auth')).toHaveCount(0);
+      await expect(transactional.getByTestId('layer-group-systems')).toHaveCount(0);
+      const total = Number(await transactional.getByTestId('layer-tables').innerText());
+      const listed = await transactional.getByTestId('layer-table').count();
+      expect(listed).toBeGreaterThanOrEqual(1);
+      expect(listed).toBeLessThan(total);
+      await expect(transactional.getByTestId('layer-hidden')).toHaveText(`${total - listed} tables are shown to administrators only`);
+    } finally {
+      await reader.close();
+      if (account) await api.delete(`${API_URL}/auth/config/accounts/${account.oid}`);
+      await api.delete(`${API_URL}/auth/config/groups/${group.oid}`);
+      await api.dispose();
+    }
+  });
+
   test('a person without the permission gets no access at the address', async ({ browser }) => {
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
-    await page.goto('/auth/login');
-    await page.locator('#username').fill('ohla-drift-admin');
-    await page.locator('#password').fill(PASSWORD);
-    await page.getByRole('button', { name: /^Login$/ }).click();
-    // The landing first: a navigation started before it would race the login's own.
-    await page.waitForURL(/\/home$/, { timeout: 20_000 });
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByTestId('home-greeting')).toHaveCount(1);
+    await signIn(page, 'ohla-drift-admin', PASSWORD);
     await expect(page.getByRole('link', { name: 'Data Overview Dashboard', exact: true })).toHaveCount(0);
 
     await page.goto(ADDRESS);
