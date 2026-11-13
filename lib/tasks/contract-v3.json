@@ -1513,6 +1513,76 @@
      "address": "/tasks/agent-access"
     }
    ]
+  },
+  {
+   "code": "usages",
+   "name": {
+    "en": "View Usages",
+    "zh": "查看使用情况"
+   },
+   "grouping": "administration",
+   "kind": "internal",
+   "address": "/tasks/usages/overview",
+   "keywords": [
+    "usage",
+    "adoption",
+    "active users",
+    "使用",
+    "活跃"
+   ],
+   "views": [
+    {
+     "slug": "overview",
+     "name": {
+      "en": "Overview",
+      "zh": "概览"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:usage:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/usages/overview"
+    },
+    {
+     "slug": "tasks",
+     "name": {
+      "en": "By Task",
+      "zh": "按任务"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:usage:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/usages/tasks"
+    },
+    {
+     "slug": "unused-access",
+     "name": {
+      "en": "Unused Access",
+      "zh": "未使用的权限"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:usage:read"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/usages/unused-access"
+    }
+   ]
   }
  ],
  "retired": [

@@ -4,13 +4,21 @@ import type { Requires } from './build';
 import { legacyMenu, permits } from './menu';
 
 const everything = () => true;
+/**
+ * The tasks as the old-style menu has them: only the views that had a page
+ * before the move. A view added since (View Usages) is in no old-style menu:
+ * its backend answers 404 while the task UI is off.
+ */
+const moved = contract.tasks
+    .map(t => ({ ...t, views: t.views.filter(v => v.old_base !== null) }))
+    .filter(t => t.views.length > 0);
 
 describe('the old-style menu', () => {
-    it('lists every contract view by grouping and task, in contract order, at the old addresses with the redirects off', () => {
+    it('lists every contract view that had an old address by grouping and task, in contract order, at the old addresses with the redirects off', () => {
         const menu = legacyMenu('en', everything, false);
         expect(menu.map(g => g.code)).toEqual(contract.groupings.map(g => g.code));
         expect(menu.flatMap(g => g.tasks.map(t => t.code))).toEqual(
-            contract.groupings.flatMap(g => contract.tasks.filter(t => t.grouping === g.code).map(t => t.code)),
+            contract.groupings.flatMap(g => moved.filter(t => t.grouping === g.code).map(t => t.code)),
         );
         const workers = menu[0].tasks[0];
         expect(workers).toEqual({
@@ -24,14 +32,15 @@ describe('the old-style menu', () => {
             ],
         });
         const links = menu.flatMap(g => g.tasks.flatMap(t => t.links));
-        expect(links).toHaveLength(contract.tasks.reduce((n, t) => n + t.views.length, 0));
+        expect(links).toHaveLength(moved.reduce((n, t) => n + t.views.length, 0));
+        expect(menu.flatMap(g => g.tasks.map(t => t.code))).not.toContain('usages');
         expect(links).toContainEqual({ href: '/ohla-journey/audit', label: 'Audit' });
     });
 
     it('links to the new addresses, the redirects being on since the pages moved', () => {
         const links = legacyMenu('en', everything).flatMap(g => g.tasks.flatMap(t => t.links));
         expect(links.map(l => l.href).sort()).toEqual(
-            contract.tasks.flatMap(t => t.views.map(v => v.address)).sort(),
+            moved.flatMap(t => t.views.map(v => v.address)).sort(),
         );
     });
 

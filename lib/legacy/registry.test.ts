@@ -9,6 +9,8 @@ import { findLegacy, newAddress, REGISTRY } from './registry';
 const KEPT = ['/', '/home', '/access-denied'];
 const views = contract.tasks.flatMap(task => task.views.map(view => ({ task, view })));
 const viewAddresses = views.map(({ view }) => view.address);
+/** The views that had a page before the move; a view added since (View Usages) has no old address. */
+const movedViews = views.flatMap(({ view }) => (view.old_base === null ? [] : [{ ...view, old_base: view.old_base }]));
 
 /** Every page.tsx under app/(main), as its address (a `[name]` segment stands for any value). */
 function pageAddresses(): string[] {
@@ -92,9 +94,7 @@ describe('the legacy registry', () => {
     });
 
     it("sends every view's old address to that view's address (the pattern entry included)", () => {
-        const wrong = views
-            .filter(({ view }) => newAddress(view.old_base) !== view.address)
-            .map(({ view }) => view.old_base);
+        const wrong = movedViews.filter(view => newAddress(view.old_base) !== view.address).map(view => view.old_base);
         expect(wrong).toEqual([]);
     });
 
@@ -106,10 +106,16 @@ describe('the legacy registry', () => {
         }
     });
 
-    it('lists each contract view exactly once for the menu, on view and pattern entries only', () => {
+    it('lists each contract view that has an old address exactly once for the menu, on view and pattern entries only', () => {
         const items = REGISTRY.entries.flatMap(entry => entry.menu);
-        expect(items.map(item => item.new).sort()).toEqual([...viewAddresses].sort());
-        expect(new Set(items.map(item => item.position)).size).toBe(views.length);
+        expect(items.map(item => item.new).sort()).toEqual(movedViews.map(view => view.address).sort());
+        expect(new Set(items.map(item => item.position)).size).toBe(movedViews.length);
+        // The views added since the move: View Usages' three, in no menu and with no redirect.
+        expect(views.filter(({ view }) => view.old_base === null).map(({ view }) => view.address)).toEqual([
+            '/tasks/usages/overview',
+            '/tasks/usages/tasks',
+            '/tasks/usages/unused-access',
+        ]);
         const hosts = new Set(REGISTRY.entries.filter(entry => entry.menu.length > 0).map(entry => entry.type));
         expect([...hosts].sort()).toEqual(['pattern', 'view']);
         for (const item of items) {

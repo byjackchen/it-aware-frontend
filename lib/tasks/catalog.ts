@@ -16,8 +16,8 @@ export interface ContractView {
     name: TaskNames;
     requires: TaskRule;
     address: string;
-    /** The page's address before the move to `/tasks/...` (the legacy registry's source). */
-    old_base: string;
+    /** The page's address before the move to `/tasks/...` (the legacy registry's source); null for a view added since. */
+    old_base: string | null;
     keywords: string[];
 }
 

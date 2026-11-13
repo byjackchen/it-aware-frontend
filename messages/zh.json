@@ -3099,6 +3099,69 @@
       "pendingHelp": "在 Airflow 应答之前记录；其应答未被记录。"
     }
   },
+  "Usage": {
+    "help": {
+      "overview": "有多少人在使用 IT-Aware:按 UTC 日统计的登录次数与打开的任务。",
+      "tasks": "每个任务被打开的次数、打开它的人数,以及拥有它的人数。",
+      "unused-access": "拥有某个任务、但在所选时间段内没有打开过它的人。"
+    },
+    "window": {
+      "label": "时间段",
+      "days": "{days} 天",
+      "dates": "{start} 至 {end}(UTC 日)"
+    },
+    "loadFailed": "无法加载:{message}",
+    "overview": {
+      "activeToday": "今日活跃人数",
+      "activeLast7": "近 7 天活跃人数",
+      "activeWindow": "近 {days} 天活跃人数",
+      "signIns": "登录次数",
+      "taskOpens": "任务打开次数",
+      "chart": {
+        "title": "每日活跃情况",
+        "subtitle": "每个 UTC 日的活跃人数与任务打开次数",
+        "people": "活跃人数",
+        "opens": "任务打开次数"
+      },
+      "trackingSince": "自 {date} 起记录。",
+      "trackingHelp": "此前的日期显示为零,是因为当时尚未记录。",
+      "empty": {
+        "title": "尚无使用记录",
+        "body": "登录与打开任务从第一次被记录起开始统计,之后这里会显示数字和每日图表。"
+      }
+    },
+    "tasks": {
+      "neverOpened": "时间段内从未打开",
+      "count": "{shown} / {total} 个任务",
+      "noMatch": "时间段内每个任务都被打开过。",
+      "never": "从未",
+      "unusedAccess": "未使用的权限",
+      "columns": {
+        "name": "任务",
+        "grouping": "分组",
+        "opens": "打开次数",
+        "people": "人数",
+        "holders": "拥有者",
+        "share": "使用过的拥有者占比",
+        "last_opened_at": "最近打开"
+      }
+    },
+    "unused": {
+      "task": "任务",
+      "pick": "选择任务",
+      "pickHelp": "选择一个任务,查看谁拥有它却没有打开过。",
+      "summary": "{holders} 位拥有者中有 {total} 位在近 {days} 天内没有打开过它",
+      "note": "已失去该任务权限的人不在列表中。",
+      "never": "从未",
+      "noHolders": "没有人拥有这个任务。",
+      "allUsed": "时间段内每位拥有者都打开过它。",
+      "pageEmpty": "此页没有人。",
+      "columns": {
+        "username": "用户名",
+        "lastOpened": "最近打开"
+      }
+    }
+  },
   "Systems": {
     "title": "系统",
     "subtitle": "LLM 代理配置",

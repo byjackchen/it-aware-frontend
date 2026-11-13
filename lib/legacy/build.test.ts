@@ -26,6 +26,12 @@ describe('the generated registry', () => {
         broken.legacy = broken.legacy.filter(e => e.old !== '/data/workers');
         expect(() => buildRegistry(broken)).toThrow('no legacy entry for workers/workers (/data/workers)');
     });
+
+    it('leaves a view with no old address (one added since the move) out of the menu, and still lists its task', () => {
+        const built = buildRegistry(contract as Contract);
+        expect(built.tasks.map(task => task.code)).toContain('usages');
+        expect(built.entries.flatMap(entry => entry.menu).filter(item => item.task === 'usages')).toEqual([]);
+    });
 });
 
 describe('patterns', () => {

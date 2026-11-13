@@ -3,9 +3,9 @@ import { GROUPINGS, TASKS, byGrouping, groupingName, named, pageHref, resolvePag
 import { PERMISSIONS } from '@/lib/config/permissions';
 
 describe('the checked-in catalog', () => {
-  it('holds the 23 tasks and 62 views of contract v3, in four groupings', () => {
-    expect(TASKS).toHaveLength(23);
-    expect(TASKS.flatMap(task => task.views)).toHaveLength(62);
+  it('holds the 24 tasks and 65 views of contract v3, in four groupings', () => {
+    expect(TASKS).toHaveLength(24);
+    expect(TASKS.flatMap(task => task.views)).toHaveLength(65);
     expect(GROUPINGS.map(grouping => grouping.code)).toEqual(['data', 'analytics', 'operations', 'administration']);
   });
 

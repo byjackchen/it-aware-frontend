@@ -3421,6 +3421,69 @@
       "pendingHelp": "Recorded before Airflow answered; its answer was not recorded."
     }
   },
+  "Usage": {
+    "help": {
+      "overview": "How many people use IT-Aware: their sign-ins and the tasks they open, by UTC day.",
+      "tasks": "Every task with how often it was opened, by how many people, and how many hold it.",
+      "unused-access": "The people who hold a task but did not open it in the window."
+    },
+    "window": {
+      "label": "Window",
+      "days": "{days} days",
+      "dates": "{start} to {end} (UTC days)"
+    },
+    "loadFailed": "Could not load this: {message}",
+    "overview": {
+      "activeToday": "Active people today",
+      "activeLast7": "Active people, last 7 days",
+      "activeWindow": "Active people, last {days} days",
+      "signIns": "Sign-ins",
+      "taskOpens": "Task opens",
+      "chart": {
+        "title": "Daily activity",
+        "subtitle": "Active people and task opens per UTC day",
+        "people": "Active people",
+        "opens": "Task opens"
+      },
+      "trackingSince": "Tracking since {date}.",
+      "trackingHelp": "Days before it show zero because nothing was recorded then.",
+      "empty": {
+        "title": "No usage recorded yet",
+        "body": "Sign-ins and opened tasks are counted from the first one recorded. The numbers and the daily chart appear here after it."
+      }
+    },
+    "tasks": {
+      "neverOpened": "Never opened in the window",
+      "count": "{shown} of {total} tasks",
+      "noMatch": "Every task was opened in the window.",
+      "never": "Never",
+      "unusedAccess": "Unused access",
+      "columns": {
+        "name": "Task",
+        "grouping": "Grouping",
+        "opens": "Opens",
+        "people": "People",
+        "holders": "Holders",
+        "share": "Holders who used it",
+        "last_opened_at": "Last opened"
+      }
+    },
+    "unused": {
+      "task": "Task",
+      "pick": "Pick a task",
+      "pickHelp": "Pick a task to see who holds it without opening it.",
+      "summary": "{total} of {holders} holders did not open it in the last {days} days",
+      "note": "People who lost access to the task are not listed.",
+      "never": "Never",
+      "noHolders": "Nobody holds this task.",
+      "allUsed": "Every holder opened it in the window.",
+      "pageEmpty": "No one on this page.",
+      "columns": {
+        "username": "Username",
+        "lastOpened": "Last opened"
+      }
+    }
+  },
   "Systems": {
     "title": "Systems",
     "subtitle": "LLM Proxy configuration",

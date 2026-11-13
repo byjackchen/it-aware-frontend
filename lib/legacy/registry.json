@@ -215,6 +215,14 @@
         "zh": "查看 CLI 与 MCP 接入"
       },
       "grouping": "administration"
+    },
+    {
+      "code": "usages",
+      "name": {
+        "en": "View Usages",
+        "zh": "查看使用情况"
+      },
+      "grouping": "administration"
     }
   ],
   "entries": [

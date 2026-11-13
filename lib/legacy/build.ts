@@ -21,7 +21,8 @@ export type EntryType = 'kept' | 'area' | 'view' | 'record' | 'special' | 'patte
 interface ContractView {
     slug: string;
     name: Name;
-    old_base: string;
+    /** The view's address before the move; null for a view added since, which has none. */
+    old_base: string | null;
     requires: Requires;
     address: string;
 }
@@ -137,6 +138,8 @@ export function buildRegistry(contract: Contract): LegacyRegistry {
     let position = 0;
     for (const task of contract.tasks) {
         for (const view of task.views) {
+            // A view added since the move has no old address: no redirect, and no place in the old-style menu.
+            if (view.old_base === null) continue;
             const hit = findEntry(entries, view.old_base);
             if (!hit) {
                 throw new Error(`no legacy entry for ${task.code}/${view.slug} (${view.old_base})`);
