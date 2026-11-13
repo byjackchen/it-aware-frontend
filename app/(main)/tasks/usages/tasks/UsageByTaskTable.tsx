@@ -89,10 +89,10 @@ export function UsageByTaskTable({ data, days }: { data: UsageByTask; days: Wind
                   <td className={`${tdClass} text-right theme-text-primary`}>{row.people.toLocaleString()}</td>
                   <td className={`${tdClass} text-right theme-text-primary`}>{row.holders.toLocaleString()}</td>
                   <td className={`${tdClass} text-right theme-text-primary`} data-testid="usage-task-share">{formatShare(row.share)}</td>
-                  <td className={`${tdClass} text-ink-2`}>
+                  <td className={`${tdClass} whitespace-nowrap text-ink-2`}>
                     {row.last_opened_at ? <When iso={row.last_opened_at} /> : t('never')}
                   </td>
-                  <td className={`${tdClass} text-right`}>
+                  <td className={`${tdClass} whitespace-nowrap text-right`}>
                     <Link href={usageHref('unused-access', { task: row.task, days })} className="text-accent hover:underline">
                       {t('unusedAccess')}
                     </Link>
