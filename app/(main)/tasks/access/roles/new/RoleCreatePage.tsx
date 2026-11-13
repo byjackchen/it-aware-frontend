@@ -37,13 +37,13 @@ export function RoleCreatePage() {
                 <div className="flex items-center gap-4 mb-6">
                     <button
                         onClick={() => router.push('/tasks/access/roles')}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-hover transition-colors"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-400" />
+                        <ArrowLeft className="w-5 h-5 text-ink-2" />
                     </button>
                     <div className="flex items-center gap-3">
-                        <Shield className="w-6 h-6 text-blue-400" />
-                        <h1 className="text-2xl font-semibold text-white">{t('roles.create')}</h1>
+                        <Shield className="w-6 h-6 text-accent" />
+                        <h1 className="text-2xl font-semibold text-ink">{t('roles.create')}</h1>
                     </div>
                 </div>
 
@@ -51,7 +51,7 @@ export function RoleCreatePage() {
                 <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 space-y-6">
                     {/* Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('roles.name')} *
                         </label>
                         <input
@@ -74,8 +74,8 @@ export function RoleCreatePage() {
                                 className="w-5 h-5 rounded theme-checkbox"
                             />
                             <div>
-                                <span className="text-white font-medium">{t('roles.includeDescendants')}</span>
-                                <p className="text-sm text-gray-400 mt-0.5">
+                                <span className="text-ink font-medium">{t('roles.includeDescendants')}</span>
+                                <p className="text-sm text-ink-2 mt-0.5">
                                     {t('roles.includeDescHint')}
                                 </p>
                             </div>

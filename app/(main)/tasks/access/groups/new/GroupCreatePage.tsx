@@ -39,13 +39,13 @@ export function GroupCreatePage() {
                 <div className="flex items-center gap-4 mb-6">
                     <button
                         onClick={() => router.push('/tasks/access/groups')}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-hover transition-colors"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-400" />
+                        <ArrowLeft className="w-5 h-5 text-ink-2" />
                     </button>
                     <div className="flex items-center gap-3">
-                        <Users className="w-6 h-6 text-blue-400" />
-                        <h1 className="text-2xl font-semibold text-white">{t('groups.create')}</h1>
+                        <Users className="w-6 h-6 text-accent" />
+                        <h1 className="text-2xl font-semibold text-ink">{t('groups.create')}</h1>
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@ export function GroupCreatePage() {
                 <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 space-y-6">
                     {/* Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('groups.name')} *
                         </label>
                         <input
@@ -68,7 +68,7 @@ export function GroupCreatePage() {
 
                     {/* Scope Type */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('groups.scopeType')} *
                         </label>
                         <select
@@ -82,7 +82,7 @@ export function GroupCreatePage() {
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted mt-2">
                             {t(`groups.scopeHint.${scopeType}`)}
                         </p>
                     </div>

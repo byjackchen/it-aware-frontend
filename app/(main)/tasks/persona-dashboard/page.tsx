@@ -16,8 +16,8 @@ export default async function PersonaPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-8">
                 <div className="glass-card rounded-2xl p-12 text-center">
-                    <h1 className="text-2xl font-semibold text-white mb-2">No Workers Found</h1>
-                    <p className="text-gray-400">Add workers in the Data section to view persona pages.</p>
+                    <h1 className="text-2xl font-semibold text-ink mb-2">No Workers Found</h1>
+                    <p className="text-ink-2">Add workers in the Data section to view persona pages.</p>
                 </div>
             </div>
         );

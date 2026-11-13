@@ -25,7 +25,7 @@ export function JobsList({ data }: { data: JobsResponse }) {
   }
   if (data.jobs.length === 0) {
     return (
-      <div className="flex h-48 flex-col items-center justify-center text-gray-500">
+      <div className="flex h-48 flex-col items-center justify-center text-muted">
         <Workflow className="mb-3 h-10 w-10 opacity-50" />
         <p>{t('list.empty')}</p>
       </div>
@@ -37,7 +37,7 @@ export function JobsList({ data }: { data: JobsResponse }) {
     <>
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <label className="relative flex-1 min-w-60">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
           <input
             type="search"
             value={text}
@@ -57,15 +57,15 @@ export function JobsList({ data }: { data: JobsResponse }) {
             <option key={f} value={f}>{t(`list.filter.${f}`)}</option>
           ))}
         </select>
-        <span className="text-xs text-gray-500">{t('list.count', { shown: shown.length, total: data.jobs.length })}</span>
+        <span className="text-xs text-muted">{t('list.count', { shown: shown.length, total: data.jobs.length })}</span>
       </div>
       {shown.length === 0 ? (
-        <p className="py-8 text-center text-gray-500">{t('list.noMatch')}</p>
+        <p className="py-8 text-center text-muted">{t('list.noMatch')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="jobs-table">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-line">
                 <th className={thClass}>{t('list.columns.job')}</th>
                 <th className={thClass}>{t('list.columns.status')}</th>
                 <th className={thClass}>{t('list.columns.schedule')}</th>
@@ -76,44 +76,44 @@ export function JobsList({ data }: { data: JobsResponse }) {
                 <th className={thClass}>{t('list.columns.tags')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-line">
               {shown.map((job) => (
-                <tr key={job.id} className="hover:bg-white/5" data-testid={`job-row-${job.id}`}>
+                <tr key={job.id} className="hover:bg-hover" data-testid={`job-row-${job.id}`}>
                   <td className={tdClass}>
-                    <Link href={jobsHref({ job: job.id })} className="font-mono text-blue-400 hover:underline">
+                    <Link href={jobsHref({ job: job.id })} className="font-mono text-accent hover:underline">
                       {job.name}
                     </Link>
-                    {job.description && <div className="text-xs text-gray-500">{job.description}</div>}
+                    {job.description && <div className="text-xs text-muted">{job.description}</div>}
                   </td>
                   <td className={tdClass}>
                     <div className="flex flex-col gap-1">
                       {job.paused ? (
-                        <span className="inline-flex items-center gap-1 text-gray-400">
+                        <span className="inline-flex items-center gap-1 text-ink-2">
                           <Pause className="h-3.5 w-3.5" />
                           {t('status.paused')}
                         </span>
                       ) : (
-                        <span className="text-green-400">{t('status.active')}</span>
+                        <span className="text-good">{t('status.active')}</span>
                       )}
                       {job.has_load_errors && (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-400" title={t('status.loadErrorsHelp')}>
+                        <span className="inline-flex items-center gap-1 text-xs text-bad" title={t('status.loadErrorsHelp')}>
                           <AlertTriangle className="h-3.5 w-3.5" />
                           {t('status.loadErrors')}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className={`${tdClass} font-mono text-gray-400`}>{job.schedule ?? '—'}</td>
-                  <td className={`${tdClass} text-gray-400`}><When iso={job.next_run} /></td>
+                  <td className={`${tdClass} font-mono text-ink-2`}>{job.schedule ?? '—'}</td>
+                  <td className={`${tdClass} text-ink-2`}><When iso={job.next_run} /></td>
                   <td className={tdClass}><StateBadge state={job.last_run?.state ?? null} empty={t('status.noRun')} /></td>
-                  <td className={`${tdClass} text-gray-400`}>
+                  <td className={`${tdClass} text-ink-2`}>
                     <When iso={job.last_run ? job.last_run.start ?? job.last_run.run_after : null} />
                   </td>
-                  <td className={`${tdClass} text-gray-400`}><Duration seconds={job.last_run?.duration_s ?? null} /></td>
+                  <td className={`${tdClass} text-ink-2`}><Duration seconds={job.last_run?.duration_s ?? null} /></td>
                   <td className={tdClass}>
                     <div className="flex flex-wrap gap-1">
                       {job.tags.map((tag) => (
-                        <span key={tag} className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-gray-400">{tag}</span>
+                        <span key={tag} className="rounded bg-field px-1.5 py-0.5 text-xs text-ink-2">{tag}</span>
                       ))}
                     </div>
                   </td>

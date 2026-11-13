@@ -65,14 +65,14 @@ export function AccountsListPage({
         <div className="h-[calc(100vh-4rem)] p-4">
             <div className="h-full glass-card rounded-xl overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div className="p-4 border-b border-line flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <User className="w-5 h-5 text-blue-400" />
-                        <h1 className="text-xl font-semibold text-white">{t('accounts.title')}</h1>
+                        <User className="w-5 h-5 text-accent" />
+                        <h1 className="text-xl font-semibold text-ink">{t('accounts.title')}</h1>
                     </div>
                     <button
                         onClick={handleCreateClick}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.create')}</span>
@@ -82,31 +82,31 @@ export function AccountsListPage({
                 {/* Table */}
                 <div className="flex-1 overflow-auto">
                     {accounts.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                        <div className="flex flex-col items-center justify-center h-64 text-muted">
                             <User className="w-12 h-12 mb-4 opacity-50" />
                             <p>{t('accounts.empty')}</p>
                         </div>
                     ) : (
                         <table className="w-full">
                             <thead className="sticky top-0 bg-inherit">
-                                <tr className="text-left text-sm text-gray-400 border-b border-white/10">
+                                <tr className="text-left text-sm text-ink-2 border-b border-line">
                                     <th className="px-4 py-3 font-medium">{t('accounts.username')}</th>
                                     <th className="px-4 py-3 font-medium">{t('accounts.type')}</th>
                                     <th className="px-4 py-3 font-medium">{t('accounts.status')}</th>
                                     <th className="px-4 py-3 font-medium">Linked</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-line">
                                 {accounts.map((account) => {
                                     const linkedLabel = getLinkedLabel(account);
                                     return (
                                         <tr
                                             key={account.oid}
                                             onClick={() => handleRowClick(account)}
-                                            className="hover:bg-white/5 cursor-pointer transition-colors"
+                                            className="hover:bg-hover cursor-pointer transition-colors"
                                         >
                                             <td className="px-4 py-3">
-                                                <span className="font-medium text-white">{account.username}</span>
+                                                <span className="font-medium text-ink">{account.username}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -118,12 +118,12 @@ export function AccountsListPage({
                                             </td>
                                             <td className="px-4 py-3">
                                                 {account.is_active ? (
-                                                    <span className="flex items-center gap-1 text-green-400">
+                                                    <span className="flex items-center gap-1 text-good">
                                                         <Check className="w-4 h-4" />
                                                         <span className="text-sm">{t('common.active')}</span>
                                                     </span>
                                                 ) : (
-                                                    <span className="flex items-center gap-1 text-gray-400">
+                                                    <span className="flex items-center gap-1 text-ink-2">
                                                         <X className="w-4 h-4" />
                                                         <span className="text-sm">{t('common.inactive')}</span>
                                                     </span>
@@ -131,9 +131,9 @@ export function AccountsListPage({
                                             </td>
                                             <td className="px-4 py-3">
                                                 {linkedLabel ? (
-                                                    <span className="text-white">{linkedLabel}</span>
+                                                    <span className="text-ink">{linkedLabel}</span>
                                                 ) : (
-                                                    <span className="text-gray-500">—</span>
+                                                    <span className="text-muted">—</span>
                                                 )}
                                             </td>
                                         </tr>

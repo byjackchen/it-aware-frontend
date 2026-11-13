@@ -25,16 +25,16 @@ export function JobsFrame({ tab, children }: { tab: 'jobs' | 'actions'; children
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const tabClass = (on: boolean) =>
-    `rounded-lg px-3 py-1.5 text-sm font-medium ${on ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400 hover:bg-white/5'}`;
+    `rounded-lg px-3 py-1.5 text-sm font-medium ${on ? 'bg-blue-500/20 text-accent' : 'text-ink-2 hover:bg-hover'}`;
   return (
     <div className="p-4">
       <div className="glass-card rounded-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div className="flex items-center gap-3">
-            <Workflow className="h-5 w-5 text-blue-400" />
+            <Workflow className="h-5 w-5 text-accent" />
             <div>
               <h1 className="text-xl font-semibold theme-text-primary">{t('title')}</h1>
-              <p className="text-xs text-gray-500">{t('help')}</p>
+              <p className="text-xs text-muted">{t('help')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export function JobsFrame({ tab, children }: { tab: 'jobs' | 'actions'; children
             <button
               onClick={() => startTransition(() => router.refresh())}
               disabled={pending}
-              className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-3 py-1.5 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-3 py-1.5 text-accent hover:bg-blue-500/30 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${pending ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">{t('refresh')}</span>
@@ -69,11 +69,11 @@ export function JobsFrame({ tab, children }: { tab: 'jobs' | 'actions'; children
 // ── Small parts ──────────────────────────────────────────────────────────────
 
 const TONE_CLASS: Record<Tone, string> = {
-  success: 'bg-green-500/15 text-green-400',
-  failed: 'bg-red-500/15 text-red-400',
-  running: 'bg-blue-500/15 text-blue-400',
-  waiting: 'bg-amber-500/15 text-amber-400',
-  none: 'bg-gray-500/15 text-gray-400',
+  success: 'bg-green-500/15 text-good',
+  failed: 'bg-red-500/15 text-bad',
+  running: 'bg-blue-500/15 text-accent',
+  waiting: 'bg-amber-500/15 text-warn',
+  none: 'bg-gray-500/15 text-ink-2',
 };
 
 /** A run or step state; `empty` stands in when there is none (a job with no run says so). */
@@ -97,9 +97,9 @@ export function Duration({ seconds }: { seconds: number | null }) {
 
 export function Notice({ tone, children }: { tone: 'warning' | 'error' | 'success'; children: ReactNode }) {
   const style = {
-    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
-    error: 'border-red-500/30 bg-red-500/10 text-red-400',
-    success: 'border-green-500/30 bg-green-500/10 text-green-400',
+    warning: 'border-amber-500/30 bg-amber-500/10 text-warn',
+    error: 'border-red-500/30 bg-red-500/10 text-bad',
+    success: 'border-green-500/30 bg-green-500/10 text-good',
   }[tone];
   const Icon = tone === 'success' ? CheckCircle2 : AlertTriangle;
   return (
@@ -120,9 +120,9 @@ export function Pager({ page, total, size, link }: { page: number; total: number
   const t = useTranslations('Jobs.pager');
   const pages = Math.max(1, Math.ceil(total / size));
   if (pages <= 1) return null;
-  const linkClass = 'rounded-lg px-3 py-1 text-sm text-blue-400 hover:bg-white/5';
+  const linkClass = 'rounded-lg px-3 py-1 text-sm text-accent hover:bg-hover';
   return (
-    <div className="mt-3 flex items-center justify-end gap-2 text-sm text-gray-400">
+    <div className="mt-3 flex items-center justify-end gap-2 text-sm text-ink-2">
       {page > 1 && <Link className={linkClass} href={jobsHref({ ...link, page: page - 1 })}>{t('previous')}</Link>}
       <span>{t('page', { page, pages })}</span>
       {page < pages && <Link className={linkClass} href={jobsHref({ ...link, page: page + 1 })}>{t('next')}</Link>}
@@ -130,7 +130,7 @@ export function Pager({ page, total, size, link }: { page: number; total: number
   );
 }
 
-export const thClass = 'px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-400';
+export const thClass = 'px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-ink-2';
 export const tdClass = 'px-3 py-2 text-sm';
 
 // ── Confirmed actions ────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function useJobActions() {
               <button
                 onClick={dismiss}
                 disabled={pending}
-                className="text-gray-400 hover:text-white disabled:opacity-40"
+                className="text-ink-2 hover:text-ink disabled:opacity-40"
                 aria-label={t('actions.cancel')}
               >
                 <X className="h-5 w-5" />
@@ -229,12 +229,12 @@ export function useJobActions() {
             </div>
             <p className="mb-4 text-sm theme-text-primary">{asking.question}</p>
             {asking.body}
-            {dialogError && <p role="alert" className="mt-3 text-sm text-red-400">{dialogError}</p>}
+            {dialogError && <p role="alert" className="mt-3 text-sm text-bad">{dialogError}</p>}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={dismiss}
                 disabled={pending}
-                className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 disabled:opacity-40"
+                className="rounded-lg px-4 py-2 text-sm text-ink-2 hover:bg-hover disabled:opacity-40"
               >
                 {t('actions.cancel')}
               </button>
@@ -271,7 +271,7 @@ export function ActionButton({
   busy?: boolean;
   tone?: 'default' | 'danger';
 }) {
-  const colour = tone === 'danger' ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30';
+  const colour = tone === 'danger' ? 'bg-red-500/20 text-bad hover:bg-red-500/30' : 'bg-blue-500/20 text-accent hover:bg-blue-500/30';
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <button
@@ -282,7 +282,7 @@ export function ActionButton({
       >
         {label}
       </button>
-      {refusal && <span className="max-w-xs text-xs text-amber-400">{refusal}</span>}
+      {refusal && <span className="max-w-xs text-xs text-warn">{refusal}</span>}
     </span>
   );
 }

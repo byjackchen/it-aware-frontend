@@ -30,8 +30,8 @@ interface GroupDetailPageProps {
 
 const scopeTypeColors: Record<string, string> = {
     unconstrained: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    self_scoped: 'bg-green-500/20 text-green-400 border-green-500/30',
-    role_based: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    self_scoped: 'bg-green-500/20 text-good border-green-500/30',
+    role_based: 'bg-blue-500/20 text-accent border-blue-500/30',
 };
 
 export function GroupDetailPage({
@@ -103,19 +103,19 @@ export function GroupDetailPage({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/tasks/access/groups')}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-hover transition-colors"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-400" />
+                            <ArrowLeft className="w-5 h-5 text-ink-2" />
                         </button>
                         <div className="flex items-center gap-3">
-                            <Users className="w-6 h-6 text-blue-400" />
-                            <h1 className="text-2xl font-semibold text-white">{t('groups.detail')}</h1>
+                            <Users className="w-6 h-6 text-accent" />
+                            <h1 className="text-2xl font-semibold text-ink">{t('groups.detail')}</h1>
                         </div>
                     </div>
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -128,7 +128,7 @@ export function GroupDetailPage({
                     {/* Group Info */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <label className="block text-sm font-medium text-ink-2 mb-1">
                                 {t('groups.name')}
                             </label>
                             {isEditing ? (
@@ -139,14 +139,14 @@ export function GroupDetailPage({
                                     className="w-full px-3 py-2 rounded-lg theme-input"
                                 />
                             ) : (
-                                <div className="px-3 py-2 rounded-lg theme-input-readonly text-white text-lg">
+                                <div className="px-3 py-2 rounded-lg theme-input-readonly text-ink text-lg">
                                     {group.name}
                                 </div>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <label className="block text-sm font-medium text-ink-2 mb-1">
                                 {t('groups.scopeType')}
                             </label>
                             {isEditing ? (
@@ -164,7 +164,7 @@ export function GroupDetailPage({
                             ) : (
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
                                     <span
-                                        className={`px-2 py-1 rounded-md text-xs font-medium border ${scopeTypeColors[group.scope_type] || 'bg-gray-500/20 text-gray-400'
+                                        className={`px-2 py-1 rounded-md text-xs font-medium border ${scopeTypeColors[group.scope_type] || 'bg-gray-500/20 text-ink-2'
                                             }`}
                                     >
                                         {t(`groups.scope.${group.scope_type}`)}
@@ -225,11 +225,11 @@ export function GroupDetailPage({
 
                     {/* Delete Action */}
                     {!isEditing && (
-                        <div className="pt-4 border-t border-white/10">
+                        <div className="pt-4 border-t border-line">
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

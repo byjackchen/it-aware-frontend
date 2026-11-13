@@ -20,13 +20,13 @@ function RunNowForm({ fields, valuesRef }: { fields: ParameterField[]; valuesRef
     valuesRef.current = { ...valuesRef.current, [name]: value };
     setShown((s) => ({ ...s, [name]: value }));
   };
-  if (fields.length === 0) return <p className="text-sm text-gray-500">{t('noParameters')}</p>;
+  if (fields.length === 0) return <p className="text-sm text-muted">{t('noParameters')}</p>;
   return (
     <fieldset className="space-y-3" data-testid="run-now-form">
-      <legend className="mb-1 text-sm font-medium text-gray-300">{t('parameters')}</legend>
+      <legend className="mb-1 text-sm font-medium text-ink-2">{t('parameters')}</legend>
       {fields.map((f) => (
         <label key={f.name} className="block">
-          <span className="mb-1 block font-mono text-sm text-gray-300">{f.name}</span>
+          <span className="mb-1 block font-mono text-sm text-ink-2">{f.name}</span>
           {f.kind === 'boolean' ? (
             <input type="checkbox" checked={shown[f.name] === true} onChange={(e) => set(f.name, e.target.checked)} />
           ) : (
@@ -38,7 +38,7 @@ function RunNowForm({ fields, valuesRef }: { fields: ParameterField[]; valuesRef
               className="theme-input w-full rounded-lg px-3 py-2 text-sm"
             />
           )}
-          {f.description && <span className="mt-1 block text-xs text-gray-500">{f.description}</span>}
+          {f.description && <span className="mt-1 block text-xs text-muted">{f.description}</span>}
         </label>
       ))}
     </fieldset>
@@ -76,17 +76,17 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
 
   return (
     <>
-      <Link href={jobsHref()} className="mb-3 inline-flex items-center gap-1 text-sm text-blue-400 hover:underline">
+      <Link href={jobsHref()} className="mb-3 inline-flex items-center gap-1 text-sm text-accent hover:underline">
         <ArrowLeft className="h-4 w-4" />
         {t('allJobs')}
       </Link>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-mono text-lg font-semibold theme-text-primary">{job.name}</h2>
-          {job.name !== job.id && <p className="font-mono text-xs text-gray-500">{job.id}</p>}
-          {job.description && <p className="text-sm text-gray-400">{job.description}</p>}
+          {job.name !== job.id && <p className="font-mono text-xs text-muted">{job.id}</p>}
+          {job.description && <p className="text-sm text-ink-2">{job.description}</p>}
           {job.has_load_errors && (
-            <p className="mt-1 inline-flex items-center gap-1 text-sm text-red-400">
+            <p className="mt-1 inline-flex items-center gap-1 text-sm text-bad">
               <AlertTriangle className="h-4 w-4" />
               {t('status.loadErrorsHelp')}
             </p>
@@ -130,7 +130,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
       <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-5">
         {facts.map(([label, value]) => (
           <div key={label}>
-            <dt className="text-xs text-gray-500">{label}</dt>
+            <dt className="text-xs text-muted">{label}</dt>
             <dd className="theme-text-primary">{value}</dd>
           </div>
         ))}
@@ -138,17 +138,17 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
 
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-semibold theme-text-primary">{t('job.runs')}</h3>
-        <Link href={jobsHref({ tab: 'actions', job: job.id })} className="text-sm text-blue-400 hover:underline">
+        <Link href={jobsHref({ tab: 'actions', job: job.id })} className="text-sm text-accent hover:underline">
           {t('job.recordLink')}
         </Link>
       </div>
       {runs.runs.length === 0 ? (
-        <p className="py-6 text-center text-gray-500">{t('job.runsEmpty')}</p>
+        <p className="py-6 text-center text-muted">{t('job.runsEmpty')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="runs-table">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-line">
                 <th className={thClass}>{t('job.columns.run')}</th>
                 <th className={thClass}>{t('job.columns.state')}</th>
                 <th className={thClass}>{t('job.columns.type')}</th>
@@ -158,20 +158,20 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
                 <th className={thClass}>{t('job.columns.duration')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-line">
               {runs.runs.map((run) => (
-                <tr key={run.id} className="hover:bg-white/5">
+                <tr key={run.id} className="hover:bg-hover">
                   <td className={tdClass}>
-                    <Link href={jobsHref({ job: job.id, run: run.id })} className="font-mono text-blue-400 hover:underline">
+                    <Link href={jobsHref({ job: job.id, run: run.id })} className="font-mono text-accent hover:underline">
                       {run.id}
                     </Link>
                   </td>
                   <td className={tdClass}><StateBadge state={run.state} /></td>
-                  <td className={`${tdClass} text-gray-400`}>{run.run_type ?? '—'}</td>
-                  <td className={`${tdClass} text-gray-400`}><When iso={run.run_after} /></td>
-                  <td className={`${tdClass} text-gray-400`}><When iso={run.start} /></td>
-                  <td className={`${tdClass} text-gray-400`}><When iso={run.end} /></td>
-                  <td className={`${tdClass} text-gray-400`}><Duration seconds={run.duration_s} /></td>
+                  <td className={`${tdClass} text-ink-2`}>{run.run_type ?? '—'}</td>
+                  <td className={`${tdClass} text-ink-2`}><When iso={run.run_after} /></td>
+                  <td className={`${tdClass} text-ink-2`}><When iso={run.start} /></td>
+                  <td className={`${tdClass} text-ink-2`}><When iso={run.end} /></td>
+                  <td className={`${tdClass} text-ink-2`}><Duration seconds={run.duration_s} /></td>
                 </tr>
               ))}
             </tbody>

@@ -187,19 +187,19 @@ export function AccountDetailPage({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/tasks/access/accounts')}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-hover transition-colors"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-400" />
+                            <ArrowLeft className="w-5 h-5 text-ink-2" />
                         </button>
                         <div className="flex items-center gap-3">
-                            <User className="w-6 h-6 text-blue-400" />
-                            <h1 className="text-2xl font-semibold text-white">{t('accounts.detail')}</h1>
+                            <User className="w-6 h-6 text-accent" />
+                            <h1 className="text-2xl font-semibold text-ink">{t('accounts.detail')}</h1>
                         </div>
                     </div>
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -212,17 +212,17 @@ export function AccountDetailPage({
                     {/* Account Info */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <label className="block text-sm font-medium text-ink-2 mb-1">
                                 {t('accounts.username')}
                             </label>
-                            <div className="px-3 py-2 rounded-lg theme-input-readonly text-white text-lg">
+                            <div className="px-3 py-2 rounded-lg theme-input-readonly text-ink text-lg">
                                 {account.username}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                <label className="block text-sm font-medium text-ink-2 mb-1">
                                     {t('accounts.type')}
                                 </label>
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
@@ -232,7 +232,7 @@ export function AccountDetailPage({
                                             <span>{t('accounts.typeIntegration')}</span>
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1.5 text-green-400">
+                                        <span className="flex items-center gap-1.5 text-good">
                                             <UserCircle className="w-4 h-4" />
                                             <span>{t('accounts.typeUser')}</span>
                                         </span>
@@ -240,7 +240,7 @@ export function AccountDetailPage({
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                <label className="block text-sm font-medium text-ink-2 mb-1">
                                     {t('accounts.status')}
                                 </label>
                                 {isEditing ? (
@@ -251,17 +251,17 @@ export function AccountDetailPage({
                                             onChange={(e) => setIsActive(e.target.checked)}
                                             className="w-5 h-5 rounded theme-checkbox"
                                         />
-                                        <span className="text-white">{t('common.active')}</span>
+                                        <span className="text-ink">{t('common.active')}</span>
                                     </label>
                                 ) : (
                                     <div className="px-3 py-2 rounded-lg theme-input-readonly">
                                         {account.is_active ? (
-                                            <span className="flex items-center gap-1 text-green-400">
+                                            <span className="flex items-center gap-1 text-good">
                                                 <Check className="w-4 h-4" />
                                                 <span>{t('common.active')}</span>
                                             </span>
                                         ) : (
-                                            <span className="flex items-center gap-1 text-red-400">
+                                            <span className="flex items-center gap-1 text-bad">
                                                 <X className="w-4 h-4" />
                                                 <span>{t('common.inactive')}</span>
                                             </span>
@@ -276,7 +276,7 @@ export function AccountDetailPage({
                             available for the same convenience as create. */}
                         {isEditing && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                <label className="block text-sm font-medium text-ink-2 mb-1">
                                     {t('accounts.newPassword')}
                                 </label>
                                 <div className="flex gap-2">
@@ -318,7 +318,7 @@ export function AccountDetailPage({
                                         <Copy className="w-4 h-4" />
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted mt-1">
                                     {copied
                                         ? `✓ ${t('accounts.passwordCopied')}`
                                         : t('accounts.passwordHint')}
@@ -354,19 +354,19 @@ export function AccountDetailPage({
 
                     {/* Linked Worker (User accounts only) */}
                     {account.account_type === 'user' && (
-                        <div className="border-t pt-6 border-white/10">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                        <div className="border-t pt-6 border-line">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-2 mb-3">
                                 {t('accounts.linkedWorker')}
                             </h3>
                             {linkedWorker ? (
                                 <div className="flex items-center justify-between p-3 rounded-lg theme-surface">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                            <User className="w-5 h-5 text-blue-400" />
+                                            <User className="w-5 h-5 text-accent" />
                                         </div>
                                         <div>
-                                            <div className="font-medium text-white">{linkedWorker.fullname}</div>
-                                            <div className="text-sm text-gray-400">
+                                            <div className="font-medium text-ink">{linkedWorker.fullname}</div>
+                                            <div className="text-sm text-ink-2">
                                                 {linkedWorker.email || linkedWorker.worker_id || t('accounts.noEmail')}
                                             </div>
                                         </div>
@@ -374,7 +374,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={handleUnlinkWorker}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Unlink className="w-3.5 h-3.5" />
                                         <span>{t('accounts.unlink')}</span>
@@ -382,11 +382,11 @@ export function AccountDetailPage({
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between p-3 rounded-lg theme-empty-bg">
-                                    <span className="text-gray-500">{t('accounts.noLinkedWorker')}</span>
+                                    <span className="text-muted">{t('accounts.noLinkedWorker')}</span>
                                     <button
                                         onClick={() => setIsLinkingWorker(true)}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Link className="w-3.5 h-3.5" />
                                         <span>{t('accounts.linkWorker')}</span>
@@ -398,8 +398,8 @@ export function AccountDetailPage({
 
                     {/* Linked System (integration accounts only) */}
                     {canLinkSystem(account.account_type) && (
-                        <div className="border-t pt-6 border-white/10">
-                            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                        <div className="border-t pt-6 border-line">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-2 mb-3">
                                 Linked System
                             </h3>
                             {linkedSystem ? (
@@ -409,8 +409,8 @@ export function AccountDetailPage({
                                             <Cpu className="w-5 h-5 text-cyan-400" />
                                         </div>
                                         <div>
-                                            <div className="font-medium text-white">{linkedSystem.name}</div>
-                                            <div className="text-sm text-gray-400">
+                                            <div className="font-medium text-ink">{linkedSystem.name}</div>
+                                            <div className="text-sm text-ink-2">
                                                 {linkedSystem.system_id} · {linkedSystem.system_platform}
                                             </div>
                                         </div>
@@ -418,7 +418,7 @@ export function AccountDetailPage({
                                     <button
                                         onClick={handleUnlinkSystem}
                                         disabled={isPending}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad text-sm transition-colors disabled:opacity-50"
                                     >
                                         <Unlink className="w-3.5 h-3.5" />
                                         <span>{t('accounts.unlink')}</span>
@@ -426,7 +426,7 @@ export function AccountDetailPage({
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-between p-3 rounded-lg theme-empty-bg">
-                                    <span className="text-gray-500">No linked system</span>
+                                    <span className="text-muted">No linked system</span>
                                     <button
                                         onClick={() => setIsLinkingSystem(true)}
                                         disabled={isPending}
@@ -453,11 +453,11 @@ export function AccountDetailPage({
 
                     {/* Delete Action */}
                     {!isEditing && (
-                        <div className="pt-4 border-t border-white/10">
+                        <div className="pt-4 border-t border-line">
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -7,10 +7,10 @@ import type { ActionOutcome, ActionsResponse } from '@/lib/types/jobs';
 import { Pager, tdClass, thClass, When } from './parts';
 
 const OUTCOME_CLASS: Record<ActionOutcome, string> = {
-  pending: 'bg-amber-500/15 text-amber-400',
-  succeeded: 'bg-green-500/15 text-green-400',
-  failed: 'bg-red-500/15 text-red-400',
-  refused: 'bg-gray-500/15 text-gray-300',
+  pending: 'bg-amber-500/15 text-warn',
+  succeeded: 'bg-green-500/15 text-good',
+  failed: 'bg-red-500/15 text-bad',
+  refused: 'bg-gray-500/15 text-ink-2',
 };
 
 /** The record of control and recovery actions: who, what, which job and run, when, and how it ended. */
@@ -21,16 +21,16 @@ export function ActionRecord({ data, job, page }: { data: ActionsResponse; job: 
       {job && (
         <div className="mb-3 flex items-center gap-3 text-sm">
           <span className="theme-text-primary">{t('forJob', { job })}</span>
-          <Link href={jobsHref({ tab: 'actions' })} className="text-blue-400 hover:underline">{t('showAll')}</Link>
+          <Link href={jobsHref({ tab: 'actions' })} className="text-accent hover:underline">{t('showAll')}</Link>
         </div>
       )}
       {data.actions.length === 0 ? (
-        <p className="py-8 text-center text-gray-500">{t('empty')}</p>
+        <p className="py-8 text-center text-muted">{t('empty')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="action-record">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-line">
                 <th className={thClass}>{t('columns.when')}</th>
                 <th className={thClass}>{t('columns.who')}</th>
                 <th className={thClass}>{t('columns.what')}</th>
@@ -39,27 +39,27 @@ export function ActionRecord({ data, job, page }: { data: ActionsResponse; job: 
                 <th className={thClass}>{t('columns.outcome')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-line">
               {data.actions.map((a) => (
-                <tr key={a.id} className="hover:bg-white/5">
-                  <td className={`${tdClass} text-gray-400`}><When iso={a.requested_at} /></td>
+                <tr key={a.id} className="hover:bg-hover">
+                  <td className={`${tdClass} text-ink-2`}><When iso={a.requested_at} /></td>
                   <td className={`${tdClass} theme-text-primary`}>{a.username}</td>
                   <td className={`${tdClass} theme-text-primary`}>
                     {t(`action.${a.action}`)}
                     {a.parameters && Object.keys(a.parameters).length > 0 && (
-                      <div className="font-mono text-xs text-gray-500">{JSON.stringify(a.parameters)}</div>
+                      <div className="font-mono text-xs text-muted">{JSON.stringify(a.parameters)}</div>
                     )}
                   </td>
                   <td className={tdClass}>
-                    <Link href={jobsHref({ job: a.job_id })} className="font-mono text-blue-400 hover:underline">{a.job_id}</Link>
+                    <Link href={jobsHref({ job: a.job_id })} className="font-mono text-accent hover:underline">{a.job_id}</Link>
                   </td>
                   <td className={tdClass}>
                     {a.run_id ? (
-                      <Link href={jobsHref({ job: a.job_id, run: a.run_id })} className="font-mono text-xs text-blue-400 hover:underline">
+                      <Link href={jobsHref({ job: a.job_id, run: a.run_id })} className="font-mono text-xs text-accent hover:underline">
                         {a.run_id}
                       </Link>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="text-muted">—</span>
                     )}
                   </td>
                   <td className={tdClass}>
@@ -69,7 +69,7 @@ export function ActionRecord({ data, job, page }: { data: ActionsResponse; job: 
                     >
                       {t(`outcome.${a.outcome}`)}
                     </span>
-                    {a.error && <div className="mt-1 max-w-sm text-xs text-red-400">{a.error}</div>}
+                    {a.error && <div className="mt-1 max-w-sm text-xs text-bad">{a.error}</div>}
                   </td>
                 </tr>
               ))}

@@ -29,14 +29,14 @@ export function RolesListPage({ roles }: RolesListPageProps) {
         <div className="h-[calc(100vh-4rem)] p-4">
             <div className="h-full glass-card rounded-xl overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div className="p-4 border-b border-line flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Shield className="w-5 h-5 text-blue-400" />
-                        <h1 className="text-xl font-semibold text-white">{t('roles.title')}</h1>
+                        <Shield className="w-5 h-5 text-accent" />
+                        <h1 className="text-xl font-semibold text-ink">{t('roles.title')}</h1>
                     </div>
                     <button
                         onClick={handleCreateClick}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.create')}</span>
@@ -46,36 +46,36 @@ export function RolesListPage({ roles }: RolesListPageProps) {
                 {/* Table */}
                 <div className="flex-1 overflow-auto">
                     {roles.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                        <div className="flex flex-col items-center justify-center h-64 text-muted">
                             <Shield className="w-12 h-12 mb-4 opacity-50" />
                             <p>{t('roles.empty')}</p>
                         </div>
                     ) : (
                         <table className="w-full">
                             <thead className="sticky top-0 bg-inherit">
-                                <tr className="text-left text-sm text-gray-400 border-b border-white/10">
+                                <tr className="text-left text-sm text-ink-2 border-b border-line">
                                     <th className="px-4 py-3 font-medium">{t('roles.name')}</th>
                                     <th className="px-4 py-3 font-medium">{t('roles.includeDescendants')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-line">
                                 {roles.map((role) => (
                                     <tr
                                         key={role.oid}
                                         onClick={() => handleRowClick(role)}
-                                        className="hover:bg-white/5 cursor-pointer transition-colors"
+                                        className="hover:bg-hover cursor-pointer transition-colors"
                                     >
                                         <td className="px-4 py-3">
-                                            <span className="font-medium text-white">{role.name}</span>
+                                            <span className="font-medium text-ink">{role.name}</span>
                                         </td>
                                         <td className="px-4 py-3">
                                             {role.include_desc ? (
-                                                <span className="flex items-center gap-1 text-green-400">
+                                                <span className="flex items-center gap-1 text-good">
                                                     <Check className="w-4 h-4" />
                                                     <span className="text-sm">{t('common.yes')}</span>
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center gap-1 text-gray-400">
+                                                <span className="flex items-center gap-1 text-ink-2">
                                                     <X className="w-4 h-4" />
                                                     <span className="text-sm">{t('common.no')}</span>
                                                 </span>

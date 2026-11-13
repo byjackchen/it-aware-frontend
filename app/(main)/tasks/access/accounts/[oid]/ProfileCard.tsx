@@ -53,20 +53,20 @@ export function ProfileCard({ profile, tasks }: ProfileCardProps) {
         });
     };
 
-    const select = 'px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-blue-500/50';
+    const select = 'px-3 py-2 rounded-lg bg-field border border-line text-sm text-ink focus:outline-none focus:border-blue-500/50';
 
     return (
         <section className="glass-card rounded-xl p-6 mt-6" data-testid="profile-customization">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">{t('profile.title')}</h3>
-            <p className="mt-1 mb-4 text-sm text-gray-500">{t('profile.note')}</p>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-2">{t('profile.title')}</h3>
+            <p className="mt-1 mb-4 text-sm text-muted">{t('profile.note')}</p>
 
-            <h4 className="text-sm font-medium text-gray-300">{t('profile.canOpen', { count: tasks.length })}</h4>
-            <p className="mt-1 mb-4 text-sm text-gray-500" data-testid="profile-can-open">
+            <h4 className="text-sm font-medium text-ink-2">{t('profile.canOpen', { count: tasks.length })}</h4>
+            <p className="mt-1 mb-4 text-sm text-muted" data-testid="profile-can-open">
                 {tasks.length ? tasks.map(task => named(task.name)).join(' · ') : t('profile.noTasks')}
             </p>
 
             <div className="flex flex-wrap gap-6 mb-4">
-                <label className="flex flex-col gap-1 text-sm text-gray-300">
+                <label className="flex flex-col gap-1 text-sm text-ink-2">
                     {t('profile.startPage')}
                     <select value={start} onChange={event => changed(setStart)(event.target.value)} className={select}>
                         <option value="">{t('profile.startNotSet')}</option>
@@ -80,13 +80,13 @@ export function ProfileCard({ profile, tasks }: ProfileCardProps) {
             </div>
 
             <fieldset className="mb-4">
-                <legend className="text-sm font-medium text-gray-300">{t('profile.homeTasks')}</legend>
-                <p className="mt-1 mb-2 text-sm text-gray-500">{t('profile.homeTasksNote')}</p>
+                <legend className="text-sm font-medium text-ink-2">{t('profile.homeTasks')}</legend>
+                <p className="mt-1 mb-2 text-sm text-muted">{t('profile.homeTasksNote')}</p>
                 <div className="flex flex-wrap gap-2 max-h-56 overflow-auto">
                     {tasks.map(task => (
                         <label
                             key={task.code}
-                            className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-gray-200 cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1 rounded-full border border-line bg-field text-sm text-ink cursor-pointer"
                         >
                             <input
                                 type="checkbox"
@@ -109,12 +109,12 @@ export function ProfileCard({ profile, tasks }: ProfileCardProps) {
                     <span>{t('profile.save')}</span>
                 </button>
                 {saved && (
-                    <span role="status" className="flex items-center gap-1 text-sm text-green-400">
+                    <span role="status" className="flex items-center gap-1 text-sm text-good">
                         <Check className="w-4 h-4" />
                         {t('profile.saved')}
                     </span>
                 )}
-                {error && <span role="alert" className="text-sm text-red-400">{error}</span>}
+                {error && <span role="alert" className="text-sm text-bad">{error}</span>}
             </div>
         </section>
     );

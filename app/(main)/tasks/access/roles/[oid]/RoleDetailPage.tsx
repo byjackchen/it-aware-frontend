@@ -57,19 +57,19 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/tasks/access/roles')}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-hover transition-colors"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-400" />
+                            <ArrowLeft className="w-5 h-5 text-ink-2" />
                         </button>
                         <div className="flex items-center gap-3">
-                            <Shield className="w-6 h-6 text-blue-400" />
-                            <h1 className="text-2xl font-semibold text-white">{t('roles.detail')}</h1>
+                            <Shield className="w-6 h-6 text-accent" />
+                            <h1 className="text-2xl font-semibold text-ink">{t('roles.detail')}</h1>
                         </div>
                     </div>
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
                         >
                             <Pencil className="w-4 h-4" />
                             <span>{t('common.edit')}</span>
@@ -82,7 +82,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                     {/* Role Info */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <label className="block text-sm font-medium text-ink-2 mb-1">
                                 {t('roles.name')}
                             </label>
                             {isEditing ? (
@@ -93,14 +93,14 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                                     className="w-full px-3 py-2 rounded-lg theme-input"
                                 />
                             ) : (
-                                <div className="px-3 py-2 rounded-lg theme-input-readonly text-white text-lg">
+                                <div className="px-3 py-2 rounded-lg theme-input-readonly text-ink text-lg">
                                     {role.name}
                                 </div>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
+                            <label className="block text-sm font-medium text-ink-2 mb-1">
                                 {t('roles.includeDescendants')}
                             </label>
                             {isEditing ? (
@@ -111,17 +111,17 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                                         onChange={(e) => setIncludeDesc(e.target.checked)}
                                         className="w-5 h-5 rounded theme-checkbox"
                                     />
-                                    <span className="text-white">{t('roles.includeDescHint')}</span>
+                                    <span className="text-ink">{t('roles.includeDescHint')}</span>
                                 </label>
                             ) : (
                                 <div className="px-3 py-2 rounded-lg theme-input-readonly">
                                     {role.include_desc ? (
-                                        <span className="flex items-center gap-1 text-green-400">
+                                        <span className="flex items-center gap-1 text-good">
                                             <Check className="w-4 h-4" />
                                             <span>{t('roles.includeDescYes')}</span>
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1 text-gray-400">
+                                        <span className="flex items-center gap-1 text-ink-2">
                                             <X className="w-4 h-4" />
                                             <span>{t('roles.includeDescNo')}</span>
                                         </span>
@@ -132,12 +132,12 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                     </div>
 
                     {/* Linked Groups */}
-                    <div className="border-t border-white/10 pt-6">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                    <div className="border-t border-line pt-6">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-2 mb-3">
                             {t('roles.linkedGroups')}
                         </h3>
                         {linkedGroups.length === 0 ? (
-                            <p className="text-sm text-gray-500">{t('roles.noGroupsLinked')}</p>
+                            <p className="text-sm text-muted">{t('roles.noGroupsLinked')}</p>
                         ) : (
                             <div className="flex flex-wrap gap-2">
                                 {linkedGroups.map((group) => (
@@ -150,13 +150,13 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                                 ))}
                             </div>
                         )}
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted mt-2">
                             {t('roles.manageGroupsHint')}
                         </p>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 pt-4 border-t border-white/10">
+                    <div className="flex gap-3 pt-4 border-t border-line">
                         {isEditing ? (
                             <>
                                 <button
@@ -183,7 +183,7 @@ export function RoleDetailPage({ role, linkedGroups }: RoleDetailPageProps) {
                             <button
                                 onClick={handleDelete}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-bad transition-colors disabled:opacity-50"
                             >
                                 {isPending ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

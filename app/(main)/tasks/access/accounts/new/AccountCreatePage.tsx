@@ -64,13 +64,13 @@ export function AccountCreatePage() {
                 <div className="flex items-center gap-4 mb-6">
                     <button
                         onClick={() => router.push('/tasks/access/accounts')}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-hover transition-colors"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-400" />
+                        <ArrowLeft className="w-5 h-5 text-ink-2" />
                     </button>
                     <div className="flex items-center gap-3">
-                        <User className="w-6 h-6 text-blue-400" />
-                        <h1 className="text-2xl font-semibold text-white">{t('accounts.create')}</h1>
+                        <User className="w-6 h-6 text-accent" />
+                        <h1 className="text-2xl font-semibold text-ink">{t('accounts.create')}</h1>
                     </div>
                 </div>
 
@@ -78,7 +78,7 @@ export function AccountCreatePage() {
                 <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 space-y-6">
                     {/* Username */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('accounts.username')} *
                         </label>
                         <input
@@ -93,7 +93,7 @@ export function AccountCreatePage() {
 
                     {/* Account Type */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('accounts.type')} *
                         </label>
                         <select
@@ -111,7 +111,7 @@ export function AccountCreatePage() {
                         The created password is only visible during this session;
                         admin is warned to save/share it before submitting. */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-ink-2 mb-1">
                             {t('accounts.password')} *
                         </label>
                         <div className="flex gap-2">
@@ -154,7 +154,7 @@ export function AccountCreatePage() {
                                 <Copy className="w-4 h-4" />
                             </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted mt-1">
                             {copied
                                 ? `✓ ${t('accounts.passwordCopied')}`
                                 : t('accounts.passwordHintCreate')}
