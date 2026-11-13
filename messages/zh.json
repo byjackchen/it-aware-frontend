@@ -2958,6 +2958,65 @@
       "actions": "操作记录"
     },
     "allJobs": "全部作业",
+    "load": {
+      "title": "负载",
+      "help": "IT-Aware 的 Airflow 作业运行了多少次、耗时多久：按 UTC 日、按一天中的小时、按作业。",
+      "window": {
+        "label": "时间窗口",
+        "days": "{days} 天",
+        "dates": "{start} 至 {end}（UTC 日）"
+      },
+      "partial": "仅显示最新的 {count} 次运行：窗口内的运行多于可读取的数量。",
+      "empty": {
+        "title": "此窗口内没有运行",
+        "body": "最近 {days} 天内没有作业运行。"
+      },
+      "tiles": {
+        "runs": "运行次数",
+        "failed": "失败次数",
+        "failureRate": "占运行的 {rate}",
+        "runTime": "总运行时间",
+        "average": "平均运行时间",
+        "longest": "最长的一次运行"
+      },
+      "unit": {
+        "s": "单位：秒",
+        "min": "单位：分钟",
+        "h": "单位：小时"
+      },
+      "charts": {
+        "runsPerDay": "每日运行次数",
+        "runsPerDayHelp": "按结果统计的每个 UTC 日的运行次数",
+        "success": "成功",
+        "failed": "失败",
+        "other": "其他",
+        "timePerDay": "每日运行时间",
+        "timePerDayHelp": "每个 UTC 日的总运行时间，{unit}",
+        "runTime": "运行时间",
+        "byHour": "按小时的负载（UTC）",
+        "byHourHelp": "在每个 UTC 小时内开始的运行的运行时间，{unit}",
+        "hourValue": "{time} · {runs} 次运行",
+        "topJobs": "按耗时排列的作业",
+        "topJobsHelp": "总运行时间最长的 {count} 个作业，{unit}"
+      },
+      "table": {
+        "title": "窗口内的全部作业",
+        "columns": {
+          "job": "作业",
+          "runs": "运行次数",
+          "failed": "失败",
+          "run_seconds": "总计",
+          "average_seconds": "平均",
+          "longest_seconds": "最长"
+        }
+      },
+      "runDurations": {
+        "title": "运行时长",
+        "help": "下方列出的已结束的运行，从旧到新，{unit}",
+        "ok": "运行时间",
+        "failed": "失败的运行"
+      }
+    },
     "none": "—",
     "loadFailed": "无法加载：{message}",
     "unreachable": {

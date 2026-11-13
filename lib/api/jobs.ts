@@ -18,6 +18,7 @@ import type {
   JobsFailure,
   JobsLoad,
   JobsResponse,
+  LoadUnavailable,
   RunDetail,
   RunsResponse,
   StepLog,
@@ -135,8 +136,8 @@ export async function listActions(jobId: string | null, limit: number, offset: n
   return call(`/actions${query({ job_id: jobId, limit, offset })}`);
 }
 
-/** The load of the last `days` UTC days: runs and run time by day, by hour and by job. */
-export async function getJobsLoad(days: number): Promise<JobsLoad> {
+/** The load of the last `days` UTC days: runs and run time by day, by hour and by job; or that Airflow can't be read. */
+export async function getJobsLoad(days: number): Promise<JobsLoad | LoadUnavailable> {
   return call(`/load${query({ days })}`);
 }
 

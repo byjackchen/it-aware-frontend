@@ -3280,6 +3280,65 @@
       "actions": "Action Record"
     },
     "allJobs": "All jobs",
+    "load": {
+      "title": "Load",
+      "help": "How much IT-Aware's Airflow jobs ran and how long they took: by UTC day, by hour of the day and by job.",
+      "window": {
+        "label": "Window",
+        "days": "{days} days",
+        "dates": "{start} to {end} (UTC days)"
+      },
+      "partial": "Showing the newest {count} runs only: the window holds more than could be read.",
+      "empty": {
+        "title": "No runs in this window",
+        "body": "No job ran in the last {days} days."
+      },
+      "tiles": {
+        "runs": "Runs",
+        "failed": "Failed runs",
+        "failureRate": "{rate} of runs",
+        "runTime": "Total run time",
+        "average": "Average run time",
+        "longest": "Longest run"
+      },
+      "unit": {
+        "s": "in seconds",
+        "min": "in minutes",
+        "h": "in hours"
+      },
+      "charts": {
+        "runsPerDay": "Runs per day",
+        "runsPerDayHelp": "Runs by outcome, per UTC day",
+        "success": "Succeeded",
+        "failed": "Failed",
+        "other": "Other",
+        "timePerDay": "Run time per day",
+        "timePerDayHelp": "Total run time per UTC day, {unit}",
+        "runTime": "Run time",
+        "byHour": "Load by hour of day (UTC)",
+        "byHourHelp": "Run time of the runs that started in each UTC hour, {unit}",
+        "hourValue": "{time} · {runs, plural, one {# run} other {# runs}}",
+        "topJobs": "Jobs by time consumed",
+        "topJobsHelp": "The {count} jobs with the most total run time, {unit}"
+      },
+      "table": {
+        "title": "All jobs in the window",
+        "columns": {
+          "job": "Job",
+          "runs": "Runs",
+          "failed": "Failed",
+          "run_seconds": "Total",
+          "average_seconds": "Average",
+          "longest_seconds": "Longest"
+        }
+      },
+      "runDurations": {
+        "title": "Run durations",
+        "help": "The runs listed below that have ended, oldest first, {unit}",
+        "ok": "Run time",
+        "failed": "Failed run"
+      }
+    },
     "none": "—",
     "loadFailed": "Could not load this: {message}",
     "unreachable": {

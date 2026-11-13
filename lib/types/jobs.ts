@@ -113,20 +113,20 @@ export interface JobsFailure {
 // ── Load (GET /jobs/load) ────────────────────────────────────────────────────
 
 /** One UTC day of the window: its finished runs by outcome, and the time they took. */
-export interface LoadDay {
+export type LoadDay = {
   date: string;
   success: number;
   failed: number;
   other: number;
   run_seconds: number;
-}
+};
 
 /** One hour of the day (UTC, 0–23): the runs that started in it over the window. */
-export interface LoadHour {
+export type LoadHour = {
   hour: number;
   runs: number;
   run_seconds: number;
-}
+};
 
 /** One job's runs in the window. */
 export interface LoadJob {
@@ -138,14 +138,8 @@ export interface LoadJob {
   longest_seconds: number | null;
 }
 
-/**
- * The load of the window's runs. Fail-soft as the job list is: `available: false`
- * with nothing counted when Airflow can't be read. `partial` means only the
- * newest `runs_read` runs were read.
- */
+/** The load of the window's runs. `partial` means only the newest `runs_read` runs were read. */
 export interface JobsLoad {
-  available: boolean;
-  base_url_configured: boolean;
   days: number;
   start: string;
   end: string;
@@ -155,10 +149,17 @@ export interface JobsLoad {
     runs: number;
     failed: number;
     run_seconds: number;
+    /** Over finished runs; null when none finished. */
     average_seconds: number | null;
     longest: { job: string; run_id: string; seconds: number } | null;
   };
   daily: LoadDay[];
   hourly: LoadHour[];
   jobs: LoadJob[];
+}
+
+/** Fail-soft, as the job list is: the whole answer when Airflow can't be read. */
+export interface LoadUnavailable {
+  available: false;
+  base_url_configured: boolean;
 }

@@ -131,6 +131,14 @@ export function Pager({ page, total, size, href }: { page: number; total: number
   );
 }
 
+/** The charts' colours, from the theme's variables: one value serves light and dark. */
+export const CHART_COLOR = {
+  good: 'var(--good)',
+  bad: 'var(--bad)',
+  other: 'var(--text-muted)',
+  time: 'var(--accent)',
+};
+
 export const thClass = 'px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-ink-2';
 export const tdClass = 'px-3 py-2 text-sm';
 

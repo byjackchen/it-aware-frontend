@@ -5,10 +5,14 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { pauseJob, resumeJob, runJob } from '@/app/actions/jobs';
+import { StackedBarPercentLineCard } from '@/components/ops_dashboard/StackedBarPercentLineCard';
+import { useTimezone } from '@/lib/contexts/timezone-context';
+import { runBars } from '@/lib/jobs/load';
 import { jobsHref, RUNS_PAGE_SIZE } from '@/lib/jobs/paths';
-import { parameterFields, parameterValues, type ParameterField } from '@/lib/jobs/view';
-import type { JobDetail, RunsResponse } from '@/lib/types/jobs';
-import { ActionButton, Duration, Pager, StateBadge, tdClass, thClass, useJobActions, When } from './parts';
+import { formatDuration, parameterFields, parameterValues, type ParameterField } from '@/lib/jobs/view';
+import { formatLocalDateTime } from '@/lib/utils/datetime';
+import type { JobDetail, RunsResponse, RunSummary } from '@/lib/types/jobs';
+import { ActionButton, CHART_COLOR, Duration, Pager, StateBadge, tdClass, thClass, useJobActions, When } from './parts';
 
 type FormValues = Record<string, string | boolean>;
 
@@ -42,6 +46,32 @@ function RunNowForm({ fields, valuesRef }: { fields: ParameterField[]; valuesRef
         </label>
       ))}
     </fieldset>
+  );
+}
+
+/** How long the runs on the page took, oldest first, a failed run in its own colour. Nothing while no run has ended. */
+function RunDurations({ runs }: { runs: RunSummary[] }) {
+  const t = useTranslations('Jobs.load');
+  const { timezone } = useTimezone();
+  const { unit, rows } = runBars(runs);
+  if (rows.length === 0) return null;
+  return (
+    <div className="mb-4" data-testid="run-durations">
+      <StackedBarPercentLineCard
+        title={t('runDurations.title')}
+        subtitle={t('runDurations.help', { unit: t(`unit.${unit}`) })}
+        data={rows.map((row) => ({ ...row, label: formatLocalDateTime(row.start, timezone).replace('T', ' ').slice(5, 16) }))}
+        xKey="label"
+        xInterval="preserveStartEnd"
+        minPointSize={0}
+        height={200}
+        stackedKeys={[
+          { key: 'ok', label: t('runDurations.ok'), color: CHART_COLOR.time },
+          { key: 'failed', label: t('runDurations.failed'), color: CHART_COLOR.bad },
+        ]}
+        formatValue={(_value, row) => formatDuration(Number(row.duration_s)) ?? '—'}
+      />
+    </div>
   );
 }
 
@@ -142,6 +172,7 @@ export function JobView({ job, runs, page }: { job: JobDetail; runs: RunsRespons
           {t('job.recordLink')}
         </Link>
       </div>
+      <RunDurations runs={runs.runs} />
       {runs.runs.length === 0 ? (
         <p className="py-6 text-center text-muted">{t('job.runsEmpty')}</p>
       ) : (
