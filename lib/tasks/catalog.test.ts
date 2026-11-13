@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GROUPINGS, TASKS, byGrouping, groupingName, named, pageHref, resolvePage } from '@/lib/tasks/catalog';
+import { GROUPINGS, TASKS, byGrouping, groupingName, named, openKey, pageHref, resolvePage } from '@/lib/tasks/catalog';
 import { PERMISSIONS } from '@/lib/config/permissions';
 
 describe('the checked-in catalog', () => {
@@ -73,6 +73,28 @@ describe('resolvePage: the task and view of the page shown', () => {
     // Old addresses redirect before a page renders (lib/legacy/redirect.ts).
     expect(at('/data/incidents')).toBeNull();
     expect(at('/knowledge/faqs')).toBeNull();
+  });
+});
+
+describe('openKey: what an open of a page is counted as', () => {
+  it("is the same for a view's page and every record under it, so browsing records is one open", () => {
+    expect(openKey('/tasks/it-incidents')).toBe('it-incidents/incidents');
+    expect(openKey('/tasks/it-incidents/abc')).toBe('it-incidents/incidents');
+    expect(openKey('/tasks/it-incidents/def')).toBe('it-incidents/incidents');
+    expect(openKey('/tasks/workers/organizations/o-1')).toBe(openKey('/tasks/workers/organizations'));
+  });
+
+  it('changes with the view and with the task, and is null for a page that is no task', () => {
+    expect(openKey('/tasks/workers/workers')).toBe('workers/workers');
+    expect(openKey('/tasks/workers/organizations')).toBe('workers/organizations');
+    expect(openKey('/tasks/it-tickets/vip')).toBe('it-tickets/vip');
+    expect(openKey('/home')).toBeNull();
+  });
+
+  it('never holds a second slash: no task code or view slug has one', () => {
+    for (const task of TASKS) {
+      for (const view of task.views) expect(`${task.code}/${view.slug}`.split('/')).toEqual([task.code, view.slug]);
+    }
   });
 });
 

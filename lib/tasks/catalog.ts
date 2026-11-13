@@ -68,6 +68,16 @@ export function resolvePage(pathname: string): PageTask | null {
     return best;
 }
 
+/**
+ * What an open of the page at `pathname` is counted as: `<task>/<view>`, the
+ * same for the view's own page and every record or sub-page under it, so
+ * moving between a view's records is one open. Null for a page that is no task's.
+ */
+export function openKey(pathname: string): string | null {
+    const page = resolvePage(pathname);
+    return page && `${page.task.code}/${page.view.slug}`;
+}
+
 /** A name in the current language. */
 export function named(names: TaskNames, locale: string): string {
     return locale.startsWith('zh') ? names.zh : names.en;
