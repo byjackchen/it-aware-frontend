@@ -9,14 +9,21 @@ const metric = (task: string, code: string, more: Partial<TaskMetric> = {}): Tas
 });
 
 describe("a card's metrics", () => {
-    it("are the task's own, in the order answered, at most two", () => {
+    it("are the task's own, in the order answered, at most three", () => {
         const byTask = metricsByTask([
-            metric('it-tickets', 'active'), metric('it-incidents', 'open'), metric('it-tickets', 'sla'), metric('it-tickets', 'third'),
+            metric('it-tickets', 'active'), metric('it-incidents', 'open'), metric('it-tickets', 'sla'),
+            metric('it-tickets', 'third'), metric('it-tickets', 'fourth'),
         ]);
         expect([...byTask.keys()]).toEqual(['it-tickets', 'it-incidents']);
-        expect(byTask.get('it-tickets')!.map(held => held.code)).toEqual(['active', 'sla']);
+        expect(byTask.get('it-tickets')!.map(held => held.code)).toEqual(['active', 'sla', 'third']);
         expect(byTask.get('it-incidents')!.map(held => held.code)).toEqual(['open']);
         expect(metricsByTask([]).size).toBe(0);
+    });
+
+    it('keep a value of 0: it is a number like any other', () => {
+        const zero = metric('data-overview', 'data-overview.raw', { value: 0 });
+        expect(metricsByTask([zero]).get('data-overview')).toEqual([zero]);
+        expect(metricValue(zero, 'en')).toBe('0');
     });
 });
 

@@ -293,7 +293,11 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       { task: 'it-incidents', code: 'opened', label: { en: 'opened', zh: '新开' }, unit: 'count', value: 3412, period: period('last_7_days'), previous_value: 3406, computed_at },
       { task: 'it-incidents', code: 'sla', label: { en: 'SLA met', zh: 'SLA 达成' }, unit: 'percent', value: 91.6, period: period('month'), previous_value: 92.8, computed_at },
       { task: 'it-incidents', code: 'third', label: { en: 'a third metric', zh: '第三个' }, unit: 'count', value: 1, period: period('now'), previous_value: null, computed_at },
-      { task: 'data-overview', code: 'records', label: { en: 'records', zh: '记录' }, unit: 'count', value: 1234567, period: period('now'), previous_value: null, computed_at },
+      { task: 'it-incidents', code: 'fourth', label: { en: 'a fourth metric', zh: '第四个' }, unit: 'count', value: 2, period: period('now'), previous_value: null, computed_at },
+      // Data Overview's three (backend cf9f7d3): a 0 is a value like any other.
+      { task: 'data-overview', code: 'data-overview.raw', label: { en: 'Raw', zh: '原始' }, unit: 'count', value: 0, period: period('now'), previous_value: null, computed_at },
+      { task: 'data-overview', code: 'data-overview.derived', label: { en: 'Derived', zh: '派生' }, unit: 'count', value: 1234567, period: period('now'), previous_value: null, computed_at },
+      { task: 'data-overview', code: 'data-overview.transactional', label: { en: 'Transactional', zh: '事务' }, unit: 'count', value: 14769, period: period('now'), previous_value: null, computed_at },
       // Malformed entries are left out; they never break the page.
       { task: 'workers', code: 'no-value', label: { en: 'broken', zh: '坏' }, unit: 'count', value: null, period: period('now'), previous_value: null, computed_at },
       { task: 'workers', code: 'no-period', label: { en: 'broken', zh: '坏' }, unit: 'count', value: 1, previous_value: null, computed_at },
@@ -302,16 +306,22 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     ] } }));
     await openHome(page);
 
-    // At most two metrics a task: a count with thousands separators, a percent with one decimal.
+    // At most three metrics a task (backend cf9f7d3 raised it from two): a count with thousands
+    // separators, a percent with one decimal.
     const incidents = page.getByTestId('home-other').locator('[data-task="it-incidents"]').getByTestId('task-metric');
-    await expect(incidents).toHaveText([/^3,412\s*opened, last 7 days\s*\+6$/, /^91\.6%\s*SLA met, this month\s*-1\.2 pts$/]);
+    await expect(incidents).toHaveText([
+      /^3,412\s*opened, last 7 days\s*\+6$/,
+      /^91\.6%\s*SLA met, this month\s*-1\.2 pts$/,
+      /^1\s*a third metric, now$/,
+    ]);
     // When the numbers were computed is on the card itself, not only in a tooltip.
     const incidentsRow = page.getByTestId('home-other').locator('[data-task="it-incidents"]');
     await expect(incidentsRow.getByTestId('task-metrics-updated')).toHaveText('Updated 5 minutes ago');
     await expect(incidents.first()).toHaveAttribute('title', 'Updated 5 minutes ago');
     // A large count is written short; without an earlier value there is no change.
+    // A 0 is written as 0, not left out.
     const overview = page.getByTestId('home-other').locator('[data-task="data-overview"]').getByTestId('task-metric');
-    await expect(overview).toHaveText([/^1\.2M\s*records, now$/]);
+    await expect(overview).toHaveText([/^0\s*Raw, now$/, /^1\.2M\s*Derived, now$/, /^14,769\s*Transactional, now$/]);
     // A task with no metric, or only malformed ones, keeps its plain card.
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]')).toHaveCount(1);
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);
@@ -361,6 +371,15 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     }
     await expect(page.getByTestId('home-other').locator('[data-task="it-tickets"]').getByTestId('task-metrics-updated'))
       .toHaveText(/^Updated (this minute|\d+ minutes? ago)$/);
+    // Data Overview shows its three, Raw, Derived and Transactional, a 0 among them as 0.
+    const layers = metrics.filter((metric) => metric.task === 'data-overview');
+    expect(layers.map((metric) => metric.code)).toEqual(['data-overview.raw', 'data-overview.derived', 'data-overview.transactional']);
+    const counted = page.getByTestId('home-other').locator('[data-task="data-overview"]').getByTestId('task-metric');
+    await expect(counted).toHaveCount(3);
+    for (const [index, metric] of layers.entries()) {
+      await expect(counted.nth(index)).toContainText(`${metricValue(metric, 'en')}${metric.label.en}, now`);
+    }
+
     // A task the registry has no metric for keeps its plain card.
     expect(metrics.some((metric) => metric.task === 'workers')).toBe(false);
     await expect(page.getByTestId('home-other').locator('[data-task="workers"]').getByTestId('task-metric')).toHaveCount(0);

@@ -6,7 +6,7 @@
 import type { TaskMetric } from '@/lib/types/tasks';
 
 /** A card shows at most this many metrics. */
-export const METRICS_PER_TASK = 2;
+export const METRICS_PER_TASK = 3;
 
 /** At and above this, a count is written in compact form (1.2M). */
 const COMPACT_FROM = 100_000;
@@ -30,7 +30,7 @@ function isMetric(entry: unknown): entry is TaskMetric {
 }
 
 /**
- * Each task's metrics, in the order the backend answered them, at most two a
+ * Each task's metrics, in the order the backend answered them, at most three a
  * task. `metrics` is the answer's list as it came: anything that is no list,
  * and every malformed entry, is left out.
  */
