@@ -237,6 +237,9 @@ test.describe('View Usages', () => {
     await page.goto(`${BASE}/unused-access?task=it-service-catalog&page=99999999999`);
     await expect(page).toHaveURL(new RegExp(`${BASE}/unused-access\\?task=it-service-catalog$`));
     await expect(page.getByTestId('unused-table').locator('tbody tr').filter({ hasText: 'gate.alice' })).toHaveCount(1);
+    // The page replaced its address; let that navigation end before the next one,
+    // or Chromium aborts the next goto (net::ERR_ABORTED, seen 2026-11-16).
+    await page.waitForLoadState('networkidle');
 
     // A code that is no task of the catalog is no pick.
     // (While a page streams in, its markup is briefly there twice: open() waits for the one page.)
