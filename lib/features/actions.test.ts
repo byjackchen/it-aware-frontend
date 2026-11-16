@@ -39,18 +39,18 @@ beforeEach(() => {
 });
 
 it('sends each change and revalidates the features page', async () => {
-  expect(await flipFlag('f', 'source', 'csat', 'go', false)).toEqual({ ok: true, data: { oid: 'e1' } });
-  await flipFlag('f', 'source', 'csat', 'over', true);
+  expect(await flipFlag('f', 'source', 'csat', 'go')).toEqual({ ok: true, data: { oid: 'e1' } });
+  await flipFlag('f', 'source', 'surveys', 'back');
   expect(sent).toEqual([
-    ['flag', 'f', 'source', 'csat', 'go', false],
-    ['flag', 'f', 'source', 'csat', 'over', true],
+    ['flag', 'f', 'source', 'csat', 'go'],
+    ['flag', 'f', 'source', 'surveys', 'back'],
   ]);
   expect(revalidated).toEqual(Array(2).fill('/tasks/features/features'));
 });
 
 it('answers a refusal as data and revalidates nothing', async () => {
   fail = true;
-  const result = await flipFlag('f', 'source', 'csat', 'go', false);
+  const result = await flipFlag('f', 'source', 'csat', 'go');
   expect(result).toEqual({ ok: false, failure: { status: 409, code: 'refused', message: 'refused' } });
   expect(revalidated).toEqual([]);
 });

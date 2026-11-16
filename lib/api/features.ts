@@ -68,13 +68,7 @@ function post<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
   return call(path, { method, body: JSON.stringify(body) });
 }
 
-/** Flip a flag; to its new value it is the switch, and `override` passes its open gates. */
-export async function flipFlag(
-  code: string,
-  flag: string,
-  value: string,
-  reason: string,
-  override: boolean,
-): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason, override }, 'PUT');
+/** Set a flag to one of its values, with a reason. */
+export async function flipFlag(code: string, flag: string, value: string, reason: string): Promise<FeatureEvent> {
+  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason }, 'PUT');
 }

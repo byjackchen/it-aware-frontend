@@ -1,8 +1,7 @@
 'use server';
 
 /**
- * Server Actions for Manage Features: flip a flag. The phase and the gates are
- * derived by the backend, never set here. Each is recorded by the backend; each answers the event it
+ * Server Actions for Manage Features: flip a flag, the one thing it controls. Each is recorded by the backend; each answers the event it
  * wrote, or the failure (its code and message) to show, such as a rule's refusal.
  */
 
@@ -27,6 +26,6 @@ async function change(action: string, work: () => Promise<FeatureEvent>): Promis
   return result;
 }
 
-export async function flipFlag(code: string, flag: string, value: string, reason: string, override: boolean) {
-  return change('Features:flag', () => api.flipFlag(code, flag, value, reason, override));
+export async function flipFlag(code: string, flag: string, value: string, reason: string) {
+  return change('Features:flag', () => api.flipFlag(code, flag, value, reason));
 }

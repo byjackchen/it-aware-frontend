@@ -1,13 +1,12 @@
 'use client';
 
-/** Manage Features: every feature with its phase, its flags and its gates. */
+/** Manage Features: every feature with its flags and their values. */
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { featureHref, named } from '@/lib/features/view';
 import type { FeaturesResponse } from '@/lib/types/features';
 import { tdClass, thClass, When } from '../jobs/parts';
-import { PhaseBadge } from './parts';
 
 export function FeaturesList({ data }: { data: FeaturesResponse }) {
   const t = useTranslations('Features.list');
@@ -18,10 +17,8 @@ export function FeaturesList({ data }: { data: FeaturesResponse }) {
         <thead>
           <tr className="border-b border-line">
             <th className={thClass}>{t('feature')}</th>
-            <th className={thClass}>{t('phase')}</th>
             <th className={thClass}>{t('flags')}</th>
-            <th className={thClass}>{t('gates')}</th>
-            <th className={thClass}>{t('lastEvent')}</th>
+            <th className={thClass}>{t('lastFlip')}</th>
           </tr>
         </thead>
         <tbody>
@@ -34,21 +31,13 @@ export function FeaturesList({ data }: { data: FeaturesResponse }) {
                 <div className="font-mono text-xs text-muted">{f.code}</div>
               </td>
               <td className={tdClass}>
-                <PhaseBadge phase={f.phase} />
+                {f.flags.map((flag) => (
+                  <div key={flag.code} className="font-mono text-xs">
+                    {flag.code} = {flag.value ?? t('noValue')}
+                  </div>
+                ))}
               </td>
-              <td className={tdClass}>
-                {f.flags.length === 0
-                  ? '—'
-                  : f.flags.map((flag) => (
-                      <div key={flag.code} className="font-mono text-xs">
-                        {flag.code} = {flag.value ?? t('noValue')}
-                      </div>
-                    ))}
-              </td>
-              <td className={tdClass}>{f.gates_total === 0 ? '—' : `${f.gates_passed} / ${f.gates_total}`}</td>
-              <td className={tdClass}>
-                <When iso={f.last_event_at} />
-              </td>
+              <td className={tdClass}>{f.last_flip_at ? <When iso={f.last_flip_at} /> : '—'}</td>
             </tr>
           ))}
         </tbody>
