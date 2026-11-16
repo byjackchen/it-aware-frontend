@@ -42,9 +42,12 @@ test.describe('data tasks', () => {
     await frame.getByRole('link', { name: 'ERP Organizations', exact: true }).click();
     await expect(page).toHaveURL(/\/tasks\/raw-records\/erp-orginfo$/);
     await expect(page.getByTestId('raw-total')).toHaveText(/ in erp_orginfo$/);
-    // No page for a source without a view.
-    const chat = await page.goto('/tasks/raw-records/oit-chatbot-cycles');
-    expect(chat?.status()).toBe(404);
+    // No page for a source without a view: Next's not-found page, inside the streamed
+    // layout (so the status is 200), and no records.
+    await page.goto('/tasks/raw-records/oit-chatbot-cycles');
+    await expect(page.getByText('This page could not be found.')).toBeVisible();
+    await expect(page.getByTestId('raw-table')).toHaveCount(0);
+    await expect(page.getByTestId('raw-total')).toHaveCount(0);
   });
 
   test('Data Overview names the raw sources CSAT is rebuilt from', async ({ page }) => {
