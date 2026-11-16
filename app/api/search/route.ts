@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import { registryGroups } from '@/lib/search/groups';
 import type { SearchResponse } from '@/lib/types/search';
 
 /**
@@ -9,11 +8,9 @@ import type { SearchResponse } from '@/lib/types/search';
  * GET /api/search?q=<query>&lang=<en|zh>&limit=<limit>
  *
  * It asks the backend's search (GET /search: tasks and records, in groups).
- * When the backend answers 404, its search switch is off (or it predates
- * Tasks 2), and the route falls back to today's record search
- * (GET /objects/registry/search), so the bar shows what it showed before.
  * A search that fails answers 502 with no groups, so the bar can say that it
- * failed instead of "no results".
+ * failed instead of "no results". (The fallback to the record search while the
+ * backend's search switch was off went with the switch: ohla-xray TODO00000157.)
  */
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -47,17 +44,8 @@ export async function GET(request: Request) {
             const data: SearchResponse = await search.json();
             return NextResponse.json({ groups: data.groups });
         }
-        if (search.status !== 404) {
-            console.error('Search failed:', search.status);
-            return NextResponse.json(nothing, { status: 502 });
-        }
-
-        const registry = await ask('/objects/registry/search', { q: query, limit });
-        if (!registry.ok) {
-            console.error('Registry search failed:', registry.status);
-            return NextResponse.json(nothing, { status: 502 });
-        }
-        return NextResponse.json({ groups: registryGroups(await registry.json()) });
+        console.error('Search failed:', search.status);
+        return NextResponse.json(nothing, { status: 502 });
     } catch (error) {
         console.error('Search error:', error);
         return NextResponse.json(nothing, { status: 502 });

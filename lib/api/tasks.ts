@@ -46,9 +46,8 @@ export async function recordOpened(code: string, view: string): Promise<void> {
 }
 
 /**
- * The profile an admin set for a user account. Null while the backend's
- * profile switch (IT_AWARE_PROFILES_ENABLED) is off, or for an account that
- * is gone.
+ * The profile an admin set for a user account. Null for an account that is
+ * gone (404).
  */
 export async function getAccountProfile(oid: string): Promise<AccountProfile | null> {
     try {
