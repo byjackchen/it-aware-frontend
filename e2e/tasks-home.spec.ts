@@ -182,9 +182,13 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
   });
 
   test('a task whose page was opened is first under Recent', async ({ page }) => {
-    // The page tells the backend it was opened; wait for that before leaving it.
+    // The page tells the backend it was opened (POST /api/tasks/opened since the fix for task pages that redirect while loading, a
+    // server action before); wait for that before leaving it.
     const noted = page.waitForResponse(
-      (response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/tasks/workers/organizations'
+      (response) =>
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname === '/api/tasks/opened' &&
+        response.request().postData() === JSON.stringify({ task: 'workers', view: 'organizations' })
     );
     await page.goto('/tasks/workers/organizations');
     await noted;

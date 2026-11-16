@@ -20,7 +20,12 @@ backend's dashboard golden snapshots, which this must not disturb):
 - three accounts in gate-readers (every read task), for View Usages' who-used-what
   pages: gate.sync, an integration account, and gate.frank, an inactive user, so
   Unused Access labels them; and gate.gone, a user who signs in, opens a task and
-  is deleted, so By Person lists its events as a deleted account's.
+  is deleted, so By Person lists its events as a deleted account's;
+- gate.holder, a user who holds one data task (View IT Interactions) and no admin
+  task, for the task pages' redirects: a refused task's address must land on
+  /access-denied, and an ended sign-in on /login, without a client exception
+  (e2e/task-redirects.spec.ts). The specs' accounts with no task at all never
+  showed that crash's cause, the task frame of a held task.
 
 Deterministic: fixed timestamps and IDs, no randomness. It runs once per stack.
 """
@@ -128,6 +133,7 @@ def main(argv: list[str]) -> int:
         print("usage: world.py <backend base URL> <username> <password>", file=sys.stderr)
         return 2
     api = Api(*argv)
+    api_password = argv[2]  # gate.holder signs in with the specs' password (e2e/env.ts)
     for system_id, name, platform in (
         ("servicenow-ingest", "ServiceNow Ingestion (gate)", "ingestion"),
         ("airflow-scheduler", "Airflow Scheduler (gate)", "scheduler"),
@@ -161,12 +167,18 @@ def main(argv: list[str]) -> int:
     ):
         accounts[username] = api.post("/auth/config/accounts", {"username": username, **fields})["oid"]
         api.post("/auth/config/account_groups", {"account_oid": accounts[username], "group_oid": readers})
+    perms = {p["permission_code"]: p["oid"] for p in api.get("/auth/config/permissions?limit=1000")}
+    holders = api.post("/auth/config/groups", {"name": "gate-holders", "scope_type": "unconstrained"})["oid"]
+    for code in ("ui:navigation:data", "objects:interactions:read"):
+        api.post("/auth/config/group_permissions", {"group_oid": holders, "permission_oid": perms[code]})
+    holder = api.post("/auth/config/accounts", {"username": "gate.holder", "password": api_password})["oid"]
+    api.post("/auth/config/account_groups", {"account_oid": holder, "group_oid": holders})
     gone = Api(api.base, "gate.gone", GONE_PASSWORD)  # a sign-in event
     gone.post("/tasks/recent", {"task": "workers", "view": "workers"})  # a task_open event
     api.delete(f"/auth/config/accounts/{accounts['gate.gone']}")
     print(
         f"ui world: 2 systems, 1 worker, 1 edge, {COUNT} requests, {COUNT} incidents, "
-        "3 accounts (1 integration, 1 inactive, 1 deleted after use)"
+        "4 accounts (1 integration, 1 inactive, 1 deleted after use, 1 holding one data task)"
     )
     return 0
 
