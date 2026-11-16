@@ -81,6 +81,8 @@ function describe(event: FeatureEvent, t: ReturnType<typeof useTranslations>): s
       return t('events.flag', { flag: event.flag ?? '', value: event.value ?? '' });
     case 'migration':
       return t('events.migration', { revision: event.value ?? '', phase: t(`phases.${event.phase}`) });
+    case 'check':
+      return t(event.passed ? 'events.checkPassed' : 'events.checkFailed', { check: event.value ?? '' });
     default:
       return t('events.note');
   }
@@ -281,6 +283,13 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
               ))}
             </tbody>
           </table>
+        )}
+        {feature.checks.length > 0 && (
+          <ul className="mt-3 space-y-1 text-xs text-muted" aria-label={t('checks.label')}>
+            {feature.checks.map((c) => (
+              <li key={c.code}>{t('checks.item', { check: c.code, job: c.job })}</li>
+            ))}
+          </ul>
         )}
         {canEdit && feature.gates.length > 0 && (
           <form

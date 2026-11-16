@@ -3567,7 +3567,13 @@
       "gateFailed": "Gate {gate} failed",
       "flag": "Flag {flag} set to {value}",
       "migration": "Migration {revision} ({phase})",
-      "note": "Note"
+      "note": "Note",
+      "checkPassed": "Check {check}: no difference",
+      "checkFailed": "Check {check}: differences found"
+    },
+    "checks": {
+      "label": "Checks",
+      "item": "Check {check}: run it with the job {job} in Manage Jobs; its result shows in the history."
     },
     "migrations": {
       "label": "Migration runs",

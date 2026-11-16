@@ -3245,7 +3245,13 @@
       "gateFailed": "关卡 {gate} 未通过",
       "flag": "开关 {flag} 设为 {value}",
       "migration": "迁移 {revision}（{phase}）",
-      "note": "备注"
+      "note": "备注",
+      "checkPassed": "检查 {check}：无差异",
+      "checkFailed": "检查 {check}：发现差异"
+    },
+    "checks": {
+      "label": "检查",
+      "item": "检查 {check}：在管理作业中运行作业 {job}，结果会出现在历史里。"
     },
     "migrations": {
       "label": "迁移记录",

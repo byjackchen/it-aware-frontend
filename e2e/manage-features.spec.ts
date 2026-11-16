@@ -31,6 +31,7 @@ test.describe('Manage Features', () => {
     await expect(page.getByRole('heading', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Flags' })).toContainText('surveys');
     await expect(page.getByText('A flag is flipped only in the switch phase.')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Checks' })).toContainText('check_csat_own_path_parity');
 
     await page.getByRole('combobox', { name: 'Gate' }).selectOption('freeze');
     await page.getByPlaceholder('Evidence text').fill('Golden files recorded (synthetic)');

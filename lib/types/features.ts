@@ -3,7 +3,7 @@
  */
 
 export type Phase = 'planned' | 'add' | 'switch' | 'remove' | 'done';
-export type EventKind = 'phase' | 'gate' | 'flag' | 'migration' | 'note';
+export type EventKind = 'phase' | 'gate' | 'flag' | 'migration' | 'check' | 'note';
 
 export interface Name {
   en: string;
@@ -73,6 +73,8 @@ export interface FeatureDetail extends FeatureSummary {
   revisions: { add: string[]; switch: string[]; remove: string[] };
   gates: GateState[];
   next_phases: { phase: Phase; missing_gates: string[] }[];
+  /** Each check and the manual Airflow job that runs it (check_<feature>_<check>). */
+  checks: { code: string; job: string }[];
   events: FeatureEvent[];
 }
 
