@@ -12,7 +12,6 @@ import { redirect } from 'next/navigation';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { JobsApiError, readFailure } from '@/lib/api/jobs';
 import type {
-  Evidence,
   FeatureDetail,
   FeatureEvent,
   FeaturesResponse,
@@ -67,16 +66,6 @@ export async function getMigrationRun(oid: string): Promise<MigrationRunDetail> 
 
 function post<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
   return call(path, { method, body: JSON.stringify(body) });
-}
-
-export async function recordGate(
-  code: string,
-  gate: string,
-  passed: boolean,
-  reason: string | null,
-  evidence: Evidence,
-): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/gates`, { gate, passed, reason, evidence });
 }
 
 /** Flip a flag; to its new value it is the switch, and `override` passes its open gates. */

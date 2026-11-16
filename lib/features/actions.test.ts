@@ -26,12 +26,11 @@ vi.mock('@/lib/api/features', () => {
         return { ok: false, failure: { status: 409, code: 'refused', message: (error as Error).message } };
       }
     },
-    recordGate: record('gate'),
     flipFlag: record('flag'),
   };
 });
 
-import { flipFlag, recordGate } from '@/app/actions/features';
+import { flipFlag } from '@/app/actions/features';
 
 beforeEach(() => {
   revalidated.length = 0;
@@ -40,17 +39,13 @@ beforeEach(() => {
 });
 
 it('sends each change and revalidates the features page', async () => {
-  expect(await recordGate('f', 'freeze', true, '', { text: 'ok' })).toEqual({ ok: true, data: { oid: 'e1' } });
-  await recordGate('f', 'freeze', false, 'flaky', {});
-  await flipFlag('f', 'source', 'csat', 'go', false);
+  expect(await flipFlag('f', 'source', 'csat', 'go', false)).toEqual({ ok: true, data: { oid: 'e1' } });
   await flipFlag('f', 'source', 'csat', 'over', true);
   expect(sent).toEqual([
-    ['gate', 'f', 'freeze', true, null, { text: 'ok' }],
-    ['gate', 'f', 'freeze', false, 'flaky', {}],
     ['flag', 'f', 'source', 'csat', 'go', false],
     ['flag', 'f', 'source', 'csat', 'over', true],
   ]);
-  expect(revalidated).toEqual(Array(4).fill('/tasks/features/features'));
+  expect(revalidated).toEqual(Array(2).fill('/tasks/features/features'));
 });
 
 it('answers a refusal as data and revalidates nothing', async () => {

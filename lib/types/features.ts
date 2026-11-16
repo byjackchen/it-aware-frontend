@@ -44,12 +44,21 @@ export interface FlagState {
   changed_at: string | null;
 }
 
+/**
+ * A gate, judged by its check: passed when the check passed `days` days in a row
+ * here up to its latest run (`streak` so far); false when that run failed; null
+ * until then. `after_switch`: only runs after the flip to the new value count.
+ */
 export interface GateState {
   code: string;
   before: string;
   name: Name;
+  check: string;
+  days: number;
+  after_switch: boolean;
   passed: boolean | null;
-  recorded: FeatureEvent | null;
+  streak: number;
+  last: FeatureEvent | null;
 }
 
 export interface FeatureSummary {

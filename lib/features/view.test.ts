@@ -1,7 +1,6 @@
 import { expect, it } from 'vitest';
 import {
   canFlip,
-  evidenceFrom,
   featureHref,
   migrationsHref,
   named,
@@ -40,7 +39,11 @@ const gate = (code: string, before: 'switch' | 'remove', passed: boolean | null)
   before,
   passed,
   name: { en: code, zh: code },
-  recorded: null,
+  check: 'c',
+  days: 1,
+  after_switch: false,
+  streak: 0,
+  last: null,
 });
 
 it('lists the switch gates a flip to new would override, until switched', () => {
@@ -50,13 +53,10 @@ it('lists the switch gates a flip to new would override, until switched', () => 
   expect(switchGatesOpen({ phase: 'switch', gates })).toEqual([]);
 });
 
-it('flips until a remove revision ran, names by locale, and keeps only filled evidence', () => {
+it('flips until a remove revision ran, and names by locale', () => {
   const revisions = { add: ['1'], switch: [], remove: ['3'] };
   expect(canFlip({ revisions, ran: ['1'] })).toBe(true);
   expect(canFlip({ revisions, ran: ['1', '3'] })).toBe(false);
   expect(named({ en: 'A', zh: '甲' }, 'zh')).toBe('甲');
   expect(named({ en: 'A', zh: '甲' }, 'en')).toBe('A');
-  expect(evidenceFrom(' https://x ', '')).toEqual({ link: 'https://x' });
-  expect(evidenceFrom('', ' 0 differ ')).toEqual({ text: '0 differ' });
-  expect(evidenceFrom(' ', ' ')).toEqual({});
 });

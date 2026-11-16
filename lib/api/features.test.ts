@@ -45,9 +45,8 @@ it('reads with the session cookie and encodes codes and oids', async () => {
   expect(fetchMock.mock.calls[0][1].cache).toBe('no-store');
 });
 
-it('sends the two changes with their bodies', async () => {
+it('sends a flip with its body', async () => {
   const fetchMock = stub({ oid: 'e1' });
-  await api.recordGate('f', 'freeze', true, null, { link: 'https://example.com' });
   await api.flipFlag('f', 'source', 'csat', 'gates passed', false);
   await api.flipFlag('f', 'source', 'csat', 'override', true);
   const calls = fetchMock.mock.calls.map(([url, init]) => [
@@ -56,7 +55,6 @@ it('sends the two changes with their bodies', async () => {
     JSON.parse(init.body),
   ]);
   expect(calls).toEqual([
-    ['/features/f/gates', 'POST', { gate: 'freeze', passed: true, reason: null, evidence: { link: 'https://example.com' } }],
     ['/features/f/flags/source', 'PUT', { value: 'csat', reason: 'gates passed', override: false }],
     ['/features/f/flags/source', 'PUT', { value: 'csat', reason: 'override', override: true }],
   ]);

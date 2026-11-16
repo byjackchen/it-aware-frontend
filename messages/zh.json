@@ -3224,13 +3224,14 @@
       "name": "关卡",
       "before": "之前",
       "state": "状态",
-      "evidence": "证据",
       "passed": "通过",
       "failed": "未通过",
-      "open": "未记录",
-      "link": "证据链接",
-      "text": "证据说明",
-      "submit": "记录"
+      "judgedBy": "判定方式",
+      "byCheck": "检查 {check} 连续 {days} 天通过",
+      "byCheckAfterSwitch": "切换后检查 {check} 连续 {days} 天通过",
+      "progress": "{streak} / {days} 天",
+      "lastRun": "最近一次运行",
+      "noRun": "尚未运行"
     },
     "events": {
       "phase": "进入{phase}",
@@ -3244,7 +3245,7 @@
     },
     "checks": {
       "label": "检查",
-      "item": "检查 {check}：在管理作业中运行作业 {job}，结果会出现在历史里。"
+      "item": "检查 {check}：在管理作业中由作业 {job} 运行；每次结果都会出现在历史里，并据此判定引用它的关卡。需要每天运行，连续天数才会累积。"
     },
     "migrations": {
       "label": "迁移记录",

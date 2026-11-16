@@ -3546,13 +3546,14 @@
       "name": "Gate",
       "before": "Before",
       "state": "State",
-      "evidence": "Evidence",
       "passed": "Passed",
       "failed": "Failed",
-      "open": "Not recorded",
-      "link": "Evidence link",
-      "text": "Evidence text",
-      "submit": "Record"
+      "judgedBy": "Judged by",
+      "byCheck": "Check {check} passes {days} days in a row",
+      "byCheckAfterSwitch": "Check {check} passes {days} days in a row after the switch",
+      "progress": "{streak} / {days} days",
+      "lastRun": "Latest run",
+      "noRun": "Not run yet"
     },
     "events": {
       "phase": "Entered {phase}",
@@ -3566,7 +3567,7 @@
     },
     "checks": {
       "label": "Checks",
-      "item": "Check {check}: run it with the job {job} in Manage Jobs; its result shows in the history."
+      "item": "Check {check}: runs with the job {job} in Manage Jobs; each result shows in the history and judges the gates that name it. It must run every day for a row of days to grow."
     },
     "migrations": {
       "label": "Migration runs",

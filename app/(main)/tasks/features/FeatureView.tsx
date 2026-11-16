@@ -3,9 +3,10 @@
 /**
  * Manage Features: one feature. Its phase (add, switch, remove), derived by the
  * backend from what ran in this environment and never set here; its flags, the
- * gates each phase needs, and its whole history; and, for a person holding
- * `systems:features:edit`, two changes: flip a flag (to its new value it is the
- * switch, to its old value the rollback) and record a gate. The backend enforces
+ * gates each phase needs (each judged by its check's runs, never recorded by hand),
+ * and its whole history; and, for a person holding `systems:features:edit`, one
+ * change: flip a flag (to its new value it is the switch, to its old value the
+ * rollback). The backend enforces
  * the rules; a refusal is shown as it says.
  */
 
@@ -13,8 +14,8 @@ import { useState, useTransition, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePermissions } from '@/lib/contexts/user-context';
-import { canFlip, evidenceFrom, FEATURES_EDIT_PERMISSION, named, switchGatesOpen } from '@/lib/features/view';
-import { flipFlag, recordGate, type FeaturesResult } from '@/app/actions/features';
+import { canFlip, FEATURES_EDIT_PERMISSION, named, switchGatesOpen } from '@/lib/features/view';
+import { flipFlag, type FeaturesResult } from '@/app/actions/features';
 import type { FeatureDetail, FeatureEvent } from '@/lib/types/features';
 import { Notice, tdClass, thClass, When } from '../jobs/parts';
 import { PhaseBadge, PhaseStrip } from './parts';
@@ -103,10 +104,6 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
   const flag = feature.flags.find((f) => f.code === flagCode);
   const [flagValue, setFlagValue] = useState(firstFlag ? (firstFlag.value === firstFlag.new ? firstFlag.old : firstFlag.new) : '');
   const [flagReason, setFlagReason] = useState('');
-  const [gate, setGate] = useState(feature.gates[0]?.code ?? '');
-  const [gatePassed, setGatePassed] = useState(true);
-  const [gateLink, setGateLink] = useState('');
-  const [gateText, setGateText] = useState('');
   const [override, setOverride] = useState(false);
   // To its new value a flip is the switch: the gates still open before it.
   const openGates = flag && flagValue === flag.new ? switchGatesOpen(feature) : [];
@@ -236,8 +233,9 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
               <tr className="border-b border-line">
                 <th className={thClass}>{t('gate.name')}</th>
                 <th className={thClass}>{t('gate.before')}</th>
+                <th className={thClass}>{t('gate.judgedBy')}</th>
                 <th className={thClass}>{t('gate.state')}</th>
-                <th className={thClass}>{t('gate.evidence')}</th>
+                <th className={thClass}>{t('gate.lastRun')}</th>
               </tr>
             </thead>
             <tbody>
@@ -248,17 +246,27 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
                     <div className="font-mono text-xs text-muted">{g.code}</div>
                   </td>
                   <td className={tdClass}>{t(`phases.${g.before}`)}</td>
+                  <td className={`${tdClass} text-xs`}>
+                    {t(g.after_switch ? 'gate.byCheckAfterSwitch' : 'gate.byCheck', { check: g.check, days: g.days })}
+                  </td>
                   <td className={tdClass}>
                     <span className={g.passed ? 'text-good' : g.passed === false ? 'text-bad' : 'text-muted'}>
-                      {t(g.passed ? 'gate.passed' : g.passed === false ? 'gate.failed' : 'gate.open')}
+                      {g.passed
+                        ? t('gate.passed')
+                        : g.passed === false
+                          ? t('gate.failed')
+                          : t('gate.progress', { streak: g.streak, days: g.days })}
                     </span>
-                    {g.recorded && (
-                      <div className="text-xs text-muted">
-                        {g.recorded.actor} · <When iso={g.recorded.at} />
-                      </div>
+                  </td>
+                  <td className={`${tdClass} text-xs text-muted`}>
+                    {g.last ? (
+                      <>
+                        {g.last.reason} · <When iso={g.last.at} />
+                      </>
+                    ) : (
+                      t('gate.noRun')
                     )}
                   </td>
-                  <td className={tdClass}>{g.recorded && <Evidence event={g.recorded} />}</td>
                 </tr>
               ))}
             </tbody>
@@ -270,32 +278,6 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
               <li key={c.code}>{t('checks.item', { check: c.code, job: c.job })}</li>
             ))}
           </ul>
-        )}
-        {canEdit && feature.gates.length > 0 && (
-          <form
-            className="mt-3 flex flex-wrap items-end gap-2"
-            onSubmit={submit(() => recordGate(feature.code, gate, gatePassed, '', evidenceFrom(gateLink, gateText)), () => {
-              setGateLink('');
-              setGateText('');
-            })}
-          >
-            <select className={inputClass} value={gate} onChange={(e) => setGate(e.target.value)} aria-label={t('gate.name')}>
-              {feature.gates.map((g) => (
-                <option key={g.code} value={g.code}>
-                  {g.code}
-                </option>
-              ))}
-            </select>
-            <label className="flex items-center gap-1 text-sm">
-              <input type="checkbox" checked={gatePassed} onChange={(e) => setGatePassed(e.target.checked)} />
-              {t('gate.passed')}
-            </label>
-            <input className={inputClass} placeholder={t('gate.link')} value={gateLink} onChange={(e) => setGateLink(e.target.value)} />
-            <input className={`${inputClass} min-w-64`} placeholder={t('gate.text')} value={gateText} onChange={(e) => setGateText(e.target.value)} />
-            <button type="submit" className={buttonClass} disabled={pending || !(gateLink.trim() || gateText.trim())}>
-              {t('gate.submit')}
-            </button>
-          </form>
         )}
       </Section>
 

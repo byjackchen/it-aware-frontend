@@ -68,11 +68,3 @@ export function switchGatesOpen(feature: Pick<FeatureDetail, 'phase' | 'gates'>)
 export function named(name: { en: string; zh: string }, locale: string): string {
   return locale.startsWith('zh') ? name.zh : name.en;
 }
-
-/** Evidence from a form's link and text: only what was filled in. */
-export function evidenceFrom(link: string, text: string): { link?: string; text?: string } {
-  const out: { link?: string; text?: string } = {};
-  if (link.trim()) out.link = link.trim();
-  if (text.trim()) out.text = text.trim();
-  return out;
-}

@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * Server Actions for Manage Features: record a gate, flip a flag. The phase is
+ * Server Actions for Manage Features: flip a flag. The phase and the gates are
  * derived by the backend, never set here. Each is recorded by the backend; each answers the event it
  * wrote, or the failure (its code and message) to show, such as a rule's refusal.
  */
@@ -11,7 +11,7 @@ import * as api from '@/lib/api/features';
 import { FEATURES_BASE } from '@/lib/features/view';
 import { logger } from '@/lib/logger';
 import type { JobsFailure } from '@/lib/types/jobs';
-import type { Evidence, FeatureEvent } from '@/lib/types/features';
+import type { FeatureEvent } from '@/lib/types/features';
 
 export type FeaturesResult = { ok: true; data: FeatureEvent } | { ok: false; failure: JobsFailure };
 
@@ -25,10 +25,6 @@ async function change(action: string, work: () => Promise<FeatureEvent>): Promis
     logger.error('Failed', result.failure.message, { requestId, action, code: result.failure.code });
   }
   return result;
-}
-
-export async function recordGate(code: string, gate: string, passed: boolean, reason: string, evidence: Evidence) {
-  return change('Features:gate', () => api.recordGate(code, gate, passed, reason || null, evidence));
 }
 
 export async function flipFlag(code: string, flag: string, value: string, reason: string, override: boolean) {
