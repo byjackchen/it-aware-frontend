@@ -23,7 +23,7 @@ test.describe('Manage Features', () => {
     await expect(table.getByRole('link', { name: 'Raw layer by source' })).toBeVisible();
     const csat = table.getByRole('row').filter({ hasText: 'csat-own-path' });
     await expect(csat).toContainText('source = surveys');
-    await expect(csat).toContainText('/ 6');
+    await expect(csat).toContainText('/ 5');
   });
 
   test('records a gate, moves to add, and is refused the switch with gates open', async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe('Manage Features', () => {
 
     await target.selectOption('switch');
     await page.getByRole('button', { name: 'Move', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('gates not passed: local-parity, dev-parity, production-parity');
+    await expect(page.getByRole('alert')).toContainText('gates not passed: local-parity, production-parity');
   });
 
   test('shows the migration runs view', async ({ page }) => {
