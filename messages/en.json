@@ -3497,6 +3497,93 @@
       "pendingHelp": "Recorded before Airflow answered; its answer was not recorded."
     }
   },
+  "Features": {
+    "title": "Manage Features",
+    "help": "Each change that takes more than one release: add, switch, then remove; its flags, gates and history.",
+    "refresh": "Refresh",
+    "tabs": {
+      "features": "Features",
+      "migrations": "Migrations"
+    },
+    "recorded": "Recorded.",
+    "owner": "Owner: {owner}",
+    "reason": "Reason",
+    "noFlags": "This feature has no flags.",
+    "noGates": "This feature has no gates.",
+    "noEvents": "Nothing has happened to this feature yet.",
+    "phases": {
+      "strip": "Phases",
+      "planned": "Planned",
+      "add": "Add (expand)",
+      "switch": "Switch (migrate)",
+      "remove": "Remove (contract)",
+      "done": "Done"
+    },
+    "sections": {
+      "phase": "Phase",
+      "flags": "Flags",
+      "gates": "Gates",
+      "history": "History"
+    },
+    "list": {
+      "label": "Features",
+      "feature": "Feature",
+      "phase": "Phase",
+      "flags": "Flags",
+      "gates": "Gates passed",
+      "lastEvent": "Last change",
+      "noValue": "no value"
+    },
+    "move": {
+      "to": "Move to",
+      "override": "Override the gates not passed ({gates})",
+      "submit": "Move"
+    },
+    "flag": {
+      "name": "Flag",
+      "value": "Value",
+      "values": "Old → new",
+      "changed": "Changed",
+      "oldNew": "{old} → {new}",
+      "reason": "Why (required)",
+      "submit": "Flip",
+      "onlyInSwitch": "A flag is flipped only in the switch phase."
+    },
+    "gate": {
+      "name": "Gate",
+      "before": "Before",
+      "state": "State",
+      "evidence": "Evidence",
+      "passed": "Passed",
+      "failed": "Failed",
+      "open": "Not recorded",
+      "link": "Evidence link",
+      "text": "Evidence text",
+      "submit": "Record"
+    },
+    "note": {
+      "placeholder": "Add a note to the history",
+      "submit": "Add note"
+    },
+    "events": {
+      "phase": "Entered {phase}",
+      "gatePassed": "Gate {gate} passed",
+      "gateFailed": "Gate {gate} failed",
+      "flag": "Flag {flag} set to {value}",
+      "migration": "Migration {revision} ({phase})",
+      "note": "Note"
+    },
+    "migrations": {
+      "label": "Migration runs",
+      "none": "No migration run has been kept yet.",
+      "started": "Started",
+      "revisions": "Revisions",
+      "outcome": "Outcome",
+      "commit": "Commit",
+      "all": "All runs",
+      "record": "Record"
+    }
+  },
   "Usage": {
     "help": {
       "overview": "How many people use IT-Aware: their sign-ins and the tasks they open, by UTC day.",

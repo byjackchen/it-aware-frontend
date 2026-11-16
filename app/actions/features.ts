@@ -1,0 +1,44 @@
+'use server';
+
+/**
+ * Server Actions for Manage Features: record a gate or a note, move a feature to
+ * a phase, flip a flag. Each is recorded by the backend; each answers the event it
+ * wrote, or the failure (its code and message) to show, such as a rule's refusal.
+ */
+
+import { revalidatePath } from 'next/cache';
+import * as api from '@/lib/api/features';
+import { FEATURES_BASE } from '@/lib/features/view';
+import { logger } from '@/lib/logger';
+import type { JobsFailure } from '@/lib/types/jobs';
+import type { Evidence, FeatureEvent, Phase } from '@/lib/types/features';
+
+export type FeaturesResult = { ok: true; data: FeatureEvent } | { ok: false; failure: JobsFailure };
+
+async function change(action: string, work: () => Promise<FeatureEvent>): Promise<FeaturesResult> {
+  const requestId = logger.generateRequestId();
+  const result = await api.attempt(work);
+  if (result.ok) {
+    logger.info('Recorded', { requestId, action });
+    revalidatePath(FEATURES_BASE);
+  } else {
+    logger.error('Failed', result.failure.message, { requestId, action, code: result.failure.code });
+  }
+  return result;
+}
+
+export async function recordGate(code: string, gate: string, passed: boolean, reason: string, evidence: Evidence) {
+  return change('Features:gate', () => api.recordGate(code, gate, passed, reason || null, evidence));
+}
+
+export async function recordNote(code: string, text: string, evidence: Evidence) {
+  return change('Features:note', () => api.recordNote(code, text, evidence));
+}
+
+export async function enterPhase(code: string, phase: Exclude<Phase, 'planned'>, reason: string, override: boolean) {
+  return change('Features:phase', () => api.enterPhase(code, phase, reason || null, override));
+}
+
+export async function flipFlag(code: string, flag: string, value: string, reason: string) {
+  return change('Features:flag', () => api.flipFlag(code, flag, value, reason));
+}

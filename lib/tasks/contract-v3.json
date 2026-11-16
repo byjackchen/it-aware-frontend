@@ -1536,6 +1536,73 @@
    ]
   },
   {
+   "code": "features",
+   "name": {
+    "en": "Manage Features",
+    "zh": "管理功能上线"
+   },
+   "grouping": "administration",
+   "kind": "internal",
+   "address": "/tasks/features/features",
+   "icon": "flag",
+   "keywords": [
+    "feature",
+    "flag",
+    "release",
+    "migration",
+    "expand",
+    "contract",
+    "功能",
+    "开关",
+    "上线",
+    "迁移"
+   ],
+   "views": [
+    {
+     "slug": "features",
+     "name": {
+      "en": "Features",
+      "zh": "功能"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:features:read"
+      ]
+     },
+     "keywords": [
+      "phase",
+      "阶段",
+      "关卡"
+     ],
+     "address": "/tasks/features/features"
+    },
+    {
+     "slug": "migrations",
+     "name": {
+      "en": "Migrations",
+      "zh": "迁移记录"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "systems:features:read"
+      ]
+     },
+     "keywords": [
+      "alembic",
+      "revision",
+      "迁移"
+     ],
+     "address": "/tasks/features/migrations"
+    }
+   ]
+  },
+  {
    "code": "agent-access",
    "name": {
     "en": "View CLI and MCP Access",
