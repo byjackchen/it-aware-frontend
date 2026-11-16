@@ -49,7 +49,7 @@ test.describe('Manage Features', () => {
 
     await target.selectOption('switch');
     await page.getByRole('button', { name: 'Move', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('gates not passed: local-parity, production-parity');
+    await expect(page.getByRole('alert').filter({ hasText: 'gates not passed: local-parity, production-parity' })).toBeVisible();
   });
 
   test('shows the migration runs view', async ({ page }) => {
