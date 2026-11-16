@@ -28,18 +28,14 @@ function stub(body: unknown, status = 200) {
   return fetchMock;
 }
 
-it('reads with the session cookie and encodes codes and oids', async () => {
+it('reads with the session cookie and encodes codes', async () => {
   const fetchMock = stub({ ok: 1 });
   await api.listFeatures();
   await api.getFeature('csat-own-path');
-  await api.listMigrationRuns(50, 100);
-  await api.getMigrationRun('a/b');
   const urls = fetchMock.mock.calls.map(([url]) => String(url).replace(/^.*\/features/, '/features'));
   expect(urls).toEqual([
     '/features',
     '/features/csat-own-path',
-    '/features/migrations?limit=50&offset=100',
-    '/features/migrations/a%2Fb',
   ]);
   expect(fetchMock.mock.calls[0][1].headers.Cookie).toBe('it_aware_access=test-token');
   expect(fetchMock.mock.calls[0][1].cache).toBe('no-store');

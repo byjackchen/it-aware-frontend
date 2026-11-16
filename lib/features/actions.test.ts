@@ -45,7 +45,7 @@ it('sends each change and revalidates the features page', async () => {
     ['flag', 'f', 'source', 'csat', 'go'],
     ['flag', 'f', 'source', 'surveys', 'back'],
   ]);
-  expect(revalidated).toEqual(Array(2).fill('/tasks/features/features'));
+  expect(revalidated).toEqual(Array(2).fill('/tasks/features'));
 });
 
 it('answers a refusal as data and revalidates nothing', async () => {

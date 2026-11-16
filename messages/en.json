@@ -3523,16 +3523,6 @@
       "changed": "Changed",
       "reason": "Why (required)",
       "submit": "Flip"
-    },
-    "migrations": {
-      "label": "Migration runs",
-      "none": "No migration run has been kept yet.",
-      "started": "Started",
-      "revisions": "Revisions",
-      "outcome": "Outcome",
-      "commit": "Commit",
-      "all": "All runs",
-      "record": "Record"
     }
   },
   "Usage": {

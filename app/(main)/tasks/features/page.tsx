@@ -1,15 +1,15 @@
 /**
- * Manage Features, Features: every feature, or one (`?feature=<code>`), with its
+ * Manage Features: every feature, or one (`?feature=<code>`), with its
  * flags and their flips (lib/features/view.ts). A person without
  * `systems:features:read` goes to the no-access page (read).
  */
 
 import { getFeature, listFeatures, read } from '@/lib/api/features';
 import { parseFeaturesView } from '@/lib/features/view';
-import { LoadFailure } from '../../jobs/parts';
-import { FeaturesList } from '../FeaturesList';
-import { FeatureView } from '../FeatureView';
-import { FeaturesFrame } from '../parts';
+import { LoadFailure } from '../jobs/parts';
+import { FeaturesList } from './FeaturesList';
+import { FeatureView } from './FeatureView';
+import { FeaturesFrame } from './parts';
 
 export const dynamic = 'force-dynamic';
 

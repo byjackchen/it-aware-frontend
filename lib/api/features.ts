@@ -15,8 +15,6 @@ import type {
   FeatureDetail,
   FeatureEvent,
   FeaturesResponse,
-  MigrationRunDetail,
-  MigrationRunsResponse,
 } from '@/lib/types/features';
 
 export { attempt, read } from '@/lib/api/jobs';
@@ -52,14 +50,6 @@ export async function listFeatures(): Promise<FeaturesResponse> {
 
 export async function getFeature(code: string): Promise<FeatureDetail> {
   return call(`/${enc(code)}`);
-}
-
-export async function listMigrationRuns(limit: number, offset: number): Promise<MigrationRunsResponse> {
-  return call(`/migrations?limit=${limit}&offset=${offset}`);
-}
-
-export async function getMigrationRun(oid: string): Promise<MigrationRunDetail> {
-  return call(`/migrations/${enc(oid)}`);
 }
 
 // ── Changes (each recorded by the backend) ───────────────────────────────────
