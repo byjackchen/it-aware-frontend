@@ -203,7 +203,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     const onHome = card.getByLabel('Data · Maintain Workers and Organizations', { exact: true });
 
     await openAccount(page, oid);
-    await expect(card.getByText('Tasks this user can open (24)')).toBeVisible();
+    await expect(card.getByText('Tasks this user can open (25)')).toBeVisible();
     await expect(card.getByTestId('profile-can-open')).toContainText('Maintain IT Service Catalog');
     // The service line was removed with the catalog v3.
     await expect(card.getByLabel('Service line')).toHaveCount(0);
@@ -397,6 +397,6 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(page).toHaveURL(/\/tasks\/access\/accounts\/[\w-]{22}$/);
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('profile-customization')).toHaveCount(1);
-    await expect(page.getByTestId('profile-customization').getByText('Tasks this user can open (24)')).toBeVisible();
+    await expect(page.getByTestId('profile-customization').getByText('Tasks this user can open (25)')).toBeVisible();
   });
 });

@@ -3175,6 +3175,95 @@
       "pendingHelp": "在 Airflow 应答之前记录；其应答未被记录。"
     }
   },
+  "Features": {
+    "title": "管理功能上线",
+    "help": "跨多个版本的变更：先新增，再切换，最后删除；以及它的开关、关卡和历史。",
+    "refresh": "刷新",
+    "recorded": "已记录。",
+    "owner": "负责人：{owner}",
+    "reason": "原因",
+    "noFlags": "该功能没有开关。",
+    "noGates": "该功能没有关卡。",
+    "noEvents": "该功能还没有任何记录。",
+    "phases": {
+      "strip": "阶段",
+      "planned": "计划中",
+      "add": "新增（expand）",
+      "switch": "切换（migrate）",
+      "remove": "删除（contract）",
+      "done": "完成"
+    },
+    "sections": {
+      "phase": "阶段",
+      "flags": "开关",
+      "gates": "关卡",
+      "history": "历史"
+    },
+    "list": {
+      "label": "功能",
+      "feature": "功能",
+      "phase": "阶段",
+      "flags": "开关",
+      "gates": "已过关卡",
+      "lastEvent": "最近变更",
+      "noValue": "无值"
+    },
+    "move": {
+      "to": "移到",
+      "override": "跳过未通过的关卡（{gates}）",
+      "submit": "移动"
+    },
+    "flag": {
+      "name": "开关",
+      "value": "值",
+      "values": "旧 → 新",
+      "changed": "变更",
+      "oldNew": "{old} → {new}",
+      "reason": "原因（必填）",
+      "submit": "切换",
+      "onlyInSwitch": "只有在切换阶段才能切换开关。"
+    },
+    "gate": {
+      "name": "关卡",
+      "before": "之前",
+      "state": "状态",
+      "evidence": "证据",
+      "passed": "通过",
+      "failed": "未通过",
+      "open": "未记录",
+      "link": "证据链接",
+      "text": "证据说明",
+      "submit": "记录"
+    },
+    "note": {
+      "placeholder": "给历史添加一条备注",
+      "submit": "添加备注"
+    },
+    "events": {
+      "phase": "进入{phase}",
+      "gatePassed": "关卡 {gate} 通过",
+      "gateFailed": "关卡 {gate} 未通过",
+      "flag": "开关 {flag} 设为 {value}",
+      "migration": "迁移 {revision}（{phase}）",
+      "note": "备注",
+      "checkPassed": "检查 {check}：无差异",
+      "checkFailed": "检查 {check}：发现差异"
+    },
+    "checks": {
+      "label": "检查",
+      "item": "检查 {check}：在管理作业中运行作业 {job}，结果会出现在历史里。"
+    },
+    "migrations": {
+      "label": "迁移记录",
+      "none": "还没有保存任何迁移记录。",
+      "started": "开始",
+      "revisions": "版本",
+      "outcome": "结果",
+      "commit": "提交",
+      "all": "全部记录",
+      "record": "记录"
+    }
+  },
   "Usage": {
     "help": {
       "overview": "有多少人在使用 IT-Aware:按 UTC 日统计的登录次数与打开的任务。",

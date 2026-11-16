@@ -1,0 +1,48 @@
+import { expect, it } from 'vitest';
+import {
+  canFlip,
+  earlierPhases,
+  evidenceFrom,
+  featureHref,
+  migrationsHref,
+  named,
+  parseFeaturesView,
+  parseMigrationsView,
+  phaseState,
+} from '@/lib/features/view';
+
+/** Manage Features' addresses and the small rules its screens show. */
+
+it('builds and reads the addresses', () => {
+  expect(featureHref()).toBe('/tasks/features/features');
+  expect(featureHref('csat own')).toBe('/tasks/features/features?feature=csat%20own');
+  expect(migrationsHref()).toBe('/tasks/features/migrations');
+  expect(migrationsHref({ page: 1 })).toBe('/tasks/features/migrations');
+  expect(migrationsHref({ page: 3 })).toBe('/tasks/features/migrations?page=3');
+  expect(migrationsHref({ run: 'a/b' })).toBe('/tasks/features/migrations?run=a%2Fb');
+  expect(parseFeaturesView({ feature: 'f' })).toEqual({ feature: 'f' });
+  expect(parseFeaturesView({ feature: ['g', 'h'] })).toEqual({ feature: 'g' });
+  expect(parseFeaturesView({ feature: '' })).toEqual({ feature: null });
+  expect(parseMigrationsView({})).toEqual({ run: null, page: 1 });
+  expect(parseMigrationsView({ page: '4', run: 'r' })).toEqual({ run: 'r', page: 4 });
+  expect(parseMigrationsView({ page: 'x' })).toEqual({ run: null, page: 1 });
+  expect(parseMigrationsView({ page: '0' })).toEqual({ run: null, page: 1 });
+});
+
+it('places each phase against the current one, and lists the rollbacks', () => {
+  expect(phaseState('switch', 'add')).toBe('done');
+  expect(phaseState('switch', 'switch')).toBe('current');
+  expect(phaseState('switch', 'remove')).toBe('ahead');
+  expect(earlierPhases('planned')).toEqual([]);
+  expect(earlierPhases('remove')).toEqual(['add', 'switch']);
+});
+
+it('flips only in the switch phase, names by locale, and keeps only filled evidence', () => {
+  expect(canFlip({ phase: 'switch' })).toBe(true);
+  expect(canFlip({ phase: 'add' })).toBe(false);
+  expect(named({ en: 'A', zh: '甲' }, 'zh')).toBe('甲');
+  expect(named({ en: 'A', zh: '甲' }, 'en')).toBe('A');
+  expect(evidenceFrom(' https://x ', '')).toEqual({ link: 'https://x' });
+  expect(evidenceFrom('', ' 0 differ ')).toEqual({ text: '0 differ' });
+  expect(evidenceFrom(' ', ' ')).toEqual({});
+});
