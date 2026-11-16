@@ -2992,7 +2992,8 @@
       "feature": "功能",
       "flags": "开关",
       "lastFlip": "最近切换",
-      "noValue": "无值"
+      "noValue": "无值",
+      "empty": "目前没有带开关的功能。"
     },
     "flag": {
       "name": "开关",

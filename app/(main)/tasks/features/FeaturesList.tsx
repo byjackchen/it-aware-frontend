@@ -11,6 +11,9 @@ import { tdClass, thClass, When } from '../jobs/parts';
 export function FeaturesList({ data }: { data: FeaturesResponse }) {
   const t = useTranslations('Features.list');
   const locale = useLocale();
+  if (data.features.length === 0) {
+    return <p className="py-8 text-center text-muted" data-testid="features-empty">{t('empty')}</p>;
+  }
   return (
     <div className="overflow-x-auto">
       <table className="w-full" aria-label={t('label')}>
