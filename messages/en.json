@@ -3515,6 +3515,7 @@
       "remove": "Remove (contract)",
       "done": "Done"
     },
+    "phaseDerived": "Set by what ran here: an add migration, a flag at its new value, a remove migration. Flip a flag below to switch or roll back.",
     "sections": {
       "phase": "Phase",
       "flags": "Flags",
@@ -3530,11 +3531,6 @@
       "lastEvent": "Last change",
       "noValue": "no value"
     },
-    "move": {
-      "to": "Move to",
-      "override": "Override the gates not passed ({gates})",
-      "submit": "Move"
-    },
     "flag": {
       "name": "Flag",
       "value": "Value",
@@ -3543,7 +3539,8 @@
       "oldNew": "{old} → {new}",
       "reason": "Why (required)",
       "submit": "Flip",
-      "onlyInSwitch": "A flag is flipped only in the switch phase."
+      "override": "Switch with gates not passed ({gates}), for the reason given",
+      "removed": "A remove revision has run; flags no longer change."
     },
     "gate": {
       "name": "Gate",
@@ -3556,10 +3553,6 @@
       "link": "Evidence link",
       "text": "Evidence text",
       "submit": "Record"
-    },
-    "note": {
-      "placeholder": "Add a note to the history",
-      "submit": "Add note"
     },
     "events": {
       "phase": "Entered {phase}",

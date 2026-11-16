@@ -71,8 +71,9 @@ export interface FeaturesResponse {
 
 export interface FeatureDetail extends FeatureSummary {
   revisions: { add: string[]; switch: string[]; remove: string[] };
+  /** The revisions whose migration runs are recorded in this environment. */
+  ran: string[];
   gates: GateState[];
-  next_phases: { phase: Phase; missing_gates: string[] }[];
   /** Each check and the manual Airflow job that runs it (check_<feature>_<check>). */
   checks: { code: string; job: string }[];
   events: FeatureEvent[];
