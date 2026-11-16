@@ -12,7 +12,6 @@ import { redirect } from 'next/navigation';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { JobsApiError, readFailure } from '@/lib/api/jobs';
 import type {
-  Evidence,
   FeatureDetail,
   FeatureEvent,
   FeaturesResponse,
@@ -69,23 +68,7 @@ function post<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
   return call(path, { method, body: JSON.stringify(body) });
 }
 
-export async function recordGate(
-  code: string,
-  gate: string,
-  passed: boolean,
-  reason: string | null,
-  evidence: Evidence,
-): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/gates`, { gate, passed, reason, evidence });
-}
-
-/** Flip a flag; to its new value it is the switch, and `override` passes its open gates. */
-export async function flipFlag(
-  code: string,
-  flag: string,
-  value: string,
-  reason: string,
-  override: boolean,
-): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason, override }, 'PUT');
+/** Set a flag to one of its values, with a reason. */
+export async function flipFlag(code: string, flag: string, value: string, reason: string): Promise<FeatureEvent> {
+  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason }, 'PUT');
 }

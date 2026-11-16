@@ -3499,74 +3499,30 @@
   },
   "Features": {
     "title": "Manage Features",
-    "help": "Each change that takes more than one release: add, switch, then remove; its flags, gates and history.",
+    "help": "Feature flags: each flag's value, and who flipped it, when and why. Where a change stands in add, switch and remove is written in the backend repo (docs/feature-lifecycle.md).",
     "refresh": "Refresh",
     "recorded": "Recorded.",
     "owner": "Owner: {owner}",
-    "reason": "Reason",
-    "noFlags": "This feature has no flags.",
-    "noGates": "This feature has no gates.",
-    "noEvents": "Nothing has happened to this feature yet.",
-    "phases": {
-      "strip": "Phases",
-      "planned": "Planned",
-      "add": "Add (expand)",
-      "switch": "Switch (migrate)",
-      "remove": "Remove (contract)",
-      "done": "Done"
-    },
-    "phaseDerived": "Set by what ran here: an add migration, a flag at its new value, a remove migration. Flip a flag below to switch or roll back.",
+    "noFlips": "No flag of this feature has been flipped yet.",
+    "flipped": "{flag} set to {value}",
     "sections": {
-      "phase": "Phase",
       "flags": "Flags",
-      "gates": "Gates",
-      "history": "History"
+      "flips": "Flips"
     },
     "list": {
       "label": "Features",
       "feature": "Feature",
-      "phase": "Phase",
       "flags": "Flags",
-      "gates": "Gates passed",
-      "lastEvent": "Last change",
+      "lastFlip": "Last flip",
       "noValue": "no value"
     },
     "flag": {
       "name": "Flag",
       "value": "Value",
-      "values": "Old → new",
+      "values": "Values",
       "changed": "Changed",
-      "oldNew": "{old} → {new}",
       "reason": "Why (required)",
-      "submit": "Flip",
-      "override": "Switch with gates not passed ({gates}), for the reason given",
-      "removed": "A remove revision has run; flags no longer change."
-    },
-    "gate": {
-      "name": "Gate",
-      "before": "Before",
-      "state": "State",
-      "evidence": "Evidence",
-      "passed": "Passed",
-      "failed": "Failed",
-      "open": "Not recorded",
-      "link": "Evidence link",
-      "text": "Evidence text",
-      "submit": "Record"
-    },
-    "events": {
-      "phase": "Entered {phase}",
-      "gatePassed": "Gate {gate} passed",
-      "gateFailed": "Gate {gate} failed",
-      "flag": "Flag {flag} set to {value}",
-      "migration": "Migration {revision} ({phase})",
-      "note": "Note",
-      "checkPassed": "Check {check}: no difference",
-      "checkFailed": "Check {check}: differences found"
-    },
-    "checks": {
-      "label": "Checks",
-      "item": "Check {check}: run it with the job {job} in Manage Jobs; its result shows in the history."
+      "submit": "Flip"
     },
     "migrations": {
       "label": "Migration runs",

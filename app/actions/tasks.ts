@@ -32,19 +32,6 @@ export async function setTaskPinned(code: string, pinned: boolean): Promise<Outc
   });
 }
 
-/**
- * Note the task whose page the person opened, and the view it was opened at,
- * for "recent" on their home and for View Usages. It never fails the page:
- * on any error, nothing is kept.
- */
-export async function taskOpened(code: string, view: string): Promise<void> {
-  try {
-    await api.recordOpened(code, view);
-  } catch {
-    // Recents are a convenience; a page view must not break on them.
-  }
-}
-
 /** Save the customization part of a user's profile (an admin's action). */
 export async function saveAccountProfile(oid: string, update: ProfileUpdate): Promise<Outcome> {
   return attempt('Tasks:saveAccountProfile', 'Failed to save the profile', async () => {

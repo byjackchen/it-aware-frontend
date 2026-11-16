@@ -2,13 +2,12 @@ import { test, expect, type Page } from '@playwright/test';
 import { FEATURES_BASE, MIGRATIONS_BASE } from '../lib/features/view';
 
 /**
- * Manage Features (lib/features/view.ts) against the backend's own definitions
- * (it-aware-backend app/features/features.json): raw-by-source and csat-own-path,
- * nothing recorded yet, the CSAT flag at `surveys`. The phase is derived and has
- * no control: there is no Move and no note. The page's admin records a gate and is
- * refused the switch (a flip to `csat`) while its other gates are open. No flag is
- * flipped here: the backend's e2e flips it on a backend of its own
- * (tests/e2e/test_manage_features.py).
+ * Manage Features (lib/features/view.ts) only controls feature flags, against the
+ * backend's own definitions (it-aware-backend app/features/features.json): the CSAT
+ * feature and its flag `source`, at `surveys`. There is no phase, gate, check or
+ * note on the page. No flag is flipped here: the backend's e2e flips it on a
+ * backend of its own (tests/e2e/test_manage_features.py); the page's admin only
+ * sees the form ready.
  */
 
 async function open(page: Page, query = '') {
@@ -18,40 +17,34 @@ async function open(page: Page, query = '') {
 }
 
 test.describe('Manage Features', () => {
-  test('lists every feature with its phase and flags', async ({ page }) => {
+  test('lists every feature with its flags', async ({ page }) => {
     await open(page);
     const table = page.getByRole('table', { name: 'Features' });
-    await expect(table.getByRole('link', { name: 'Raw layer by source' })).toBeVisible();
+    await expect(table.getByRole('link', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
     const csat = table.getByRole('row').filter({ hasText: 'csat-own-path' });
     await expect(csat).toContainText('source = surveys');
-    await expect(csat).toContainText('/ 5');
+    await expect(table.getByRole('columnheader')).toHaveText(['Feature', 'Flags', 'Last flip']);
   });
 
-  test('records a gate and is refused the switch with gates open', async ({ page }) => {
+  test('shows one feature: its flags and the flip form, and nothing else', async ({ page }) => {
     await open(page, '?feature=csat-own-path');
     await expect(page.getByRole('heading', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Flags' })).toContainText('surveys');
-    await expect(page.getByText(/^Set by what ran here/)).toBeVisible();
-    await expect(page.getByRole('combobox', { name: 'Move to' })).toHaveCount(0);
-    await expect(page.getByPlaceholder('Add a note to the history')).toHaveCount(0);
-    await expect(page.getByRole('list', { name: 'Checks' })).toContainText('check_csat_own_path_parity');
+    const flags = page.getByRole('table', { name: 'Flags' });
+    await expect(flags).toContainText('surveys');
+    await expect(flags).toContainText('surveys · csat');
+    await expect(page.getByRole('heading', { name: 'Flips' })).toBeVisible();
+    for (const gone of ['Phase', 'Gates', 'History']) {
+      await expect(page.getByRole('heading', { name: gone, exact: true })).toHaveCount(0);
+    }
 
-    await page.getByRole('combobox', { name: 'Gate' }).selectOption('freeze');
-    await page.getByPlaceholder('Evidence text').fill('Golden files recorded (synthetic)');
-    await page.getByRole('button', { name: 'Record', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Recorded.' })).toBeVisible();
-    const gates = page.getByRole('table', { name: 'Gates' });
-    await expect(gates.getByRole('row').filter({ hasText: 'freeze' })).toContainText('Passed');
-    const history = page.getByRole('list', { name: 'History' });
-    await expect(history).toContainText('Gate freeze passed');
-    await expect(history).toContainText('Golden files recorded (synthetic)');
-
-    await page.getByRole('combobox', { name: 'Value' }).selectOption('csat');
-    await expect(page.getByText('Switch with gates not passed (local-parity, production-parity), for the reason given')).toBeVisible();
-    await page.getByPlaceholder('Why (required)').fill('too early');
-    await page.getByRole('button', { name: 'Flip', exact: true }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'gates not passed: local-parity, production-parity' })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Flags' })).toContainText('surveys');
+    const value = page.getByRole('combobox', { name: 'Value' });
+    await expect(value).toHaveValue('csat'); // the form starts on another value
+    const flip = page.getByRole('button', { name: 'Flip', exact: true });
+    await expect(flip).toBeDisabled(); // a flip needs a reason
+    await page.getByPlaceholder('Why (required)').fill('ready');
+    await expect(flip).toBeEnabled();
+    await value.selectOption('surveys');
+    await expect(flip).toBeDisabled(); // the value it already has
   });
 
   test('shows the migration runs view', async ({ page }) => {

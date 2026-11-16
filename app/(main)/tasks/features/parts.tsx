@@ -2,16 +2,13 @@
 
 /**
  * Manage Features: the frame both views share (title and refresh; the task frame
- * around it switches the two views) and the small pieces: phase badges and the
- * phase strip.
+ * around it switches the two views).
  */
 
 import { useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Flag, RefreshCw } from 'lucide-react';
-import { PHASES, phaseState } from '@/lib/features/view';
-import type { Phase } from '@/lib/types/features';
 
 export function FeaturesFrame({ children }: { children: ReactNode }) {
   const t = useTranslations('Features');
@@ -42,42 +39,5 @@ export function FeaturesFrame({ children }: { children: ReactNode }) {
         <div className="p-4">{children}</div>
       </div>
     </div>
-  );
-}
-
-const PHASE_CLASS: Record<Phase, string> = {
-  planned: 'bg-gray-500/15 text-ink-2',
-  add: 'bg-blue-500/15 text-accent',
-  switch: 'bg-amber-500/15 text-warn',
-  remove: 'bg-red-500/15 text-bad',
-  done: 'bg-green-500/15 text-good',
-};
-
-export function PhaseBadge({ phase }: { phase: Phase }) {
-  const t = useTranslations('Features.phases');
-  return <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${PHASE_CLASS[phase]}`}>{t(phase)}</span>;
-}
-
-/** planned → add → switch → remove → done, the current phase marked. */
-export function PhaseStrip({ phase }: { phase: Phase }) {
-  const t = useTranslations('Features.phases');
-  return (
-    <ol className="flex flex-wrap items-center gap-2" aria-label={t('strip')}>
-      {PHASES.map((p, i) => {
-        const state = phaseState(phase, p);
-        const style =
-          state === 'current'
-            ? 'border-accent bg-blue-500/20 text-accent font-semibold'
-            : state === 'done'
-              ? 'border-line text-good'
-              : 'border-line text-muted';
-        return (
-          <li key={p} className="flex items-center gap-2" aria-current={state === 'current' ? 'step' : undefined}>
-            {i > 0 && <span className="text-muted">→</span>}
-            <span className={`rounded-lg border px-3 py-1 text-sm ${style}`}>{t(p)}</span>
-          </li>
-        );
-      })}
-    </ol>
   );
 }

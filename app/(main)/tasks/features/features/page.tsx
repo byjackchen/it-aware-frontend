@@ -1,6 +1,6 @@
 /**
  * Manage Features, Features: every feature, or one (`?feature=<code>`), with its
- * phase, flags, gates and history (lib/features/view.ts). A person without
+ * flags and their flips (lib/features/view.ts). A person without
  * `systems:features:read` goes to the no-access page (read).
  */
 

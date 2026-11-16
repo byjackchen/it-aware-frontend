@@ -1,8 +1,9 @@
 /**
  * Manage Features: the backend's answers (it-aware-backend specs/api_specs_features.md).
+ * It only controls feature flags; a change's add, switch and remove are written in
+ * it-aware-backend docs/feature-lifecycle.md.
  */
 
-export type Phase = 'planned' | 'add' | 'switch' | 'remove' | 'done';
 export type EventKind = 'phase' | 'gate' | 'flag' | 'migration' | 'check' | 'note';
 
 export interface Name {
@@ -37,19 +38,9 @@ export interface FlagState {
   code: string;
   name: Name;
   values: string[];
-  old: string;
-  new: string;
   value: string | null;
   changed_by: string | null;
   changed_at: string | null;
-}
-
-export interface GateState {
-  code: string;
-  before: string;
-  name: Name;
-  passed: boolean | null;
-  recorded: FeatureEvent | null;
 }
 
 export interface FeatureSummary {
@@ -58,11 +49,8 @@ export interface FeatureSummary {
   description: Name;
   tapd: string | null;
   owner: string | null;
-  phase: Phase;
   flags: FlagState[];
-  gates_passed: number;
-  gates_total: number;
-  last_event_at: string | null;
+  last_flip_at: string | null;
 }
 
 export interface FeaturesResponse {
@@ -70,13 +58,8 @@ export interface FeaturesResponse {
 }
 
 export interface FeatureDetail extends FeatureSummary {
-  revisions: { add: string[]; switch: string[]; remove: string[] };
-  /** The revisions whose migration runs are recorded in this environment. */
-  ran: string[];
-  gates: GateState[];
-  /** Each check and the manual Airflow job that runs it (check_<feature>_<check>). */
-  checks: { code: string; job: string }[];
-  events: FeatureEvent[];
+  /** The feature's flips, newest first. */
+  flips: FeatureEvent[];
 }
 
 export interface MigrationRun {

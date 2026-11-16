@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { saveAccountProfile, setTaskPinned, taskOpened } from '@/app/actions/tasks';
+import { saveAccountProfile, setTaskPinned } from '@/app/actions/tasks';
 import * as api from '@/lib/api/tasks';
 
 /**
@@ -35,13 +35,6 @@ it('answers with the error when a pin fails, and redraws nothing', async () => {
   vi.mocked(api.pinTask).mockRejectedValueOnce('boom');
   expect(await setTaskPinned('no.such', true)).toEqual({ error: 'Failed to change the pin' });
   expect(revalidated).toEqual([]);
-});
-
-it("notes an opened page's task and view, and never fails on it", async () => {
-  await taskOpened('it-tickets', 'vip');
-  expect(api.recordOpened).toHaveBeenCalledWith('it-tickets', 'vip');
-  vi.mocked(api.recordOpened).mockRejectedValueOnce(new Error('Not Found'));
-  await expect(taskOpened('it-tickets', 'vip')).resolves.toBeUndefined();
 });
 
 it("saves a user's profile and redraws the account page and the home", async () => {

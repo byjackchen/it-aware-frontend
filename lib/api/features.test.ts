@@ -45,27 +45,23 @@ it('reads with the session cookie and encodes codes and oids', async () => {
   expect(fetchMock.mock.calls[0][1].cache).toBe('no-store');
 });
 
-it('sends the two changes with their bodies', async () => {
+it('sends a flip with its body', async () => {
   const fetchMock = stub({ oid: 'e1' });
-  await api.recordGate('f', 'freeze', true, null, { link: 'https://example.com' });
-  await api.flipFlag('f', 'source', 'csat', 'gates passed', false);
-  await api.flipFlag('f', 'source', 'csat', 'override', true);
+  await api.flipFlag('f', 'source', 'csat', 'parity passed');
   const calls = fetchMock.mock.calls.map(([url, init]) => [
     String(url).replace(/^.*\/features/, '/features'),
     init.method,
     JSON.parse(init.body),
   ]);
   expect(calls).toEqual([
-    ['/features/f/gates', 'POST', { gate: 'freeze', passed: true, reason: null, evidence: { link: 'https://example.com' } }],
-    ['/features/f/flags/source', 'PUT', { value: 'csat', reason: 'gates passed', override: false }],
-    ['/features/f/flags/source', 'PUT', { value: 'csat', reason: 'override', override: true }],
+    ['/features/f/flags/source', 'PUT', { value: 'csat', reason: 'parity passed' }],
   ]);
 });
 
 it('keeps a refusal code, and sends a 401 to the login page', async () => {
-  stub({ detail: { code: 'refused', message: 'gates not passed: freeze' } }, 409);
-  const failed = await api.attempt(() => api.flipFlag('f', 'source', 'csat', 'go', false));
-  expect(failed).toEqual({ ok: false, failure: { status: 409, code: 'refused', message: 'gates not passed: freeze' } });
+  stub({ detail: { code: 'refused', message: "source is already 'csat'" } }, 409);
+  const failed = await api.attempt(() => api.flipFlag('f', 'source', 'csat', 'go'));
+  expect(failed).toEqual({ ok: false, failure: { status: 409, code: 'refused', message: "source is already 'csat'" } });
   vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response('not json', { status: 500 })));
   await expect(api.listFeatures()).rejects.toBeInstanceOf(JobsApiError);
   stub({}, 401);

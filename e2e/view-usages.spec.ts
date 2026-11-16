@@ -105,12 +105,13 @@ test.describe('View Usages', () => {
   });
 
   test("moving between a view's records is one open; another view is another", async ({ page }) => {
-    // What the frame tells the backend: one server action per open, with the task and the view.
+    // What the frame tells the backend: one POST /api/tasks/opened per open, with the task and
+    // the view (a server action until the fix for task pages that redirect while loading).
     const told: string[] = [];
     page.on('request', (request) => {
-      if (request.method() === 'POST' && request.headers()['next-action']) told.push(request.postData() ?? '');
+      if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/tasks/opened') told.push(request.postData() ?? '');
     });
-    const opens = (task: string, view: string) => told.filter((body) => body === JSON.stringify([task, view])).length;
+    const opens = (task: string, view: string) => told.filter((body) => body === JSON.stringify({ task, view })).length;
 
     await openTask(page, '/tasks/workers/organizations');
     await expect.poll(() => opens('workers', 'organizations')).toBe(1);
