@@ -513,24 +513,6 @@
         "total": 14
       }
     },
-    "app/api/objects/worker-clusters/summary/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 20
-      },
-      "lines": {
-        "covered": 0,
-        "total": 18
-      },
-      "functions": {
-        "covered": 0,
-        "total": 6
-      },
-      "branches": {
-        "covered": 0,
-        "total": 8
-      }
-    },
     "app/api/services/chatbot/react/route.ts": {
       "statements": {
         "covered": 0,
@@ -619,24 +601,6 @@
       "branches": {
         "covered": 0,
         "total": 30
-      }
-    },
-    "lib/api/clusters.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 15
-      },
-      "lines": {
-        "covered": 0,
-        "total": 11
-      },
-      "functions": {
-        "covered": 0,
-        "total": 3
-      },
-      "branches": {
-        "covered": 0,
-        "total": 11
       }
     },
     "lib/api/core.ts": {
@@ -1609,24 +1573,6 @@
       "branches": {
         "covered": 0,
         "total": 18
-      }
-    },
-    "lib/utils/cluster-feature-labels.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 1
-      },
-      "lines": {
-        "covered": 0,
-        "total": 1
-      },
-      "functions": {
-        "covered": 0,
-        "total": 0
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
       }
     },
     "lib/utils/datetime.ts": {

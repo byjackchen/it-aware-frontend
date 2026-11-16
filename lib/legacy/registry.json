@@ -184,13 +184,13 @@
     },
     {
       "old": "/data/clusters",
-      "new": "/tasks/workers/clusters",
-      "type": "view"
+      "new": "/tasks/workers/workers",
+      "type": "special"
     },
     {
       "old": "/data/clusters/[label]",
-      "new": "/tasks/workers/clusters/[label]",
-      "type": "record"
+      "new": "/tasks/workers/workers",
+      "type": "special"
     },
     {
       "old": "/data/hardwares",

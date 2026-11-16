@@ -112,27 +112,6 @@
       "层级结构"
      ],
      "address": "/tasks/workers/locations"
-    },
-    {
-     "slug": "clusters",
-     "name": {
-      "en": "Clusters",
-      "zh": "群组"
-     },
-     "old_code": "data.clusters",
-     "old_base": "/data/clusters",
-     "requires": {
-      "check": "all",
-      "codes": [
-       "ui:navigation:data",
-       "objects:worker_clusters:read"
-      ]
-     },
-     "keywords": [
-      "Insights",
-      "洞察"
-     ],
-     "address": "/tasks/workers/clusters"
     }
    ]
   },
@@ -1898,13 +1877,13 @@
   },
   {
    "old": "/data/clusters",
-   "new": "/tasks/workers/clusters",
-   "type": "view"
+   "new": "/tasks/workers/workers",
+   "type": "special"
   },
   {
    "old": "/data/clusters/[label]",
-   "new": "/tasks/workers/clusters/[label]",
-   "type": "record"
+   "new": "/tasks/workers/workers",
+   "type": "special"
   },
   {
    "old": "/data/hardwares",
