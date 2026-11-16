@@ -67,7 +67,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
       (r) => r.url().includes('/api/objects/incidents') && r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     const list = await listPromise;
     expect(list.ok()).toBeTruthy();
     expect(extractItems(await list.json()).length).toBeGreaterThan(0);
@@ -91,7 +91,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     const sample = items.find((it) => it.actor_type === 'worker') ?? items[0];
     expect(sample.oid).toBeTruthy();
 
-    await page.goto(`/data/incidents/${sample.oid}`);
+    await page.goto(`/tasks/it-incidents/${sample.oid}`);
     // QA Score section renders unconditionally (even when score is null).
     await expect(page.getByText(/^QA Score$/).first()).toBeVisible({ timeout: 15_000 });
     // The denormalized actors-section heading from Phase 2.
@@ -107,7 +107,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
     }
     // Worker actors get a profile link; non-worker actors render as plain text.
     if (sample.actor_type === 'worker' && sample.actor_stable_id) {
-      await expect(id).toHaveAttribute('href', `/data/workers/${sample.actor_stable_id}`);
+      await expect(id).toHaveAttribute('href', `/tasks/workers/workers/${sample.actor_stable_id}`);
     }
   });
 
@@ -117,7 +117,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
       (r) => r.url().includes('/api/objects/incidents') && r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/ssc-cockpit/dashboard');
+    await page.goto('/tasks/it-ssc-dashboard/overview');
     expect((await incidentsPromise).ok()).toBeTruthy();
     await expect(page.getByRole('heading', { name: /SSC Dashboard/i })).toBeVisible();
     // B2 regression net: Sidebar.incidentReport must resolve.
@@ -126,7 +126,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
 
   test('I-4 /ssc-cockpit/incident-report renders translated labels (no raw keys)', async ({ page }) => {
     const i18n = watchForMissingMessages(page);
-    await page.goto('/ssc-cockpit/incident-report');
+    await page.goto('/tasks/it-ssc-dashboard/incident-report');
     // B3 regression net: page must render English labels, not raw keys like
     // "SSCIncidentReport.title" or "SSCINCIDENTREPORT.KPI.TOTALINCIDENTS".
     await expect(page.getByRole('heading', { name: /Incident Monthly Report/i })).toBeVisible({
@@ -145,7 +145,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
         r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/operation-teams/ops-dashboard/incidents');
+    await page.goto('/tasks/it-tickets/incidents');
     expect((await slimPromise).ok()).toBeTruthy();
     await expect(page.getByRole('heading', { name: /Incident Analysis/i })).toBeVisible();
     // Previous build had an "Active by Priority" donut; the current dashboard
@@ -162,7 +162,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
         r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/operation-teams/ops-dashboard/aging-incidents');
+    await page.goto('/tasks/it-aging-work/incidents');
     expect((await agingPromise).ok()).toBeTruthy();
     await expect(page.getByRole('heading', { name: /Aging Incidents/i })).toBeVisible();
   });
@@ -179,7 +179,7 @@ test.describe('Incidents — list, detail, dashboards, persona', () => {
       if (resp.status() >= 500) failures.push({ url, status: resp.status() });
     });
 
-    await page.goto(`/persona/${worker!.oid}`);
+    await page.goto(`/tasks/persona-dashboard/${worker!.oid}`);
     await page.waitForLoadState('networkidle', { timeout: 20_000 });
     expect(failures, 'no 5xx on persona timeline lanes').toEqual([]);
     // B4 regression net.
@@ -207,7 +207,7 @@ test.describe('Requests — list, detail, creation form', () => {
         r.status() === 200,
       { timeout: 15_000 }
     );
-    await page.goto('/data/requests');
+    await page.goto('/tasks/it-requests');
     const list = await listPromise;
     const items = extractItems(await list.json());
     expect(items.length).toBeGreaterThan(0);
@@ -234,7 +234,7 @@ test.describe('Requests — list, detail, creation form', () => {
     }>(page, '/api/objects/requests?limit=1');
     expect(sample?.oid).toBeTruthy();
 
-    await page.goto(`/data/requests/${sample!.oid}`);
+    await page.goto(`/tasks/it-requests/${sample!.oid}`);
     await expect(page.getByRole('heading', { name: /Request Details/i })).toBeVisible({
       timeout: 15_000,
     });
@@ -250,7 +250,7 @@ test.describe('Requests — list, detail, creation form', () => {
 
   test('R-3 /data/requests/new form renders Required + Optional sections', async ({ page }) => {
     const i18n = watchForMissingMessages(page);
-    await page.goto('/data/requests/new');
+    await page.goto('/tasks/it-requests/new');
     await expect(page.getByRole('heading', { name: /^New Request$/i })).toBeVisible({
       timeout: 15_000,
     });
@@ -266,7 +266,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
       (r) => r.url().includes('/api/objects/systems') && r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/data/systems');
+    await page.goto('/tasks/it-hardware/systems');
     const list = await listPromise;
     expect(list.ok()).toBeTruthy();
     const items = extractItems(await list.json()) as Array<{ system_id: string }>;
@@ -284,7 +284,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     );
     expect(sample?.oid).toBeTruthy();
 
-    await page.goto(`/data/systems/${sample!.oid}`);
+    await page.goto(`/tasks/it-hardware/systems/${sample!.oid}`);
     await expect(onScreen(page, 'system-detail-title')).toHaveText('System Details');
     await expect(onScreen(page, 'system-stable-id')).toHaveText(sample!.system_id);
     await expect(onScreen(page, 'system-edit-button')).toBeVisible();
@@ -292,7 +292,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
   });
 
   test('S-3 /data/systems/new form renders all required fields', async ({ page }) => {
-    await page.goto('/data/systems/new');
+    await page.goto('/tasks/it-hardware/systems/new');
     await expect(page.getByRole('heading', { name: /^New System$/i })).toBeVisible({
       timeout: 15_000,
     });
@@ -311,12 +311,12 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     const renamedName = `${initialName} (renamed)`;
 
     // CREATE
-    await page.goto('/data/systems/new');
+    await page.goto('/tasks/it-hardware/systems/new');
     await page.getByPlaceholder('e.g. ServiceNow Ingestion').fill(initialName);
     await page.getByPlaceholder('e.g. servicenow-ingest').fill(systemId);
     await page.getByPlaceholder('e.g. ingestion, scheduler, internal').fill('test');
     await page.getByTestId('system-create-submit').click();
-    await page.waitForURL('**/data/systems', { timeout: 15_000 });
+    await page.waitForURL('**/tasks/it-hardware/systems', { timeout: 15_000 });
 
     // Verify created
     const listAfterCreate = extractItems(
@@ -328,7 +328,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     expect(created!.is_active).toBe(true);
 
     // EDIT (rename via detail page)
-    await page.goto(`/data/systems/${created!.oid}`);
+    await page.goto(`/tasks/it-hardware/systems/${created!.oid}`);
     await onScreen(page, 'system-edit-button').click();
     // The Name input is the first editable text input on the detail card.
     await page.locator(`input[value="${initialName}"]`).fill(renamedName);
@@ -346,7 +346,7 @@ test.describe('Systems — list, detail, full CRUD round-trip', () => {
     // SOFT-DELETE (backend convention: flips is_active=false; row stays in list)
     page.once('dialog', (dialog) => dialog.accept());
     await onScreen(page, 'system-delete-button').click();
-    await page.waitForURL('**/data/systems', { timeout: 15_000 });
+    await page.waitForURL('**/tasks/it-hardware/systems', { timeout: 15_000 });
 
     const listAfterDelete = extractItems(
       await (await page.request.get(`/api/objects/systems?limit=1000`)).json()

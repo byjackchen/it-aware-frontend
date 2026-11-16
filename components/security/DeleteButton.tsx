@@ -9,7 +9,7 @@ interface DeleteButtonProps {
   itemName: string;
 }
 
-export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
+export function DeleteButton({ onDelete }: DeleteButtonProps) {
   const t = useTranslations('Security');
   const [showConfirm, setShowConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -23,7 +23,7 @@ export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
   if (showConfirm) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-sm text-red-400">{t('common.confirmDelete')}</span>
+        <span className="text-sm text-bad">{t('common.confirmDelete')}</span>
         <button
           onClick={() => setShowConfirm(false)}
           disabled={isPending}
@@ -34,7 +34,7 @@ export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
         <button
           onClick={handleDelete}
           disabled={isPending}
-          className="px-3 py-1.5 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 text-sm rounded-lg bg-btn-danger hover:bg-btn-danger-hover text-bad transition-colors disabled:opacity-50"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.yes')}
         </button>
@@ -45,7 +45,7 @@ export function DeleteButton({ onDelete, itemName }: DeleteButtonProps) {
   return (
     <button
       onClick={() => setShowConfirm(true)}
-      className="p-2 rounded-lg text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+      className="p-2 rounded-lg text-muted hover:bg-red-500/10 hover:text-bad transition-colors"
       title={t('common.delete')}
     >
       <Trash2 className="w-4 h-4" />

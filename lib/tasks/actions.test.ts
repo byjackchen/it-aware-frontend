@@ -1,0 +1,55 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { saveAccountProfile, setTaskPinned, taskOpened } from '@/app/actions/tasks';
+import * as api from '@/lib/api/tasks';
+
+/**
+ * The server actions of the home page and the user profile (app/actions/tasks.ts).
+ */
+
+// Each call as made: the path, and its type when one is given ('layout' or 'page').
+const revalidated: [string, string?][] = [];
+vi.mock('next/cache', () => ({
+  revalidatePath: (...args: [string, string?]) => revalidated.push(args),
+}));
+vi.mock('@/lib/api/tasks');
+
+beforeEach(() => {
+  revalidated.length = 0;
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+});
+afterEach(() => vi.restoreAllMocks());
+
+it('pins and unpins, and redraws the home', async () => {
+  expect(await setTaskPinned('it-incidents', true)).toEqual({ success: true });
+  expect(api.pinTask).toHaveBeenCalledWith('it-incidents');
+  expect(await setTaskPinned('it-incidents', false)).toEqual({ success: true });
+  expect(api.unpinTask).toHaveBeenCalledWith('it-incidents');
+  // The task frame in the layout reads the pins on every page, so a pin
+  // revalidates the whole layout from the root, not only the home page.
+  expect(revalidated).toEqual([['/', 'layout'], ['/', 'layout']]);
+});
+
+it('answers with the error when a pin fails, and redraws nothing', async () => {
+  vi.mocked(api.pinTask).mockRejectedValueOnce(new Error('Not a task you have'));
+  expect(await setTaskPinned('no.such', true)).toEqual({ error: 'Not a task you have' });
+  vi.mocked(api.pinTask).mockRejectedValueOnce('boom');
+  expect(await setTaskPinned('no.such', true)).toEqual({ error: 'Failed to change the pin' });
+  expect(revalidated).toEqual([]);
+});
+
+it("notes an opened page's task and view, and never fails on it", async () => {
+  await taskOpened('it-tickets', 'vip');
+  expect(api.recordOpened).toHaveBeenCalledWith('it-tickets', 'vip');
+  vi.mocked(api.recordOpened).mockRejectedValueOnce(new Error('Not Found'));
+  await expect(taskOpened('it-tickets', 'vip')).resolves.toBeUndefined();
+});
+
+it("saves a user's profile and redraws the account page and the home", async () => {
+  const update = { start_task: 'it-incidents', home_tasks: ['persona-dashboard'] };
+  expect(await saveAccountProfile('abc', update)).toEqual({ success: true });
+  expect(api.putAccountProfile).toHaveBeenCalledWith('abc', update);
+  expect(revalidated).toEqual([['/tasks/access/accounts/abc'], ['/home']]);
+
+  vi.mocked(api.putAccountProfile).mockRejectedValueOnce(new Error('Unknown task codes'));
+  expect(await saveAccountProfile('abc', update)).toEqual({ error: 'Unknown task codes' });
+});

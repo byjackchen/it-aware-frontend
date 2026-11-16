@@ -29,11 +29,11 @@ export function EntityList<T>({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <div className="p-4 border-b border-line flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <button
           onClick={onCreateClick}
-          className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+          className="p-2 rounded-lg bg-btn-accent hover:bg-btn-accent-hover text-accent transition-colors"
           title="Create new"
         >
           <Plus className="w-4 h-4" />
@@ -43,22 +43,22 @@ export function EntityList<T>({
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">No items found</div>
+          <div className="p-4 text-center text-muted">No items found</div>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-line">
             {items.map((item) => {
               const id = getId(item);
               return (
                 <li key={id}>
                   <button
                     onClick={() => onSelectItem(item)}
-                    className="w-full text-left block px-4 py-3 transition-colors hover:bg-white/5 border-l-2 border-transparent"
+                    className="w-full text-left block px-4 py-3 transition-colors hover:bg-hover border-l-2 border-transparent"
                   >
-                    <div className="font-medium text-white">
+                    <div className="font-medium text-ink">
                       {getLabel(item)}
                     </div>
                     {getSubLabel && (
-                      <div className="text-sm text-gray-500 truncate">{getSubLabel(item)}</div>
+                      <div className="text-sm text-muted truncate">{getSubLabel(item)}</div>
                     )}
                   </button>
                 </li>

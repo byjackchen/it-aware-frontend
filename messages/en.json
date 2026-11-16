@@ -12,6 +12,32 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "profile": {
+      "title": "Customization",
+      "note": "Set by an admin. The user does not see this; they see its effect on their home page. The account's status, linked worker and groups above are the security part of the profile.",
+      "canOpen": "Tasks this user can open ({count})",
+      "noTasks": "None. Give the user a group first.",
+      "startPage": "Start page",
+      "startNotSet": "Not set (lands on Home)",
+      "homeTasks": "Tasks on their home",
+      "homeTasksNote": "Only tasks the user can open are offered. The user's own pins are kept apart from this.",
+      "save": "Save customization",
+      "saved": "Saved"
+    },
+    "tasks": {
+      "userProfile": "User profile: {name}",
+      "title": "Task access",
+      "subtitle": "Who has what tasks, from the task catalog and each group's permissions",
+      "byGroup": "By group",
+      "byPerson": "By person",
+      "filter": "Filter…",
+      "pick": "Pick a group or a person to see its tasks",
+      "noTasks": "No tasks",
+      "taskCount": "{count} tasks",
+      "groups": "Groups",
+      "inactive": "Inactive",
+      "scopeNote": "The scope beside a task is how its rows are narrowed for this person."
+    },
     "common": {
       "save": "Save",
       "create": "Create",
@@ -433,7 +459,7 @@
       }
     },
     "GlobalSearch": {
-      "placeholder": "Search Data Objects...",
+      "placeholder": "Search tasks and records...",
       "noResults": "No results found",
       "searching": "Searching...",
       "organizations": "Organizations",
@@ -1436,47 +1462,64 @@
   },
   "Dashboard": {
     "title": "Data Overview",
-    "subtitle": "Live high-level metrics across all data object resources.",
-    "refresh": "Refresh",
-    "loading": "Loading dashboard stats...",
-    "loadFailed": "Failed to load dashboard stats. Try refreshing.",
-    "generatedAt": "Updated at {time}",
-    "summary": {
-      "totalAcrossResources": "Total Across Resources",
-      "activeCapable": "Active (Active-Capable Resources)",
-      "availableResources": "Resources Available"
-    },
-    "groups": {
-      "hierarchies": "Hierarchies",
-      "objects": "Objects",
-      "activities": "Activities",
-      "campaigns": "Campaigns",
-      "insights": "Insights"
-    },
-    "resources": {
-      "organizations": "Organizations",
-      "locations": "Locations",
-      "service-catalogs": "Service Catalogs",
-      "workers": "Workers",
-      "articles": "Articles",
-      "incidents": "Incidents",
-      "requests": "Requests",
-      "interactions": "Interactions",
-      "surveys": "Survey Batches",
-      "notifications": "Notification Batches",
-      "analyses": "Analyses"
-    },
-    "metrics": {
-      "total": "Total",
-      "active": "Active",
-      "inactive": "Inactive"
-    },
-    "status": {
-      "ok": "Available",
-      "forbidden": "No Access",
-      "error": "Unavailable"
-    },
-    "comingSoon": "Dashboards coming soon"
+    "layers": {
+      "title": "IT-Aware's data by layer: raw → derived → transactional",
+      "flow": "Sources → <b>1 Raw</b> → rebuilt into → <b>2 Derived</b> ← read together with → <b>3 Transactional</b> ← people and IT-Aware",
+      "names": {
+        "raw": "Raw data",
+        "derived": "Derived data",
+        "transactional": "Transactional data"
+      },
+      "descriptions": {
+        "raw": "What each source sent, kept as received. Append-only. Nobody reads it through a page; it exists so everything else can be rebuilt.",
+        "derived": "Rebuilt from raw: the copy of what each source said, and what jobs computed from it (classifications, profiles, clusters, links, metrics).",
+        "transactional": "What IT-Aware itself creates: accounts and access, notifications, surveys, settings, usage and action records, and the marks people add to synced records."
+      },
+      "writtenBy": {
+        "raw": "Written by: each source's landing step",
+        "derived": "Written by: sync and derive jobs only",
+        "transactional": "Written by: people and IT-Aware's own processes"
+      },
+      "totals": {
+        "tables": "tables",
+        "rows": "rows",
+        "rowsApproximate": "rows (approx.)",
+        "landing": "Older landing area: {rows} rows"
+      },
+      "notes": {
+        "unused": "Not in use yet: the raw record table is empty. Today sources land in the older landing area, which raw replaces.",
+        "toSplit": "{count, plural, one {# table is} other {# tables are}} marked <tag></tag>: they hold what the source said together with marks people added. The marks move to Transactional.",
+        "toArrive": "Still to arrive here: the marks people add to synced records, from the {count, plural, one {# table} other {# tables}} marked <tag></tag>."
+      },
+      "tags": {
+        "source_copy": "Source copy",
+        "computed": "Computed",
+        "mixed": "To split",
+        "landing": "Older landing",
+        "raw": "Raw"
+      },
+      "subjects": {
+        "activities": "Tickets and interactions",
+        "auth": "Accounts and access",
+        "campaigns": "Notifications and surveys",
+        "edges": "Record links",
+        "hierarchies": "Organizations, locations, service catalog",
+        "insights": "Insights",
+        "journeys": "Journeys",
+        "knowledges": "Knowledge",
+        "metrics": "Metrics",
+        "networks": "Network scans",
+        "objects": "Workers, hardware, systems",
+        "ohla_journey": "Ohla Journey",
+        "raw": "Raw records",
+        "registry": "Record index",
+        "shadow": "Shadow runs",
+        "staging": "Older landing area",
+        "systems": "Platform records"
+      },
+      "hidden": "{count, plural, one {# table is} other {# tables are}} shown to administrators only",
+      "counted": "Counted {time}"
+    }
   },
   "Data": {
     "common": {
@@ -1796,8 +1839,52 @@
       "clusterAssignment": "Cluster"
     }
   },
+  "Home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "internal": "Internal Task",
+    "external": "External Task",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}",
+    "setForYou": "Set for you",
+    "pinned": {
+      "title": "Pinned",
+      "empty": "Pin a task below or from search."
+    },
+    "recent": {
+      "title": "Recent",
+      "empty": "Tasks you open show up here."
+    },
+    "other": {
+      "title": "All tasks"
+    },
+    "metrics": {
+      "join": ", ",
+      "period": {
+        "now": "now",
+        "month": "this month",
+        "last7Days": "last 7 days"
+      },
+      "updated": "Updated {when}",
+      "points": "{change} pts"
+    }
+  },
+  "TaskFrame": {
+    "views": "Views of {name}",
+    "pin": "Pin to home",
+    "unpin": "Unpin from home",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}"
+  },
   "GlobalSearch": {
-    "placeholder": "Search Data Objects...",
+    "pin": "Pin to home",
+    "unpin": "Unpin from home",
+    "pinTask": "Pin {name}",
+    "unpinTask": "Unpin {name}",
+    "placeholder": "Search tasks and records...",
     "noResults": "No results found",
     "searching": "Searching...",
     "organizations": "Organizations",
@@ -1805,7 +1892,19 @@
     "workers": "Workers",
     "serviceCatalogs": "Service Catalogs",
     "articles": "Articles",
-    "requests": "Requests"
+    "requests": "Requests",
+    "tasks": "Tasks",
+    "tasksCount": "{count} you can open",
+    "objects": "Objects",
+    "objectsHint": "records you can see",
+    "keyMove": "move",
+    "keyOpen": "open",
+    "keyClose": "close",
+    "clear": "Clear search",
+    "failed": "Search failed. Try again.",
+    "pinFailed": "The pin could not be changed. Try again.",
+    "results": "Search results",
+    "objectsOf": "Objects: {kind}"
   },
   "Knowledge": {
     "sidebar": {
@@ -2025,7 +2124,6 @@
     "opsOhlaOtherCase": "Other Case Analysis",
     "opsOhlaLatencyBreakdown": "Latency Breakdown",
     "incidentReport": "Incident Report",
-    "surveyLookup": "Survey Lookup",
     "opsUnassigned": "Unassigned",
     "llmProxy": "LLM Proxy",
     "llmRoutes": "Task Routing",
@@ -2714,6 +2812,7 @@
     }
   },
   "TopBar": {
+    "home": "Home",
     "title": "Ohla IT-Aware",
     "dashboard": "Raw Data",
     "dataOverview": "Data Overview",
@@ -3188,6 +3287,320 @@
     },
     "noData": "No data available for this period."
   },
+  "Jobs": {
+    "title": "Manage Jobs",
+    "help": "IT-Aware's Airflow jobs: see their runs and logs, pause, resume or run them now, and recover a run. Every action is recorded.",
+    "refresh": "Refresh",
+    "tabs": {
+      "jobs": "Job list",
+      "actions": "Action Record"
+    },
+    "allJobs": "All jobs",
+    "load": {
+      "title": "Load",
+      "help": "How much IT-Aware's Airflow jobs ran and how long they took: by UTC day, by hour of the day and by job. Updated every 5 minutes.",
+      "window": {
+        "label": "Window",
+        "days": "{days} days",
+        "dates": "{start} to {end} (UTC days)"
+      },
+      "partial": "Showing the newest {count} runs only: the window holds more than could be read.",
+      "empty": {
+        "title": "No runs in this window",
+        "body": "No job ran in the last {days} days."
+      },
+      "tiles": {
+        "runs": "Runs",
+        "failed": "Failed runs",
+        "failureRate": "{rate} of runs",
+        "runTime": "Total run time",
+        "average": "Average run time",
+        "longest": "Longest run"
+      },
+      "unit": {
+        "s": "in seconds",
+        "min": "in minutes",
+        "h": "in hours"
+      },
+      "charts": {
+        "runsPerDay": "Runs per day",
+        "runsPerDayHelp": "Runs by outcome, per UTC day",
+        "success": "Succeeded",
+        "failed": "Failed",
+        "other": "Other",
+        "timePerDay": "Run time per day",
+        "timePerDayHelp": "Total run time per UTC day, {unit}",
+        "runTime": "Run time",
+        "byHour": "Load by hour of day (UTC)",
+        "byHourHelp": "Run time of the runs that started in each UTC hour, {unit}",
+        "hourValue": "{time} · {runs, plural, one {# run} other {# runs}}",
+        "topJobs": "Jobs by time consumed",
+        "noTime": "No run in this window has ended yet.",
+      "topJobsHelp": "The {count} jobs with the most total run time, {unit}"
+      },
+      "table": {
+        "title": "All jobs in the window",
+        "columns": {
+          "job": "Job",
+          "runs": "Runs",
+          "failed": "Failed",
+          "run_seconds": "Total",
+          "average_seconds": "Average",
+          "longest_seconds": "Longest"
+        }
+      },
+      "runDurations": {
+        "title": "Run durations",
+        "help": "{count, plural, one {The newest run that has ended} other {The newest # runs that have ended, oldest first}}, {unit}",
+        "ok": "Run time",
+        "failed": "Failed run"
+      }
+    },
+    "none": "—",
+    "loadFailed": "Could not load this: {message}",
+    "unreachable": {
+      "title": "Airflow is unreachable",
+      "body": "IT-Aware could not read Airflow just now, so no jobs are shown. Try again in a moment.",
+      "notConfigured": "Airflow is not configured for this environment."
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "loadErrors": "Load errors",
+      "loadErrorsHelp": "Airflow could not load this job's file.",
+      "noRun": "No runs"
+    },
+    "list": {
+      "search": "Filter by name, description or tag",
+      "stateFilter": "State",
+      "filter": {
+        "all": "All states",
+        "active": "Active",
+        "paused": "Paused",
+        "running": "Running",
+        "failed": "Last run failed",
+        "load_errors": "Load errors"
+      },
+      "count": "{shown} of {total} jobs",
+      "empty": "Airflow has no jobs.",
+      "noMatch": "No job matches the filter.",
+      "columns": {
+        "job": "Job",
+        "status": "Status",
+        "schedule": "Schedule",
+        "nextRun": "Next run",
+        "lastRun": "Last run",
+        "lastRunTime": "Last run time",
+        "duration": "Duration",
+        "tags": "Tags"
+      }
+    },
+    "job": {
+      "schedule": "Schedule",
+      "nextRun": "Next run",
+      "tags": "Tags",
+      "status": "Status",
+      "lastRun": "Last run",
+      "runs": "Runs",
+      "runsEmpty": "This job has no runs.",
+      "recordLink": "Actions on this job",
+      "columns": {
+        "run": "Run",
+        "state": "State",
+        "type": "Type",
+        "runAfter": "Run after",
+        "start": "Started",
+        "end": "Ended",
+        "duration": "Duration"
+      }
+    },
+    "pager": {
+      "page": "Page {page} of {pages}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "run": {
+      "title": "Run {run}",
+      "parameters": "Started with",
+      "noParameters": "No parameters.",
+      "steps": "Steps",
+      "noSteps": "This run has no steps.",
+      "columns": {
+        "step": "Step",
+        "state": "State",
+        "start": "Started",
+        "end": "Ended",
+        "duration": "Duration",
+        "try": "Try",
+        "log": "Log"
+      },
+      "tryLink": "Try {n}",
+      "noLog": "Not run"
+    },
+    "log": {
+      "title": "Log of {step}, try {try}",
+      "close": "Close",
+      "empty": "The log is empty.",
+      "truncated": "This log is long: only its end is shown.",
+      "loadMore": "Load more",
+      "failed": "The log could not be read: {message}"
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "run": "Run now",
+      "retry_failed": "Retry failed steps",
+      "stop": "Stop run",
+      "confirmTitle": "Confirm",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "working": "Working…",
+      "confirmPause": "Pause the schedule of {job}? No scheduled run starts until it is resumed.",
+      "confirmResume": "Resume the schedule of {job}?",
+      "confirmRun": "Start a run of {job} now?",
+      "confirmRetry": "Run the failed steps of {job}, run {run}, again?",
+      "confirmStop": "Stop {job}, run {run}? The run is marked failed and what is left of it stops.",
+      "parameters": "Parameters",
+      "noParameters": "This job defines no parameters.",
+      "invalidParameters": "Not a valid value: {names}",
+      "done": "{action}: recorded as {outcome}.",
+      "unavailable": "{action} is unavailable here: {message}",
+      "failed": "{action} failed: {message}",
+      "runRefused": "Run now is not allowed for this job: {reason}",
+      "retryRefused": "Retrying is not allowed for this job: {reason}"
+    },
+    "record": {
+      "forJob": "Actions on {job}",
+      "empty": "No action is recorded yet.",
+      "showAll": "Show every job",
+      "columns": {
+        "when": "When",
+        "who": "Who",
+        "what": "What",
+        "job": "Job",
+        "run": "Run",
+        "outcome": "Outcome"
+      },
+      "action": {
+        "pause": "Pause",
+        "resume": "Resume",
+        "run": "Run now",
+        "retry_failed": "Retry failed",
+        "stop": "Stop"
+      },
+      "outcome": {
+        "pending": "Pending",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "refused": "Refused"
+      },
+      "pendingHelp": "Recorded before Airflow answered; its answer was not recorded."
+    }
+  },
+  "Usage": {
+    "help": {
+      "overview": "How many people use IT-Aware: their sign-ins and the tasks they open, by UTC day.",
+      "tasks": "Every task with how often it was opened, by how many people, and how many hold it.",
+      "people": "Everyone who signed in or opened a task in the window, the most task opens first.",
+      "unused-access": "The people who hold a task but did not open it in the window."
+    },
+    "window": {
+      "label": "Window",
+      "days": "{days} days",
+      "dates": "{start} to {end} (UTC days)"
+    },
+    "loadFailed": "Could not load this: {message}",
+    "overview": {
+      "activeToday": "Active people today (UTC)",
+      "activeLast7": "Active people, last 7 days",
+      "activeWindow": "Active people, last {days} days",
+      "signIns": "Sign-ins",
+      "taskOpens": "Task opens",
+      "chart": {
+        "title": "Daily activity",
+        "subtitle": "Active people and task opens per UTC day",
+        "people": "Active people",
+        "opens": "Task opens"
+      },
+      "trackingSince": "Tracking since {date} (UTC day).",
+      "trackingHelp": "Days before it show zero because nothing was recorded then.",
+      "empty": {
+        "title": "No usage recorded yet",
+        "body": "Sign-ins and opened tasks are counted from the first one recorded. The numbers and the daily chart appear here after it."
+      }
+    },
+    "tasks": {
+      "neverOpened": "Never opened in the window",
+      "count": "{shown} of {total} tasks",
+      "noMatch": "Every task was opened in the window.",
+      "never": "Never",
+      "unusedAccess": "Unused access",
+      "peopleOf": "{count, plural, one {# person} other {# people}} opened {task}",
+      "columns": {
+        "name": "Task",
+        "grouping": "Grouping",
+        "opens": "Opens",
+        "people": "People",
+        "holders": "Holders",
+        "share": "Holders who used it",
+        "last_opened_at": "Last opened"
+      }
+    },
+    "unused": {
+      "task": "Task",
+      "pick": "Pick a task",
+      "show": "Show",
+      "pickHelp": "Pick a task to see who holds it without opening it.",
+      "summary": "{total} of {holders} holders did not open it in the last {days} days",
+      "note": "People who lost access to the task are not listed.",
+      "never": "Never",
+      "noHolders": "Nobody holds this task.",
+      "allUsed": "Every holder opened it in the window.",
+      "columns": {
+        "username": "Username",
+        "lastOpened": "Last opened"
+      }
+    },
+    "back": "Back to {view}",
+    "deletedAccount": "Deleted account",
+    "labels": {
+      "inactive": "Inactive",
+      "integration": "Integration"
+    },
+    "taskPeople": {
+      "title": "People who opened {task}",
+      "summary": "{total, plural, one {# person} other {# people}} opened it in the last {days} days",
+      "empty": "Nobody opened it in the window.",
+      "columns": {
+        "username": "Username",
+        "opens": "Opens",
+        "views": "Views opened",
+        "lastOpened": "Last opened"
+      }
+    },
+    "people": {
+      "summary": "{total, plural, one {# person} other {# people}} active in the last {days} days",
+      "empty": "Nobody signed in or opened a task in the window.",
+      "columns": {
+        "username": "Username",
+        "signIns": "Sign-ins",
+        "taskOpens": "Task opens",
+        "tasks": "Tasks",
+        "lastActive": "Last active"
+      }
+    },
+    "person": {
+      "unknown": "Person",
+      "summary": "{signIns, plural, one {# sign-in} other {# sign-ins}} and {tasks, plural, one {# task} other {# tasks}} opened in the last {days} days",
+      "empty": "No task opened in the window.",
+      "columns": {
+        "task": "Task",
+        "opens": "Opens",
+        "views": "Views opened",
+        "lastOpened": "Last opened"
+      }
+    }
+  },
   "Systems": {
     "title": "Systems",
     "subtitle": "LLM Proxy configuration",
@@ -3248,24 +3661,6 @@
       "inactiveModel": "(inactive)",
       "noActiveModels": "No active model. Add or activate a model first.",
       "inactiveWarn": "This model is inactive — the task runs on the default model instead."
-    },
-    "airflow": {
-      "title": "Airflow DAGs",
-      "help": "DAG run status pulled live from Airflow (read-only).",
-      "refresh": "Refresh",
-      "empty": "No DAGs found.",
-      "unavailable": "Airflow is currently unreachable.",
-      "notConfigured": "Airflow is not configured (IT_AWARE_AIRFLOW_BASE_URL).",
-      "dag": "DAG",
-      "status": "Status",
-      "schedule": "Schedule",
-      "lastRun": "Last Run",
-      "lastRunTime": "Last Run Time",
-      "duration": "Duration",
-      "paused": "Paused",
-      "active": "Active",
-      "noRun": "No runs",
-      "importError": "DAG has import errors"
     },
     "agentAccess": {
       "title": "Agent access",

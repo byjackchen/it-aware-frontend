@@ -91,15 +91,15 @@ test.describe('Auth module — authenticated', () => {
     acctIntOid?: string;
   } = {};
 
-  test('GET /auth → 302 to /auth/permissions', async ({ page }) => {
+  test('GET /auth → 307 to /tasks/access/permissions (legacy redirect)', async ({ page }) => {
     await page.goto('/auth');
-    await expect(page).toHaveURL(/\/auth\/permissions$/);
+    await expect(page).toHaveURL(/\/tasks\/access\/permissions$/);
   });
 
   // -- permissions --------------------------------------------------------
 
   test('create permission with live code preview', async ({ page }) => {
-    await page.goto('/auth/permissions/new');
+    await page.goto('/tasks/access/permissions/new');
 
     // Code preview reads "domain:resource:action" until fields are filled.
     await expect(page.locator('text=domain:resource:action')).toBeVisible();
@@ -112,14 +112,14 @@ test.describe('Auth module — authenticated', () => {
     await expect(page.locator(`text=${PERM_CODE}`)).toBeVisible();
 
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/permissions$/);
+    await page.waitForURL(/\/tasks\/access\/permissions$/);
 
     // List shows the new row.
     await expect(page.locator(`tbody tr:has-text("${PERM_CODE}")`)).toBeVisible();
 
     // Capture OID for later cleanup.
     await page.locator(`tbody tr:has-text("${PERM_CODE}")`).click();
-    await page.waitForURL(/\/auth\/permissions\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/permissions\/[A-Za-z0-9_-]{22}$/);
     created.permissionOid = page.url().split('/').pop()!;
   });
 
@@ -127,7 +127,7 @@ test.describe('Auth module — authenticated', () => {
     page,
   }) => {
     test.skip(!created.permissionOid, 'depends on create permission');
-    await page.goto(`/auth/permissions/${created.permissionOid}`);
+    await page.goto(`/tasks/access/permissions/${created.permissionOid}`);
     // The permission code is rendered in both the code-preview header and the
     // labeled detail row, so the locator legitimately resolves to 2 elements.
     await expect(page.locator(`text=${PERM_CODE}`).first()).toBeVisible();
@@ -139,35 +139,35 @@ test.describe('Auth module — authenticated', () => {
 
   test('permission delete dismissal preserves entity', async ({ page }) => {
     test.skip(!created.permissionOid, 'depends on create permission');
-    await page.goto(`/auth/permissions/${created.permissionOid}`);
+    await page.goto(`/tasks/access/permissions/${created.permissionOid}`);
     page.once('dialog', (d) => d.dismiss());
     await page.getByRole('button', { name: /^Delete$/ }).click();
     // Still on detail page, entity intact.
-    await expect(page).toHaveURL(new RegExp(`/auth/permissions/${created.permissionOid}$`));
+    await expect(page).toHaveURL(new RegExp(`/tasks/access/permissions/${created.permissionOid}$`));
     await expect(page.locator(`text=${PERM_CODE}`).first()).toBeVisible();
   });
 
   // -- roles --------------------------------------------------------------
 
   test('create role with include_descendants flag', async ({ page }) => {
-    await page.goto('/auth/roles/new');
+    await page.goto('/tasks/access/roles/new');
     await page.locator('input[placeholder="e.g., Manager"]').fill(`role_${RUN_ID}`);
     await page.locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/roles$/);
+    await page.waitForURL(/\/tasks\/access\/roles$/);
 
     const row = page.locator(`tbody tr:has-text("role_${RUN_ID}")`);
     await expect(row).toBeVisible();
     await expect(row).toContainText(/Yes/);
 
     await row.click();
-    await page.waitForURL(/\/auth\/roles\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/roles\/[A-Za-z0-9_-]{22}$/);
     created.roleOid = page.url().split('/').pop()!;
   });
 
   test('role edit renames and toggles include_descendants', async ({ page }) => {
     test.skip(!created.roleOid, 'depends on create role');
-    await page.goto(`/auth/roles/${created.roleOid}`);
+    await page.goto(`/tasks/access/roles/${created.roleOid}`);
     await page.getByRole('button', { name: /^Edit$/ }).click();
 
     // Scope to <main> to dodge the header search input.
@@ -181,7 +181,7 @@ test.describe('Auth module — authenticated', () => {
 
   test('role detail shows linked-groups read-only section (initially empty)', async ({ page }) => {
     test.skip(!created.roleOid, 'depends on create role');
-    await page.goto(`/auth/roles/${created.roleOid}`);
+    await page.goto(`/tasks/access/roles/${created.roleOid}`);
     await expect(page.getByText(/Linked Groups|no groups/i).first()).toBeVisible();
   });
 
@@ -189,25 +189,25 @@ test.describe('Auth module — authenticated', () => {
 
   test('create three groups — one per scope type', async ({ page }) => {
     // unconstrained
-    await page.goto('/auth/groups/new');
+    await page.goto('/tasks/access/groups/new');
     await page.locator('input[placeholder="e.g., administrators"]').fill(`group_${RUN_ID}_unc`);
     await page.locator('select').selectOption('unconstrained');
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/groups$/);
+    await page.waitForURL(/\/tasks\/access\/groups$/);
 
     // self_scoped
-    await page.goto('/auth/groups/new');
+    await page.goto('/tasks/access/groups/new');
     await page.locator('input[placeholder="e.g., administrators"]').fill(`group_${RUN_ID}_self`);
     await page.locator('select').selectOption('self_scoped');
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/groups$/);
+    await page.waitForURL(/\/tasks\/access\/groups$/);
 
     // role_based
-    await page.goto('/auth/groups/new');
+    await page.goto('/tasks/access/groups/new');
     await page.locator('input[placeholder="e.g., administrators"]').fill(`group_${RUN_ID}_rb`);
     await page.locator('select').selectOption('role_based');
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/groups$/);
+    await page.waitForURL(/\/tasks\/access\/groups$/);
 
     // Verify list shows all three with correct scope badges. `.first()` guards
     // against the dev-mode double-render that occasionally inserts twin rows.
@@ -223,30 +223,30 @@ test.describe('Auth module — authenticated', () => {
 
     // Capture OIDs by clicking each.
     await page.locator(`tbody tr:has-text("group_${RUN_ID}_unc")`).first().click();
-    await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupUncOid = page.url().split('/').pop()!;
 
-    await page.goto('/auth/groups');
+    await page.goto('/tasks/access/groups');
     await page.locator(`tbody tr:has-text("group_${RUN_ID}_self")`).first().click();
-    await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupSelfOid = page.url().split('/').pop()!;
 
-    await page.goto('/auth/groups');
+    await page.goto('/tasks/access/groups');
     await page.locator(`tbody tr:has-text("group_${RUN_ID}_rb")`).first().click();
-    await page.waitForURL(/\/auth\/groups\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/groups\/[A-Za-z0-9_-]{22}$/);
     created.groupRbOid = page.url().split('/').pop()!;
   });
 
   test('self_scoped group detail hides Roles section (conditional render)', async ({ page }) => {
     test.skip(!created.groupSelfOid, 'depends on create groups');
-    await page.goto(`/auth/groups/${created.groupSelfOid}`);
+    await page.goto(`/tasks/access/groups/${created.groupSelfOid}`);
     await expect(page.getByRole('heading', { name: 'Permissions', level: 3 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Roles', level: 3 })).toHaveCount(0);
   });
 
   test('role_based group detail shows both Permissions and Roles sections', async ({ page }) => {
     test.skip(!created.groupRbOid, 'depends on create groups');
-    await page.goto(`/auth/groups/${created.groupRbOid}`);
+    await page.goto(`/tasks/access/groups/${created.groupRbOid}`);
     await expect(page.getByRole('heading', { name: 'Permissions', level: 3 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Roles', level: 3 })).toBeVisible();
   });
@@ -256,7 +256,7 @@ test.describe('Auth module — authenticated', () => {
       !created.groupRbOid || !created.permissionOid,
       'depends on create group_rb and permission'
     );
-    await page.goto(`/auth/groups/${created.groupRbOid}`);
+    await page.goto(`/tasks/access/groups/${created.groupRbOid}`);
 
     // Open the AssignmentManager combobox for Permissions.
     await page.locator('button[title="Add permissions"]').filter({ visible: true }).click();
@@ -281,7 +281,7 @@ test.describe('Auth module — authenticated', () => {
     page,
   }) => {
     test.skip(!created.groupRbOid || !created.roleOid, 'depends on group_rb and role');
-    await page.goto(`/auth/groups/${created.groupRbOid}`);
+    await page.goto(`/tasks/access/groups/${created.groupRbOid}`);
 
     await page.locator('button[title="Add roles"]').filter({ visible: true }).click();
     await page
@@ -293,7 +293,7 @@ test.describe('Auth module — authenticated', () => {
     await expect(page.locator(`text=role_${RUN_ID}_edited`).first()).toBeVisible();
 
     // Bidirectional: open the role and confirm group appears there.
-    await page.goto(`/auth/roles/${created.roleOid}`);
+    await page.goto(`/tasks/access/roles/${created.roleOid}`);
     await expect(page.locator(`text=group_${RUN_ID}_rb`).first()).toBeVisible();
   });
 
@@ -302,7 +302,7 @@ test.describe('Auth module — authenticated', () => {
   test('account create form requires a password for every account type', async ({ page }) => {
     // Since b9ba07f (2026-05-18) user accounts take a password too: they can
     // log in with grant_type=password, so Create waits for one.
-    await page.goto('/auth/accounts/new');
+    await page.goto('/tasks/access/accounts/new');
     const create = page.getByRole('button', { name: /^Create$/ });
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_form`);
     for (const type of ['user', 'integration']) {
@@ -317,21 +317,21 @@ test.describe('Auth module — authenticated', () => {
 
   test('create two accounts — user / integration', async ({ page }) => {
     // user
-    await page.goto('/auth/accounts/new');
+    await page.goto('/tasks/access/accounts/new');
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_usr`);
     await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/accounts$/);
+    await page.waitForURL(/\/tasks\/access\/accounts$/);
 
     // integration (system and agent were merged into it: it-aware-backend
     // 2de7e84, ohla-xray TODO00000135)
-    await page.goto('/auth/accounts/new');
+    await page.goto('/tasks/access/accounts/new');
     await expect(page.locator('select option')).toHaveText(['User', 'Integration']);
     await page.locator('select').selectOption('integration');
     await page.locator('input[placeholder="e.g., john.doe"]').fill(`acct_${RUN_ID}_int`);
     await page.locator('input[type="password"]').fill('qatest_pwd_8chars');
     await page.getByRole('button', { name: /^Create$/ }).click();
-    await page.waitForURL(/\/auth\/accounts$/);
+    await page.waitForURL(/\/tasks\/access\/accounts$/);
 
     // Verify list rows + type badges.
     await expect(
@@ -345,22 +345,22 @@ test.describe('Auth module — authenticated', () => {
     // otherwise we capture the listing URL ("/auth/accounts") and assign
     // "accounts" to the OID.
     await page.locator(`tbody tr:has-text("acct_${RUN_ID}_usr")`).first().click();
-    await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/accounts\/[A-Za-z0-9_-]{22}$/);
     created.acctUserOid = page.url().split('/').pop()!;
 
-    await page.goto('/auth/accounts');
+    await page.goto('/tasks/access/accounts');
     await page.locator(`tbody tr:has-text("acct_${RUN_ID}_int")`).first().click();
-    await page.waitForURL(/\/auth\/accounts\/[A-Za-z0-9_-]{22}$/);
+    await page.waitForURL(/\/tasks\/access\/accounts\/[A-Za-z0-9_-]{22}$/);
     created.acctIntOid = page.url().split('/').pop()!;
   });
 
   test('user account detail shows Link Worker; integration shows Linked System', async ({ page }) => {
     test.skip(!created.acctUserOid || !created.acctIntOid, 'depends on accounts');
-    await page.goto(`/auth/accounts/${created.acctUserOid}`);
+    await page.goto(`/tasks/access/accounts/${created.acctUserOid}`);
     await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Link Worker$/ })).toBeVisible();
 
-    await page.goto(`/auth/accounts/${created.acctIntOid}`);
+    await page.goto(`/tasks/access/accounts/${created.acctIntOid}`);
     await expect(page.getByRole('heading', { name: 'Linked Worker', level: 3 })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Linked System', level: 3 })).toBeVisible();
     await expect(page.getByText('Integration').first()).toBeVisible();
@@ -368,7 +368,7 @@ test.describe('Auth module — authenticated', () => {
 
   test('link then unlink a worker to user account', async ({ page }) => {
     test.skip(!created.acctUserOid, 'depends on create user account');
-    await page.goto(`/auth/accounts/${created.acctUserOid}`);
+    await page.goto(`/tasks/access/accounts/${created.acctUserOid}`);
     await page.getByRole('button', { name: /^Link Worker$/ }).click();
 
     const dialog = page.locator('div.fixed.inset-0');
@@ -393,7 +393,7 @@ test.describe('Auth module — authenticated', () => {
 
   test('assign group to integration account via AssignmentManager', async ({ page }) => {
     test.skip(!created.acctIntOid || !created.groupUncOid, 'depends on accounts and group');
-    await page.goto(`/auth/accounts/${created.acctIntOid}`);
+    await page.goto(`/tasks/access/accounts/${created.acctIntOid}`);
     await page.locator('button[title="Add groups"]').filter({ visible: true }).click();
     await page.locator('select').first().selectOption(created.groupUncOid!);
     await page.getByRole('button', { name: /^Add$/ }).click();
@@ -402,7 +402,7 @@ test.describe('Auth module — authenticated', () => {
 
   test('integration account edit: toggle active off + password reset', async ({ page }) => {
     test.skip(!created.acctIntOid, 'depends on create integration account');
-    await page.goto(`/auth/accounts/${created.acctIntOid}`);
+    await page.goto(`/tasks/access/accounts/${created.acctIntOid}`);
     await page.getByRole('button', { name: /^Edit$/ }).click();
     await page.locator('input[type="checkbox"]').uncheck();
     await page.locator('input[type="password"]').fill('new_pwd_8chars');
@@ -425,12 +425,10 @@ test.describe('Auth module — authenticated', () => {
     page,
     context,
   }) => {
-    // At 1280px the top bar is wider than the window for an account that sees
-    // every top-level item (measured 1470px on d241716 and after the AgentOps
-    // retirement alike), which pushes the user menu off screen: open it at a
-    // width that fits. The overflow itself is a layout bug reported separately.
+    // Kept from when the top bar held a menu wider than a 1280px window, which
+    // pushed the user menu off screen (the menu was retired in Tasks 3).
     await page.setViewportSize({ width: 1600, height: 900 });
-    await page.goto('/dashboard/data-overview');
+    await page.goto('/tasks/data-overview');
 
     // The Logout button lives inside the user-menu popover, which is opened by
     // *hovering* the `.group` wrapper (Tailwind `group-hover:visible`), not by
@@ -454,7 +452,7 @@ test.describe('Auth module — authenticated', () => {
     expect(cookies.some((c) => c.name === 'it_aware_access')).toBe(false);
 
     // Protected route now bounces to /login.
-    await page.goto('/auth/accounts');
+    await page.goto('/tasks/access/accounts');
     await page.waitForURL(/\/login/);
   });
 

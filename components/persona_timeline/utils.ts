@@ -9,7 +9,7 @@ import {
     MAX_WINDOW_DAYS,
     MIN_WINDOW_DAYS,
 } from './constants';
-import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/persona/types';
+import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
 
 export function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));

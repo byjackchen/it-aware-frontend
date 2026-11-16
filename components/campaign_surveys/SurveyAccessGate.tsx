@@ -29,9 +29,9 @@ export function SurveyAccessGate({ children, requireWrite = false }: SurveyAcces
         <div className="h-[calc(100vh-4rem)] p-6">
             <div className="max-w-3xl mx-auto rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
                 <div className="flex items-start gap-3">
-                    <ShieldAlert className="w-5 h-5 text-amber-300 mt-0.5" />
+                    <ShieldAlert className="w-5 h-5 text-amber-800 dark:text-amber-300 mt-0.5" />
                     <div>
-                        <h1 className="text-lg font-semibold text-amber-100">{t('accessDenied.title')}</h1>
+                        <h1 className="text-lg font-semibold text-amber-800 dark:text-amber-100">{t('accessDenied.title')}</h1>
                         <p className="text-sm text-amber-200/90 mt-1">{t('accessDenied.description')}</p>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import type { PersonaActivityEvent, PersonaActivityEventType } from '@/app/(main)/persona/types';
+import type { PersonaActivityEvent, PersonaActivityEventType } from '@/app/(main)/tasks/persona-dashboard/types';
 
 export interface TimelineTick {
     index: number;

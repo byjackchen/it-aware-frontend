@@ -55,15 +55,15 @@ export function Drawer({ isOpen, onClose, title, children, width = 'lg' }: Drawe
 
             {/* Drawer Panel */}
             <div
-                className={`relative ${widthClasses[width]} max-w-full h-full glass-dark border-l border-white/10 shadow-2xl animate-slide-in-right overflow-y-auto`}
+                className={`relative ${widthClasses[width]} max-w-full h-full glass-dark border-l border-line shadow-2xl animate-slide-in-right overflow-y-auto`}
             >
                 {/* Header */}
                 {title && (
-                    <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 bg-inherit">
-                        <h2 className="text-lg font-semibold text-white">{title}</h2>
+                    <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-line bg-inherit">
+                        <h2 className="text-lg font-semibold text-ink">{title}</h2>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg text-ink-2 hover:text-ink hover:bg-hover transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>

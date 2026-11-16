@@ -1,0 +1,546 @@
+{
+  "source": "lib/tasks/contract-v3.json",
+  "version": 3,
+  "entries": [
+    {
+      "old": "/",
+      "new": "/",
+      "type": "kept"
+    },
+    {
+      "old": "/access-denied",
+      "new": "/access-denied",
+      "type": "kept"
+    },
+    {
+      "old": "/auth",
+      "new": "/tasks/access/permissions",
+      "type": "area"
+    },
+    {
+      "old": "/auth/accounts",
+      "new": "/tasks/access/accounts",
+      "type": "view"
+    },
+    {
+      "old": "/auth/accounts/[oid]",
+      "new": "/tasks/access/accounts/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/auth/accounts/new",
+      "new": "/tasks/access/accounts/new",
+      "type": "record"
+    },
+    {
+      "old": "/auth/groups",
+      "new": "/tasks/access/groups",
+      "type": "view"
+    },
+    {
+      "old": "/auth/groups/[oid]",
+      "new": "/tasks/access/groups/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/auth/groups/new",
+      "new": "/tasks/access/groups/new",
+      "type": "record"
+    },
+    {
+      "old": "/auth/permissions",
+      "new": "/tasks/access/permissions",
+      "type": "view"
+    },
+    {
+      "old": "/auth/permissions/[oid]",
+      "new": "/tasks/access/permissions/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/auth/permissions/new",
+      "new": "/tasks/access/permissions/new",
+      "type": "record"
+    },
+    {
+      "old": "/auth/roles",
+      "new": "/tasks/access/roles",
+      "type": "view"
+    },
+    {
+      "old": "/auth/roles/[oid]",
+      "new": "/tasks/access/roles/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/auth/roles/new",
+      "new": "/tasks/access/roles/new",
+      "type": "record"
+    },
+    {
+      "old": "/auth/tasks",
+      "new": "/tasks/access/who-has-what",
+      "type": "view"
+    },
+    {
+      "old": "/campaign",
+      "new": "/tasks/notifications/batches",
+      "type": "area"
+    },
+    {
+      "old": "/campaign/notification-batches",
+      "new": "/tasks/notifications/batches",
+      "type": "view"
+    },
+    {
+      "old": "/campaign/notification-batches/new",
+      "new": "/tasks/notifications/batches/new",
+      "type": "record"
+    },
+    {
+      "old": "/campaign/survey-analytics",
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "area"
+    },
+    {
+      "old": "/campaign/survey-batches",
+      "new": "/tasks/surveys/batches",
+      "type": "view"
+    },
+    {
+      "old": "/campaign/survey-batches/new",
+      "new": "/tasks/surveys/batches/new",
+      "type": "record"
+    },
+    {
+      "old": "/chatbot",
+      "new": "/tasks/ohla-chatbot-dashboard/overview",
+      "type": "area"
+    },
+    {
+      "old": "/chatbot/dashboard/agent-support",
+      "new": "/tasks/ohla-chatbot-dashboard/agent-support",
+      "type": "view"
+    },
+    {
+      "old": "/chatbot/dashboard/latency-breakdown",
+      "new": "/tasks/ohla-chatbot-dashboard/latency-breakdown",
+      "type": "view"
+    },
+    {
+      "old": "/chatbot/dashboard/other-case",
+      "new": "/tasks/ohla-chatbot-dashboard/other-case",
+      "type": "view"
+    },
+    {
+      "old": "/chatbot/dashboard/overview",
+      "new": "/tasks/ohla-chatbot-dashboard/overview",
+      "type": "view"
+    },
+    {
+      "old": "/chatbot/dashboard/survey-details",
+      "new": "/tasks/ohla-chatbot-dashboard/survey-details",
+      "type": "view"
+    },
+    {
+      "old": "/chatbot/dashboard/user-ask-analysis",
+      "new": "/tasks/ohla-chatbot-dashboard/user-ask-analysis",
+      "type": "view"
+    },
+    {
+      "old": "/dashboard",
+      "new": "/tasks/data-overview",
+      "type": "area"
+    },
+    {
+      "old": "/dashboard/data-overview",
+      "new": "/tasks/data-overview",
+      "type": "view"
+    },
+    {
+      "old": "/data",
+      "new": "/tasks/workers/organizations",
+      "type": "area"
+    },
+    {
+      "old": "/data/analyses",
+      "new": "/tasks/survey-analysis-dashboard",
+      "type": "view"
+    },
+    {
+      "old": "/data/analyses/[oid]",
+      "new": "/tasks/survey-analysis-dashboard/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/articles",
+      "new": "/tasks/it-knowledge/articles",
+      "type": "view"
+    },
+    {
+      "old": "/data/articles/[oid]",
+      "new": "/tasks/it-knowledge/articles/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/clusters",
+      "new": "/tasks/workers/clusters",
+      "type": "view"
+    },
+    {
+      "old": "/data/clusters/[label]",
+      "new": "/tasks/workers/clusters/[label]",
+      "type": "record"
+    },
+    {
+      "old": "/data/hardwares",
+      "new": "/tasks/it-hardware/hardware",
+      "type": "view"
+    },
+    {
+      "old": "/data/hardwares/[oid]",
+      "new": "/tasks/it-hardware/hardware/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/incidents",
+      "new": "/tasks/it-incidents",
+      "type": "view"
+    },
+    {
+      "old": "/data/incidents/[oid]",
+      "new": "/tasks/it-incidents/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/interactions",
+      "new": "/tasks/it-interactions",
+      "type": "view"
+    },
+    {
+      "old": "/data/interactions/[oid]",
+      "new": "/tasks/it-interactions/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/locations",
+      "new": "/tasks/workers/locations",
+      "type": "view"
+    },
+    {
+      "old": "/data/locations/[oid]",
+      "new": "/tasks/workers/locations/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/locations/new",
+      "new": "/tasks/workers/locations/new",
+      "type": "record"
+    },
+    {
+      "old": "/data/networks/ioa-scans",
+      "new": "/tasks/it-hardware/ioa-scans",
+      "type": "view"
+    },
+    {
+      "old": "/data/networks/ioa-scans/[oid]",
+      "new": "/tasks/it-hardware/ioa-scans/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/notifications",
+      "new": "/tasks/notifications/records",
+      "type": "view"
+    },
+    {
+      "old": "/data/notifications/[oid]",
+      "new": "/tasks/notifications/records/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/organizations",
+      "new": "/tasks/workers/organizations",
+      "type": "view"
+    },
+    {
+      "old": "/data/organizations/[oid]",
+      "new": "/tasks/workers/organizations/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/organizations/new",
+      "new": "/tasks/workers/organizations/new",
+      "type": "record"
+    },
+    {
+      "old": "/data/requests",
+      "new": "/tasks/it-requests",
+      "type": "view"
+    },
+    {
+      "old": "/data/requests/[oid]",
+      "new": "/tasks/it-requests/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/requests/new",
+      "new": "/tasks/it-requests/new",
+      "type": "record"
+    },
+    {
+      "old": "/data/scenarios",
+      "new": "/tasks/it-service-catalog/scenarios",
+      "type": "view"
+    },
+    {
+      "old": "/data/scenarios/[oid]",
+      "new": "/tasks/it-service-catalog/scenarios/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/service-catalogs",
+      "new": "/tasks/it-service-catalog/service-catalogs",
+      "type": "view"
+    },
+    {
+      "old": "/data/service-catalogs/[oid]",
+      "new": "/tasks/it-service-catalog/service-catalogs/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/service-catalogs/new",
+      "new": "/tasks/it-service-catalog/service-catalogs/new",
+      "type": "record"
+    },
+    {
+      "old": "/data/surveys",
+      "new": "/tasks/surveys/records",
+      "type": "view"
+    },
+    {
+      "old": "/data/surveys/[oid]",
+      "new": "/tasks/surveys/records/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/systems",
+      "new": "/tasks/it-hardware/systems",
+      "type": "view"
+    },
+    {
+      "old": "/data/systems/[oid]",
+      "new": "/tasks/it-hardware/systems/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/systems/new",
+      "new": "/tasks/it-hardware/systems/new",
+      "type": "record"
+    },
+    {
+      "old": "/data/workers",
+      "new": "/tasks/workers/workers",
+      "type": "view"
+    },
+    {
+      "old": "/data/workers/[oid]",
+      "new": "/tasks/workers/workers/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/data/workers/new",
+      "new": "/tasks/workers/workers/new",
+      "type": "record"
+    },
+    {
+      "old": "/home",
+      "new": "/home",
+      "type": "kept"
+    },
+    {
+      "old": "/itopsdashboard",
+      "new": "/tasks/it-operations-dashboard/overview",
+      "type": "area"
+    },
+    {
+      "old": "/itopsdashboard/overview",
+      "new": "/tasks/it-operations-dashboard/overview",
+      "type": "view"
+    },
+    {
+      "old": "/itopsdashboard/service-experience",
+      "new": "/tasks/it-operations-dashboard/service-experience",
+      "type": "view"
+    },
+    {
+      "old": "/itopsdashboard/survey-analytics",
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "view"
+    },
+    {
+      "old": "/knowledge",
+      "new": "/tasks/it-knowledge/library",
+      "type": "view"
+    },
+    {
+      "old": "/knowledge/articles",
+      "new": "/tasks/it-knowledge/library",
+      "type": "special"
+    },
+    {
+      "old": "/knowledge/catalog/[oid]",
+      "new": "/tasks/it-knowledge/library/catalog/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/knowledge/faqs",
+      "new": "/tasks/it-knowledge/library",
+      "type": "special"
+    },
+    {
+      "old": "/ohla-journey",
+      "new": "/tasks/ohla-journey-dashboard/headline",
+      "type": "area"
+    },
+    {
+      "old": "/ohla-journey/[section]",
+      "new": "/tasks/ohla-journey-dashboard/[section]",
+      "type": "pattern"
+    },
+    {
+      "old": "/operation-teams",
+      "new": "/tasks/it-tickets/active",
+      "type": "area"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard",
+      "new": "/tasks/it-tickets/active",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/aging-asset-tasks",
+      "new": "/tasks/it-aging-work/asset-tasks",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/aging-incidents",
+      "new": "/tasks/it-aging-work/incidents",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/aging-sc-tasks",
+      "new": "/tasks/it-aging-work/sc-tasks",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/assets",
+      "new": "/tasks/it-assets/overview",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/catalog",
+      "new": "/tasks/it-tickets/catalog",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/in-stock-assets",
+      "new": "/tasks/it-assets/in-stock",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/incidents",
+      "new": "/tasks/it-tickets/incidents",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/on-off-boarding",
+      "new": "/tasks/it-tickets/on-off-boarding",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/pending-assets",
+      "new": "/tasks/it-assets/pending",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/unassigned",
+      "new": "/tasks/it-tickets/unassigned",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/vip-tickets",
+      "new": "/tasks/it-tickets/vip",
+      "type": "view"
+    },
+    {
+      "old": "/operation-teams/ops-dashboard/zero-residual-assets",
+      "new": "/tasks/it-assets/zero-residual",
+      "type": "view"
+    },
+    {
+      "old": "/persona",
+      "new": "/tasks/persona-dashboard",
+      "type": "view"
+    },
+    {
+      "old": "/persona/[oid]",
+      "new": "/tasks/persona-dashboard/[oid]",
+      "type": "record"
+    },
+    {
+      "old": "/ssc-cockpit",
+      "new": "/tasks/it-ssc-dashboard/overview",
+      "type": "area"
+    },
+    {
+      "old": "/ssc-cockpit/dashboard",
+      "new": "/tasks/it-ssc-dashboard/overview",
+      "type": "view"
+    },
+    {
+      "old": "/ssc-cockpit/faq-report",
+      "new": "/tasks/it-ssc-dashboard/faq-report",
+      "type": "view"
+    },
+    {
+      "old": "/ssc-cockpit/incident-report",
+      "new": "/tasks/it-ssc-dashboard/incident-report",
+      "type": "view"
+    },
+    {
+      "old": "/ssc-cockpit/survey-lookup",
+      "new": "/tasks/it-csat-link",
+      "type": "view"
+    },
+    {
+      "old": "/systems",
+      "new": "/tasks/jobs/jobs",
+      "type": "special"
+    },
+    {
+      "old": "/systems/agent-access",
+      "new": "/tasks/agent-access",
+      "type": "view"
+    },
+    {
+      "old": "/systems/airflow",
+      "new": "/tasks/jobs/jobs",
+      "type": "view"
+    },
+    {
+      "old": "/systems/llm_proxy",
+      "new": "/home",
+      "type": "special"
+    },
+    {
+      "old": "/systems/llm_proxy/models",
+      "new": "/home",
+      "type": "special"
+    },
+    {
+      "old": "/systems/llm_proxy/routes",
+      "new": "/home",
+      "type": "special"
+    }
+  ]
+}

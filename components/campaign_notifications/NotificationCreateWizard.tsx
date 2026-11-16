@@ -103,7 +103,7 @@ export function NotificationCreateWizard() {
                 return;
             }
 
-            router.push(`/campaign/notification-batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
+            router.push(`/tasks/notifications/batches?notificationBatch=${encodeURIComponent(notificationBatchOid)}`);
             router.refresh();
         });
     };
@@ -114,7 +114,7 @@ export function NotificationCreateWizard() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.push('/campaign/notification-batches')}
+                        onClick={() => router.push('/tasks/notifications/batches')}
                         className={`p-2 rounded-lg ${isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -135,7 +135,7 @@ export function NotificationCreateWizard() {
                                 setError(null);
                                 setBatchProgress(null);
                             }}
-                            className={`px-3 py-1.5 rounded-md border text-sm ${createMode === 'guided' ? 'border-blue-400 bg-blue-500/20 text-blue-200' : isLight ? 'border-slate-300 text-slate-700' : 'border-white/10 text-gray-300'}`}
+                            className={`px-3 py-1.5 rounded-md border text-sm ${createMode === 'guided' ? 'border-blue-400 bg-blue-500/20 text-blue-800 dark:text-blue-200' : isLight ? 'border-slate-300 text-slate-700' : 'border-white/10 text-gray-300'}`}
                         >
                             {t('create.entryModes.guided')}
                         </button>
@@ -147,7 +147,7 @@ export function NotificationCreateWizard() {
                                 setError(null);
                                 setBatchProgress(null);
                             }}
-                            className={`px-3 py-1.5 rounded-md border text-sm ${createMode === 'excel_direct' ? 'border-blue-400 bg-blue-500/20 text-blue-200' : isLight ? 'border-slate-300 text-slate-700' : 'border-white/10 text-gray-300'}`}
+                            className={`px-3 py-1.5 rounded-md border text-sm ${createMode === 'excel_direct' ? 'border-blue-400 bg-blue-500/20 text-blue-800 dark:text-blue-200' : isLight ? 'border-slate-300 text-slate-700' : 'border-white/10 text-gray-300'}`}
                         >
                             {t('create.entryModes.excelDirect')}
                         </button>
@@ -165,7 +165,7 @@ export function NotificationCreateWizard() {
                 {createMode === 'guided' && (
                     <>
                         {error && (
-                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-200">
+                            <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-800 dark:text-rose-200">
                                 {error}
                             </div>
                         )}

@@ -104,7 +104,7 @@ export function SurveyCreateWizard() {
                 return;
             }
 
-            router.push(`/campaign/survey-batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
+            router.push(`/tasks/surveys/batches?surveyBatch=${encodeURIComponent(surveyBatchOid)}`);
             router.refresh();
         });
     };
@@ -115,7 +115,7 @@ export function SurveyCreateWizard() {
                 <div className="flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => router.push('/campaign/survey-batches')}
+                        onClick={() => router.push('/tasks/surveys/batches')}
                         className={`p-2 rounded-lg ${isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-white/10 text-gray-300'}`}
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -126,7 +126,7 @@ export function SurveyCreateWizard() {
                     </div>
                 </div>
 
-                <div className="inline-flex rounded-lg border border-white/10 p-1">
+                <div className="inline-flex rounded-lg border border-line p-1">
                     <button
                         type="button"
                         onClick={() => {
@@ -154,7 +154,7 @@ export function SurveyCreateWizard() {
                 </div>
 
                 {error && (
-                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-100">
+                    <div className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-4 py-3 text-sm text-rose-800 dark:text-rose-100">
                         {error}
                     </div>
                 )}

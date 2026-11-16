@@ -118,7 +118,7 @@ export function AgingTable<T extends AgingTableRow>({
                 key: 'stable_id',
                 label: t('tables.number'),
                 width: '130px',
-                render: (r) => <span className="font-mono text-blue-400">{r.stable_id}</span>,
+                render: (r) => <span className="font-mono text-accent">{r.stable_id}</span>,
             },
             {
                 key: '_daysNoUpdate',

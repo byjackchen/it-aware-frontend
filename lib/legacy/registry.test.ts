@@ -1,0 +1,132 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import contract from '@/lib/tasks/contract-v3.json';
+import { pageAddress } from '@/lib/tasks/pages';
+import { placeholders } from './build';
+import { findLegacy, newAddress, REGISTRY } from './registry';
+
+const KEPT = ['/', '/home', '/access-denied'];
+const views = contract.tasks.flatMap(task => task.views.map(view => ({ task, view })));
+const viewAddresses = views.map(({ view }) => view.address);
+/** The views that had a page before the move; a view added since (View Usages' three) has no old address and no redirect. */
+const movedViews = views.flatMap(({ view }) => (view.old_base === null ? [] : [{ ...view, old_base: view.old_base }]));
+
+/** Every page.tsx under app/(main), as its address (a `[name]` segment stands for any value). */
+function pageAddresses(): string[] {
+    const root = join(process.cwd(), 'app', '(main)');
+    return readdirSync(root, { recursive: true, encoding: 'utf-8' })
+        .filter(file => file === 'page.tsx' || file.endsWith('/page.tsx'))
+        .map(file => pageAddress(`app/(main)/${file}`))
+        .sort();
+}
+
+const isPlaceholder = (segment: string) => /^\[.+\]$/.test(segment);
+
+/** Whether `address` lies at or under `base`, segment by segment; a placeholder segment of either fits any value. */
+function fitsUnder(address: string, base: string): boolean {
+    const have = address.split('/');
+    const want = base.split('/');
+    return (
+        have.length >= want.length &&
+        want.every((segment, i) => segment === have[i] || isPlaceholder(segment) || isPlaceholder(have[i]))
+    );
+}
+
+/** Whether a page serves `address`: same length, each segment equal or a placeholder. */
+const serves = (page: string, address: string) =>
+    page.split('/').length === address.split('/').length && fitsUnder(address, page);
+
+describe('the legacy registry', () => {
+    // Since lane F4 moved the pages under /tasks/..., only the kept addresses live elsewhere.
+    it('finds every page under app/(main) at a kept address or under /tasks', () => {
+        const pages = pageAddresses();
+        expect(pages.length).toBeGreaterThan(80);
+        expect(pages.filter(page => !page.startsWith('/tasks/')).sort()).toEqual([...KEPT].sort());
+    });
+
+    it('finds every page under /tasks at a contract view address or a record under one', () => {
+        const stray = pageAddresses()
+            .filter(page => page.startsWith('/tasks/'))
+            .filter(page => !viewAddresses.some(address => fitsUnder(page, address)));
+        expect(stray).toEqual([]);
+    });
+
+    it("has a page for every legacy entry's new address and every view address", () => {
+        const pages = pageAddresses();
+        const targets = [...REGISTRY.entries.map(entry => entry.new), ...viewAddresses];
+        expect(targets.filter(target => !pages.some(page => serves(page, target)))).toEqual([]);
+    });
+
+    it('checks pages as patterns: a placeholder page serves every value, nothing else', () => {
+        expect(serves('/tasks/ohla-journey-dashboard/[section]', '/tasks/ohla-journey-dashboard/headline')).toBe(true);
+        expect(serves('/tasks/it-incidents/[oid]', '/tasks/it-incidents/[oid]')).toBe(true);
+        expect(serves('/tasks/it-incidents', '/tasks/it-incidents/[oid]')).toBe(false);
+        expect(fitsUnder('/tasks/it-incidents/[oid]', '/tasks/it-incidents')).toBe(true);
+        expect(fitsUnder('/tasks/it-incidentsx', '/tasks/it-incidents')).toBe(false);
+        expect(fitsUnder('/tasks/workers', '/tasks/workers/workers')).toBe(false);
+    });
+
+    it('holds every entry of the contract legacy list, unchanged, and nothing else', () => {
+        const entries = REGISTRY.entries;
+        expect(entries).toEqual(contract.legacy);
+        expect(new Set(entries.map(e => e.old)).size).toBe(entries.length);
+    });
+
+    it('sends each old address to a kept address, a view address, or a record under a view', () => {
+        const unknown = REGISTRY.entries
+            .filter(entry => entry.type !== 'pattern')
+            .map(entry => entry.new)
+            .filter(
+                to =>
+                    !KEPT.includes(to) &&
+                    !viewAddresses.some(address => to === address || to.startsWith(`${address}/`)),
+            );
+        expect(unknown).toEqual([]);
+    });
+
+    it('keeps exactly the kept addresses in place', () => {
+        const inPlace = REGISTRY.entries.filter(entry => entry.new === entry.old).map(entry => entry.old);
+        expect(inPlace.sort()).toEqual([...KEPT].sort());
+        expect(REGISTRY.entries.filter(entry => entry.type === 'kept').map(entry => entry.old).sort()).toEqual(
+            [...KEPT].sort(),
+        );
+    });
+
+    it("sends every view's old address to that view's address (the pattern entry included)", () => {
+        const wrong = movedViews.filter(view => newAddress(view.old_base) !== view.address).map(view => view.old_base);
+        expect(wrong).toEqual([]);
+    });
+
+    it('only uses placeholders in a new address that its old address captures', () => {
+        for (const entry of REGISTRY.entries) {
+            for (const name of placeholders(entry.new)) {
+                expect(placeholders(entry.old)).toContain(name);
+            }
+        }
+    });
+});
+
+describe('the matcher', () => {
+    it('carries every kind of placeholder over', () => {
+        expect(newAddress('/data/workers/w-1')).toBe('/tasks/workers/workers/w-1');
+        expect(newAddress('/data/clusters/blue%20team')).toBe('/tasks/workers/clusters/blue%20team');
+        expect(newAddress('/ohla-journey/timeline')).toBe('/tasks/ohla-journey-dashboard/timeline');
+        expect(newAddress('/knowledge/catalog/c-9')).toBe('/tasks/it-knowledge/library/catalog/c-9');
+        const kinds = new Set(REGISTRY.entries.flatMap(entry => placeholders(entry.old)));
+        expect([...kinds].sort()).toEqual(['label', 'oid', 'section']);
+    });
+
+    it('prefers a fixed segment to a placeholder', () => {
+        expect(findLegacy('/auth/accounts/new')?.entry.old).toBe('/auth/accounts/new');
+        expect(findLegacy('/auth/accounts/a-1')?.entry.old).toBe('/auth/accounts/[oid]');
+    });
+
+    it('matches whole addresses only, ignoring a trailing slash', () => {
+        expect(newAddress('/data/workers/')).toBe('/tasks/workers/workers');
+        expect(newAddress('/')).toBe('/');
+        expect(newAddress('/data/workers/w-1/history')).toBeNull();
+        expect(newAddress('/login')).toBeNull();
+        expect(newAddress('/systems/llm_proxy/models')).toBe('/home');
+    });
+});

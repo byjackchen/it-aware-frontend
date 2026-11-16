@@ -45,19 +45,19 @@ export function SystemSearchDialog({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-lg mx-4 glass-dark rounded-xl shadow-2xl border border-white/10 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Select System</h3>
+            <div className="relative w-full max-w-lg mx-4 glass-dark rounded-xl shadow-2xl border border-line overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+                    <h3 className="text-lg font-semibold text-ink">Select System</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                        className="p-1 rounded text-ink-2 hover:text-ink hover:bg-hover transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="p-4 border-b border-white/10">
+                <div className="p-4 border-b border-line">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-2" />
                         <input
                             type="text"
                             placeholder="Search by name, system_id, or platform..."
@@ -70,11 +70,11 @@ export function SystemSearchDialog({
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                     {availableSystems.length === 0 ? (
-                        <div className="p-8 text-center text-gray-500">
+                        <div className="p-8 text-center text-muted">
                             {searchTerm ? 'No systems match your search' : 'No available systems'}
                         </div>
                     ) : (
-                        <ul className="divide-y divide-white/5">
+                        <ul className="divide-y divide-line">
                             {availableSystems.map((system) => (
                                 <li key={system.oid}>
                                     <button
@@ -82,27 +82,27 @@ export function SystemSearchDialog({
                                             onSelect(system);
                                             onClose();
                                         }}
-                                        className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left ${!system.is_active ? 'opacity-60' : ''
+                                        className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-hover transition-colors text-left ${!system.is_active ? 'opacity-60' : ''
                                             }`}
                                     >
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${system.is_active ? 'bg-cyan-500/20' : 'bg-gray-500/20'
                                             }`}>
-                                            <Cpu className={`w-5 h-5 ${system.is_active ? 'text-cyan-400' : 'text-gray-400'
+                                            <Cpu className={`w-5 h-5 ${system.is_active ? 'text-accent' : 'text-ink-2'
                                                 }`} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <span className={`font-medium truncate ${system.is_active ? 'text-white' : 'text-gray-400'
+                                                <span className={`font-medium truncate ${system.is_active ? 'text-ink' : 'text-ink-2'
                                                     }`}>
                                                     {system.name}
                                                 </span>
                                                 {!system.is_active && (
-                                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-600/50 text-gray-400">
+                                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-500/20 dark:bg-gray-600/50 text-ink-2">
                                                         Inactive
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-sm text-gray-400 truncate">
+                                            <div className="text-sm text-ink-2 truncate">
                                                 {system.system_id} · {system.system_platform}
                                             </div>
                                         </div>

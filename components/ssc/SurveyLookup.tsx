@@ -104,7 +104,7 @@ export function SurveyLookup() {
                     <Link2 className="w-6 h-6" />
                 </div>
                 <div>
-                    <h1 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>调查链接查询</h1>
+                    <h1 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>CSAT 链接查询</h1>
                     <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>输入工单号获取满意度调查链接</p>
                 </div>
             </div>

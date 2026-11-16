@@ -56,6 +56,18 @@ export interface StackedBarPercentLineCardProps {
     /** Optional secondary axis label key (e.g. 'quarterLabel'). Renders a
      *  ghost row beneath the main x-axis grouping like PBIX hierarchy. */
     secondaryXKey?: string
+    /** Which x-axis ticks are drawn: 0 (the default) draws every one; 'preserveStartEnd' thins them to fit. */
+    xInterval?: number | 'preserveStartEnd'
+    /** A bar's value as the tooltip shows it, from the value, its row and the series key (e.g. a duration with its unit). */
+    formatValue?: (value: number, row: Record<string, unknown>, key: string) => string
+    /** The least height of a bar segment, in pixels, or a function of its value; 3 unless set (0 leaves a segment undrawn). */
+    minPointSize?: number | ((value: number | null | undefined) => number)
+    /** Whether the legend is drawn; pass false for a chart of one series. */
+    showLegend?: boolean
+    /** The widest a bar is drawn, in pixels, so a chart of few bars is not one slab; unbounded unless set. */
+    maxBarSize?: number
+    /** Whether the left axis may tick at fractions; pass false for bars of whole counts. */
+    allowDecimals?: boolean
 }
 
 function pctFmt(v: number | string) {
@@ -78,13 +90,17 @@ export function StackedBarPercentLineCard({
     showBarLabels = false,
     showLineLabels = false,
     secondaryXKey,
+    xInterval = 0,
+    formatValue,
+    minPointSize = 3,
+    showLegend = true,
+    allowDecimals = true,
+    maxBarSize,
 }: StackedBarPercentLineCardProps) {
     const { theme } = useTheme()
     const isLight = theme === 'light'
 
     const cardBase = isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'
-    const titleCls = isLight ? 'text-slate-800' : 'text-white'
-    const subtitleCls = isLight ? 'text-slate-500' : 'text-gray-400'
     const axisCls = isLight ? '#475569' : '#94a3b8'
     const gridCls = isLight ? '#e2e8f0' : '#1e293b'
     const tooltipBg = isLight ? '#ffffff' : '#0f172a'
@@ -112,7 +128,7 @@ export function StackedBarPercentLineCard({
                         <XAxis
                             dataKey={xKey}
                             tick={{ fontSize: 11, fill: axisCls }}
-                            interval={0}
+                            interval={xInterval}
                             xAxisId="primary"
                         />
                         {secondaryXKey && (
@@ -129,6 +145,7 @@ export function StackedBarPercentLineCard({
                         )}
                         <YAxis
                             yAxisId="left"
+                            allowDecimals={allowDecimals}
                             tick={{ fontSize: 11, fill: axisCls }}
                             label={
                                 leftAxisLabel
@@ -176,10 +193,14 @@ export function StackedBarPercentLineCard({
                                 const key = (props as { dataKey?: string }).dataKey
                                 const isPctSeries = lineKeys.some((k) => k.key === key)
                                 if (isPctSeries) return [pctFmt(value as number), name]
+                                if (formatValue) {
+                                    const row = (props as { payload?: Record<string, unknown> }).payload ?? {}
+                                    return [formatValue(Number(value), row, String(key)), name]
+                                }
                                 return [value, name]
                             }}
                         />
-                        <Legend wrapperStyle={{ fontSize: 11, color: axisCls }} />
+                        {showLegend && <Legend wrapperStyle={{ fontSize: 11, color: axisCls }} />}
                         {stackedKeys.map((s, idx) => {
                             const isTopStack = idx === stackedKeys.length - 1
                             return (
@@ -191,7 +212,8 @@ export function StackedBarPercentLineCard({
                                     name={s.label}
                                     fill={s.color}
                                     stackId="stack"
-                                    minPointSize={3}
+                                    minPointSize={minPointSize}
+                                    maxBarSize={maxBarSize}
                                 >
                                     {showBarLabels && (
                                         <LabelList

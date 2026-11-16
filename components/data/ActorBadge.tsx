@@ -46,7 +46,7 @@ export function ActorBadge({
     const { Icon } = style;
     const role = actorRole || defaultRole;
     const identifier = actorStableId || actorOid || 'Unknown';
-    // Only workers get a profile link — other types don't have a /data/workers/<id> page.
+    // Only workers get a profile link — other types don't have a /tasks/workers/workers/<id> page.
     const isLinkable = actorType === 'worker' && !!actorStableId;
 
     return (
@@ -62,7 +62,7 @@ export function ActorBadge({
             <span className="text-slate-500 dark:text-slate-400 capitalize">{role}:</span>
             {isLinkable ? (
                 <Link
-                    href={`/data/workers/${actorStableId}`}
+                    href={`/tasks/workers/workers/${actorStableId}`}
                     className="font-mono text-xs underline underline-offset-4 hover:text-blue-500"
                     data-testid="actor-stable-id"
                 >

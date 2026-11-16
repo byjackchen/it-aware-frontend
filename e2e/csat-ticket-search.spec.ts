@@ -40,7 +40,7 @@ test('ticket ID search resets paging, exports all matching pages, and clears', a
       filtered_ticket_count: matches.length, tickets: matches.slice((pageNumber - 1) * 50, pageNumber * 50) } });
   });
 
-  await page.goto('/itopsdashboard/survey-analytics');
+  await page.goto('/tasks/it-operations-dashboard/csat');
   await page.getByRole('combobox', { name: /^View metric range/ }).selectOption('csat');
   await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText('Showing 102 ratings');
   await page.getByRole('button', { name: 'Next', exact: true }).click();

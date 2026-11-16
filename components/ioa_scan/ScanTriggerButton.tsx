@@ -48,7 +48,7 @@ export function ScanTriggerButton({
             if (onSuccess) {
                 await onSuccess(scan);
             } else {
-                router.push(`/data/networks/ioa-scans/${scan.oid}`);
+                router.push(`/tasks/it-hardware/ioa-scans/${scan.oid}`);
                 router.refresh();
             }
         } catch (e) {

@@ -6,6 +6,32 @@
     "unknown": "Unknown Env | 未知环境"
   },
   "Auth": {
+    "profile": {
+      "title": "个性化设置",
+      "note": "由管理员设置。用户看不到这里，只会在自己的首页看到效果。上方的账号状态、关联员工和用户组是配置中的安全部分。",
+      "canOpen": "该用户可以打开的任务（{count}）",
+      "noTasks": "没有。请先给用户分配用户组。",
+      "startPage": "起始页",
+      "startNotSet": "未设置（进入首页）",
+      "homeTasks": "其首页上的任务",
+      "homeTasksNote": "只列出该用户可以打开的任务。用户自己固定的任务与此分开保存。",
+      "save": "保存个性化设置",
+      "saved": "已保存"
+    },
+    "tasks": {
+      "userProfile": "用户配置：{name}",
+      "title": "任务访问",
+      "subtitle": "谁有哪些任务：来自任务目录和各用户组的权限",
+      "byGroup": "按用户组",
+      "byPerson": "按人",
+      "filter": "筛选…",
+      "pick": "选择一个用户组或一个人，查看其任务",
+      "noTasks": "没有任务",
+      "taskCount": "{count} 个任务",
+      "groups": "用户组",
+      "inactive": "已停用",
+      "scopeNote": "任务旁的范围表示这个人在该任务里能看到哪些数据行。"
+    },
     "common": {
       "save": "保存",
       "create": "创建",
@@ -113,7 +139,7 @@
       "addTitle": "添加{title}"
     },
     "GlobalSearch": {
-      "placeholder": "搜索数据对象...",
+      "placeholder": "搜索任务和记录...",
       "noResults": "未找到结果",
       "searching": "搜索中...",
       "organizations": "组织",
@@ -1116,47 +1142,64 @@
   },
   "Dashboard": {
     "title": "数据概览",
-    "subtitle": "跨所有数据对象资源的实时汇总指标。",
-    "refresh": "刷新",
-    "loading": "正在加载看板统计...",
-    "loadFailed": "看板统计加载失败，请刷新重试。",
-    "generatedAt": "更新时间：{time}",
-    "summary": {
-      "totalAcrossResources": "资源总计",
-      "activeCapable": "活跃数（支持激活状态的资源）",
-      "availableResources": "可用资源"
-    },
-    "groups": {
-      "hierarchies": "层级",
-      "objects": "对象",
-      "activities": "活动",
-      "campaigns": "运营活动",
-      "insights": "洞察"
-    },
-    "resources": {
-      "organizations": "组织",
-      "locations": "地点",
-      "service-catalogs": "服务目录",
-      "workers": "员工",
-      "articles": "文章",
-      "incidents": "事件",
-      "requests": "请求",
-      "interactions": "交互事件",
-      "surveys": "问卷批次",
-      "notifications": "通知批次",
-      "analyses": "分析"
-    },
-    "metrics": {
-      "total": "总数",
-      "active": "活跃",
-      "inactive": "未激活"
-    },
-    "status": {
-      "ok": "可用",
-      "forbidden": "无权限",
-      "error": "不可用"
-    },
-    "comingSoon": "看板即将推出"
+    "layers": {
+      "title": "IT-Aware 的数据分层：原始 → 派生 → 事务",
+      "flow": "来源 → <b>1 原始</b> → 重建为 → <b>2 派生</b> ← 一同读取 → <b>3 事务</b> ← 人和 IT-Aware",
+      "names": {
+        "raw": "原始数据",
+        "derived": "派生数据",
+        "transactional": "事务数据"
+      },
+      "descriptions": {
+        "raw": "各来源发来的内容，原样保存，只追加。没有页面直接读取它；它的存在是为了让其他一切都能重建。",
+        "derived": "由原始数据重建：各来源所述内容的副本，以及作业据此计算出的结果（分类、画像、聚类、关联、指标）。",
+        "transactional": "IT-Aware 自身产生的数据：账号与权限、通知、问卷、设置、使用与操作记录，以及人们在同步记录上添加的标记。"
+      },
+      "writtenBy": {
+        "raw": "写入方：各来源的落地步骤",
+        "derived": "写入方：仅同步与派生作业",
+        "transactional": "写入方：人和 IT-Aware 自身的流程"
+      },
+      "totals": {
+        "tables": "张表",
+        "rows": "行",
+        "rowsApproximate": "行（约）",
+        "landing": "旧落地区：{rows} 行"
+      },
+      "notes": {
+        "unused": "尚未启用：原始记录表为空。目前各来源落在旧落地区，原始层将取代它。",
+        "toSplit": "{count} 张表标记为<tag></tag>：它们把来源所述内容和人们添加的标记存在一起。这些标记将移到事务层。",
+        "toArrive": "尚待到达这里：人们在同步记录上添加的标记，来自 {count} 张标记为<tag></tag>的表。"
+      },
+      "tags": {
+        "source_copy": "来源副本",
+        "computed": "计算所得",
+        "mixed": "待拆分",
+        "landing": "旧落地区",
+        "raw": "原始"
+      },
+      "subjects": {
+        "activities": "工单与交互",
+        "auth": "账号与权限",
+        "campaigns": "通知与问卷",
+        "edges": "记录关联",
+        "hierarchies": "组织、地点、服务目录",
+        "insights": "洞察",
+        "journeys": "旅程",
+        "knowledges": "知识",
+        "metrics": "指标",
+        "networks": "网络扫描",
+        "objects": "员工、硬件、系统",
+        "ohla_journey": "Ohla Journey",
+        "raw": "原始记录",
+        "registry": "记录索引",
+        "shadow": "影子运行",
+        "staging": "旧落地区",
+        "systems": "平台记录"
+      },
+      "hidden": "{count} 张表仅管理员可见",
+      "counted": "统计于{time}"
+    }
   },
   "Data": {
     "common": {
@@ -1474,8 +1517,52 @@
       "clusterAssignment": "群组"
     }
   },
+  "Home": {
+    "greeting": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好"
+    },
+    "internal": "内部任务",
+    "external": "外部任务",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}",
+    "setForYou": "为你设置",
+    "pinned": {
+      "title": "已固定",
+      "empty": "在下方或搜索结果里固定一个任务。"
+    },
+    "recent": {
+      "title": "最近使用",
+      "empty": "你打开过的任务会显示在这里。"
+    },
+    "other": {
+      "title": "全部任务"
+    },
+    "metrics": {
+      "join": "，",
+      "period": {
+        "now": "当前",
+        "month": "本月",
+        "last7Days": "近 7 天"
+      },
+      "updated": "更新于{when}",
+      "points": "{change} 个百分点"
+    }
+  },
+  "TaskFrame": {
+    "views": "{name} 的视图",
+    "pin": "固定到首页",
+    "unpin": "从首页取消固定",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}"
+  },
   "GlobalSearch": {
-    "placeholder": "搜索数据对象...",
+    "pin": "固定到首页",
+    "unpin": "从首页取消固定",
+    "pinTask": "固定 {name}",
+    "unpinTask": "取消固定 {name}",
+    "placeholder": "搜索任务和记录...",
     "noResults": "未找到结果",
     "searching": "搜索中...",
     "organizations": "组织",
@@ -1483,7 +1570,19 @@
     "workers": "员工",
     "serviceCatalogs": "服务目录",
     "articles": "文章",
-    "requests": "请求"
+    "requests": "请求",
+    "tasks": "任务",
+    "tasksCount": "你可以打开 {count} 个",
+    "objects": "对象",
+    "objectsHint": "你可以查看的记录",
+    "keyMove": "移动",
+    "keyOpen": "打开",
+    "keyClose": "关闭",
+    "clear": "清空搜索",
+    "failed": "搜索失败，请重试。",
+    "pinFailed": "固定状态未能更改，请重试。",
+    "results": "搜索结果",
+    "objectsOf": "对象：{kind}"
   },
   "Knowledge": {
     "sidebar": {
@@ -1703,7 +1802,6 @@
     "opsOhlaOtherCase": "其它案例分析",
     "opsOhlaLatencyBreakdown": "延迟分解",
     "incidentReport": "工单分析报告",
-    "surveyLookup": "调查链接查询",
     "opsUnassigned": "未分派",
     "llmProxy": "LLM 代理",
     "llmRoutes": "任务路由",
@@ -2392,6 +2490,7 @@
     }
   },
   "TopBar": {
+    "home": "首页",
     "title": "Ohla IT-Aware",
     "dashboard": "原始数据",
     "dataOverview": "数据概览",
@@ -2866,6 +2965,320 @@
     },
     "noData": "当前周期无可用数据。"
   },
+  "Jobs": {
+    "title": "管理作业",
+    "help": "IT-Aware 的 Airflow 作业：查看运行与日志，暂停、恢复或立即运行，并恢复一次运行。每个操作都会记录。",
+    "refresh": "刷新",
+    "tabs": {
+      "jobs": "作业列表",
+      "actions": "操作记录"
+    },
+    "allJobs": "全部作业",
+    "load": {
+      "title": "负载",
+      "help": "IT-Aware 的 Airflow 作业运行了多少次、耗时多久：按 UTC 日、按一天中的小时、按作业。每 5 分钟更新一次。",
+      "window": {
+        "label": "时间窗口",
+        "days": "{days} 天",
+        "dates": "{start} 至 {end}（UTC 日）"
+      },
+      "partial": "仅显示最新的 {count} 次运行：窗口内的运行多于可读取的数量。",
+      "empty": {
+        "title": "此窗口内没有运行",
+        "body": "最近 {days} 天内没有作业运行。"
+      },
+      "tiles": {
+        "runs": "运行次数",
+        "failed": "失败次数",
+        "failureRate": "占运行的 {rate}",
+        "runTime": "总运行时间",
+        "average": "平均运行时间",
+        "longest": "最长的一次运行"
+      },
+      "unit": {
+        "s": "单位：秒",
+        "min": "单位：分钟",
+        "h": "单位：小时"
+      },
+      "charts": {
+        "runsPerDay": "每日运行次数",
+        "runsPerDayHelp": "按结果统计的每个 UTC 日的运行次数",
+        "success": "成功",
+        "failed": "失败",
+        "other": "其他",
+        "timePerDay": "每日运行时间",
+        "timePerDayHelp": "每个 UTC 日的总运行时间，{unit}",
+        "runTime": "运行时间",
+        "byHour": "按小时的负载（UTC）",
+        "byHourHelp": "在每个 UTC 小时内开始的运行的运行时间，{unit}",
+        "hourValue": "{time} · {runs} 次运行",
+        "topJobs": "按耗时排列的作业",
+        "noTime": "此窗口内还没有已结束的运行。",
+      "topJobsHelp": "总运行时间最长的 {count} 个作业，{unit}"
+      },
+      "table": {
+        "title": "窗口内的全部作业",
+        "columns": {
+          "job": "作业",
+          "runs": "运行次数",
+          "failed": "失败",
+          "run_seconds": "总计",
+          "average_seconds": "平均",
+          "longest_seconds": "最长"
+        }
+      },
+      "runDurations": {
+        "title": "运行时长",
+        "help": "最新 {count} 次已结束的运行，从旧到新，{unit}",
+        "ok": "运行时间",
+        "failed": "失败的运行"
+      }
+    },
+    "none": "—",
+    "loadFailed": "无法加载：{message}",
+    "unreachable": {
+      "title": "无法连接 Airflow",
+      "body": "IT-Aware 暂时无法读取 Airflow，因此未显示任何作业。请稍后再试。",
+      "notConfigured": "当前环境未配置 Airflow。"
+    },
+    "status": {
+      "active": "运行中",
+      "paused": "已暂停",
+      "loadErrors": "加载错误",
+      "loadErrorsHelp": "Airflow 无法加载该作业的文件。",
+      "noRun": "无运行"
+    },
+    "list": {
+      "search": "按名称、描述或标签筛选",
+      "stateFilter": "状态",
+      "filter": {
+        "all": "全部状态",
+        "active": "运行中",
+        "paused": "已暂停",
+        "running": "正在运行",
+        "failed": "上次运行失败",
+        "load_errors": "加载错误"
+      },
+      "count": "共 {total} 个作业，显示 {shown} 个",
+      "empty": "Airflow 中没有作业。",
+      "noMatch": "没有符合筛选条件的作业。",
+      "columns": {
+        "job": "作业",
+        "status": "状态",
+        "schedule": "调度",
+        "nextRun": "下次运行",
+        "lastRun": "上次运行",
+        "lastRunTime": "上次运行时间",
+        "duration": "耗时",
+        "tags": "标签"
+      }
+    },
+    "job": {
+      "schedule": "调度",
+      "nextRun": "下次运行",
+      "tags": "标签",
+      "status": "状态",
+      "lastRun": "上次运行",
+      "runs": "运行记录",
+      "runsEmpty": "该作业没有运行记录。",
+      "recordLink": "该作业的操作",
+      "columns": {
+        "run": "运行",
+        "state": "状态",
+        "type": "类型",
+        "runAfter": "计划时间",
+        "start": "开始",
+        "end": "结束",
+        "duration": "耗时"
+      }
+    },
+    "pager": {
+      "page": "第 {page} / {pages} 页",
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "run": {
+      "title": "运行 {run}",
+      "parameters": "启动参数",
+      "noParameters": "无参数。",
+      "steps": "步骤",
+      "noSteps": "该运行没有步骤。",
+      "columns": {
+        "step": "步骤",
+        "state": "状态",
+        "start": "开始",
+        "end": "结束",
+        "duration": "耗时",
+        "try": "尝试",
+        "log": "日志"
+      },
+      "tryLink": "第 {n} 次",
+      "noLog": "未运行"
+    },
+    "log": {
+      "title": "{step} 的日志，第 {try} 次尝试",
+      "close": "关闭",
+      "empty": "日志为空。",
+      "truncated": "日志较长：仅显示末尾部分。",
+      "loadMore": "加载更多",
+      "failed": "无法读取日志：{message}"
+    },
+    "actions": {
+      "pause": "暂停",
+      "resume": "恢复",
+      "run": "立即运行",
+      "retry_failed": "重试失败步骤",
+      "stop": "停止运行",
+      "confirmTitle": "确认",
+      "confirm": "确认",
+      "cancel": "取消",
+      "working": "处理中…",
+      "confirmPause": "暂停 {job} 的调度？恢复之前不会启动计划运行。",
+      "confirmResume": "恢复 {job} 的调度？",
+      "confirmRun": "立即启动 {job} 的一次运行？",
+      "confirmRetry": "重新运行 {job} 的运行 {run} 中失败的步骤？",
+      "confirmStop": "停止 {job} 的运行 {run}？该运行将被标记为失败，剩余部分停止。",
+      "parameters": "参数",
+      "noParameters": "该作业未定义参数。",
+      "invalidParameters": "无效的值：{names}",
+      "done": "{action}：已记录，结果为 {outcome}。",
+      "unavailable": "{action} 在此不可用：{message}",
+      "failed": "{action} 失败：{message}",
+      "runRefused": "该作业不允许手动运行：{reason}",
+      "retryRefused": "该作业不允许重试：{reason}"
+    },
+    "record": {
+      "forJob": "{job} 的操作",
+      "empty": "尚无操作记录。",
+      "showAll": "显示全部作业",
+      "columns": {
+        "when": "时间",
+        "who": "操作人",
+        "what": "操作",
+        "job": "作业",
+        "run": "运行",
+        "outcome": "结果"
+      },
+      "action": {
+        "pause": "暂停",
+        "resume": "恢复",
+        "run": "立即运行",
+        "retry_failed": "重试失败步骤",
+        "stop": "停止"
+      },
+      "outcome": {
+        "pending": "待定",
+        "succeeded": "成功",
+        "failed": "失败",
+        "refused": "已拒绝"
+      },
+      "pendingHelp": "在 Airflow 应答之前记录；其应答未被记录。"
+    }
+  },
+  "Usage": {
+    "help": {
+      "overview": "有多少人在使用 IT-Aware:按 UTC 日统计的登录次数与打开的任务。",
+      "tasks": "每个任务被打开的次数、打开它的人数,以及拥有它的人数。",
+      "people": "所选时间段内登录过或打开过任务的每个人,任务打开次数最多的在前。",
+      "unused-access": "拥有某个任务、但在所选时间段内没有打开过它的人。"
+    },
+    "window": {
+      "label": "时间段",
+      "days": "{days} 天",
+      "dates": "{start} 至 {end}(UTC 日)"
+    },
+    "loadFailed": "无法加载:{message}",
+    "overview": {
+      "activeToday": "今日活跃人数(UTC)",
+      "activeLast7": "近 7 天活跃人数",
+      "activeWindow": "近 {days} 天活跃人数",
+      "signIns": "登录次数",
+      "taskOpens": "任务打开次数",
+      "chart": {
+        "title": "每日活跃情况",
+        "subtitle": "每个 UTC 日的活跃人数与任务打开次数",
+        "people": "活跃人数",
+        "opens": "任务打开次数"
+      },
+      "trackingSince": "自 {date}(UTC 日)起记录。",
+      "trackingHelp": "此前的日期显示为零,是因为当时尚未记录。",
+      "empty": {
+        "title": "尚无使用记录",
+        "body": "登录与打开任务从第一次被记录起开始统计,之后这里会显示数字和每日图表。"
+      }
+    },
+    "tasks": {
+      "neverOpened": "时间段内从未打开",
+      "count": "{shown} / {total} 个任务",
+      "noMatch": "时间段内每个任务都被打开过。",
+      "never": "从未",
+      "unusedAccess": "未使用的权限",
+      "peopleOf": "{count} 人打开过{task}",
+      "columns": {
+        "name": "任务",
+        "grouping": "分组",
+        "opens": "打开次数",
+        "people": "人数",
+        "holders": "拥有者",
+        "share": "使用过的拥有者占比",
+        "last_opened_at": "最近打开"
+      }
+    },
+    "unused": {
+      "task": "任务",
+      "pick": "选择任务",
+      "show": "显示",
+      "pickHelp": "选择一个任务,查看谁拥有它却没有打开过。",
+      "summary": "{holders} 位拥有者中有 {total} 位在近 {days} 天内没有打开过它",
+      "note": "已失去该任务权限的人不在列表中。",
+      "never": "从未",
+      "noHolders": "没有人拥有这个任务。",
+      "allUsed": "时间段内每位拥有者都打开过它。",
+      "columns": {
+        "username": "用户名",
+        "lastOpened": "最近打开"
+      }
+    },
+    "back": "返回{view}",
+    "deletedAccount": "已删除的账号",
+    "labels": {
+      "inactive": "已停用",
+      "integration": "集成"
+    },
+    "taskPeople": {
+      "title": "打开过{task}的人",
+      "summary": "近 {days} 天内有 {total} 人打开过它",
+      "empty": "时间段内没有人打开过它。",
+      "columns": {
+        "username": "用户名",
+        "opens": "打开次数",
+        "views": "打开的视图",
+        "lastOpened": "最近打开"
+      }
+    },
+    "people": {
+      "summary": "近 {days} 天内有 {total} 人活跃",
+      "empty": "时间段内没有人登录或打开任务。",
+      "columns": {
+        "username": "用户名",
+        "signIns": "登录次数",
+        "taskOpens": "任务打开次数",
+        "tasks": "任务数",
+        "lastActive": "最近活跃"
+      }
+    },
+    "person": {
+      "unknown": "人员",
+      "summary": "近 {days} 天内登录 {signIns} 次,打开过 {tasks} 个任务",
+      "empty": "时间段内没有打开过任务。",
+      "columns": {
+        "task": "任务",
+        "opens": "打开次数",
+        "views": "打开的视图",
+        "lastOpened": "最近打开"
+      }
+    }
+  },
   "Systems": {
     "title": "系统",
     "subtitle": "LLM 代理配置",
@@ -2926,24 +3339,6 @@
       "inactiveModel": "（未启用）",
       "noActiveModels": "没有启用的模型，请先添加或启用一个模型。",
       "inactiveWarn": "该模型未启用 —— 此任务会改用默认模型。"
-    },
-    "airflow": {
-      "title": "Airflow DAG",
-      "help": "实时从 Airflow 拉取的 DAG 运行状态(只读)。",
-      "refresh": "刷新",
-      "empty": "未找到 DAG。",
-      "unavailable": "当前无法连接 Airflow。",
-      "notConfigured": "Airflow 未配置(IT_AWARE_AIRFLOW_BASE_URL)。",
-      "dag": "DAG",
-      "status": "状态",
-      "schedule": "调度",
-      "lastRun": "最近运行",
-      "lastRunTime": "最近运行时间",
-      "duration": "时长",
-      "paused": "已暂停",
-      "active": "启用",
-      "noRun": "无运行记录",
-      "importError": "DAG 存在导入错误"
     },
     "agentAccess": {
       "title": "Agent 接入",

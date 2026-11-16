@@ -41,7 +41,7 @@ export async function createPermission(formData: FormData) {
     const permission = await api.createPermission(data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/permissions');
+    revalidatePath('/tasks/access/permissions');
     return { success: true, permission };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -61,7 +61,7 @@ export async function deletePermission(oid: string) {
     await api.deletePermission(oid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/permissions');
+    revalidatePath('/tasks/access/permissions');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -90,7 +90,7 @@ export async function createRole(formData: FormData) {
     const role = await api.createRole(data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/roles');
+    revalidatePath('/tasks/access/roles');
     return { success: true, role };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -115,7 +115,7 @@ export async function updateRole(oid: string, formData: FormData) {
     await api.updateRole(oid, data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/roles');
+    revalidatePath('/tasks/access/roles');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -135,7 +135,7 @@ export async function deleteRole(oid: string) {
     await api.deleteRole(oid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/roles');
+    revalidatePath('/tasks/access/roles');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -164,7 +164,7 @@ export async function createGroup(formData: FormData) {
     const group = await api.createGroup(data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true, group };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -189,7 +189,7 @@ export async function updateGroup(oid: string, formData: FormData) {
     await api.updateGroup(oid, data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -209,7 +209,7 @@ export async function deleteGroup(oid: string) {
     await api.deleteGroup(oid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -229,7 +229,7 @@ export async function assignGroupPermission(groupOid: string, permissionOid: str
     await api.assignGroupPermission(groupOid, permissionOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -249,7 +249,7 @@ export async function removeGroupPermission(groupOid: string, permissionOid: str
     await api.removeGroupPermission(groupOid, permissionOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -269,7 +269,7 @@ export async function linkGroupRole(groupOid: string, roleOid: string) {
     await api.linkGroupRole(groupOid, roleOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -289,7 +289,7 @@ export async function unlinkGroupRole(groupOid: string, roleOid: string) {
     await api.unlinkGroupRole(groupOid, roleOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/groups');
+    revalidatePath('/tasks/access/groups');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -320,7 +320,7 @@ export async function createAccount(formData: FormData) {
     const account = await api.createAccount(data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true, account };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -349,7 +349,7 @@ export async function updateAccount(oid: string, formData: FormData) {
     await api.updateAccount(oid, data);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -369,7 +369,7 @@ export async function deleteAccount(oid: string) {
     await api.deleteAccount(oid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -389,7 +389,7 @@ export async function linkAccountWorker(accountOid: string, workerOid: string) {
     await api.linkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -409,7 +409,7 @@ export async function unlinkAccountWorker(accountOid: string, workerOid: string)
     await api.unlinkAccountWorker(accountOid, workerOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -424,8 +424,8 @@ export async function linkAccountSystem(accountOid: string, systemOid: string) {
   logger.info('Started', { requestId, action });
   try {
     await api.linkAccountSystem(accountOid, systemOid);
-    revalidatePath('/auth/accounts');
-    revalidatePath(`/auth/accounts/${accountOid}`);
+    revalidatePath('/tasks/access/accounts');
+    revalidatePath(`/tasks/access/accounts/${accountOid}`);
     logger.info('Success', { requestId, action });
     return { success: true };
   } catch (error) {
@@ -440,8 +440,8 @@ export async function unlinkAccountSystem(accountOid: string, systemOid: string)
   logger.info('Started', { requestId, action });
   try {
     await api.unlinkAccountSystem(accountOid, systemOid);
-    revalidatePath('/auth/accounts');
-    revalidatePath(`/auth/accounts/${accountOid}`);
+    revalidatePath('/tasks/access/accounts');
+    revalidatePath(`/tasks/access/accounts/${accountOid}`);
     logger.info('Success', { requestId, action });
     return { success: true };
   } catch (error) {
@@ -461,7 +461,7 @@ export async function assignAccountGroup(accountOid: string, groupOid: string) {
     await api.assignAccountGroup(accountOid, groupOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -481,7 +481,7 @@ export async function removeAccountGroup(accountOid: string, groupOid: string) {
     await api.removeAccountGroup(accountOid, groupOid);
     const duration = Date.now() - startTime;
     logger.info(`Success in ${duration}ms`, { requestId, action });
-    revalidatePath('/auth/accounts');
+    revalidatePath('/tasks/access/accounts');
     return { success: true };
   } catch (error) {
     const duration = Date.now() - startTime;

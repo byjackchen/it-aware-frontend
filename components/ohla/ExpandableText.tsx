@@ -29,7 +29,7 @@ export function ExpandableText({
     const [open, setOpen] = useState(false)
 
     if (text == null || text === '') {
-        return <span className="text-slate-400">{placeholder}</span>
+        return <span className="text-ink-2">{placeholder}</span>
     }
 
     const s = String(text)

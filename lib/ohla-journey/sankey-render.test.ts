@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { JourneySankey } from '../../app/(main)/ohla-journey/ReportVisuals';
+import { JourneySankey } from '../../app/(main)/tasks/ohla-journey-dashboard/ReportVisuals';
 
 describe('Journey Sankey rendered bands', () => {
   it('renders the bot stage blue and the human outcome green at their full colors', () => {

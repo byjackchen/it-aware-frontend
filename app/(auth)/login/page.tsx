@@ -1,20 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/actions/session'
 
 export default function LoginPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // An auth error from the URL params (e.g., Taihu auth failure) is shown from the start
+  const [error, setError] = useState<string | null>(() => searchParams.get('error'))
 
-  // Check for auth error from URL params (e.g., Taihu auth failure)
+  // ... and then taken out of the URL
   useEffect(() => {
-    const authError = searchParams.get('error')
-    if (authError) {
-      setError(authError)
+    if (searchParams.get('error')) {
       // Clean up URL without triggering navigation
       const url = new URL(window.location.href)
       url.searchParams.delete('error')
@@ -159,7 +157,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+            <div className="w-11 h-11 brand-mark rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">IA</span>
             </div>
             <span className="text-2xl font-bold text-gradient">Ohla IT-Aware</span>
@@ -186,7 +184,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md glass-card rounded-2xl p-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+            <div className="w-10 h-10 brand-mark rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">IA</span>
             </div>
             <span className="text-2xl font-bold text-gradient">Ohla IT-Aware</span>

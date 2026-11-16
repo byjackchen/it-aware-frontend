@@ -24,12 +24,13 @@ function extractItems(payload: unknown): unknown[] {
 }
 
 test.describe('Phase C — activities-decouple smoke', () => {
-  test('C1+C7 sidebar has Systems, no Inquiries', async ({ page }) => {
-    await page.goto('/data/workers');
-    const sidebar = page.locator('aside').first();
-    await expect(sidebar).toBeVisible();
-    // The top bar has its own Systems app link (/systems); this is the sidebar's.
-    await expect(sidebar.getByRole('link', { name: /Systems/i })).toBeVisible();
+  test('C1+C7 the task frame replaces the sidebar, no Inquiries', async ({ page }) => {
+    await page.goto('/tasks/workers/workers');
+    // The global sidebar, and its Systems link, went with the catalog v3
+    // (TODO00000140 A14, lane F1): a page shows its task's own views instead.
+    await expect(page.locator('aside')).toHaveCount(0);
+    const views = page.getByTestId('task-frame').getByRole('navigation');
+    await expect(views.getByRole('link')).toHaveText(['Workers', 'Organizations', 'Locations', 'Clusters']);
     await expect(page.getByRole('link', { name: /Inquiries?/i })).toHaveCount(0);
   });
 
@@ -38,7 +39,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
       (r) => r.url().includes('/api/objects/incidents') && r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/data/incidents');
+    await page.goto('/tasks/it-incidents');
     const listResponse = await listResponsePromise;
     expect(listResponse.ok()).toBeTruthy();
     const items = extractItems(await listResponse.json());
@@ -47,7 +48,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
     const firstIncident = items[0] as { oid?: string };
     expect(typeof firstIncident.oid).toBe('string');
 
-    await page.goto(`/data/incidents/${firstIncident.oid}`);
+    await page.goto(`/tasks/it-incidents/${firstIncident.oid}`);
     await expect(page.getByText(/^QA Score$/).first()).toBeVisible({ timeout: 15_000 });
   });
 
@@ -56,7 +57,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
       (r) => r.url().includes('/api/objects/systems') && r.request().method() === 'GET',
       { timeout: 15_000 }
     );
-    await page.goto('/data/systems');
+    await page.goto('/tasks/it-hardware/systems');
     const listResponse = await listResponsePromise;
     expect(listResponse.ok()).toBeTruthy();
     const items = extractItems(await listResponse.json());
@@ -81,7 +82,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
       if (/inquir/i.test(req.url())) inquiryRequests.push(req.url());
     });
 
-    await page.goto(`/persona/${workerOid}`);
+    await page.goto(`/tasks/persona-dashboard/${workerOid}`);
     // Let the timeline lazy-fetch settle.
     await page.waitForLoadState('networkidle', { timeout: 15_000 });
     await expect(page.locator('body')).toBeVisible();

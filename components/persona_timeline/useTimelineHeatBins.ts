@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { HEAT_BIN_MAX, HEAT_BIN_MIN, HEAT_BIN_PX, TIMELINE_TYPES } from './constants';
 import type { TimelineHeatBin } from './types';
-import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/persona/types';
+import type { PersonaActivityEvent, PersonaActivityEventType, TimelineWindowState } from '@/app/(main)/tasks/persona-dashboard/types';
 import { clamp, normalizeSqrt, parseTimestamp } from './utils';
 
 interface UseTimelineHeatBinsParams {

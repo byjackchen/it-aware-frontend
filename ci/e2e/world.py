@@ -16,7 +16,11 @@ backend's dashboard golden snapshots, which this must not disturb):
 - one more worker, gate.erin, with an email and no account, for the
   account-to-worker link dialog (which lists unlinked workers by email);
 - one edge, gate.erin belongs_to Gate Carol's organization, so the relationship
-  graph on a worker's page has something to draw (the seed has no edges).
+  graph on a worker's page has something to draw (the seed has no edges);
+- three accounts in gate-readers (every read task), for View Usages' who-used-what
+  pages: gate.sync, an integration account, and gate.frank, an inactive user, so
+  Unused Access labels them; and gate.gone, a user who signs in, opens a task and
+  is deleted, so By Person lists its events as a deleted account's.
 
 Deterministic: fixed timestamps and IDs, no randomness. It runs once per stack.
 """
@@ -38,6 +42,7 @@ STATES = {
 GROUPS = ("OIT Service Desk", "OIT Hardware", "OIT Payments Support")
 START = datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc)
 COUNT = 60  # more than the lists' default page size (50)
+GONE_PASSWORD = "gate-fake-password-2"  # synthetic, for the accounts below
 
 
 class Api:
@@ -59,6 +64,14 @@ class Api:
 
     def oids(self, path: str, key: str) -> dict[str, str]:
         return {i[key]: i["oid"] for i in self.get(f"{path}?limit=500")["items"]}
+
+    def delete(self, path: str) -> None:
+        req = urllib.request.Request(f"{self.base}{path}", method="DELETE", headers={"Cookie": self.cookie})
+        try:
+            with urllib.request.urlopen(req, timeout=30):
+                pass
+        except urllib.error.HTTPError as error:
+            raise SystemExit(f"world: DELETE {path} -> {error.code} {error.read().decode()[:500]}") from None
 
     def post(self, path: str, payload: dict) -> dict:
         req = urllib.request.Request(
@@ -139,7 +152,22 @@ def main(argv: list[str]) -> int:
     for kind in ("requests", "incidents"):
         for n in range(1, COUNT + 1):
             api.post(f"/objects/activities/{kind}", ticket(kind, n, workers, systems))
-    print(f"ui world: 2 systems, 1 worker, 1 edge, {COUNT} requests, {COUNT} incidents")
+    readers = next(g["oid"] for g in api.get("/auth/config/groups?limit=1000") if g["name"] == "gate-readers")
+    accounts = {}
+    for username, fields in (
+        ("gate.sync", {"account_type": "integration", "password": GONE_PASSWORD}),
+        ("gate.frank", {"is_active": False}),
+        ("gate.gone", {"password": GONE_PASSWORD}),
+    ):
+        accounts[username] = api.post("/auth/config/accounts", {"username": username, **fields})["oid"]
+        api.post("/auth/config/account_groups", {"account_oid": accounts[username], "group_oid": readers})
+    gone = Api(api.base, "gate.gone", GONE_PASSWORD)  # a sign-in event
+    gone.post("/tasks/recent", {"task": "workers", "view": "workers"})  # a task_open event
+    api.delete(f"/auth/config/accounts/{accounts['gate.gone']}")
+    print(
+        f"ui world: 2 systems, 1 worker, 1 edge, {COUNT} requests, {COUNT} incidents, "
+        "3 accounts (1 integration, 1 inactive, 1 deleted after use)"
+    )
     return 0
 
 
