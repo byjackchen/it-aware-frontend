@@ -1392,7 +1392,8 @@
         "systems": "Platform records"
       },
       "hidden": "{count, plural, one {# table is} other {# tables are}} shown to administrators only",
-      "counted": "Counted {time}"
+      "counted": "Counted {time}",
+      "rawSources": "From raw: {sources}"
     }
   },
   "Data": {
@@ -3497,6 +3498,42 @@
       "status": "Status",
       "progress": "Progress",
       "none": "No key projects"
+    }
+  },
+  "DataTasks": {
+    "csat": {
+      "intro": "csat.responses, the ServiceNow CSAT table derived from raw, as it is: one row per survey of an incident, newest submission first. What ServiceNow sent, untouched, is in View Raw Records.",
+      "incident": "Incident number",
+      "incidentPlaceholder": "INC0012345",
+      "search": "Search",
+      "total": "{total, plural, one {# survey} other {# surveys}}",
+      "empty": "No survey here.",
+      "loadFailed": "Could not load the CSAT table: {message}",
+      "columns": {
+        "survey": "Survey",
+        "incident": "Incident",
+        "status": "Status",
+        "submitted": "Submitted",
+        "takenOn": "Taken on",
+        "answer": "Answer",
+        "rawSource": "From raw source"
+      }
+    },
+    "raw": {
+      "intro": "What the source sent, as the raw layer holds it: each key at its newest record, newest first, with the fields the source's reader names.",
+      "key": "Source key",
+      "keyPlaceholder": "An exact key",
+      "search": "Search",
+      "total": "{total, plural, one {# key} other {# keys}} in {source}",
+      "empty": "No record here.",
+      "loadFailed": "Could not load the raw records: {message}",
+      "deleted": "No longer in the source",
+      "first": "First page",
+      "next": "Next page",
+      "columns": {
+        "key": "Key",
+        "received": "Received"
+      }
     }
   }
 }

@@ -1123,7 +1123,8 @@
         "systems": "平台记录"
       },
       "hidden": "{count} 张表仅管理员可见",
-      "counted": "统计于{time}"
+      "counted": "统计于{time}",
+      "rawSources": "来自原始来源：{sources}"
     }
   },
   "Data": {
@@ -3226,6 +3227,42 @@
       "status": "状态",
       "progress": "进展",
       "none": "暂无关键项目"
+    }
+  },
+  "DataTasks": {
+    "csat": {
+      "intro": "csat.responses：由原始层派生的 ServiceNow CSAT 表，按原样显示，每条事件问卷一行，最新提交在前。ServiceNow 发来的原样数据在“查看原始记录”中。",
+      "incident": "事件编号",
+      "incidentPlaceholder": "INC0012345",
+      "search": "搜索",
+      "total": "{total} 份问卷",
+      "empty": "没有问卷。",
+      "loadFailed": "无法加载 CSAT 表：{message}",
+      "columns": {
+        "survey": "问卷",
+        "incident": "事件",
+        "status": "状态",
+        "submitted": "提交时间",
+        "takenOn": "填写时间",
+        "answer": "回答",
+        "rawSource": "原始来源"
+      }
+    },
+    "raw": {
+      "intro": "来源发来的原样数据，按原始层保存：每个键取最新一条记录，最新在前，只显示该来源读取器列出的字段。",
+      "key": "来源键",
+      "keyPlaceholder": "精确的键",
+      "search": "搜索",
+      "total": "{source} 共 {total} 个键",
+      "empty": "没有记录。",
+      "loadFailed": "无法加载原始记录：{message}",
+      "deleted": "来源中已不存在",
+      "first": "第一页",
+      "next": "下一页",
+      "columns": {
+        "key": "键",
+        "received": "接收时间"
+      }
     }
   }
 }
