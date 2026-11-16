@@ -20,7 +20,6 @@ vi.mock('@/lib/api/security');
 vi.mock('@/lib/api/objects');
 vi.mock('@/lib/api/campaigns');
 vi.mock('@/lib/api/scenarios');
-vi.mock('@/lib/api/insights');
 
 const form = (fields: Record<string, string> = {}) => {
     const data = new FormData();
@@ -102,9 +101,6 @@ describe('the data views', () => {
         ['updateRequest', () => objects.updateRequestAction('x', form()), ['/tasks/it-requests', '/tasks/it-requests/x']],
         ['deleteRequest', () => objects.deleteRequestAction('x'), ['/tasks/it-requests']],
         ['deleteInteraction', () => objects.deleteInteractionAction('x'), ['/tasks/it-interactions', '/tasks/it-interactions/x']],
-        ['createAnalysis', () => objects.createAnalysisAction(form()), ['/tasks/survey-analysis-dashboard']],
-        ['updateAnalysis', () => objects.updateAnalysisAction('x', form()), ['/tasks/survey-analysis-dashboard', '/tasks/survey-analysis-dashboard/x']],
-        ['deleteAnalysis', () => objects.deleteAnalysisAction('x'), ['/tasks/survey-analysis-dashboard']],
         ['createScenario', () => objects.createScenarioAction(form()), ['/tasks/it-service-catalog/scenarios']],
         ['updateScenario', () => objects.updateScenarioAction('x', form()), ['/tasks/it-service-catalog/scenarios', '/tasks/it-service-catalog/scenarios/x']],
         ['deleteScenario', () => objects.deleteScenarioAction('x'), ['/tasks/it-service-catalog/scenarios']],

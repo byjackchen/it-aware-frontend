@@ -164,13 +164,13 @@
     },
     {
       "old": "/data/analyses",
-      "new": "/tasks/survey-analysis-dashboard",
-      "type": "view"
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "special"
     },
     {
       "old": "/data/analyses/[oid]",
-      "new": "/tasks/survey-analysis-dashboard/[oid]",
-      "type": "record"
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "special"
     },
     {
       "old": "/data/articles",

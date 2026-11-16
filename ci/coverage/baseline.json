@@ -225,42 +225,6 @@
         "total": 30
       }
     },
-    "app/api/dashboard/survey-analytics/analysis-classification/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 147
-      },
-      "lines": {
-        "covered": 0,
-        "total": 131
-      },
-      "functions": {
-        "covered": 0,
-        "total": 22
-      },
-      "branches": {
-        "covered": 0,
-        "total": 78
-      }
-    },
-    "app/api/dashboard/survey-analytics/keyword-heatmap/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 186
-      },
-      "lines": {
-        "covered": 0,
-        "total": 153
-      },
-      "functions": {
-        "covered": 0,
-        "total": 20
-      },
-      "branches": {
-        "covered": 0,
-        "total": 111
-      }
-    },
     "app/api/dashboard/survey-analytics/servicenow-month-details/route.ts": {
       "statements": {
         "covered": 20,
@@ -637,24 +601,6 @@
       "branches": {
         "covered": 0,
         "total": 25
-      }
-    },
-    "lib/api/insights.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 28
-      },
-      "lines": {
-        "covered": 0,
-        "total": 24
-      },
-      "functions": {
-        "covered": 0,
-        "total": 6
-      },
-      "branches": {
-        "covered": 0,
-        "total": 11
       }
     },
     "lib/api/itopsdashboard.ts": {

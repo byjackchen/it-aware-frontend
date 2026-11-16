@@ -240,7 +240,6 @@ Computes every registered metric for the whole organization and upserts its row.
 | `ohla-journey-dashboard` | `route` |
 | `it-ssc-dashboard` | `headset` |
 | `persona-dashboard` | `user-round-search` |
-| `survey-analysis-dashboard` | `chart-pie` |
 | `it-tickets` | `ticket` |
 | `it-aging-work` | `hourglass` |
 | `it-assets` | `package` |

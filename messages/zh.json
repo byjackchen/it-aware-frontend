@@ -300,7 +300,6 @@
       "insights": "洞察",
       "notifications": "通知",
       "surveys": "问卷",
-      "analyses": "分析",
       "journeys": "旅程",
       "scenarios": "场景",
       "sscDashboard": "SSC 仪表盘",
@@ -611,44 +610,6 @@
         "showAll": "展开全部 {count} 个地区",
         "showLess": "收起"
       },
-      "classification": {
-        "title": "分析分类",
-        "loading": "正在加载分析分类...",
-        "loadFailed": "数据加载失败",
-        "totalAnalyses": "分析总数",
-        "positive": "正面",
-        "negative": "负面",
-        "serviceCatalog": "服务目录",
-        "configurationItem": "配置项",
-        "intent": "意图",
-        "byLocation": "按地区",
-        "neutral": "中性"
-      },
-      "keywords": {
-        "title": "关键词热力图",
-        "loading": "正在加载关键词热力图...",
-        "loadFailed": "数据加载失败",
-        "positive": "正面",
-        "negative": "负面",
-        "mixedNeutral": "混合/中性",
-        "sizeFrequency": "面积 = 频率",
-        "groupBySC": "服务目录层级",
-        "groupByLocation": "地区层级",
-        "allKeywords": "全部",
-        "ungrouped": "未分类"
-      },
-      "location": {
-        "noData": "暂无地区数据",
-        "location": "地区",
-        "total": "总数",
-        "topIssues": "主要问题"
-      },
-      "popover": {
-        "total": "总计",
-        "showing": "显示",
-        "openAnalysis": "打开分析",
-        "openSurvey": "打开问卷"
-      },
       "donut": {
         "submitted": "已提交",
         "notStarted": "未开始",
@@ -659,21 +620,6 @@
         "apac": "亚太",
         "emea": "欧非中东",
         "americas": "美洲"
-      },
-      "negativeFeedback": {
-        "title": "负面反馈聚焦",
-        "loading": "正在加载负面反馈分析...",
-        "serviceCatalog": "服务目录",
-        "configItem": "配置项",
-        "allLocations": "全部地区",
-        "count": "数量",
-        "negativeRate": "负面比例",
-        "typicalIssues": "典型问题",
-        "viewMore": "查看更多 ({count})",
-        "collapse": "收起",
-        "noNegative": "未发现负面反馈",
-        "issue": "条问题",
-        "issues": "条问题"
       }
     },
     "TopBar": {
@@ -1443,28 +1389,6 @@
       "noDescription": "无描述",
       "noNotes": "无备注",
       "noKeyTopics": "无关键主题"
-    },
-    "analyses": {
-      "title": "分析",
-      "detail": "分析详情",
-      "new": "新建分析",
-      "empty": "未找到分析",
-      "deleteConfirm": "确定要删除此分析吗？",
-      "worker": "员工",
-      "sourceType": "来源类型",
-      "sourceOid": "来源 OID",
-      "sourceObject": "来源对象",
-      "sourceBatch": "来源批次",
-      "topic": "主题",
-      "keywords": "关键词",
-      "fact": "事实摘要",
-      "semantic": "情感倾向",
-      "intent": "意图",
-      "serviceCatalog": "服务目录",
-      "configurationItem": "配置项",
-      "positive": "正面",
-      "negative": "负面",
-      "noKeywords": "无关键词"
     }
   },
   "Home": {
@@ -1685,7 +1609,6 @@
     "insights": "洞察",
     "notifications": "通知",
     "surveys": "问卷",
-    "analyses": "分析",
     "journeys": "旅程",
     "scenarios": "场景",
     "sscDashboard": "SSC 仪表盘",
@@ -2353,44 +2276,6 @@
       "showAll": "展开全部 {count} 个地区",
       "showLess": "收起"
     },
-    "classification": {
-      "title": "分析分类",
-      "loading": "正在加载分析分类...",
-      "loadFailed": "数据加载失败",
-      "totalAnalyses": "分析总数",
-      "positive": "正面",
-      "negative": "负面",
-      "serviceCatalog": "服务目录",
-      "configurationItem": "配置项",
-      "intent": "意图",
-      "byLocation": "按地区",
-      "neutral": "中性"
-    },
-    "keywords": {
-      "title": "关键词热力图",
-      "loading": "正在加载关键词热力图...",
-      "loadFailed": "数据加载失败",
-      "positive": "正面",
-      "negative": "负面",
-      "mixedNeutral": "混合/中性",
-      "sizeFrequency": "面积 = 频率",
-      "groupBySC": "服务目录层级",
-      "groupByLocation": "地区层级",
-      "allKeywords": "全部",
-      "ungrouped": "未分类"
-    },
-    "location": {
-      "noData": "暂无地区数据",
-      "location": "地区",
-      "total": "总数",
-      "topIssues": "主要问题"
-    },
-    "popover": {
-      "total": "总计",
-      "showing": "显示",
-      "openAnalysis": "打开分析",
-      "openSurvey": "打开问卷"
-    },
     "donut": {
       "submitted": "已提交",
       "notStarted": "未开始",
@@ -2401,21 +2286,6 @@
       "apac": "亚太",
       "emea": "欧非中东",
       "americas": "美洲"
-    },
-    "negativeFeedback": {
-      "title": "负面反馈聚焦",
-      "loading": "正在加载负面反馈分析...",
-      "serviceCatalog": "服务目录",
-      "configItem": "配置项",
-      "allLocations": "全部地区",
-      "count": "数量",
-      "negativeRate": "负面比例",
-      "typicalIssues": "典型问题",
-      "viewMore": "查看更多 ({count})",
-      "collapse": "收起",
-      "noNegative": "未发现负面反馈",
-      "issue": "条问题",
-      "issues": "条问题"
     }
   },
   "TopBar": {

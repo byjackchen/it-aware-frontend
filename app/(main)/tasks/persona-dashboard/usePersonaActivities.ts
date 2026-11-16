@@ -240,7 +240,7 @@ function toAnalysisEvent(item: Analysis): PersonaActivityEvent {
         title: item.topic || item.oid,
         subtitle: [item.semantic, item.intent].filter(Boolean).join(' · '),
         createdAt: item.effective_at ?? item.created_at,
-        href: `/tasks/survey-analysis-dashboard/${item.oid}`,
+        href: null, // the Survey Analysis Dashboard was retired (2026-11-16)
         raw: item,
     };
 }

@@ -405,28 +405,6 @@
         "noDescription": "No description",
         "noNotes": "No notes",
         "noKeyTopics": "No key topics"
-      },
-      "analyses": {
-        "title": "Analyses",
-        "detail": "Analysis Details",
-        "new": "New Analysis",
-        "empty": "No analyses found",
-        "deleteConfirm": "Are you sure you want to delete this analysis?",
-        "worker": "Worker",
-        "sourceType": "Source Type",
-        "sourceOid": "Source OID",
-        "sourceObject": "Source Object",
-        "sourceBatch": "Source Batch",
-        "topic": "Topic",
-        "keywords": "Keywords",
-        "fact": "Fact",
-        "semantic": "Semantic",
-        "intent": "Intent",
-        "serviceCatalog": "Service Catalog",
-        "configurationItem": "Configuration Item",
-        "positive": "Positive",
-        "negative": "Negative",
-        "noKeywords": "No keywords"
       }
     },
     "GlobalSearch": {
@@ -591,7 +569,6 @@
       "insights": "Insights",
       "notifications": "Notifications",
       "surveys": "Surveys",
-      "analyses": "Analyses",
       "journeys": "Journeys",
       "scenarios": "Scenarios",
       "sscDashboard": "SSC Dashboard",
@@ -902,44 +879,6 @@
         "showAll": "Show all {count} locations",
         "showLess": "Show less"
       },
-      "classification": {
-        "title": "Analysis Classification",
-        "loading": "Loading analysis classification...",
-        "loadFailed": "Failed to load data",
-        "totalAnalyses": "Total Analyses",
-        "positive": "Positive",
-        "negative": "Negative",
-        "serviceCatalog": "Service Catalog",
-        "configurationItem": "Configuration Item",
-        "intent": "Intent",
-        "byLocation": "By Location",
-        "neutral": "Neutral"
-      },
-      "keywords": {
-        "title": "Keyword Heatmap",
-        "loading": "Loading keyword heatmap...",
-        "loadFailed": "Failed to load data",
-        "positive": "Positive",
-        "negative": "Negative",
-        "mixedNeutral": "Mixed/Neutral",
-        "sizeFrequency": "Size = frequency",
-        "groupBySC": "Service Catalog Level",
-        "groupByLocation": "Location Level",
-        "allKeywords": "All",
-        "ungrouped": "Uncategorized"
-      },
-      "location": {
-        "noData": "No location data available",
-        "location": "Location",
-        "total": "Total",
-        "topIssues": "Top Issues"
-      },
-      "popover": {
-        "total": "total",
-        "showing": "showing",
-        "openAnalysis": "Open analysis",
-        "openSurvey": "Open survey"
-      },
       "donut": {
         "submitted": "Submitted",
         "notStarted": "Not Started",
@@ -950,21 +889,6 @@
         "apac": "APAC",
         "emea": "EMEA",
         "americas": "Americas"
-      },
-      "negativeFeedback": {
-        "title": "Negative Feedback Focus",
-        "loading": "Loading negative feedback analysis...",
-        "serviceCatalog": "Service Catalog",
-        "configItem": "Configuration Item",
-        "allLocations": "All Locations",
-        "count": "Count",
-        "negativeRate": "negative rate",
-        "typicalIssues": "Typical Issues",
-        "viewMore": "View More ({count})",
-        "collapse": "Collapse",
-        "noNegative": "No negative feedback found",
-        "issue": "issue",
-        "issues": "issues"
       }
     },
     "TopBar": {
@@ -1736,28 +1660,6 @@
       "noDescription": "No description",
       "noNotes": "No notes",
       "noKeyTopics": "No key topics"
-    },
-    "analyses": {
-      "title": "Analyses",
-      "detail": "Analysis Details",
-      "new": "New Analysis",
-      "empty": "No analyses found",
-      "deleteConfirm": "Are you sure you want to delete this analysis?",
-      "worker": "Worker",
-      "sourceType": "Source Type",
-      "sourceOid": "Source OID",
-      "sourceObject": "Source Object",
-      "sourceBatch": "Source Batch",
-      "topic": "Topic",
-      "keywords": "Keywords",
-      "fact": "Fact",
-      "semantic": "Semantic",
-      "intent": "Intent",
-      "serviceCatalog": "Service Catalog",
-      "configurationItem": "Configuration Item",
-      "positive": "Positive",
-      "negative": "Negative",
-      "noKeywords": "No keywords"
     }
   },
   "Home": {
@@ -1978,7 +1880,6 @@
     "insights": "Insights",
     "notifications": "Notifications",
     "surveys": "Surveys",
-    "analyses": "Analyses",
     "journeys": "Journeys",
     "scenarios": "Scenarios",
     "sscDashboard": "SSC Dashboard",
@@ -2646,44 +2547,6 @@
       "showAll": "Show all {count} locations",
       "showLess": "Show less"
     },
-    "classification": {
-      "title": "Analysis Classification",
-      "loading": "Loading analysis classification...",
-      "loadFailed": "Failed to load data",
-      "totalAnalyses": "Total Analyses",
-      "positive": "Positive",
-      "negative": "Negative",
-      "serviceCatalog": "Service Catalog",
-      "configurationItem": "Configuration Item",
-      "intent": "Intent",
-      "byLocation": "By Location",
-      "neutral": "Neutral"
-    },
-    "keywords": {
-      "title": "Keyword Heatmap",
-      "loading": "Loading keyword heatmap...",
-      "loadFailed": "Failed to load data",
-      "positive": "Positive",
-      "negative": "Negative",
-      "mixedNeutral": "Mixed/Neutral",
-      "sizeFrequency": "Size = frequency",
-      "groupBySC": "Service Catalog Level",
-      "groupByLocation": "Location Level",
-      "allKeywords": "All",
-      "ungrouped": "Uncategorized"
-    },
-    "location": {
-      "noData": "No location data available",
-      "location": "Location",
-      "total": "Total",
-      "topIssues": "Top Issues"
-    },
-    "popover": {
-      "total": "total",
-      "showing": "showing",
-      "openAnalysis": "Open analysis",
-      "openSurvey": "Open survey"
-    },
     "donut": {
       "submitted": "Submitted",
       "notStarted": "Not Started",
@@ -2694,21 +2557,6 @@
       "apac": "APAC",
       "emea": "EMEA",
       "americas": "Americas"
-    },
-    "negativeFeedback": {
-      "title": "Negative Feedback Focus",
-      "loading": "Loading negative feedback analysis...",
-      "serviceCatalog": "Service Catalog",
-      "configItem": "Configuration Item",
-      "allLocations": "All Locations",
-      "count": "Count",
-      "negativeRate": "negative rate",
-      "typicalIssues": "Typical Issues",
-      "viewMore": "View More ({count})",
-      "collapse": "Collapse",
-      "noNegative": "No negative feedback found",
-      "issue": "issue",
-      "issues": "issues"
     }
   },
   "TopBar": {

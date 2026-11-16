@@ -878,40 +878,6 @@
    ]
   },
   {
-   "code": "survey-analysis-dashboard",
-   "name": {
-    "en": "Survey Analysis Dashboard",
-    "zh": "问卷分析仪表盘"
-   },
-   "grouping": "analytics",
-   "kind": "internal",
-   "address": "/tasks/survey-analysis-dashboard",
-   "icon": "chart-pie",
-   "views": [
-    {
-     "slug": "analyses",
-     "name": {
-      "en": "Analyses",
-      "zh": "分析"
-     },
-     "old_code": "data.analyses",
-     "old_base": "/data/analyses",
-     "requires": {
-      "check": "all",
-      "codes": [
-       "ui:navigation:data",
-       "objects:analysiss:read"
-      ]
-     },
-     "keywords": [
-      "Insights",
-      "洞察"
-     ],
-     "address": "/tasks/survey-analysis-dashboard"
-    }
-   ]
-  },
-  {
    "code": "it-tickets",
    "name": {
     "en": "Monitor IT Tickets",
@@ -1857,13 +1823,13 @@
   },
   {
    "old": "/data/analyses",
-   "new": "/tasks/survey-analysis-dashboard",
-   "type": "view"
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "special"
   },
   {
    "old": "/data/analyses/[oid]",
-   "new": "/tasks/survey-analysis-dashboard/[oid]",
-   "type": "record"
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "special"
   },
   {
    "old": "/data/articles",

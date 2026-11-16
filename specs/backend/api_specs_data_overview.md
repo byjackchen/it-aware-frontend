@@ -125,7 +125,6 @@ Every table declared in `app/data_layers.py` appears exactly once. A table the d
 | `hierarchies.locations` | `workers` |
 | `hierarchies.organizations` | `workers` |
 | `hierarchies.service_catalogs` | `it-service-catalog` |
-| `insights.analysiss` | `survey-analysis-dashboard` |
 | `insights.worker_clusters` | `workers` |
 | `journeys.scenarios` | `it-service-catalog` |
 | `knowledges.articles` | `it-knowledge` |
