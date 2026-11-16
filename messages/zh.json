@@ -3193,6 +3193,7 @@
       "remove": "删除（contract）",
       "done": "完成"
     },
+    "phaseDerived": "阶段由本环境实际运行的内容决定：add 迁移、开关切到新值、remove 迁移。在下方切换开关即可切换或回滚。",
     "sections": {
       "phase": "阶段",
       "flags": "开关",
@@ -3208,11 +3209,6 @@
       "lastEvent": "最近变更",
       "noValue": "无值"
     },
-    "move": {
-      "to": "移到",
-      "override": "跳过未通过的关卡（{gates}）",
-      "submit": "移动"
-    },
     "flag": {
       "name": "开关",
       "value": "值",
@@ -3221,7 +3217,8 @@
       "oldNew": "{old} → {new}",
       "reason": "原因（必填）",
       "submit": "切换",
-      "onlyInSwitch": "只有在切换阶段才能切换开关。"
+      "override": "在关卡未通过（{gates}）的情况下切换，以上述原因为准",
+      "removed": "已运行删除迁移，开关不再变更。"
     },
     "gate": {
       "name": "关卡",
@@ -3234,10 +3231,6 @@
       "link": "证据链接",
       "text": "证据说明",
       "submit": "记录"
-    },
-    "note": {
-      "placeholder": "给历史添加一条备注",
-      "submit": "添加备注"
     },
     "events": {
       "phase": "进入{phase}",

@@ -18,7 +18,6 @@ import type {
   FeaturesResponse,
   MigrationRunDetail,
   MigrationRunsResponse,
-  Phase,
 } from '@/lib/types/features';
 
 export { attempt, read } from '@/lib/api/jobs';
@@ -80,19 +79,13 @@ export async function recordGate(
   return post(`/${enc(code)}/gates`, { gate, passed, reason, evidence });
 }
 
-export async function recordNote(code: string, text: string, evidence: Evidence): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/notes`, { text, evidence });
-}
-
-export async function enterPhase(
+/** Flip a flag; to its new value it is the switch, and `override` passes its open gates. */
+export async function flipFlag(
   code: string,
-  phase: Exclude<Phase, 'planned'>,
-  reason: string | null,
+  flag: string,
+  value: string,
+  reason: string,
   override: boolean,
 ): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/phase`, { phase, reason, override });
-}
-
-export async function flipFlag(code: string, flag: string, value: string, reason: string): Promise<FeatureEvent> {
-  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason }, 'PUT');
+  return post(`/${enc(code)}/flags/${enc(flag)}`, { value, reason, override }, 'PUT');
 }

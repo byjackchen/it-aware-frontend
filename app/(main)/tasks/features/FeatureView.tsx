@@ -1,19 +1,21 @@
 'use client';
 
 /**
- * Manage Features: one feature. Its phase (add, switch, remove), its flags, the
+ * Manage Features: one feature. Its phase (add, switch, remove), derived by the
+ * backend from what ran in this environment and never set here; its flags, the
  * gates each phase needs, and its whole history; and, for a person holding
- * `systems:features:edit`, the four changes: flip a flag, record a gate, move the
- * phase, add a note. The backend enforces the rules; a refusal is shown as it says.
+ * `systems:features:edit`, two changes: flip a flag (to its new value it is the
+ * switch, to its old value the rollback) and record a gate. The backend enforces
+ * the rules; a refusal is shown as it says.
  */
 
 import { useState, useTransition, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePermissions } from '@/lib/contexts/user-context';
-import { canFlip, earlierPhases, evidenceFrom, FEATURES_EDIT_PERMISSION, named } from '@/lib/features/view';
-import { enterPhase, flipFlag, recordGate, recordNote, type FeaturesResult } from '@/app/actions/features';
-import type { FeatureDetail, FeatureEvent, Phase } from '@/lib/types/features';
+import { canFlip, evidenceFrom, FEATURES_EDIT_PERMISSION, named, switchGatesOpen } from '@/lib/features/view';
+import { flipFlag, recordGate, type FeaturesResult } from '@/app/actions/features';
+import type { FeatureDetail, FeatureEvent } from '@/lib/types/features';
 import { Notice, tdClass, thClass, When } from '../jobs/parts';
 import { PhaseBadge, PhaseStrip } from './parts';
 
@@ -105,12 +107,9 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
   const [gatePassed, setGatePassed] = useState(true);
   const [gateLink, setGateLink] = useState('');
   const [gateText, setGateText] = useState('');
-  const moves = [...feature.next_phases.map((p) => p.phase), ...earlierPhases(feature.phase)] as Exclude<Phase, 'planned'>[];
-  const [target, setTarget] = useState<Exclude<Phase, 'planned'> | ''>(moves[0] ?? '');
-  const [moveReason, setMoveReason] = useState('');
   const [override, setOverride] = useState(false);
-  const [note, setNote] = useState('');
-  const missing = feature.next_phases.find((p) => p.phase === target)?.missing_gates ?? [];
+  // To its new value a flip is the switch: the gates still open before it.
+  const openGates = flag && flagValue === flag.new ? switchGatesOpen(feature) : [];
 
   const submit = (work: () => Promise<FeaturesResult>, done?: () => void) => (e: FormEvent) => {
     e.preventDefault();
@@ -143,45 +142,14 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
         <div className="mt-2 text-xs text-muted">
           {(['add', 'switch', 'remove'] as const).map((p) => (
             <div key={p}>
-              {t(`phases.${p}`)}: {feature.revisions[p].length ? feature.revisions[p].join(', ') : '—'}
+              {t(`phases.${p}`)}:{' '}
+              {feature.revisions[p].length
+                ? feature.revisions[p].map((r) => (feature.ran.includes(r) ? `${r} ✓` : r)).join(', ')
+                : '—'}
             </div>
           ))}
         </div>
-        {canEdit && moves.length > 0 && (
-          <form
-            className="mt-3 flex flex-wrap items-end gap-2"
-            onSubmit={submit(
-              () => enterPhase(feature.code, target as Exclude<Phase, 'planned'>, moveReason, override),
-              () => setMoveReason(''),
-            )}
-          >
-            <label className="text-sm">
-              {t('move.to')}{' '}
-              <select
-                className={inputClass}
-                value={target}
-                onChange={(e) => setTarget(e.target.value as Exclude<Phase, 'planned'>)}
-                aria-label={t('move.to')}
-              >
-                {moves.map((p) => (
-                  <option key={p} value={p}>
-                    {t(`phases.${p}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <input className={`${inputClass} min-w-64`} placeholder={t('reason')} value={moveReason} onChange={(e) => setMoveReason(e.target.value)} />
-            {missing.length > 0 && (
-              <label className="flex items-center gap-1 text-sm text-warn">
-                <input type="checkbox" checked={override} onChange={(e) => setOverride(e.target.checked)} />
-                {t('move.override', { gates: missing.join(', ') })}
-              </label>
-            )}
-            <button type="submit" className={buttonClass} disabled={pending || !target}>
-              {t('move.submit')}
-            </button>
-          </form>
-        )}
+        <p className="mt-2 text-xs text-muted">{t('phaseDerived')}</p>
       </Section>
 
       <Section title={t('sections.flags')}>
@@ -218,7 +186,13 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
           canFlip(feature) ? (
             <form
               className="mt-3 flex flex-wrap items-end gap-2"
-              onSubmit={submit(() => flipFlag(feature.code, flagCode, flagValue, flagReason), () => setFlagReason(''))}
+              onSubmit={submit(
+                () => flipFlag(feature.code, flagCode, flagValue, flagReason, openGates.length > 0 && override),
+                () => {
+                  setFlagReason('');
+                  setOverride(false);
+                },
+              )}
             >
               {feature.flags.length > 1 && (
                 <select className={inputClass} value={flagCode} onChange={(e) => setFlagCode(e.target.value)} aria-label={t('flag.name')}>
@@ -237,12 +211,18 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
                 ))}
               </select>
               <input className={`${inputClass} min-w-64`} placeholder={t('flag.reason')} value={flagReason} onChange={(e) => setFlagReason(e.target.value)} />
+              {openGates.length > 0 && (
+                <label className="flex items-center gap-1 text-sm text-warn">
+                  <input type="checkbox" checked={override} onChange={(e) => setOverride(e.target.checked)} />
+                  {t('flag.override', { gates: openGates.join(', ') })}
+                </label>
+              )}
               <button type="submit" className={buttonClass} disabled={pending || !flagReason.trim()}>
                 {t('flag.submit')}
               </button>
             </form>
           ) : (
-            <p className="mt-2 text-xs text-muted">{t('flag.onlyInSwitch')}</p>
+            <p className="mt-2 text-xs text-muted">{t('flag.removed')}</p>
           )
         )}
       </Section>
@@ -320,14 +300,6 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
       </Section>
 
       <Section title={t('sections.history')}>
-        {canEdit && (
-          <form className="mb-3 flex flex-wrap items-end gap-2" onSubmit={submit(() => recordNote(feature.code, note, {}), () => setNote(''))}>
-            <input className={`${inputClass} min-w-96`} placeholder={t('note.placeholder')} value={note} onChange={(e) => setNote(e.target.value)} />
-            <button type="submit" className={buttonClass} disabled={pending || !note.trim()}>
-              {t('note.submit')}
-            </button>
-          </form>
-        )}
         {feature.events.length === 0 ? (
           <p className="text-sm text-muted">{t('noEvents')}</p>
         ) : (

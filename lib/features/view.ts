@@ -50,14 +50,18 @@ export function phaseState(current: Phase, phase: Phase): 'done' | 'current' | '
   return of < at ? 'done' : of === at ? 'current' : 'ahead';
 }
 
-/** The phases a feature may go back to (a rollback, which needs a reason). */
-export function earlierPhases(current: Phase): Exclude<Phase, 'planned'>[] {
-  return PHASES.slice(1, PHASES.indexOf(current)) as Exclude<Phase, 'planned'>[];
+/** Whether a flag may still be flipped: until one of the remove revisions has run. */
+export function canFlip(feature: Pick<FeatureDetail, 'revisions' | 'ran'>): boolean {
+  return !feature.revisions.remove.some((r) => feature.ran.includes(r));
 }
 
-/** Whether a flag may be flipped now: only in the switch phase. */
-export function canFlip(feature: Pick<FeatureDetail, 'phase'>): boolean {
-  return feature.phase === 'switch';
+/**
+ * The gates a flip to a flag's new value would override: flipping to `new` is the
+ * switch, so the gates due before it must have passed (none once switched).
+ */
+export function switchGatesOpen(feature: Pick<FeatureDetail, 'phase' | 'gates'>): string[] {
+  if (PHASES.indexOf(feature.phase) >= PHASES.indexOf('switch')) return [];
+  return feature.gates.filter((g) => g.before === 'switch' && !g.passed).map((g) => g.code);
 }
 
 /** A name in the page's language. */
