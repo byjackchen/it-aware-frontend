@@ -21,7 +21,7 @@ import { PASSWORD } from './env';
 const REFUSED = [
   '/tasks/usages/overview', // lib/api/usage.ts load()
   '/tasks/jobs/jobs', // lib/api/jobs.ts read()
-  '/tasks/features/features', // lib/api/features.ts
+  '/tasks/features', // lib/api/features.ts
 ];
 
 /** Sign in as gate.holder in a fresh context, collecting every page error. */

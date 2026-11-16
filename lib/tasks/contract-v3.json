@@ -1543,7 +1543,7 @@
    },
    "grouping": "administration",
    "kind": "internal",
-   "address": "/tasks/features/features",
+   "address": "/tasks/features",
    "icon": "flag",
    "keywords": [
     "feature",
@@ -1577,28 +1577,7 @@
       "阶段",
       "关卡"
      ],
-     "address": "/tasks/features/features"
-    },
-    {
-     "slug": "migrations",
-     "name": {
-      "en": "Migrations",
-      "zh": "迁移记录"
-     },
-     "old_code": null,
-     "old_base": null,
-     "requires": {
-      "check": "any",
-      "codes": [
-       "systems:features:read"
-      ]
-     },
-     "keywords": [
-      "alembic",
-      "revision",
-      "迁移"
-     ],
-     "address": "/tasks/features/migrations"
+     "address": "/tasks/features"
     }
    ]
   },

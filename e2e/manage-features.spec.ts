@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { FEATURES_BASE, MIGRATIONS_BASE } from '../lib/features/view';
+import { FEATURES_BASE } from '../lib/features/view';
 
 /**
  * Manage Features (lib/features/view.ts) only controls feature flags, against the
@@ -45,12 +45,5 @@ test.describe('Manage Features', () => {
     await expect(flip).toBeEnabled();
     await value.selectOption('surveys');
     await expect(flip).toBeDisabled(); // the value it already has
-  });
-
-  test('shows the migration runs view', async ({ page }) => {
-    await page.goto(MIGRATIONS_BASE);
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Migrations', exact: true })).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByText(/No migration run has been kept yet\.|Started/).first()).toBeVisible();
   });
 });

@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * Manage Features: the frame both views share (title and refresh; the task frame
- * around it switches the two views).
+ * Manage Features: the page's frame (title and refresh).
  */
 
 import { useTransition, type ReactNode } from 'react';

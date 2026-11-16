@@ -61,24 +61,3 @@ export interface FeatureDetail extends FeatureSummary {
   /** The feature's flips, newest first. */
   flips: FeatureEvent[];
 }
-
-export interface MigrationRun {
-  oid: string;
-  started: string;
-  finished: string;
-  revision_before: string | null;
-  revision_after: string | null;
-  outcome: string;
-  commit: string | null;
-}
-
-export interface MigrationRunsResponse {
-  items: MigrationRun[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-export interface MigrationRunDetail extends MigrationRun {
-  record: Record<string, unknown>;
-}

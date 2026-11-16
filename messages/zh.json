@@ -3201,16 +3201,6 @@
       "changed": "变更",
       "reason": "原因（必填）",
       "submit": "切换"
-    },
-    "migrations": {
-      "label": "迁移记录",
-      "none": "还没有保存任何迁移记录。",
-      "started": "开始",
-      "revisions": "版本",
-      "outcome": "结果",
-      "commit": "提交",
-      "all": "全部记录",
-      "record": "记录"
     }
   },
   "Usage": {
