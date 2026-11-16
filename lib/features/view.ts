@@ -57,11 +57,12 @@ export function canFlip(feature: Pick<FeatureDetail, 'revisions' | 'ran'>): bool
 
 /**
  * The gates a flip to a flag's new value would override: flipping to `new` is the
- * switch, so the gates due before it must have passed (none once switched).
+ * switch, so the gates due before it and judged here must have passed (none once
+ * switched; a gate judged in another environment never holds a flip here).
  */
 export function switchGatesOpen(feature: Pick<FeatureDetail, 'phase' | 'gates'>): string[] {
   if (PHASES.indexOf(feature.phase) >= PHASES.indexOf('switch')) return [];
-  return feature.gates.filter((g) => g.before === 'switch' && !g.passed).map((g) => g.code);
+  return feature.gates.filter((g) => g.before === 'switch' && g.judged_here && !g.passed).map((g) => g.code);
 }
 
 /** A name in the page's language. */

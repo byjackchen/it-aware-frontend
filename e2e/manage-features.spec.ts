@@ -5,9 +5,10 @@ import { FEATURES_BASE, MIGRATIONS_BASE } from '../lib/features/view';
  * Manage Features (lib/features/view.ts) against the backend's own definitions
  * (it-aware-backend app/features/features.json): raw-by-source and csat-own-path,
  * nothing recorded yet, the CSAT flag at `surveys`. The phase is derived and has
- * no control: there is no Move and no note. Gates are judged by their check and
- * cannot be recorded by hand. The page's admin is refused the switch (a flip to
- * `csat`) while its gate is open. No flag is
+ * no control: there is no Move and no note. Gates are judged by their check, only
+ * in the environment each names (CSAT's: prod), and cannot be recorded by hand.
+ * This stack (hermetic) judges none of them, so they hold no flip here. No flag is
+ * flipped here: the backend's e2e flips it, as prod, on a backend of its own. No flag is
  * flipped here: the backend's e2e flips it on a backend of its own
  * (tests/e2e/test_manage_features.py).
  */
@@ -25,10 +26,10 @@ test.describe('Manage Features', () => {
     await expect(table.getByRole('link', { name: 'Raw layer by source' })).toBeVisible();
     const csat = table.getByRole('row').filter({ hasText: 'csat-own-path' });
     await expect(csat).toContainText('source = surveys');
-    await expect(csat).toContainText('/ 2');
+    await expect(csat).not.toContainText(' / '); // its gates are judged in prod: none counted on this stack
   });
 
-  test('shows gates judged by their check and refuses the switch while one is open', async ({ page }) => {
+  test('shows each gate, where it is judged, and that it holds nothing elsewhere', async ({ page }) => {
     await open(page, '?feature=csat-own-path');
     await expect(page.getByRole('heading', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Flags' })).toContainText('surveys');
@@ -40,17 +41,15 @@ test.describe('Manage Features', () => {
     const gates = page.getByRole('table', { name: 'Gates' });
     const gate3 = gates.getByRole('row').filter({ hasText: 'parity-7-days' });
     await expect(gate3).toContainText('Check parity passes 7 days in a row');
-    await expect(gate3).toContainText('/ 7 days');
+    await expect(gate3).toContainText('Judged in prod only');
+    await expect(gate3).toContainText('Judged in prod, not here (hermetic); holds nothing here');
     const watch = gates.getByRole('row').filter({ hasText: 'switch-watch' });
     await expect(watch).toContainText('Check parity passes 14 days in a row after the switch');
-    await expect(watch).toContainText('Not run yet'); // never switched here
+    await expect(watch).toContainText('Judged in prod, not here (hermetic)');
     await expect(page.getByRole('button', { name: 'Record', exact: true })).toHaveCount(0);
 
     await page.getByRole('combobox', { name: 'Value' }).selectOption('csat');
-    await expect(page.getByText('Switch with gates not passed (parity-7-days), for the reason given')).toBeVisible();
-    await page.getByPlaceholder('Why (required)').fill('too early');
-    await page.getByRole('button', { name: 'Flip', exact: true }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'gates not passed: parity-7-days' })).toBeVisible();
+    await expect(page.getByText(/^Switch with gates not passed/)).toHaveCount(0); // nothing to override here
     await expect(page.getByRole('table', { name: 'Flags' })).toContainText('surveys');
   });
 

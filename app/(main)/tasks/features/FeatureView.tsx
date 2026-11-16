@@ -247,19 +247,26 @@ export function FeatureView({ feature }: { feature: FeatureDetail }) {
                   </td>
                   <td className={tdClass}>{t(`phases.${g.before}`)}</td>
                   <td className={`${tdClass} text-xs`}>
-                    {t(g.after_switch ? 'gate.byCheckAfterSwitch' : 'gate.byCheck', { check: g.check, days: g.days })}
+                    <div>{t(g.after_switch ? 'gate.byCheckAfterSwitch' : 'gate.byCheck', { check: g.check, days: g.days })}</div>
+                    <div className="text-muted">{t('gate.where', { env: g.where })}</div>
                   </td>
                   <td className={tdClass}>
-                    <span className={g.passed ? 'text-good' : g.passed === false ? 'text-bad' : 'text-muted'}>
-                      {g.passed
-                        ? t('gate.passed')
-                        : g.passed === false
-                          ? t('gate.failed')
-                          : t('gate.progress', { streak: g.streak, days: g.days })}
-                    </span>
+                    {g.judged_here ? (
+                      <span className={g.passed ? 'text-good' : g.passed === false ? 'text-bad' : 'text-muted'}>
+                        {g.passed
+                          ? t('gate.passed')
+                          : g.passed === false
+                            ? t('gate.failed')
+                            : t('gate.progress', { streak: g.streak, days: g.days })}
+                      </span>
+                    ) : (
+                      <span className="text-muted">{t('gate.elsewhere', { env: g.where, here: feature.environment })}</span>
+                    )}
                   </td>
                   <td className={`${tdClass} text-xs text-muted`}>
-                    {g.last ? (
+                    {!g.judged_here ? (
+                      '—'
+                    ) : g.last ? (
                       <>
                         {g.last.reason} · <When iso={g.last.at} />
                       </>

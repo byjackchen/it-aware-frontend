@@ -48,11 +48,15 @@ export interface FlagState {
  * A gate, judged by its check: passed when the check passed `days` days in a row
  * here up to its latest run (`streak` so far); false when that run failed; null
  * until then. `after_switch`: only runs after the flip to the new value count.
+ * A gate is judged only in the environment it names (`where`); elsewhere
+ * `judged_here` is false and it holds nothing.
  */
 export interface GateState {
   code: string;
   before: string;
   name: Name;
+  where: 'dev' | 'test' | 'prod';
+  judged_here: boolean;
   check: string;
   days: number;
   after_switch: boolean;
@@ -79,6 +83,8 @@ export interface FeaturesResponse {
 }
 
 export interface FeatureDetail extends FeatureSummary {
+  /** This environment (IT_AWARE_ENV). */
+  environment: string;
   revisions: { add: string[]; switch: string[]; remove: string[] };
   /** The revisions whose migration runs are recorded in this environment. */
   ran: string[];

@@ -3231,7 +3231,9 @@
       "byCheckAfterSwitch": "切换后检查 {check} 连续 {days} 天通过",
       "progress": "{streak} / {days} 天",
       "lastRun": "最近一次运行",
-      "noRun": "尚未运行"
+      "noRun": "尚未运行",
+      "where": "只在 {env} 判定",
+      "elsewhere": "在 {env} 判定，本环境（{here}）不判定、不拦切换"
     },
     "events": {
       "phase": "进入{phase}",

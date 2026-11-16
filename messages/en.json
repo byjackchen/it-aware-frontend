@@ -3553,7 +3553,9 @@
       "byCheckAfterSwitch": "Check {check} passes {days} days in a row after the switch",
       "progress": "{streak} / {days} days",
       "lastRun": "Latest run",
-      "noRun": "Not run yet"
+      "noRun": "Not run yet",
+      "where": "Judged in {env} only",
+      "elsewhere": "Judged in {env}, not here ({here}); holds nothing here"
     },
     "events": {
       "phase": "Entered {phase}",

@@ -34,10 +34,12 @@ it('places each phase against the current one', () => {
   expect(phaseState('switch', 'remove')).toBe('ahead');
 });
 
-const gate = (code: string, before: 'switch' | 'remove', passed: boolean | null) => ({
+const gate = (code: string, before: 'switch' | 'remove', passed: boolean | null, judgedHere = true) => ({
   code,
   before,
   passed,
+  where: 'prod' as const,
+  judged_here: judgedHere,
   name: { en: code, zh: code },
   check: 'c',
   days: 1,
@@ -51,6 +53,8 @@ it('lists the switch gates a flip to new would override, until switched', () => 
   expect(switchGatesOpen({ phase: 'add', gates })).toEqual(['g2']);
   expect(switchGatesOpen({ phase: 'planned', gates })).toEqual(['g2']);
   expect(switchGatesOpen({ phase: 'switch', gates })).toEqual([]);
+  // A gate judged in another environment never holds a flip here.
+  expect(switchGatesOpen({ phase: 'add', gates: [gate('g4', 'switch', null, false)] })).toEqual([]);
 });
 
 it('flips until a remove revision ran, and names by locale', () => {
