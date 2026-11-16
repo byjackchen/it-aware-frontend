@@ -138,8 +138,8 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
         onDragStart: clearHover,
     });
 
-    const handleEventClick = useCallback((event: { href: string }) => {
-        if (dragPan.shouldSuppressClick()) {
+    const handleEventClick = useCallback((event: { href: string | null }) => {
+        if (dragPan.shouldSuppressClick() || !event.href) {
             return;
         }
         window.open(event.href, '_blank', 'noopener');

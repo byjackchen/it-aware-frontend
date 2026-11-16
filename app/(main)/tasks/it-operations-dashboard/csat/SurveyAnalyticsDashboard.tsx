@@ -6,9 +6,6 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { BatchSelector, type SurveyBatchItem } from './BatchSelector';
 import { SubmissionOverview } from './SubmissionOverview';
-import { AnalysisClassification } from './AnalysisClassification';
-import { NegativeFeedbackSection } from './NegativeFeedbackSection';
-import { KeywordHeatmap } from './KeywordHeatmap';
 import { ServiceNowQuality } from './ServiceNowQuality';
 
 export function SurveyAnalyticsDashboard() {
@@ -67,9 +64,6 @@ export function SurveyAnalyticsDashboard() {
                     ) : (
                         <div key={refreshKey} className="space-y-8">
                             <SubmissionOverview batchOid={selectedBatch.oid} isLight={isLight} />
-                            <AnalysisClassification batchOid={selectedBatch.oid} isLight={isLight} />
-                            <NegativeFeedbackSection batchOid={selectedBatch.oid} isLight={isLight} />
-                            <KeywordHeatmap batchOid={selectedBatch.oid} isLight={isLight} />
                         </div>
                     )
                 ) : (

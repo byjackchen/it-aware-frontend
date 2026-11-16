@@ -30,7 +30,7 @@ test.describe('Phase C — activities-decouple smoke', () => {
     // (TODO00000140 A14, lane F1): a page shows its task's own views instead.
     await expect(page.locator('aside')).toHaveCount(0);
     const views = page.getByTestId('task-frame').getByRole('navigation');
-    await expect(views.getByRole('link')).toHaveText(['Workers', 'Organizations', 'Locations', 'Clusters']);
+    await expect(views.getByRole('link')).toHaveText(['Workers', 'Organizations', 'Locations']);
     await expect(page.getByRole('link', { name: /Inquiries?/i })).toHaveCount(0);
   });
 

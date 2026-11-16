@@ -110,7 +110,6 @@ describe('the legacy registry', () => {
 describe('the matcher', () => {
     it('carries every kind of placeholder over', () => {
         expect(newAddress('/data/workers/w-1')).toBe('/tasks/workers/workers/w-1');
-        expect(newAddress('/data/clusters/blue%20team')).toBe('/tasks/workers/clusters/blue%20team');
         expect(newAddress('/ohla-journey/timeline')).toBe('/tasks/ohla-journey-dashboard/timeline');
         expect(newAddress('/knowledge/catalog/c-9')).toBe('/tasks/it-knowledge/library/catalog/c-9');
         const kinds = new Set(REGISTRY.entries.flatMap(entry => placeholders(entry.old)));
@@ -128,5 +127,7 @@ describe('the matcher', () => {
         expect(newAddress('/data/workers/w-1/history')).toBeNull();
         expect(newAddress('/login')).toBeNull();
         expect(newAddress('/systems/llm_proxy/models')).toBe('/home');
+        // The Clusters view was retired (2026-11-16): its old addresses open the Workers view.
+        expect(newAddress('/data/clusters/blue%20team')).toBe('/tasks/workers/workers');
     });
 });

@@ -35,11 +35,6 @@ import {
     deleteSystem,
 } from '@/lib/api/objects';
 import {
-    createAnalysis,
-    updateAnalysis,
-    deleteAnalysis,
-} from '@/lib/api/insights';
-import {
     createScenario,
     updateScenario,
     deleteScenario,
@@ -1062,127 +1057,6 @@ export async function deleteInteractionAction(oid: string) {
         await deleteInteraction(oid);
         revalidatePath('/tasks/it-interactions');
         revalidatePath(`/tasks/it-interactions/${oid}`);
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-// ============================================================================
-// Analysis Actions
-// ============================================================================
-
-export async function createAnalysisAction(formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:createAnalysis';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    const worker_oid = formData.get('worker_oid') as string;
-    const source_type = (formData.get('source_type') as string) || 'survey';
-    const source_oid = formData.get('source_oid') as string;
-    const source_batch_oid = formData.get('source_batch_oid') as string | null;
-    const topic = formData.get('topic') as string;
-    const effective_at = formData.get('effective_at') as string | null;
-    const keywordsStr = formData.get('keywords') as string | null;
-    const factStr = formData.get('fact') as string | null;
-    const semantic = formData.get('semantic') as string | null;
-    const intent = formData.get('intent') as string | null;
-    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
-    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
-
-    let keywords: string[] | undefined = undefined;
-    if (keywordsStr) {
-        try {
-            keywords = JSON.parse(keywordsStr);
-        } catch {
-            keywords = keywordsStr.split(',').map(k => k.trim()).filter(Boolean);
-        }
-    }
-
-    try {
-        await createAnalysis({
-            worker_oid,
-            source_type: source_type as 'survey',
-            source_oid,
-            source_batch_oid: source_batch_oid || undefined,
-            topic,
-            effective_at: effective_at || undefined,
-            keywords,
-            fact: factStr?.trim() || undefined,
-            semantic: (semantic as 'positive' | 'negative') || undefined,
-            intent: (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion') || undefined,
-            service_catalog_oid: service_catalog_oid || undefined,
-            configuration_item_oid: configuration_item_oid || undefined,
-        });
-        revalidatePath('/tasks/survey-analysis-dashboard');
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function updateAnalysisAction(oid: string, formData: FormData) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:updateAnalysis';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    const keywordsStr = formData.get('keywords') as string | null;
-    const factStr = formData.get('fact') as string | null;
-    const semantic = formData.get('semantic') as string | null;
-    const intent = formData.get('intent') as string | null;
-    const service_catalog_oid = formData.get('service_catalog_oid') as string | null;
-    const configuration_item_oid = formData.get('configuration_item_oid') as string | null;
-
-    let keywords: string[] | null | undefined = undefined;
-    if (keywordsStr !== null) {
-        if (keywordsStr.trim() === '') {
-            keywords = null;
-        } else {
-            try {
-                keywords = JSON.parse(keywordsStr);
-            } catch {
-                keywords = keywordsStr.split(',').map(k => k.trim()).filter(Boolean);
-            }
-        }
-    }
-
-    try {
-        await updateAnalysis(oid, {
-            keywords,
-            fact: factStr === null ? undefined : (factStr.trim() === '' ? null : factStr.trim()),
-            semantic: semantic === '' ? null : (semantic as 'positive' | 'negative' | null) ?? undefined,
-            intent: intent === '' ? null : (intent as 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion' | null) ?? undefined,
-            service_catalog_oid: service_catalog_oid === '' ? null : service_catalog_oid ?? undefined,
-            configuration_item_oid: configuration_item_oid === '' ? null : configuration_item_oid ?? undefined,
-        });
-        revalidatePath('/tasks/survey-analysis-dashboard');
-        revalidatePath(`/tasks/survey-analysis-dashboard/${oid}`);
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function deleteAnalysisAction(oid: string) {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:deleteAnalysis';
-    const startTime = Date.now();
-    logger.info(`Started`, { requestId, action });
-
-    try {
-        await deleteAnalysis(oid);
-        revalidatePath('/tasks/survey-analysis-dashboard');
         const duration = Date.now() - startTime;
         logger.info(`Success in ${duration}ms`, { requestId, action });
     } catch (error) {

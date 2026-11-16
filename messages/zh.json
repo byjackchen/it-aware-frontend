@@ -227,26 +227,6 @@
         "tagsUpdated": "标签更新时间",
         "empty": "暂无画像信息"
       },
-      "cluster": {
-        "label": "用户群组",
-        "noise": "未分类",
-        "probability": "置信度",
-        "outlierScore": "异常分数",
-        "profile": "群组画像",
-        "behaviors": "核心行为",
-        "painPoints": "痛点",
-        "bestPractices": "最佳实践",
-        "sla": "SLA 建议",
-        "features": "特征画像",
-        "labelFeatures": "标签",
-        "basedOn": "基于 {count} 名相似员工",
-        "description": "描述",
-        "noCluster": "该员工暂无群组分配",
-        "membershipStrong": "强",
-        "membershipModerate": "中等",
-        "membershipWeak": "弱",
-        "viewCluster": "查看群组详情"
-      },
       "timeline": {
         "window": "时间窗口",
         "slideLeft": "向左滑动",
@@ -320,8 +300,6 @@
       "insights": "洞察",
       "notifications": "通知",
       "surveys": "问卷",
-      "analyses": "分析",
-      "clusters": "群组",
       "journeys": "旅程",
       "scenarios": "场景",
       "sscDashboard": "SSC 仪表盘",
@@ -632,44 +610,6 @@
         "showAll": "展开全部 {count} 个地区",
         "showLess": "收起"
       },
-      "classification": {
-        "title": "分析分类",
-        "loading": "正在加载分析分类...",
-        "loadFailed": "数据加载失败",
-        "totalAnalyses": "分析总数",
-        "positive": "正面",
-        "negative": "负面",
-        "serviceCatalog": "服务目录",
-        "configurationItem": "配置项",
-        "intent": "意图",
-        "byLocation": "按地区",
-        "neutral": "中性"
-      },
-      "keywords": {
-        "title": "关键词热力图",
-        "loading": "正在加载关键词热力图...",
-        "loadFailed": "数据加载失败",
-        "positive": "正面",
-        "negative": "负面",
-        "mixedNeutral": "混合/中性",
-        "sizeFrequency": "面积 = 频率",
-        "groupBySC": "服务目录层级",
-        "groupByLocation": "地区层级",
-        "allKeywords": "全部",
-        "ungrouped": "未分类"
-      },
-      "location": {
-        "noData": "暂无地区数据",
-        "location": "地区",
-        "total": "总数",
-        "topIssues": "主要问题"
-      },
-      "popover": {
-        "total": "总计",
-        "showing": "显示",
-        "openAnalysis": "打开分析",
-        "openSurvey": "打开问卷"
-      },
       "donut": {
         "submitted": "已提交",
         "notStarted": "未开始",
@@ -680,21 +620,6 @@
         "apac": "亚太",
         "emea": "欧非中东",
         "americas": "美洲"
-      },
-      "negativeFeedback": {
-        "title": "负面反馈聚焦",
-        "loading": "正在加载负面反馈分析...",
-        "serviceCatalog": "服务目录",
-        "configItem": "配置项",
-        "allLocations": "全部地区",
-        "count": "数量",
-        "negativeRate": "负面比例",
-        "typicalIssues": "典型问题",
-        "viewMore": "查看更多 ({count})",
-        "collapse": "收起",
-        "noNegative": "未发现负面反馈",
-        "issue": "条问题",
-        "issues": "条问题"
       }
     },
     "TopBar": {
@@ -1464,57 +1389,6 @@
       "noDescription": "无描述",
       "noNotes": "无备注",
       "noKeyTopics": "无关键主题"
-    },
-    "analyses": {
-      "title": "分析",
-      "detail": "分析详情",
-      "new": "新建分析",
-      "empty": "未找到分析",
-      "deleteConfirm": "确定要删除此分析吗？",
-      "worker": "员工",
-      "sourceType": "来源类型",
-      "sourceOid": "来源 OID",
-      "sourceObject": "来源对象",
-      "sourceBatch": "来源批次",
-      "topic": "主题",
-      "keywords": "关键词",
-      "fact": "事实摘要",
-      "semantic": "情感倾向",
-      "intent": "意图",
-      "serviceCatalog": "服务目录",
-      "configurationItem": "配置项",
-      "positive": "正面",
-      "negative": "负面",
-      "noKeywords": "无关键词"
-    },
-    "clusters": {
-      "title": "员工群组",
-      "subtitle": "基于 ML 计算的 IT 服务员工行为分组",
-      "detail": "群组详情",
-      "empty": "未找到群组数据。聚类管道尚未运行。",
-      "noWorkers": "该群组中未找到员工",
-      "summaryTitle": "群组概览",
-      "totalWorkers": "总员工数",
-      "nClusters": "群组数",
-      "noiseCount": "未分类",
-      "lastComputed": "上次计算",
-      "clusterSize": "规模",
-      "percentage": "占比",
-      "workers": "员工",
-      "allClusters": "所有群组",
-      "noise": "未分类（异常值）",
-      "searchPlaceholder": "按员工姓名或 ID 搜索...",
-      "filterByCluster": "按群组筛选",
-      "featureRadar": "特征指纹",
-      "scatterPlot": "群组可视化",
-      "pcaX": "成分 1",
-      "pcaY": "成分 2",
-      "runId": "运行 ID",
-      "computedAt": "计算时间",
-      "backToList": "返回群组列表",
-      "probability": "置信度",
-      "workerName": "员工",
-      "clusterAssignment": "群组"
     }
   },
   "Home": {
@@ -1662,26 +1536,6 @@
       "tagsUpdated": "标签更新时间",
       "empty": "暂无画像信息"
     },
-    "cluster": {
-      "label": "用户群组",
-      "noise": "未分类",
-      "probability": "置信度",
-      "outlierScore": "异常分数",
-      "profile": "群组画像",
-      "behaviors": "核心行为",
-      "painPoints": "痛点",
-      "bestPractices": "最佳实践",
-      "sla": "SLA 建议",
-      "features": "特征画像",
-      "labelFeatures": "标签",
-      "basedOn": "基于 {count} 名相似员工",
-      "description": "描述",
-      "noCluster": "该员工暂无群组分配",
-      "membershipStrong": "强",
-      "membershipModerate": "中等",
-      "membershipWeak": "弱",
-      "viewCluster": "查看群组详情"
-    },
     "timeline": {
       "window": "时间窗口",
       "slideLeft": "向左滑动",
@@ -1755,8 +1609,6 @@
     "insights": "洞察",
     "notifications": "通知",
     "surveys": "问卷",
-    "analyses": "分析",
-    "clusters": "群组",
     "journeys": "旅程",
     "scenarios": "场景",
     "sscDashboard": "SSC 仪表盘",
@@ -2424,44 +2276,6 @@
       "showAll": "展开全部 {count} 个地区",
       "showLess": "收起"
     },
-    "classification": {
-      "title": "分析分类",
-      "loading": "正在加载分析分类...",
-      "loadFailed": "数据加载失败",
-      "totalAnalyses": "分析总数",
-      "positive": "正面",
-      "negative": "负面",
-      "serviceCatalog": "服务目录",
-      "configurationItem": "配置项",
-      "intent": "意图",
-      "byLocation": "按地区",
-      "neutral": "中性"
-    },
-    "keywords": {
-      "title": "关键词热力图",
-      "loading": "正在加载关键词热力图...",
-      "loadFailed": "数据加载失败",
-      "positive": "正面",
-      "negative": "负面",
-      "mixedNeutral": "混合/中性",
-      "sizeFrequency": "面积 = 频率",
-      "groupBySC": "服务目录层级",
-      "groupByLocation": "地区层级",
-      "allKeywords": "全部",
-      "ungrouped": "未分类"
-    },
-    "location": {
-      "noData": "暂无地区数据",
-      "location": "地区",
-      "total": "总数",
-      "topIssues": "主要问题"
-    },
-    "popover": {
-      "total": "总计",
-      "showing": "显示",
-      "openAnalysis": "打开分析",
-      "openSurvey": "打开问卷"
-    },
     "donut": {
       "submitted": "已提交",
       "notStarted": "未开始",
@@ -2472,21 +2286,6 @@
       "apac": "亚太",
       "emea": "欧非中东",
       "americas": "美洲"
-    },
-    "negativeFeedback": {
-      "title": "负面反馈聚焦",
-      "loading": "正在加载负面反馈分析...",
-      "serviceCatalog": "服务目录",
-      "configItem": "配置项",
-      "allLocations": "全部地区",
-      "count": "数量",
-      "negativeRate": "负面比例",
-      "typicalIssues": "典型问题",
-      "viewMore": "查看更多 ({count})",
-      "collapse": "收起",
-      "noNegative": "未发现负面反馈",
-      "issue": "条问题",
-      "issues": "条问题"
     }
   },
   "TopBar": {
