@@ -6,7 +6,7 @@ import type { Task } from '@/lib/types/tasks';
 /** How Data Overview shows the layers (lib/data-layers/view.ts). */
 
 function table(name: string, declared: Declared, rows: number | null, more: Partial<LayerTable> = {}): LayerTable {
-  return { table: name, declared, rows, approximate: false, task: null, ...more };
+  return { table: name, declared, rows, approximate: false, task: null, writers: [], raw_sources: [], ...more };
 }
 
 function task(code: string, en: string, zh: string, address: string): Task {
@@ -136,13 +136,13 @@ it('groups a layer’s tables by subject, the subjects by name, an unknown schem
     schema: 'activities',
     subject: 'Tickets and interactions',
     tables: [
-      { table: 'activities.incidents', tag: 'mixed', rows: '≈19,941', link: { name: 'View IT Incidents', href: '/tasks/it-incidents' } },
-      { table: 'activities.incident_slas', tag: 'source_copy', rows: '30,092', link: null },
+      { table: 'activities.incidents', tag: 'mixed', rows: '≈19,941', link: { name: 'View IT Incidents', href: '/tasks/it-incidents' }, rawSources: [] },
+      { table: 'activities.incident_slas', tag: 'source_copy', rows: '30,092', link: null, rawSources: [] },
     ],
   });
-  expect(derived.groups[2].tables[1]).toEqual({ table: 'objects.gone', tag: 'computed', rows: '—', link: null });
+  expect(derived.groups[2].tables[1]).toEqual({ table: 'objects.gone', tag: 'computed', rows: '—', link: null, rawSources: [] });
   // A transactional table has no tag; its task is not the person's, so no link.
-  expect(transactional.groups[0].tables).toEqual([{ table: 'auth.accounts', tag: null, rows: '46', link: null }]);
+  expect(transactional.groups[0].tables).toEqual([{ table: 'auth.accounts', tag: null, rows: '46', link: null, rawSources: [] }]);
 });
 
 it('notes what the data says: raw not in use, and how many tables are to split', () => {
@@ -181,4 +181,20 @@ it('says how long ago the rows were counted', () => {
   // A clock behind the backend's does not count into the future.
   expect(countedAgo(counted, at('2026-11-12T09:59:00Z'), 'en')).toBe('now');
   expect(countedAgo('not a time', at(counted), 'en')).toBeNull();
+});
+
+it('names the raw sources a derived table is rebuilt from', () => {
+  const data: DataLayers = {
+    counted_at: '2026-11-16T12:00:00Z',
+    layers: [
+      { layer: 'raw', tables: 0, rows: 0, approximate: false, declared_rows: {}, hidden_tables: 0, groups: [] },
+      {
+        layer: 'derived', tables: 1, rows: 3, approximate: false, declared_rows: { computed: 3 }, hidden_tables: 0,
+        groups: [{ schema: 'csat', tables: [table('csat.responses', 'computed', 3, { raw_sources: ['servicenow_incident_assessment'] })] }],
+      },
+      { layer: 'transactional', tables: 0, rows: 0, approximate: false, declared_rows: {}, hidden_tables: 0, groups: [] },
+    ],
+  };
+  const [, derived] = shapeLayers(data, { held: null, locale: 'en', subject: (schema) => schema });
+  expect(derived.groups[0].tables[0].rawSources).toEqual(['servicenow_incident_assessment']);
 });

@@ -105,6 +105,11 @@ export function LayerColumns({ data, held }: LayerColumnsProps) {
                         <div className="min-w-0">
                           <code className="break-all font-mono text-xs text-ink">{row.table}</code>
                           {row.tag && <> <Tag tag={row.tag} /></>}
+                          {row.rawSources.length > 0 && (
+                            <p className="mt-px text-xs text-muted" data-testid="layer-table-sources">
+                              {t('rawSources', { sources: row.rawSources.join(', ') })}
+                            </p>
+                          )}
                           {row.link && (
                             <Link href={row.link.href} className="mt-px block text-xs text-accent hover:underline">
                               → {row.link.name}

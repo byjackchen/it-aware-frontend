@@ -239,6 +239,47 @@
    ]
   },
   {
+   "code": "it-csat",
+   "name": {
+    "en": "View IT CSAT",
+    "zh": "查看 IT CSAT"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-csat",
+   "icon": "smile",
+   "keywords": [
+    "csat",
+    "satisfaction",
+    "survey",
+    "满意度",
+    "问卷"
+   ],
+   "views": [
+    {
+     "slug": "responses",
+     "name": {
+      "en": "CSAT Responses",
+      "zh": "CSAT 问卷"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "csat:responses:read"
+      ]
+     },
+     "keywords": [
+      "Derived",
+      "派生"
+     ],
+     "address": "/tasks/it-csat"
+    }
+   ]
+  },
+  {
    "code": "it-service-catalog",
    "name": {
     "en": "Maintain IT Service Catalog",
@@ -396,6 +437,145 @@
      },
      "keywords": [],
      "address": "/tasks/data-overview"
+    }
+   ]
+  },
+  {
+   "code": "raw-records",
+   "name": {
+    "en": "View Raw Records",
+    "zh": "查看原始记录"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/raw-records/servicenow-incident",
+   "icon": "database",
+   "keywords": [
+    "raw",
+    "source",
+    "原始",
+    "来源"
+   ],
+   "views": [
+    {
+     "slug": "servicenow-incident",
+     "name": {
+      "en": "ServiceNow Incidents",
+      "zh": "ServiceNow 事件"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_incident:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_incident"
+     ],
+     "address": "/tasks/raw-records/servicenow-incident"
+    },
+    {
+     "slug": "servicenow-incident-assessment",
+     "name": {
+      "en": "ServiceNow Incident Surveys",
+      "zh": "ServiceNow 事件问卷"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_incident_assessment:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_incident_assessment"
+     ],
+     "address": "/tasks/raw-records/servicenow-incident-assessment"
+    },
+    {
+     "slug": "servicenow-asmt-assessment-instance",
+     "name": {
+      "en": "ServiceNow Survey Completions",
+      "zh": "ServiceNow 问卷完成时间"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_asmt_assessment_instance:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_asmt_assessment_instance"
+     ],
+     "address": "/tasks/raw-records/servicenow-asmt-assessment-instance"
+    },
+    {
+     "slug": "itaware-campaigns-surveys",
+     "name": {
+      "en": "IT-Aware CSAT Archive",
+      "zh": "IT-Aware CSAT 存档"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:itaware_campaigns_surveys:read"
+      ]
+     },
+     "keywords": [
+      "itaware_campaigns_surveys"
+     ],
+     "address": "/tasks/raw-records/itaware-campaigns-surveys"
+    },
+    {
+     "slug": "erp-orginfo",
+     "name": {
+      "en": "ERP Organizations",
+      "zh": "ERP 组织"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:erp_orginfo:read"
+      ]
+     },
+     "keywords": [
+      "erp_orginfo"
+     ],
+     "address": "/tasks/raw-records/erp-orginfo"
+    },
+    {
+     "slug": "erp-locationinfo",
+     "name": {
+      "en": "ERP Offices",
+      "zh": "ERP 办公地点"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:erp_locationinfo:read"
+      ]
+     },
+     "keywords": [
+      "erp_locationinfo"
+     ],
+     "address": "/tasks/raw-records/erp-locationinfo"
     }
    ]
   },
@@ -1372,7 +1552,7 @@
       "check": "all",
       "codes": [
        "ui:navigation:ssc",
-       "objects:incidents:read"
+       "csat:responses:read"
       ]
      },
      "keywords": [],

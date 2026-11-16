@@ -22,6 +22,8 @@ const REFUSED = [
   '/tasks/usages/overview', // lib/api/usage.ts load()
   '/tasks/jobs/jobs', // lib/api/jobs.ts read()
   '/tasks/features', // lib/api/features.ts
+  '/tasks/it-csat', // lib/api/data-tasks.ts through load(): csat:responses:read
+  '/tasks/raw-records/erp-orginfo', // the same: raw:erp_orginfo:read
 ];
 
 /** Sign in as gate.holder in a fresh context, collecting every page error. */
