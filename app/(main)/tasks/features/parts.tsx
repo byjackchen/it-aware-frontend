@@ -1,24 +1,22 @@
 'use client';
 
 /**
- * Manage Features: the frame both views share (title, the two views, refresh) and
- * the small pieces: phase badges and the phase strip.
+ * Manage Features: the frame both views share (title and refresh; the task frame
+ * around it switches the two views) and the small pieces: phase badges and the
+ * phase strip.
  */
 
 import { useTransition, type ReactNode } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Flag, RefreshCw } from 'lucide-react';
-import { featureHref, migrationsHref, PHASES, phaseState } from '@/lib/features/view';
+import { PHASES, phaseState } from '@/lib/features/view';
 import type { Phase } from '@/lib/types/features';
 
-export function FeaturesFrame({ tab, children }: { tab: 'features' | 'migrations'; children: ReactNode }) {
+export function FeaturesFrame({ children }: { children: ReactNode }) {
   const t = useTranslations('Features');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const tabClass = (on: boolean) =>
-    `rounded-lg px-3 py-1.5 text-sm font-medium ${on ? 'bg-blue-500/20 text-accent' : 'text-ink-2 hover:bg-hover'}`;
   return (
     <div className="p-4">
       <div className="glass-card rounded-xl">
@@ -31,14 +29,6 @@ export function FeaturesFrame({ tab, children }: { tab: 'features' | 'migrations
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <nav className="flex gap-1" aria-label={t('title')}>
-              <Link href={featureHref()} className={tabClass(tab === 'features')} aria-current={tab === 'features' ? 'page' : undefined}>
-                {t('tabs.features')}
-              </Link>
-              <Link href={migrationsHref()} className={tabClass(tab === 'migrations')} aria-current={tab === 'migrations' ? 'page' : undefined}>
-                {t('tabs.migrations')}
-              </Link>
-            </nav>
             <button
               onClick={() => startTransition(() => router.refresh())}
               disabled={pending}

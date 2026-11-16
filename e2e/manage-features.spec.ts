@@ -35,7 +35,7 @@ test.describe('Manage Features', () => {
     await page.getByRole('combobox', { name: 'Gate' }).selectOption('freeze');
     await page.getByPlaceholder('Evidence text').fill('Golden files recorded (synthetic)');
     await page.getByRole('button', { name: 'Record', exact: true }).click();
-    await expect(page.getByRole('status')).toContainText('Recorded.');
+    await expect(page.getByRole('status').filter({ hasText: 'Recorded.' })).toBeVisible();
     const gates = page.getByRole('table', { name: 'Gates' });
     await expect(gates.getByRole('row').filter({ hasText: 'freeze' })).toContainText('Passed');
     const history = page.getByRole('list', { name: 'History' });
@@ -55,7 +55,7 @@ test.describe('Manage Features', () => {
   test('shows the migration runs view', async ({ page }) => {
     await page.goto(MIGRATIONS_BASE);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('link', { name: 'Migrations', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Migrations', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByText(/No migration run has been kept yet\.|Started/).first()).toBeVisible();
   });
 });

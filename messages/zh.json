@@ -3179,10 +3179,6 @@
     "title": "管理功能上线",
     "help": "跨多个版本的变更：先新增，再切换，最后删除；以及它的开关、关卡和历史。",
     "refresh": "刷新",
-    "tabs": {
-      "features": "功能",
-      "migrations": "迁移记录"
-    },
     "recorded": "已记录。",
     "owner": "负责人：{owner}",
     "reason": "原因",

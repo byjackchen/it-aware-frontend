@@ -3501,10 +3501,6 @@
     "title": "Manage Features",
     "help": "Each change that takes more than one release: add, switch, then remove; its flags, gates and history.",
     "refresh": "Refresh",
-    "tabs": {
-      "features": "Features",
-      "migrations": "Migrations"
-    },
     "recorded": "Recorded.",
     "owner": "Owner: {owner}",
     "reason": "Reason",

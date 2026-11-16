@@ -22,11 +22,11 @@ export default async function ManageFeaturesPage({ searchParams }: PageProps) {
   if (feature) {
     const detail = await read(() => getFeature(feature));
     return (
-      <FeaturesFrame tab="features">
+      <FeaturesFrame>
         {detail.ok ? <FeatureView feature={detail.data} /> : <LoadFailure failure={detail.failure} />}
       </FeaturesFrame>
     );
   }
   const list = await read(listFeatures);
-  return <FeaturesFrame tab="features">{list.ok ? <FeaturesList data={list.data} /> : <LoadFailure failure={list.failure} />}</FeaturesFrame>;
+  return <FeaturesFrame>{list.ok ? <FeaturesList data={list.data} /> : <LoadFailure failure={list.failure} />}</FeaturesFrame>;
 }

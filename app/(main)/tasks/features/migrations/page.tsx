@@ -20,14 +20,14 @@ export default async function MigrationRunsPage({ searchParams }: PageProps) {
   if (run) {
     const detail = await read(() => getMigrationRun(run));
     return (
-      <FeaturesFrame tab="migrations">
+      <FeaturesFrame>
         {detail.ok ? <MigrationRunView run={detail.data} /> : <LoadFailure failure={detail.failure} />}
       </FeaturesFrame>
     );
   }
   const runs = await read(() => listMigrationRuns(RUNS_PAGE_SIZE, (page - 1) * RUNS_PAGE_SIZE));
   return (
-    <FeaturesFrame tab="migrations">
+    <FeaturesFrame>
       {runs.ok ? <MigrationRuns data={runs.data} page={page} /> : <LoadFailure failure={runs.failure} />}
     </FeaturesFrame>
   );
