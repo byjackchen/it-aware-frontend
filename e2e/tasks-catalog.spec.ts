@@ -60,7 +60,7 @@ test.describe('Tasks 1: task access', () => {
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('Maintain Access');
     await expect(frame.getByText('Administration', { exact: true })).toBeVisible();
-    const views = frame.getByRole('navigation', { name: 'Views of Maintain Access' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of Maintain Access' });
     await expect(views.getByRole('link')).toHaveText(['Accounts', 'Groups', 'Roles', 'Permissions', 'Who Has What Tasks']);
     await expect(views.getByRole('link', { name: 'Who Has What Tasks' })).toHaveAttribute('aria-current', 'page');
     await expect(views.getByRole('link', { name: 'Groups' })).toHaveAttribute('href', '/tasks/access/groups');

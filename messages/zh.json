@@ -1399,7 +1399,8 @@
     "pin": "固定到首页",
     "unpin": "从首页取消固定",
     "pinTask": "固定 {name}",
-    "unpinTask": "取消固定 {name}"
+    "unpinTask": "取消固定 {name}",
+    "external": "由 {name} 提供。你在这里能做什么，由你在 {name} 里的角色决定。"
   },
   "GlobalSearch": {
     "pin": "固定到首页",
@@ -3223,7 +3224,6 @@
   },
   "OhlaRouter": {
     "title": "Ohla Router",
-    "providedBy": "由 Ohla Router 提供。你在这里能做什么，由你在 Ohla Router 里的角色决定。",
     "notConfigured": "当前环境还没有配置 Ohla Router。",
     "unavailable": "Ohla Router 暂时不可用。IT-Aware 的其他功能不受影响，请稍后再试。"
   }

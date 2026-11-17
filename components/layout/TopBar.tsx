@@ -1,7 +1,7 @@
 'use client';
 
 import { NavLink } from '@/components/navigation/NavLink';
-import { Bell, Home, LogOut } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { TimezoneSelect } from '@/components/data/TimezoneSelect';
@@ -12,14 +12,17 @@ import { useTransitionRouter } from '@/components/navigation/useTransitionRouter
 import { useUser } from '@/lib/contexts/user-context';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
+import { TaskHeader, type TaskFrameProps } from '@/components/tasks/TaskFrame';
 
 /**
- * The top bar: the brand (goes to the person's start page), the home, the
- * search bar and the account controls. It has no menu: a person reaches a page
- * as a task, from search or from their home; a section's sidebar is unchanged.
+ * The top bar: the brand (goes to the person's start page), the home, the task
+ * of the page (its name and pin, components/tasks/TaskFrame.tsx), the search bar
+ * and the account controls. It has no menu: a person reaches a page as a task,
+ * from search or from their home. The task sits here rather than on a row of
+ * its own, so the page under it keeps that height.
  */
 
-export function TopBar() {
+export function TopBar({ held, pinned }: TaskFrameProps) {
   const t = useTranslations('TopBar');
   const router = useTransitionRouter();
   const { user, isLoading, clearUser } = useUser();
@@ -49,24 +52,18 @@ export function TopBar() {
     >
       {/* Main Navigation Row */}
       <div className="h-16 flex items-center justify-between gap-6 flex-shrink-0">
-        <div className="flex items-center gap-8">
+        <div className="flex min-w-0 max-w-[50%] shrink items-center gap-8">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            {/* The logo goes to the person's start page; the house to their home. */}
-            <NavLink href="/" className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {/* The logo is the way home (maintainer, 2026-11-17: the house beside it did
+                the same). A start page set in the profile still opens at "/". */}
+            <NavLink href="/home" aria-label={t('title')} title={t('home')} className="flex items-center gap-3">
               <div className="w-9 h-9 brand-mark rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-lg">IA</span>
               </div>
-              <span className={`text-xl font-semibold whitespace-nowrap ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
+              <span className={`hidden xl:inline text-xl font-semibold whitespace-nowrap ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
             </NavLink>
-            <NavLink
-              href="/home"
-              aria-label={t('home')}
-              title={t('home')}
-              className={`p-2 rounded-full transition-all duration-300 ${isLight ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-900/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
-            >
-              <Home className="w-5 h-5" />
-            </NavLink>
+            <TaskHeader held={held} pinned={pinned} />
           </div>
         </div>
 

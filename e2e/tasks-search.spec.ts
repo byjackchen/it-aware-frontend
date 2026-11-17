@@ -39,7 +39,7 @@ test.describe('Tasks 2: search over tasks and records', () => {
       .getByRole('button', { name: 'Monitor IT Tickets Incidents Operations', exact: true }).click();
 
     await expect(page).toHaveURL(/\/tasks\/it-tickets\/incidents$/);
-    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Incidents', exact: true }))
+    await expect(page.getByTestId('task-views').getByRole('link', { name: 'Incidents', exact: true }))
       .toHaveAttribute('aria-current', 'page');
   });
 
