@@ -1,13 +1,12 @@
 'use server';
 
 /**
- * Server Actions for the home page and the admin-set user profile.
+ * Server Actions for the home page and the home tasks an admin sets per group.
  */
 
 import { revalidatePath } from 'next/cache';
 import * as api from '@/lib/api/tasks';
 import { logger } from '@/lib/logger';
-import type { ProfileUpdate } from '@/lib/types/tasks';
 
 type Outcome = { success: true } | { error: string };
 
@@ -32,11 +31,11 @@ export async function setTaskPinned(code: string, pinned: boolean): Promise<Outc
   });
 }
 
-/** Save the customization part of a user's profile (an admin's action). */
-export async function saveAccountProfile(oid: string, update: ProfileUpdate): Promise<Outcome> {
-  return attempt('Tasks:saveAccountProfile', 'Failed to save the profile', async () => {
-    await api.putAccountProfile(oid, update);
-    revalidatePath(`/tasks/access/accounts/${oid}`);
+/** Save the tasks on the home of a group's members (an admin's action). */
+export async function saveGroupHomeTasks(oid: string, homeTasks: string[]): Promise<Outcome> {
+  return attempt('Tasks:saveGroupHomeTasks', 'Failed to save the home tasks', async () => {
+    await api.putGroupHomeTasks(oid, homeTasks);
+    revalidatePath(`/tasks/access/groups/${oid}`);
     revalidatePath('/home');
   });
 }

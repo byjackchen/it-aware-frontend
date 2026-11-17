@@ -4,10 +4,10 @@ import { metricValue } from '../lib/tasks/metrics';
 import type { TaskMetrics } from '../lib/types/tasks';
 
 /**
- * Tasks 3 (TODO00000140): the home page, a person's own pins and recents, the
- * landing rule, and the customization part of a user's profile, which an admin
- * sets on the account page. The specs act as the synthetic admin, who is also a
- * user with every task. Each spec leaves the pins and the profile as it found them.
+ * Tasks 3 (TODO00000140): the home page, a person's own pins and recents, and the
+ * tasks an admin sets for a group's members on the group page. The specs act as
+ * the synthetic admin, who is also a user with every task, in the group
+ * super_admins. Each spec leaves the pins and the group's home tasks as it found them.
  *
  * Changed with the catalog v3 (TODO00000140 A14, lane F1): tasks with
  * views (24 since View Usages) in place of 63 pages, grouped by grouping; the start task is a code;
@@ -19,6 +19,10 @@ import type { TaskMetrics } from '../lib/types/tasks';
  * the cards.
  *
  * Changed with View Usages (feat/view-usages): the 24th task, which the admin has.
+ *
+ * Changed with home tasks per group (ohla-xray TODO00000169): the start page and
+ * the per-account profile are gone; everyone lands on the home, and an admin sets
+ * the home tasks on a group's page. The account page lists what the user can open.
  */
 
 /** The backend, as the signed-in person. */
@@ -28,11 +32,12 @@ async function backend(context: BrowserContext): Promise<APIRequestContext> {
   return request.newContext({ extraHTTPHeaders: { Cookie: `it_aware_access=${session!.value}` } });
 }
 
-async function ownAccountOid(context: BrowserContext): Promise<string> {
+/** The oid of the admin's own group, super_admins. */
+async function adminGroupOid(context: BrowserContext): Promise<string> {
   const api = await backend(context);
-  const me = await api.get(`${API_URL}/auth/me`);
-  expect(me.ok()).toBeTruthy();
-  const oid = (await me.json()).account.oid as string;
+  const groups = await api.get(`${API_URL}/auth/config/groups`);
+  expect(groups.ok()).toBeTruthy();
+  const oid = ((await groups.json()) as { oid: string; name: string }[]).find(g => g.name === 'super_admins')!.oid;
   await api.dispose();
   return oid;
 }
@@ -44,15 +49,15 @@ async function openHome(page: Page) {
   await expect(page.getByTestId('home-greeting')).toHaveCount(1);
 }
 
-/** Open a user's account page and wait until it is there once, with its requests done. */
-async function openAccount(page: Page, oid: string) {
-  await page.goto(`/tasks/access/accounts/${oid}`);
+/** Open a group's page and wait until it is there once, with its requests done. */
+async function openGroup(page: Page, oid: string) {
+  await page.goto(`/tasks/access/groups/${oid}`);
   await page.waitForLoadState('networkidle');
-  await expect(page.getByTestId('profile-customization')).toHaveCount(1);
+  await expect(page.getByTestId('group-home-tasks')).toHaveCount(1);
 }
 
-test.describe('Tasks 3: home, pins and the user profile', () => {
-  test('with no start page set, a person lands on the home with their tasks', async ({ page }) => {
+test.describe('Tasks 3: home, pins and the home tasks per group', () => {
+  test('a person lands on the home with their tasks', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/home$/);
     // The home greets the person by the time of day, with today's date.
@@ -204,30 +209,29 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(recent.getByRole('link', { name: 'Home', exact: true })).toHaveCount(0);
   });
 
-  test("an admin sets a user's start page and home tasks; the user lands there and sees them", async ({ page, context }) => {
-    const oid = await ownAccountOid(context);
-    const card = page.getByTestId('profile-customization');
-    const startPage = card.getByLabel('Start page');
+  test("an admin sets a group's home tasks; its members see them on their home", async ({ page, context }) => {
+    const oid = await adminGroupOid(context);
+    const card = page.getByTestId('group-home-tasks');
     const onHome = card.getByLabel('Data · Maintain Workers and Organizations', { exact: true });
+    const save = async () => {
+      await card.getByRole('button', { name: 'Save home tasks' }).click();
+      await expect(card.getByRole('status')).toHaveText('Saved');
+    };
 
-    await openAccount(page, oid);
-    // 27 since Ohla Router, the first external task (it-aware-backend 24ab249): the admin holds *:*:*.
-    await expect(card.getByText('Tasks this user can open (27)')).toBeVisible();
-    await expect(card.getByTestId('profile-can-open')).toContainText('Maintain IT Service Catalog');
-    // The service line was removed with the catalog v3.
-    await expect(card.getByLabel('Service line')).toHaveCount(0);
-    await expect(startPage).toHaveValue('');
+    await openGroup(page, oid);
+    // The start page is gone (TODO00000169); every task of the catalog is offered.
+    await expect(page.getByLabel('Start page')).toHaveCount(0);
+    await expect(card.getByRole('checkbox')).toHaveCount(27);
+    await expect(onHome).not.toBeChecked();
 
     try {
-      await startPage.selectOption({ label: 'Data · View IT Incidents' });
       await onHome.check();
-      await card.getByRole('button', { name: 'Save customization' }).click();
-      await expect(card.getByRole('status')).toHaveText('Saved');
+      await save();
 
-      // The user lands on the start page, and the home's Pinned row shows what the
+      // The member still lands on the home, and its Pinned row shows what the
       // admin set, labelled "Set for you" and with no pin on it.
       await page.goto('/');
-      await expect(page).toHaveURL(/\/tasks\/it-incidents$/);
+      await expect(page).toHaveURL(/\/home$/);
       await openHome(page);
       const adminSet = page.getByTestId('home-pinned').getByTestId('home-card');
       await expect(adminSet).toHaveCount(1);
@@ -237,32 +241,27 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       await expect(page.getByTestId('home-other').getByRole('link', { name: 'Maintain Workers and Organizations', exact: true })).toHaveCount(0);
 
       // What was saved is what the admin reads back.
-      await openAccount(page, oid);
-      await expect(startPage).toHaveValue('it-incidents');
+      await openGroup(page, oid);
       await expect(onHome).toBeChecked();
     } finally {
-      await openAccount(page, oid);
-      await startPage.selectOption('');
+      await openGroup(page, oid);
       await onHome.uncheck();
-      await card.getByRole('button', { name: 'Save customization' }).click();
-      await expect(card.getByRole('status')).toHaveText('Saved');
+      await save();
     }
 
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/home$/);
+    await openHome(page);
     await expect(page.getByTestId('home-set-for-you')).toHaveCount(0);
   });
 
   test("the Pinned row mixes the person's own pins, first, with the tasks an admin set", async ({ page, context }) => {
-    const oid = await ownAccountOid(context);
     const api = await backend(context);
-    const profile = `${API_URL}/auth/config/accounts/${oid}/profile`;
+    const group = `${API_URL}/auth/config/groups/${await adminGroupOid(context)}`;
     const cards = page.getByTestId('home-pinned').getByTestId('home-card');
     const [catalog, incidents, workers] = ['Maintain IT Service Catalog', 'View IT Incidents', 'Maintain Workers and Organizations'];
 
     try {
-      // An admin set two tasks; the person pinned two, one of them among the admin's.
-      expect((await api.put(profile, { data: { start_task: null, home_tasks: ['workers', 'it-incidents'] } })).ok()).toBeTruthy();
+      // An admin set two tasks for the person's group; the person pinned two, one of them among the admin's.
+      expect((await api.put(group, { data: { home_tasks: ['workers', 'it-incidents'] } })).ok()).toBeTruthy();
       for (const code of ['it-service-catalog', 'it-incidents']) {
         expect((await api.put(`${API_URL}/tasks/pins/${code}`)).ok()).toBeTruthy();
       }
@@ -287,7 +286,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
       for (const code of ['it-service-catalog', 'it-incidents']) {
         await api.delete(`${API_URL}/tasks/pins/${code}`);
       }
-      await api.put(profile, { data: { start_task: null, home_tasks: [] } });
+      await api.put(group, { data: { home_tasks: [] } });
       await api.dispose();
     }
 

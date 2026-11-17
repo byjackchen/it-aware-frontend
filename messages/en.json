@@ -13,15 +13,14 @@
   },
   "Auth": {
     "profile": {
-      "title": "Customization",
-      "note": "Set by an admin. The user does not see this; they see its effect on their home page. The account's status, linked worker and groups above are the security part of the profile.",
       "canOpen": "Tasks this user can open ({count})",
       "noTasks": "None. Give the user a group first.",
-      "startPage": "Start page",
-      "startNotSet": "Not set (lands on Home)",
-      "homeTasks": "Tasks on their home",
-      "homeTasksNote": "Only tasks the user can open are offered. The user's own pins are kept apart from this.",
-      "save": "Save customization",
+      "homeByGroup": "The tasks on this user's home are set on each of their groups (Groups → a group → Tasks on members' home)."
+    },
+    "groupHome": {
+      "title": "Tasks on members' home",
+      "note": "Set by an admin. Every member of this group sees these tasks on their home page, if they can open them. A task set by two groups is shown once. Members' own pins are kept apart.",
+      "save": "Save home tasks",
       "saved": "Saved"
     },
     "tasks": {

@@ -11,6 +11,7 @@ import {
     getGroupPermissions,
     getGroupRoles,
 } from '@/lib/api/security';
+import { getTaskAccess } from '@/lib/api/tasks';
 import type { GroupPermission, GroupRole, Permission, Role } from '@/lib/types/security';
 import { GroupDetailPage } from './GroupDetailPage';
 
@@ -24,12 +25,14 @@ export default async function GroupPage({ params }: PageProps) {
     // Built outside the try: React renders after this returns, so a try cannot catch its errors.
     let props: ComponentProps<typeof GroupDetailPage>;
     try {
-        const [group, permissions, roles, groupPermissions, groupRoles] = await Promise.all([
+        const [group, permissions, roles, groupPermissions, groupRoles, access] = await Promise.all([
             getGroup(oid),
             getPermissions(),
             getRoles(),
             getGroupPermissions(oid),
             getGroupRoles(oid),
+            // The catalog's tasks, for the home tasks; null for an admin who may not read them.
+            getTaskAccess().catch(() => null),
         ]);
 
         // Get assigned permissions
@@ -40,7 +43,14 @@ export default async function GroupPage({ params }: PageProps) {
         const linkedRoleOids = groupRoles.map((gr: GroupRole) => gr.role_oid);
         const linkedRoles = roles.filter((r: Role) => linkedRoleOids.includes(r.oid));
 
-        props = { group, assignedPermissions, allPermissions: permissions, linkedRoles, allRoles: roles };
+        props = {
+            group,
+            assignedPermissions,
+            allPermissions: permissions,
+            linkedRoles,
+            allRoles: roles,
+            tasks: access?.tasks ?? null,
+        };
     } catch {
         notFound();
     }

@@ -116,6 +116,7 @@ class Group(Base):
     oid = Column(BYTEA(16), primary_key=True)
     name = Column(Text, unique=True, nullable=False)
     scope_type = Column(Text, nullable=False)  # 'unconstrained'|'self_scoped'|'role_based'
+    home_tasks = Column(JSONB, nullable=False)  # task codes on every member's home, in order
 
 class WorkerHierarchyRole(Base):
     """Role assignment at hierarchy node - managed under /objects/worker-hierarchy-roles"""
@@ -434,11 +435,19 @@ class GroupCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     scope_type: str = Field(..., pattern="^(unconstrained|self_scoped|role_based)$")
 
+class GroupUpdate(BaseModel):  # a field left out is kept
+    name: Optional[str]
+    scope_type: Optional[str]
+    home_tasks: Optional[list[str]]
+
 class GroupResponse(BaseModel):
     oid: str
     name: str
     scope_type: str
+    home_tasks: list[str]
 ```
+
+`home_tasks` (migration 0153) are the tasks an admin puts on the home page of every member of the group, in order. A PUT that names them replaces the list. Codes are checked against the task catalog ([tasks](api_specs_tasks.md)) when written: `422` for an unknown code or a code named twice. Whether a member has a task is not checked here: access changes, so it is applied when the member's home is drawn (`GET /tasks/home`).
 
 ### Endpoints Summary
 

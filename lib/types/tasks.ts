@@ -82,9 +82,7 @@ export interface TaskAccess {
 
 /** The signed-in person's home (GET /tasks/home). Every list holds only tasks they have. */
 export interface TaskHome {
-    /** The code of the task they land on; null lands on the home page. */
-    start: string | null;
-    /** Set for them by an admin. */
+    /** Set by an admin for the groups they are in. */
     admin_set: Task[];
     pinned: Task[];
     recent: Task[];
@@ -111,14 +109,3 @@ export interface TaskMetrics {
     metrics: TaskMetric[];
 }
 
-/** What an admin sets for a user: the customization part of the profile. */
-export interface ProfileUpdate {
-    start_task: string | null;
-    home_tasks: string[];
-}
-
-export interface AccountProfile extends ProfileUpdate {
-    account_oid: string;
-    updated_at: string | null;
-    updated_by: string | null;
-}

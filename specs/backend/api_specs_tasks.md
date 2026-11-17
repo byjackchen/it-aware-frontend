@@ -131,13 +131,12 @@ A group's `tasks` are those its own permissions grant. An account's `groups` lis
 
 ## The home page (Tasks 3)
 
-The signed-in person's home, their own pins and their recent tasks. Pins and recents are stored per account in `auth.account_home`; the tasks an admin set come from the profile (`/auth/config/accounts/{oid}/profile`, in `api_specs_auth.md`), which the person never reads. Every list holds only tasks the person has now: a stored code they no longer have is left out, not deleted. Codes saved before the catalog v3 were moved to the new task codes by migration 0137 (each old page's code to the task that holds that page; repeats, retired and unknown codes dropped).
+The signed-in person's home, their own pins and their recent tasks. Pins and recents are stored per account in `auth.account_home`; the tasks an admin set come from the groups the person is in (`home_tasks` of each group, `/auth/config/groups/{oid}` in `api_specs_auth.md`, since migration 0153; before it, from a per-account profile with a start task, both removed). Every list holds only tasks the person has now: a stored code they no longer have is left out, not deleted. Codes saved before the catalog v3 were moved to the new task codes by migration 0137 (each old page's code to the task that holds that page; repeats, retired and unknown codes dropped).
 
 ### GET /tasks/home
 
 ```json
 {
-  "start": "it-incidents",
   "admin_set": ["<task>"],
   "pinned": ["<task>"],
   "recent": ["<task>"],
@@ -145,8 +144,7 @@ The signed-in person's home, their own pins and their recent tasks. Pins and rec
 }
 ```
 
-- `start`: the code of the profile's start task, when one is set and the person has it; otherwise `null`, and the person lands on the home page. The task's `address` (in the lists, or `GET /tasks/mine`) is where it opens for them.
-- `admin_set`: the profile's home tasks, in the admin's order. Empty while `IT_AWARE_PROFILES_ENABLED` is off.
+- `admin_set`: the home tasks of the person's groups: group by group in the order of their names, each group's in the admin's order, a task named by two groups shown once, where it comes first. A task's `address` (in the lists, or `GET /tasks/mine`) is where it opens for them.
 - `pinned`: in the order pinned. `recent`: the last opened first, at most 8.
 - `other`: the person's tasks that are neither set by the admin nor pinned, in catalog order.
 

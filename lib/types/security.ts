@@ -30,6 +30,8 @@ export interface Group {
   oid: string;
   name: string;
   scope_type: 'unconstrained' | 'self_scoped' | 'role_based';
+  /** Task codes an admin puts on every member's home, in order. */
+  home_tasks: string[];
 }
 
 export interface Role {

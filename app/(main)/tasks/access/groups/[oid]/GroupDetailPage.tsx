@@ -11,6 +11,8 @@ import { ArrowLeft, Trash2, Pencil, Loader2, Users, Save } from 'lucide-react';
 import { AssignmentManager } from '@/components/security';
 import type { Group, Permission, Role, ScopeType } from '@/lib/types/security';
 import { SCOPE_TYPES } from '@/lib/types/security';
+import type { Task } from '@/lib/types/tasks';
+import { HomeTasksCard } from './HomeTasksCard';
 import {
     updateGroup,
     deleteGroup,
@@ -26,6 +28,8 @@ interface GroupDetailPageProps {
     allPermissions: Permission[];
     linkedRoles: Role[];
     allRoles: Role[];
+    /** The catalog's tasks, for the home tasks; null when the admin may not read them. */
+    tasks: Task[] | null;
 }
 
 const scopeTypeColors: Record<string, string> = {
@@ -40,6 +44,7 @@ export function GroupDetailPage({
     allPermissions,
     linkedRoles,
     allRoles,
+    tasks,
 }: GroupDetailPageProps) {
     const t = useTranslations('Auth');
     const router = useTransitionRouter();
@@ -241,6 +246,14 @@ export function GroupDetailPage({
                         </div>
                     )}
                 </div>
+
+                {tasks && (
+                    <HomeTasksCard
+                        groupOid={group.oid}
+                        homeTasks={group.home_tasks}
+                        tasks={tasks}
+                    />
+                )}
             </div>
         </div>
     );

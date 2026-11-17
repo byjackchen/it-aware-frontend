@@ -3,9 +3,9 @@
  */
 
 import { fetchApi } from '@/lib/api/core';
-import { ApiError } from '@/lib/api/errors';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
-import type { AccountProfile, ProfileUpdate, TaskAccess, TaskHome, TaskMetrics, TasksMine } from '@/lib/types/tasks';
+import type { Group } from '@/lib/types/security';
+import type { TaskAccess, TaskHome, TaskMetrics, TasksMine } from '@/lib/types/tasks';
 
 const backend = (path: string) => `${RUNTIME_CONFIG.backend.domain}${path}`;
 
@@ -45,24 +45,10 @@ export async function recordOpened(code: string, view: string): Promise<void> {
     await fetchApi(backend('/tasks/recent'), { method: 'POST', body: JSON.stringify({ task: code, view }) });
 }
 
-/**
- * The profile an admin set for a user account. Null for an account that is
- * gone (404).
- */
-export async function getAccountProfile(oid: string): Promise<AccountProfile | null> {
-    try {
-        return await fetchApi<AccountProfile>(backend(`/auth/config/accounts/${oid}/profile`));
-    } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-            return null;
-        }
-        throw error;
-    }
-}
-
-export async function putAccountProfile(oid: string, update: ProfileUpdate): Promise<AccountProfile> {
-    return fetchApi<AccountProfile>(backend(`/auth/config/accounts/${oid}/profile`), {
+/** Set the tasks on the home of every member of a group (an admin's action). */
+export async function putGroupHomeTasks(oid: string, homeTasks: string[]): Promise<Group> {
+    return fetchApi<Group>(backend(`/auth/config/groups/${encodeURIComponent(oid)}`), {
         method: 'PUT',
-        body: JSON.stringify(update),
+        body: JSON.stringify({ home_tasks: homeTasks }),
     });
 }

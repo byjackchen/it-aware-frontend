@@ -25,22 +25,19 @@ it('passes every failure on, a 404 like any other: the task routes are always th
   await expect(getTaskAccess()).rejects.toEqual(new ApiError('Not Found', 404));
 });
 
-// --- Tasks 3: the home page, pins, recents and the admin-set profile ---------------
+// --- Tasks 3: the home page, pins, recents and the home tasks per group ------------
 
 import {
-  getAccountProfile,
   getTaskHome,
   getTasksMine,
   pinTask,
-  putAccountProfile,
+  putGroupHomeTasks,
   recordOpened,
   unpinTask,
 } from '@/lib/api/tasks';
 
-const home = { start: null, admin_set: [], pinned: [], recent: [], other: [] };
-const profile = {
-  account_oid: 'abc', start_task: null, home_tasks: ['persona-dashboard'], updated_at: null, updated_by: null,
-};
+const home = { admin_set: [], pinned: [], recent: [], other: [] };
+const group = { oid: 'g/1', name: 'ssc', scope_type: 'unconstrained', home_tasks: ['persona-dashboard'] };
 const notFound = () => vi.fn().mockResolvedValue(Response.json({ detail: 'Not Found' }, { status: 404 }));
 
 it("reads the person's home, and fails when the backend does", async () => {
@@ -84,21 +81,16 @@ it('tells the backend which task was opened', async () => {
   expect([init.method, init.body]).toEqual(['POST', '{"task":"it-tickets","view":"vip"}']);
 });
 
-it("reads and sets a user's profile", async () => {
-  const fetchMock = vi.fn().mockImplementation(async () => Response.json(profile));
+it("sets a group's home tasks, and fails when the backend does", async () => {
+  const fetchMock = vi.fn().mockImplementation(async () => Response.json(group));
   vi.stubGlobal('fetch', fetchMock);
-  expect(await getAccountProfile('abc')).toEqual(profile);
-  const update = { start_task: null, home_tasks: ['persona-dashboard'] };
-  expect(await putAccountProfile('abc', update)).toEqual(profile);
-  const [url, init] = fetchMock.mock.calls[1];
-  expect(String(url)).toMatch(/\/auth\/config\/accounts\/abc\/profile$/);
-  expect([init.method, JSON.parse(init.body)]).toEqual(['PUT', update]);
+  expect(await putGroupHomeTasks('g/1', ['persona-dashboard'])).toEqual(group);
+  const [url, init] = fetchMock.mock.calls[0];
+  expect(String(url)).toMatch(/\/auth\/config\/groups\/g%2F1$/);
+  expect([init.method, JSON.parse(init.body)]).toEqual(['PUT', { home_tasks: ['persona-dashboard'] }]);
 
-  // No profile: the backend's profile switch is off, or the account is gone.
-  vi.stubGlobal('fetch', notFound());
-  expect(await getAccountProfile('abc')).toBeNull();
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Permission denied' }, { status: 403 })));
-  await expect(getAccountProfile('abc')).rejects.toEqual(new ApiError('Permission denied', 403));
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ detail: 'Unknown task codes' }, { status: 422 })));
+  await expect(putGroupHomeTasks('g/1', ['no-such'])).rejects.toEqual(new ApiError('Unknown task codes', 422));
 });
 
 // --- The key metrics on the home's task cards ----------------------------------------
