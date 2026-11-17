@@ -297,12 +297,6 @@ function workerIdParam(id: string): string {
     return `${key}=${encodeURIComponent(id)}`;
 }
 
-/** Build `worker_oid=<v>` or `stable_id=<v>` based on the identifier format. */
-function workerOidParam(id: string): string {
-    const key = OID_RE.test(id) ? 'worker_oid' : 'stable_id';
-    return `${key}=${encodeURIComponent(id)}`;
-}
-
 export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
     let baseUrl = `${OBJECTS_BASE}/workers`;
     if (isActive !== undefined) {

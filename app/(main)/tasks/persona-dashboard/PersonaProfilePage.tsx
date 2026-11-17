@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarClock, ShieldCheck, User, Users, BriefcaseBusiness } from 'lucide-react';
+import { CalendarClock, User, Users, BriefcaseBusiness } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { usePermissions } from '@/lib/contexts/user-context';
