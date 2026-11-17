@@ -35,7 +35,7 @@ test.describe('View Usages: who used what', () => {
     await openTask(page, '/tasks/it-tickets/vip');
 
     await open(page, 'people', 'By Person');
-    const tabs = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of View Usages' });
+    const tabs = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of View Usages' });
     await expect(tabs.getByRole('link', { name: 'By Person' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByTestId('people-summary')).toHaveText(/^\d+ (person|people) active in the last 30 days$/);
 
@@ -94,7 +94,7 @@ test.describe('View Usages: who used what', () => {
     await page.waitForLoadState('networkidle');
 
     // By Task's page still: its tab is current, and the way back keeps the window.
-    const tabs = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of View Usages' });
+    const tabs = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of View Usages' });
     await expect(tabs.getByRole('link', { name: 'By Task' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('link', { name: 'Back to By Task' })).toHaveAttribute('href', `${BASE}/tasks?days=7`);
     await expect(page.getByTestId('task-people-summary')).toHaveText(

@@ -73,16 +73,17 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     );
     await expect(page.getByTestId('home-grouping-analytics').getByRole('link', { name: 'Persona Dashboard', exact: true })).toBeVisible();
 
-    // The top bar reaches the home from any page.
+    // The top bar reaches the home from any page: its logo (the separate house
+    // was removed in feat/compact-task-frame, maintainer 2026-11-17).
     await page.goto('/tasks/workers/workers');
-    await page.getByRole('link', { name: 'Home', exact: true }).click();
+    await page.locator('header').filter({ visible: true }).last().getByRole('link', { name: /IT-Aware/ }).click();
     await expect(page).toHaveURL(/\/home$/);
   });
 
   test('the top bar has no menu; its pages are reached as tasks, each with its own views', async ({ page }) => {
     await page.goto('/tasks/workers/workers');
     const topBar = page.locator('header').filter({ visible: true }).last();
-    await expect(topBar.getByRole('link', { name: /IT-Aware/ })).toHaveAttribute('href', '/');
+    await expect(topBar.getByRole('link', { name: /IT-Aware/ })).toHaveAttribute('href', '/home');
     await expect(topBar.getByPlaceholder('Search tasks and records...')).toBeVisible();
     // The retired entries: none is a link or a button in the top bar any more.
     for (const entry of ['Auth', 'Data', 'Persona', 'ITOps Dashboard', 'Ohla Chatbot', 'Ohla Journey', 'SSC Team', 'Systems', 'Other Apps']) {
@@ -92,7 +93,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(topBar.getByRole('navigation')).toHaveCount(0);
     // No global sidebar: the task's views are its tabs.
     await expect(page.locator('aside')).toHaveCount(0);
-    await expect(page.getByTestId('task-frame').getByRole('link', { name: 'Organizations', exact: true })).toHaveAttribute('href', '/tasks/workers/organizations');
+    await expect(page.getByTestId('task-views').getByRole('link', { name: 'Organizations', exact: true })).toHaveAttribute('href', '/tasks/workers/organizations');
 
     // A page a retired entry opened is a task on the home: Persona, and the first page of Auth.
     await openHome(page);
@@ -103,12 +104,15 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await expect(other.locator('a[href="/tasks/data-overview"]')).toHaveCount(1);
   });
 
+  // Since feat/compact-task-frame the task's name, grouping and pin are in the top
+  // bar, and its tabs on a row of their own under it (task-views).
   test("a task's page shows the task frame: its name, grouping, views and pin", async ({ page }) => {
     await page.goto('/tasks/it-tickets/vip');
     const frame = page.getByTestId('task-frame');
+    await expect(page.getByRole('banner').getByTestId('task-frame')).toHaveCount(1);
     await expect(frame.getByTestId('task-frame-name')).toHaveText('Monitor IT Tickets');
     await expect(frame.getByText('Operations', { exact: true })).toBeVisible();
-    const views = frame.getByRole('navigation', { name: 'Views of Monitor IT Tickets' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of Monitor IT Tickets' });
     await expect(views.getByRole('link')).toHaveText(
       ['Active Monitoring', 'Incidents', 'Catalog', 'VIP Tickets', 'Unassigned', 'On/Offboarding']
     );
@@ -136,7 +140,7 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     await page.goto('/tasks/it-incidents');
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('View IT Incidents');
-    await expect(frame.getByRole('navigation')).toHaveCount(0);
+    await expect(page.getByTestId('task-views')).toHaveCount(0); // one view: no row of tabs
     await openHome(page);
     await expect(page.getByTestId('task-frame')).toHaveCount(0);
   });

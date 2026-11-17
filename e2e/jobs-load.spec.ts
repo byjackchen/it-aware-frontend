@@ -36,7 +36,7 @@ test.describe('Manage Jobs, Load', () => {
   test('a holder opens Load from the task and sees the tiles and the charts', async ({ page }) => {
     await page.goto(jobsHref());
     await page.waitForLoadState('networkidle');
-    const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of Manage Jobs' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of Manage Jobs' });
     await expect(views.getByRole('link')).toHaveText(['Jobs', 'Load']);
     // The Jobs view's own tabs are named apart from the task's.
     await expect(page.getByRole('navigation', { name: 'Manage Jobs', exact: true }).getByRole('link')).toHaveText(['Job list', 'Action Record']);

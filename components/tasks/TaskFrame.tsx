@@ -1,18 +1,24 @@
 'use client';
 
 /**
- * The task frame: on a page that belongs to a task, a header with the task's
- * icon tile, its name, its grouping as a small caption, a pin toggle (the star of the home
- * and of search), and, when the person
- * has more than one of the task's views, a tab per view. It replaces the
- * global sidebar: each task carries its own navigation. Renders nothing on a
- * page that is no task's (the home).
+ * The task frame, in two parts so the page keeps its height for the task:
+ *
+ * - `TaskHeader`, in the top bar's middle: the task's icon tile, its grouping as
+ *   a small caption, its name, and a pin toggle (the star of the home and of
+ *   search). An external task (another app's page inside IT-Aware) carries a
+ *   small app mark whose hint says whose page it is.
+ * - `TaskViews`, a slim row under the top bar: a tab per view, and only when the
+ *   person has more than one of the task's views. Most tasks have none, so the
+ *   page starts right under the top bar.
+ *
+ * Each task carries its own navigation; there is no global sidebar. Both render
+ * nothing on a page that is no task's (the home).
  */
 
 import { useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Star } from 'lucide-react';
+import { AppWindow, ChevronRight, Star } from 'lucide-react';
 import { NavLink } from '@/components/navigation/NavLink';
 import { TaskTile } from '@/components/tasks/TaskTile';
 import { setTaskPinned } from '@/app/actions/tasks';
@@ -28,27 +34,31 @@ export interface TaskFrameProps {
     pinned: string[] | null;
 }
 
-export function TaskFrame({ held, pinned }: TaskFrameProps) {
+/** The task of this page, and what the person has of it; null on a page that is no task's. */
+function useTaskOfPage(held: Task[] | null) {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
+    const page = resolvePage(pathname);
+    if (!page) return null;
+    const { task, view } = page;
+    const mine = held?.find(candidate => candidate.code === task.code);
+    const views = mine ? task.views.filter(candidate => mine.views.some(own => own.slug === candidate.slug)) : [];
+    return { task, view, mine, views };
+}
+
+export function TaskHeader({ held, pinned }: TaskFrameProps) {
     const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('TaskFrame');
     const { theme } = useTheme();
     const isLight = theme === 'light';
     const [isPending, startTransition] = useTransition();
-
-    const page = resolvePage(pathname);
+    const page = useTaskOfPage(held);
     if (!page) return null;
-    const { task, view } = page;
+    const { task, mine } = page;
     const name = named(task.name, locale);
-    const mine = held?.find(candidate => candidate.code === task.code);
-    const views = mine ? task.views.filter(candidate => mine.views.some(own => own.slug === candidate.slug)) : [];
     // The pin shows what is stored: it changes once the backend has it and
     // the layout's data is fetched again; until then the button waits.
     const isPinned = pinned?.includes(task.code) ?? false;
-    // View Usages' views share one window (7, 30 or 90 days): its tabs carry it along.
-    const kept = task.code === 'usages' ? windowQuery(searchParams) : '';
 
     const togglePin = () => {
         startTransition(async () => {
@@ -58,62 +68,88 @@ export function TaskFrame({ held, pinned }: TaskFrameProps) {
     };
 
     return (
-        <div
-            data-testid="task-frame"
-            className={`flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 border-b ${isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23]/60 border-white/10'}`}
-        >
-            <div className="flex items-center gap-2.5">
-                <TaskTile name={name} task={task.code} small />
-                <div className="flex flex-col leading-tight">
-                    <span className={`text-xs uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                        {groupingName(task.grouping, locale)}
-                    </span>
-                    <span data-testid="task-frame-name" className={`text-base font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
+        <div data-testid="task-frame" className="flex min-w-0 items-center gap-2">
+            <ChevronRight aria-hidden="true" className={`h-4 w-4 shrink-0 ${isLight ? 'text-slate-300' : 'text-gray-600'}`} />
+            <TaskTile name={name} task={task.code} small />
+            <div className="flex min-w-0 flex-col leading-tight">
+                <span className={`truncate text-[11px] uppercase tracking-wide ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                    {groupingName(task.grouping, locale)}
+                </span>
+                <span className="flex min-w-0 items-center gap-1.5">
+                    <span data-testid="task-frame-name" className={`truncate text-[15px] font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
                         {name}
                     </span>
-                </div>
+                    {task.kind === 'external' && (
+                        <span
+                            data-testid="task-frame-external"
+                            title={t('external', { name })}
+                            aria-label={t('external', { name })}
+                            className={`shrink-0 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}
+                        >
+                            <AppWindow aria-hidden="true" className="h-3.5 w-3.5" />
+                        </span>
+                    )}
+                </span>
             </div>
-
-            {views.length > 1 && (
-                <nav aria-label={t('views', { name })} className="flex flex-wrap items-center gap-1">
-                    {views.map(candidate => {
-                        const active = candidate.slug === view.slug;
-                        return (
-                            <NavLink
-                                key={candidate.slug}
-                                href={`${pageHref(candidate.address)}${kept}`}
-                                aria-current={active ? 'page' : undefined}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${active
-                                    ? 'sidebar-active'
-                                    : isLight
-                                        ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                                    }`}
-                            >
-                                {named(candidate.name, locale)}
-                            </NavLink>
-                        );
-                    })}
-                </nav>
-            )}
-
             {mine && pinned && (
                 <button
                     onClick={togglePin}
                     disabled={isPending}
                     aria-pressed={isPinned}
+                    aria-label={t(isPinned ? 'unpin' : 'pin')}
                     title={t(isPinned ? 'unpinTask' : 'pinTask', { name })}
-                    className={`ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-xs border disabled:opacity-50 ${isPinned
-                        ? 'border-blue-500/30 text-accent'
+                    className={`shrink-0 rounded-md p-1.5 disabled:opacity-50 ${isPinned
+                        ? 'text-accent'
                         : isLight
-                            ? 'border-slate-200 text-slate-500 hover:text-slate-800'
-                            : 'border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                            ? 'text-slate-400 hover:bg-slate-100 hover:text-slate-800'
+                            : 'text-gray-500 hover:bg-white/10 hover:text-white'
                         }`}
                 >
-                    <Star className="w-3.5 h-3.5" fill={isPinned ? 'currentColor' : 'none'} />
-                    <span>{t(isPinned ? 'unpin' : 'pin')}</span>
+                    <Star className="h-4 w-4" fill={isPinned ? 'currentColor' : 'none'} />
                 </button>
             )}
+        </div>
+    );
+}
+
+export function TaskViews({ held }: Pick<TaskFrameProps, 'held'>) {
+    const searchParams = useSearchParams();
+    const locale = useLocale();
+    const t = useTranslations('TaskFrame');
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+    const page = useTaskOfPage(held);
+    if (!page || page.views.length < 2) return null;
+    const { task, view, views } = page;
+    const name = named(task.name, locale);
+    // View Usages' views share one window (7, 30 or 90 days): its tabs carry it along.
+    const kept = task.code === 'usages' ? windowQuery(searchParams) : '';
+
+    return (
+        <div
+            data-testid="task-views"
+            className={`flex items-center px-4 border-b ${isLight ? 'bg-white border-slate-200' : 'bg-[#0f0f23]/60 border-white/10'}`}
+        >
+            <nav aria-label={t('views', { name })} className="flex flex-wrap items-center gap-1 py-1">
+                {views.map(candidate => {
+                    const active = candidate.slug === view.slug;
+                    return (
+                        <NavLink
+                            key={candidate.slug}
+                            href={`${pageHref(candidate.address)}${kept}`}
+                            aria-current={active ? 'page' : undefined}
+                            className={`px-2.5 py-1 rounded-md text-[13px] font-medium transition-colors ${active
+                                ? 'sidebar-active'
+                                : isLight
+                                    ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                }`}
+                        >
+                            {named(candidate.name, locale)}
+                        </NavLink>
+                    );
+                })}
+            </nav>
         </div>
     );
 }

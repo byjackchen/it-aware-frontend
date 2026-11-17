@@ -56,7 +56,7 @@ test.describe('View Usages', () => {
     // copy of backend 358c5ef, feat/usage-who-icons).
     const frame = page.getByTestId('task-frame');
     await expect(frame.getByTestId('task-frame-name')).toHaveText('View Usages');
-    const views = frame.getByRole('navigation', { name: 'Views of View Usages' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of View Usages' });
     await expect(views.getByRole('link')).toHaveText(['Overview', 'By Task', 'By Person', 'Unused Access']);
     await expect(views.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
     await expect(views.getByRole('link', { name: 'By Task' })).toHaveAttribute('href', `${BASE}/tasks`);
@@ -94,7 +94,7 @@ test.describe('View Usages', () => {
     expect(await stat(page, 'taskOpens')).toBeGreaterThanOrEqual(2);
 
     // The task's tabs carry the window along; the default one is left out of the address.
-    const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of View Usages' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of View Usages' });
     await expect(views.getByRole('link', { name: 'Unused Access' })).toHaveAttribute('href', `${BASE}/unused-access?days=7`);
     await views.getByRole('link', { name: 'By Task' }).click();
     await expect(page).toHaveURL(new RegExp(`${BASE}/tasks\\?days=7$`));
@@ -122,7 +122,7 @@ test.describe('View Usages', () => {
     await expect(page).toHaveURL(/\/tasks\/workers\/organizations\/[\w-]{22}$/);
     await page.waitForLoadState('networkidle');
     // And back to the list, by the frame's own tab.
-    const views = page.getByTestId('task-frame').getByRole('navigation', { name: 'Views of Maintain Workers and Organizations' });
+    const views = page.getByTestId('task-views').getByRole('navigation', { name: 'Views of Maintain Workers and Organizations' });
     await views.getByRole('link', { name: 'Organizations' }).click();
     await expect(page).toHaveURL(/\/tasks\/workers\/organizations$/);
     await page.waitForLoadState('networkidle');

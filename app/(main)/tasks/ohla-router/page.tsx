@@ -22,10 +22,14 @@ export default async function OhlaRouterPage() {
       </div>
     );
   }
+  // Router's interface takes everything under the top bar: whose page it is
+  // is said by the app mark on the task's name (components/tasks/TaskFrame.tsx).
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col gap-1 p-2">
-      <p className="px-2 text-xs text-ink-2">{t('providedBy')}</p>
-      <iframe src={FRAME_SRC} title={t('title')} className="w-full flex-1 rounded border border-line" data-testid="ohla-router-frame" />
-    </div>
+    <iframe
+      src={FRAME_SRC}
+      title={t('title')}
+      className="block h-[calc(100vh-4rem-var(--env-banner-h,0px))] w-full border-0"
+      data-testid="ohla-router-frame"
+    />
   );
 }

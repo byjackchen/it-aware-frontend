@@ -17,8 +17,8 @@ export default async function MainLayout({
       <NavigationProvider>
         <RouteProgressBar />
         <TaskOpenRecorder />
-        <TopBar />
-        <MainContent held={held} pinned={pinned}>
+        <TopBar held={held} pinned={pinned} />
+        <MainContent held={held}>
           {children}
         </MainContent>
       </NavigationProvider>

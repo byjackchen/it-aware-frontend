@@ -27,7 +27,6 @@ test.describe('data tasks', () => {
     await page.goto('/tasks/raw-records/servicenow-incident');
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('task-frame-name')).toHaveText('View Raw Records');
-    const frame = page.getByTestId('task-frame');
     for (const name of [
       'ServiceNow Incidents',
       'ServiceNow Incident Surveys',
@@ -36,10 +35,10 @@ test.describe('data tasks', () => {
       'ERP Organizations',
       'ERP Offices',
     ]) {
-      await expect(frame.getByRole('link', { name, exact: true })).toBeVisible();
+      await expect(page.getByTestId('task-views').getByRole('link', { name, exact: true })).toBeVisible();
     }
     await expect(page.getByTestId('raw-total')).toHaveText(/^\d[\d,]* keys? in servicenow_incident$/);
-    await frame.getByRole('link', { name: 'ERP Organizations', exact: true }).click();
+    await page.getByTestId('task-views').getByRole('link', { name: 'ERP Organizations', exact: true }).click();
     await expect(page).toHaveURL(/\/tasks\/raw-records\/erp-orginfo$/);
     await expect(page.getByTestId('raw-total')).toHaveText(/ in erp_orginfo$/);
     // No page for a source without a view: Next's not-found page, inside the streamed
