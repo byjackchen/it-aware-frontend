@@ -19,7 +19,9 @@ test.describe('The theme', () => {
     await expect(page.locator('body')).toHaveClass(/(^| )theme-light( |$)/);
     // A soft grey page with white surfaces; nobody chose it, so nothing was stored.
     await expect(page.locator('body')).toHaveCSS('background-color', PAGE_GREY);
-    await expect(page.getByTestId('task-frame')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    // The task's surface under the top bar is its tabs row since feat/compact-task-frame
+    // (the task's name moved into the top bar).
+    await expect(page.getByTestId('task-views')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible();
     expect((await context.cookies()).some((cookie) => cookie.name === 'it-aware-theme')).toBe(false);
   });
