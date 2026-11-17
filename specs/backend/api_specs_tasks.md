@@ -13,7 +13,7 @@ A task has **views**: the pages inside it, which the frontend shows as tabs. Eac
 | `code` | string | Stable key, lower case with hyphens (`it-tickets`). It is the task part of every address |
 | `name` | `{en, zh}` | The task's name, following the naming convention below |
 | `grouping` | string | A grouping code: `data`, `analytics`, `operations` or `administration` |
-| `kind` | `internal` \| `external` | `internal`: page and backend are IT-Aware's. `external`: the page is in IT-Aware's frontend and its backend is another app, not reached through this backend |
+| `kind` | `internal` \| `external` | `internal`: page and backend are IT-Aware's. `external`: the task opens another app (`external_app`), reached through this backend's gateway for that app ([external tasks](#external-tasks)) |
 | `external_app` | string \| null | The other app, for an `external` task; null otherwise |
 | `address` | string | Where the task opens: its first view's address |
 | `icon` | string | The lucide icon the frontend draws it with, lowercase kebab-case; required ([icons](#icons)) |
@@ -30,9 +30,23 @@ A view:
 | `requires` | `{check, codes}` | The permission codes the view needs: `check` is `any` (one of them) or `all` |
 | `address` | string | `/tasks/<task>` for a task with one view, `/tasks/<task>/<slug>` otherwise. A record or sub-page follows it: `/tasks/it-incidents/<oid>` |
 
-Whether a task shows something or changes something is not stored: it follows from the leading verb of the English name (View, Find, Monitor, and names ending Dashboard or Report show; Maintain, Manage, Create, Edit, Send, Import change).
+Whether a task shows something or changes something is not stored: it follows from the leading verb of the English name (View, Find, Monitor, and names ending Dashboard or Report show; Maintain, Manage, Create, Edit, Send, Import change). An external task may instead be named after the app it opens, as people know it, and then counts as one that changes something (maintainer, 2026-11-17: **Ohla Router**).
 
-The catalog refuses to load when a name starts with no known verb and ends with neither Dashboard nor Report, when two tasks share a name in either language, when a name names a team, when a code starts with `it-` and the English name does not say "IT" or the other way round, or when an address does not follow the rule above.
+The catalog refuses to load when an internal task's name starts with no known verb and ends with neither Dashboard nor Report, when two tasks share a name in either language, when a name names a team, when a code starts with `it-` and the English name does not say "IT" or the other way round, or when an address does not follow the rule above.
+
+## External tasks
+
+An external task opens another app's own interface inside IT-Aware. IT-Aware decides who has the task, by its view's rule like any other task; the app then decides what the person may do there, by the role it gives them. The first is **Ohla Router** (code `ohla-router`, `external_app` `ohla-router`, grouping Administration, icon `waypoints`, one view needing `external:ohla_router:use`, which migration 0152 gives the `admins` group; added 2026-11-17, ohla-xray TODO00000164).
+
+### ANY /external/ohla-router/{path}
+
+`GET`, `POST`, `PUT` and `DELETE`. The frontend frames Router's interface from IT-Aware's own origin, and every request the framed page makes, for the page and for Router's management API, comes here.
+
+- **Who.** A signed-in `user` account that meets the task's view rule: `401` without a sign-in, `403` without the code, and `403` for an integration account, since Router acts for people.
+- **What is forwarded.** Everything but Router's sign-in and sign-out (`admin/api/login`, `admin/api/logout`) and its model-call API (`v1/...`), which answer `404`, as does a path with an empty, `.` or `..` part. A body over 10 MiB is `413`.
+- **How.** The request goes to Router's origin, taken from `ROUTER_BASE_URL`, with its query, its body and its `Accept`, `Content-Type` and `If-None-Match` headers, and nothing else of the caller's: no cookie. It carries `Authorization: Bearer <token>`, a JWT signed RS256 with `ROUTER_DELEGATION_PRIVATE_KEY` (a key pair of its own, not the sign-in key): `iss` `it-aware`, `sub` the account's username, `aud` `ohla-router`, `iat`, `exp` one minute later, and a `jti`. Router checks it with the public half and applies the person's role there.
+- **The answer.** Router's status and body unchanged, with only the headers a page needs: `Content-Type`, `Cache-Control`, `ETag`, `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Retry-After`, `Allow`. Router's own refusals (`401 invalid_delegation`, `403 no_standing`, `403 role_required`) come back as they are.
+- **Not configured.** Without `ROUTER_BASE_URL` or `ROUTER_DELEGATION_PRIVATE_KEY` the answer is `503`; Router unreachable is `502`.
 
 ## Who has a task
 

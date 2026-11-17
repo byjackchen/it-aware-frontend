@@ -33,6 +33,7 @@ import {
     TriangleAlertIcon,
     UserRoundSearchIcon,
     UsersIcon,
+    WaypointsIcon,
     type LucideIcon,
 } from 'lucide-react';
 import { TASKS } from './catalog';
@@ -64,6 +65,7 @@ export const TASK_ICONS: Readonly<Record<string, LucideIcon>> = {
     'triangle-alert': TriangleAlertIcon,
     'user-round-search': UserRoundSearchIcon,
     'users': UsersIcon,
+    'waypoints': WaypointsIcon,
 };
 
 /** The component of a lucide name; null for a name the map lacks. */
