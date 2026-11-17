@@ -27,7 +27,6 @@ test.describe('data tasks', () => {
     await page.goto('/tasks/raw-records/servicenow-incident');
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('task-frame-name')).toHaveText('View Raw Records');
-    const frame = page.getByTestId('task-frame');
     for (const name of [
       'ServiceNow Incidents',
       'ServiceNow Incident Surveys',
