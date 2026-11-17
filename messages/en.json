@@ -3474,5 +3474,11 @@
         "received": "Received"
       }
     }
+  },
+  "OhlaRouter": {
+    "title": "Ohla Router",
+    "providedBy": "Provided by Ohla Router. What you can do here is set by your role in Ohla Router.",
+    "notConfigured": "Ohla Router is not set up in this environment yet.",
+    "unavailable": "Ohla Router is temporarily unavailable. The rest of IT-Aware works as usual; try again shortly."
   }
 }

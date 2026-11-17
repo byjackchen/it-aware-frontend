@@ -4,7 +4,7 @@
  "rules": {
   "task_access": "A person has a task when any of its views' rules is met; they see only the views whose rule is met.",
   "address": "/tasks/<task> for a one-view task, /tasks/<task>/<view> otherwise; a record or sub-page follows the view part.",
-  "kind": "internal or external; view or do is derived from the leading verb of the English name.",
+  "kind": "internal or external; view or do is derived from the leading verb of the English name. An external task may instead be named after the app it opens (maintainer, 2026-11-17: Ohla Router); it then counts as do.",
   "views_in_catalog": "Views are listed in the backend catalog as data (name, keywords, rule) for search and access; they are not a level people browse.",
   "legacy": "Every old page address has one entry in the frontend legacy registry; redirects are generated from it."
  },
@@ -1824,6 +1824,45 @@
      },
      "keywords": [],
      "address": "/tasks/usages/unused-access"
+    }
+   ]
+  },
+  {
+   "code": "ohla-router",
+   "name": {
+    "en": "Ohla Router",
+    "zh": "Ohla Router"
+   },
+   "grouping": "administration",
+   "kind": "external",
+   "external_app": "ohla-router",
+   "address": "/tasks/ohla-router",
+   "icon": "waypoints",
+   "keywords": [
+    "model gateway",
+    "LLM",
+    "Provider",
+    "Consumer",
+    "模型网关",
+    "大模型"
+   ],
+   "views": [
+    {
+     "slug": "router",
+     "name": {
+      "en": "Ohla Router",
+      "zh": "Ohla Router"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "external:ohla_router:use"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-router"
     }
    ]
   }

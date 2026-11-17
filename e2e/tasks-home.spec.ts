@@ -207,7 +207,8 @@ test.describe('Tasks 3: home, pins and the user profile', () => {
     const onHome = card.getByLabel('Data · Maintain Workers and Organizations', { exact: true });
 
     await openAccount(page, oid);
-    await expect(card.getByText('Tasks this user can open (26)')).toBeVisible();
+    // 27 since Ohla Router, the first external task (it-aware-backend 24ab249): the admin holds *:*:*.
+    await expect(card.getByText('Tasks this user can open (27)')).toBeVisible();
     await expect(card.getByTestId('profile-can-open')).toContainText('Maintain IT Service Catalog');
     // The service line was removed with the catalog v3.
     await expect(card.getByLabel('Service line')).toHaveCount(0);
