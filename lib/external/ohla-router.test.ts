@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { DELETE, GET, POST } from '@/app/api/external/ohla-router/[...path]/route';
-import { FRAME_SRC, fromOwnPage, plainPath, routerState } from '@/lib/external/ohla-router';
+import { FRAME_SRC, fromOwnPage, plainPath, renewSignIn, routerState } from '@/lib/external/ohla-router';
+import { getIdentityFromHeaders } from '@/lib/auth/taihu';
 
 /**
  * The Ohla Router task (lib/external/ohla-router.ts): the page's check before the
@@ -8,12 +9,20 @@ import { FRAME_SRC, fromOwnPage, plainPath, routerState } from '@/lib/external/o
  * The gateway's own checks (the task's rule, the token) are the backend's tests.
  */
 
-const session: { value: string | null } = { value: 'test-token' };
+const session: { value: string | null; mode?: string } = { value: 'test-token' };
 const redirected: string[] = [];
 
 vi.mock('next/headers', () => ({
-  cookies: async () => ({ get: (name: string) => (name === 'it_aware_access' && session.value ? { value: session.value } : undefined) }),
+  cookies: async () => ({
+    get: (name: string) =>
+      name === 'it_aware_access' && session.value
+        ? { value: session.value }
+        : name === 'it_aware_auth_mode' && session.mode
+          ? { value: session.mode }
+          : undefined,
+  }),
 }));
+vi.mock('@/lib/auth/taihu', () => ({ getIdentityFromHeaders: vi.fn() }));
 vi.mock('next/navigation', () => ({
   redirect: (to: string) => {
     redirected.push(to);
@@ -23,7 +32,10 @@ vi.mock('next/navigation', () => ({
 
 beforeEach(() => {
   session.value = 'test-token';
+  session.mode = undefined;
   redirected.length = 0;
+  vi.mocked(getIdentityFromHeaders).mockReset();
+  vi.mocked(getIdentityFromHeaders).mockResolvedValue({ staffId: 1, loginName: 'alice' });
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -141,4 +153,79 @@ it('knows plain paths and own pages', () => {
   expect(plainPath(['.'])).toBe(false);
   expect(fromOwnPage(new Request('http://localhost/x', { method: 'HEAD' }))).toBe(true);
   expect(fromOwnPage(new Request('http://localhost/x', { method: 'PUT', headers: { 'sec-fetch-site': 'same-origin' } }))).toBe(true);
+});
+
+// --- an expired sign-in, renewed as a page load would renew it -------------------
+
+const TAIHU = { 'x-tai-identity': 'jwe-from-the-gateway', timestamp: '1', signature: 's', 'x-rio-seq': '9' };
+const issued = () =>
+  new Response(null, {
+    status: 200,
+    headers: [
+      ['set-cookie', 'it_aware_access=fresh; Path=/; HttpOnly'],
+      ['set-cookie', 'it_aware_refresh=r2; Path=/; HttpOnly'],
+    ],
+  });
+
+it('renews a sign-in whose cookie expired, and hands the browser the new cookies', async () => {
+  session.value = null;
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(issued())
+    .mockResolvedValueOnce(Response.json({ signed_in: true }));
+  vi.stubGlobal('fetch', fetchMock);
+  const response = await GET(new Request('http://localhost/x', { headers: TAIHU }), ctx('admin', 'api', 'session'));
+  expect(response.status).toBe(200);
+  expect(response.headers.getSetCookie()).toEqual(['it_aware_access=fresh; Path=/; HttpOnly', 'it_aware_refresh=r2; Path=/; HttpOnly']);
+  const [tokenUrl, tokenInit] = fetchMock.mock.calls[0];
+  expect(String(tokenUrl)).toMatch(/\/auth\/session\/token$/);
+  expect(String(tokenInit.body)).toBe('grant_type=sso&username=alice&tai_identity=jwe-from-the-gateway');
+  expect(getIdentityFromHeaders).toHaveBeenCalledWith(TAIHU);
+  expect(fetchMock.mock.calls[1][1].headers.Cookie).toBe('it_aware_access=fresh');
+});
+
+it('renews once when the backend no longer takes the cookie, and retries with the new one', async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockResolvedValueOnce(issued())
+    .mockResolvedValueOnce(Response.json({ ok: true }));
+  vi.stubGlobal('fetch', fetchMock);
+  const response = await GET(new Request('http://localhost/x', { headers: TAIHU }), ctx('admin', 'api', 'config'));
+  expect(response.status).toBe(200);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
+  expect(fetchMock.mock.calls[2][1].headers.Cookie).toBe('it_aware_access=fresh');
+  expect(response.headers.getSetCookie()).toHaveLength(2);
+});
+
+it('passes a 401 on when the sign-in cannot be renewed, and never renews twice', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+  vi.stubGlobal('fetch', fetchMock);
+  // No Taihu identity on the request: nothing to renew from.
+  expect((await GET(new Request('http://localhost/x'), ctx('console'))).status).toBe(401);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  // Renewed for a missing cookie, then refused anyway: no second renewal.
+  session.value = null;
+  fetchMock.mockReset().mockResolvedValueOnce(issued()).mockResolvedValue(new Response(null, { status: 401 }));
+  expect((await GET(new Request('http://localhost/x', { headers: TAIHU }), ctx('console'))).status).toBe(401);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it.each([
+  ['a password sign-in', 'password'],
+  ['a person who signed out', 'logged_out'],
+])('does not renew %s', async (_, mode) => {
+  session.mode = mode;
+  const fetchMock = vi.fn();
+  vi.stubGlobal('fetch', fetchMock);
+  expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it('does not renew when the gateway identity, the backend or its answer fails', async () => {
+  vi.mocked(getIdentityFromHeaders).mockRejectedValueOnce(new Error('bad signature'));
+  vi.stubGlobal('fetch', vi.fn());
+  expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+  expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200, headers: [['set-cookie', 'other=1']] })));
+  expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
 });
