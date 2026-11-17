@@ -18,8 +18,6 @@ import type {
     Worker,
     WorkerCreate,
     WorkerUpdate,
-    WorkerProfile,
-    WorkerProfileUpsert,
     Hardware,
     HardwareCreate,
     HardwareUpdate,
@@ -323,25 +321,6 @@ export async function getWorker(id: string): Promise<Worker> {
     return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?${workerIdParam(id)}`);
 }
 
-export async function getWorkerProfile(workerOidOrStableId: string): Promise<WorkerProfile | null> {
-    try {
-        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`);
-    } catch (error) {
-        if (error instanceof Error) {
-            const message = error.message.toLowerCase();
-            if (
-                message === 'profile not found' ||
-                message === 'not found' ||
-                message.includes('profile not found') ||
-                message.includes('404')
-            ) {
-                return null;
-            }
-        }
-        throw error;
-    }
-}
-
 export async function createWorker(data: WorkerCreate): Promise<Worker> {
     return fetchApi<Worker>(`${OBJECTS_BASE}/workers`, {
         method: 'POST',
@@ -361,17 +340,6 @@ export async function deleteWorker(id: string): Promise<void> {
         method: 'DELETE',
     });
 }
-
-export async function upsertWorkerProfile(workerOidOrStableId: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
-    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-    });
-}
-
-// ============================================================================
-// Hardware APIs (standalone)
-// ============================================================================
 
 export async function listHardwares(params: HardwareListParams = {}): Promise<HardwareListResponse> {
     const query = new URLSearchParams();

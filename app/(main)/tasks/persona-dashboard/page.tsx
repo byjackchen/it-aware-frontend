@@ -2,7 +2,6 @@ import {
     getConnectedEdges,
     getLocation,
     getOrganization,
-    getWorkerProfile,
     getWorkersPage,
 } from '@/lib/api/objects';
 import { PersonaProfilePage } from './PersonaProfilePage';
@@ -22,8 +21,7 @@ export default async function PersonaPage() {
         );
     }
 
-    const [workerProfile, organization, location, edgesResponse] = await Promise.all([
-        getWorkerProfile(worker.oid).catch(() => null),
+    const [organization, location, edgesResponse] = await Promise.all([
         getOrganization(worker.org_oid).catch(() => null),
         worker.location_oid ? getLocation(worker.location_oid).catch(() => null) : Promise.resolve(null),
         getConnectedEdges(worker.oid).catch(() => ({ items: [], total: 0, page: 1, page_size: 100 })),
@@ -32,7 +30,6 @@ export default async function PersonaPage() {
     return (
         <PersonaProfilePage
             currentWorker={worker}
-            workerProfile={workerProfile}
             organization={organization}
             location={location}
             edges={edgesResponse.items}

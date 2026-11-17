@@ -12,7 +12,6 @@ const RESOURCE_PATHS = {
     incidents: '/objects/activities/incidents',
     requests: '/objects/activities/requests',
     interactions: '/objects/activities/interactions',
-    analysiss: '/objects/insights/analysiss',
     scenarios: '/objects/journeys/scenarios',
     roles: '/auth/config/roles',
     systems: '/objects/systems',

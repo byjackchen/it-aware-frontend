@@ -242,24 +242,7 @@
         "countPlural": "{filtered} of {total} workers",
         "required": "Required",
         "optional": "Optional",
-        "createWorker": "Create Worker",
-        "profile": {
-          "title": "Worker Profile",
-          "empty": "No worker profile yet.",
-          "summary": "Summary",
-          "topics": "Topics",
-          "tags": "Tags",
-          "commaDelimited": "Comma-delimited",
-          "summaryUpdated": "Summary Updated",
-          "topicsUpdated": "Topics Updated",
-          "tagsUpdated": "Tags Updated",
-          "addTopic": "Add Topic",
-          "topicName": "Topic name",
-          "topicNeed": "Need / description",
-          "topicNotes": "Notes (optional)",
-          "topicResolved": "Resolved",
-          "topicUnresolved": "Unresolved"
-        }
+        "createWorker": "Create Worker"
       },
       "hardwares": {
         "title": "Hardwares",
@@ -454,11 +437,8 @@
       "sections": {
         "personalInfo": "Personal Info",
         "jobInfo": "Job Info",
-        "profileInfo": "Profile Info",
         "activitiesTimeline": "Activities Timeline",
-        "graphLinks": "Graph Links",
-        "experimental": "Experimental Features",
-        "experimentalHint": "Profile and cluster analysis are still in development. Click to expand."
+        "graphLinks": "Graph Links"
       },
       "fields": {
         "workerType": "Worker Type",
@@ -487,15 +467,6 @@
         "noOrganizations": "No organizations found",
         "noWorkers": "No workers found"
       },
-      "profile": {
-        "summary": "AI Summary",
-        "topics": "Topics",
-        "tags": "Tags",
-        "summaryUpdated": "Summary Updated",
-        "topicsUpdated": "Topics Updated",
-        "tagsUpdated": "Tags Updated",
-        "empty": "No profile data available"
-      },
       "timeline": {
         "window": "Window",
         "slideLeft": "Slide left",
@@ -517,7 +488,6 @@
           "request": "Requests",
           "interaction": "Interactions",
           "survey": "Surveys",
-          "analysis": "Analyses",
           "scenario": "Scenarios"
         },
         "scenarioTooltip": "Scenario: {type} at {date}",
@@ -532,8 +502,7 @@
           "incident": "Incidents",
           "request": "Requests",
           "interaction": "Interactions",
-          "survey": "Surveys",
-          "analysis": "Analyses"
+          "survey": "Surveys"
         }
       }
     },
@@ -1498,24 +1467,7 @@
       "countPlural": "{filtered} of {total} workers",
       "required": "Required",
       "optional": "Optional",
-      "createWorker": "Create Worker",
-      "profile": {
-        "title": "Worker Profile",
-        "empty": "No worker profile yet.",
-        "summary": "Summary",
-        "topics": "Topics",
-        "tags": "Tags",
-        "commaDelimited": "Comma-delimited",
-        "summaryUpdated": "Summary Updated",
-        "topicsUpdated": "Topics Updated",
-        "tagsUpdated": "Tags Updated",
-        "addTopic": "Add Topic",
-        "topicName": "Topic name",
-        "topicNeed": "Need / description",
-        "topicNotes": "Notes (optional)",
-        "topicResolved": "Resolved",
-        "topicUnresolved": "Unresolved"
-      }
+      "createWorker": "Create Worker"
     },
     "hardwares": {
       "title": "Hardwares",
@@ -1766,11 +1718,8 @@
     "sections": {
       "personalInfo": "Personal Info",
       "jobInfo": "Job Info",
-      "profileInfo": "Profile Info",
       "activitiesTimeline": "Activities Timeline",
-      "graphLinks": "Graph Links",
-      "experimental": "Experimental Features",
-      "experimentalHint": "Preview-only — may change without notice."
+      "graphLinks": "Graph Links"
     },
     "fields": {
       "workerType": "Worker Type",
@@ -1799,15 +1748,6 @@
       "noOrganizations": "No organizations found",
       "noWorkers": "No workers found"
     },
-    "profile": {
-      "summary": "AI Summary",
-      "topics": "Topics",
-      "tags": "Tags",
-      "summaryUpdated": "Summary Updated",
-      "topicsUpdated": "Topics Updated",
-      "tagsUpdated": "Tags Updated",
-      "empty": "No profile data available"
-    },
     "timeline": {
       "window": "Window",
       "slideLeft": "Slide left",
@@ -1829,7 +1769,6 @@
         "request": "Requests",
         "interaction": "Interactions",
         "survey": "Surveys",
-        "analysis": "Analyses",
         "scenario": "Scenarios"
       },
       "scenarioTooltip": "Scenario: {type} at {date}",
@@ -1844,8 +1783,7 @@
         "incident": "Incidents",
         "request": "Requests",
         "interaction": "Interactions",
-        "survey": "Surveys",
-        "analysis": "Analyses"
+        "survey": "Surveys"
       }
     }
   },

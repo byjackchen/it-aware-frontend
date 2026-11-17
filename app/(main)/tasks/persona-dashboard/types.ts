@@ -1,6 +1,6 @@
-import type { Analysis, Incident, Interaction, Request, Survey } from '@/lib/types/objects';
+import type { Incident, Interaction, Request, Survey } from '@/lib/types/objects';
 
-export type PersonaActivityEventType = 'incident' | 'request' | 'interaction' | 'survey' | 'analysis';
+export type PersonaActivityEventType = 'incident' | 'request' | 'interaction' | 'survey';
 
 export interface PersonaActivityEvent {
     id: string;
@@ -9,9 +9,9 @@ export interface PersonaActivityEvent {
     title: string;
     subtitle: string;
     createdAt: string;
-    /** The record's page; null for a kind with no page (survey analyses, since 2026-11-16). */
+    /** The record's page. */
     href: string | null;
-    raw: Incident | Request | Interaction | Survey | Analysis;
+    raw: Incident | Request | Interaction | Survey;
 }
 
 export interface TimelineWindowState {

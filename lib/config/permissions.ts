@@ -57,8 +57,6 @@ export const PERMISSIONS = {
     NOTIFICATION_BATCHS_WRITE: 'objects:notification_batchs:write',
     SURVEY_BATCHS_READ: 'objects:survey_batchs:read',
     SURVEY_BATCHS_WRITE: 'objects:survey_batchs:write',
-    ANALYSISS_READ: 'objects:analysiss:read',
-    ANALYSISS_WRITE: 'objects:analysiss:write',
     SCENARIOS_READ: 'objects:scenarios:read',
     SCENARIOS_WRITE: 'objects:scenarios:write',
   },

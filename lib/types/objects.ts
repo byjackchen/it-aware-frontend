@@ -184,29 +184,6 @@ export interface Worker {
     department_name?: string | null;
 }
 
-export interface WorkerProfileTopicItem {
-    topic: string;
-    need: string;
-    status: 'resolved' | 'unresolved';
-    notes: string | null;
-}
-
-export interface WorkerProfile {
-    worker_oid: string;
-    summary: string | null;
-    summary_updated_at: string | null;
-    topics: WorkerProfileTopicItem[] | null;
-    topics_updated_at: string | null;
-    tags: string[] | null;
-    tags_updated_at: string | null;
-}
-
-export interface WorkerProfileUpsert {
-    summary?: string | null;
-    topics?: WorkerProfileTopicItem[] | null;
-    tags?: string[] | null;
-}
-
 // ============================================================================
 // Hardware Types (standalone — synced from ERP BPMS)
 // ============================================================================
@@ -1540,88 +1517,6 @@ export interface CrossBatchSurveyListParams {
     external_id?: string;
     skip?: number;
     limit?: number;
-}
-
-// ============================================================================
-// Analysis (Insights)
-// ============================================================================
-
-export type AnalysisSourceType = 'survey';
-
-export type AnalysisSemantic = 'positive' | 'negative' | null;
-
-export type AnalysisIntent = 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion' | null;
-
-export interface Analysis {
-    oid: string;
-    worker_oid: string;
-    source_type: AnalysisSourceType;
-    source_oid: string;
-    source_batch_oid: string | null;
-    topic: string;
-    keywords: string[] | null;
-    fact: string | null;
-    semantic: AnalysisSemantic;
-    intent: AnalysisIntent;
-    service_catalog_oid: string | null;
-    service_catalog_override_oid: string | null;
-    service_type_oid: string | null;
-    service_type_override_oid: string | null;
-    configuration_item_oid: string | null;
-    created_at: string;
-    updated_at: string;
-    effective_at: string;
-}
-
-export interface AnalysisCreate {
-    worker_oid: string;
-    source_type: AnalysisSourceType;
-    source_oid: string;
-    source_batch_oid?: string | null;
-    topic: string;
-    effective_at?: string;
-    keywords?: string[] | null;
-    fact?: string | null;
-    semantic?: AnalysisSemantic;
-    intent?: AnalysisIntent;
-    service_catalog_oid?: string | null;
-    service_catalog_override_oid?: string | null;
-    service_type_oid?: string | null;
-    service_type_override_oid?: string | null;
-    configuration_item_oid?: string | null;
-}
-
-export interface AnalysisUpdate {
-    keywords?: string[] | null;
-    fact?: string | null;
-    semantic?: AnalysisSemantic;
-    intent?: AnalysisIntent;
-    service_catalog_oid?: string | null;
-    service_catalog_override_oid?: string | null;
-    service_type_oid?: string | null;
-    service_type_override_oid?: string | null;
-    configuration_item_oid?: string | null;
-}
-
-export interface AnalysisListParams {
-    worker_oid?: string;
-    source_type?: AnalysisSourceType;
-    source_oid?: string;
-    source_batch_oid?: string;
-    topic?: string;
-    semantic?: 'positive' | 'negative';
-    intent?: 'request' | 'bug' | 'complaint' | 'praise' | 'suggestion';
-    effective_at_from?: string;
-    effective_at_to?: string;
-    skip?: number;
-    limit?: number;
-}
-
-export interface AnalysisListResponse {
-    items: Analysis[];
-    total: number;
-    skip: number;
-    limit: number;
 }
 
 // ============================================================================
