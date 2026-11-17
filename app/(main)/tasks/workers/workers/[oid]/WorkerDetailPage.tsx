@@ -30,64 +30,18 @@ import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import { ObjectGraph } from '@/components/data';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
-import type { Worker, WorkerManagedBy, WorkerProfile, WorkerProfileUpsert, WorkerProfileTopicItem, GlobalEdge, Organization, Location } from '@/lib/types/objects';
-import { updateWorkerAction, upsertWorkerProfileAction, deleteWorkerAction } from '@/app/actions/objects';
+import type { Worker, WorkerManagedBy, GlobalEdge, Organization, Location } from '@/lib/types/objects';
+import { updateWorkerAction, deleteWorkerAction } from '@/app/actions/objects';
 import { changedWorkerFields } from '@/lib/utils/worker-edit';
 
 interface WorkerDetailPageProps {
     worker: Worker;
-    workerProfile: WorkerProfile | null;
     edges: GlobalEdge[];
     organizations: Organization[];
     locations: Location[];
 }
 
-function normalizeSummary(text: string): string | null {
-    const trimmed = text.trim();
-    return trimmed.length > 0 ? trimmed : null;
-}
-
-function parseCommaList(text: string): string[] | null {
-    const uniqueValues = new Set<string>();
-
-    text.split(',').forEach((value) => {
-        const trimmed = value.trim();
-        if (trimmed) {
-            uniqueValues.add(trimmed);
-        }
-    });
-
-    const values = Array.from(uniqueValues);
-    return values.length > 0 ? values : null;
-}
-
-function areStringArraysEqual(a: string[] | null, b: string[] | null): boolean {
-    if (a === b) return true;
-    if (a === null || b === null) return false;
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
-function areTopicsEqual(a: WorkerProfileTopicItem[] | null, b: WorkerProfileTopicItem[] | null): boolean {
-    if (a === b) return true;
-    if (a === null || b === null) return false;
-    if (a.length !== b.length) return false;
-    return JSON.stringify(a) === JSON.stringify(b);
-}
-
-function formatCommaList(values: string[] | null): string {
-    if (!values || values.length === 0) return '';
-    return values.join(', ');
-}
-
-function emptyTopicItem(): WorkerProfileTopicItem {
-    return { topic: '', need: '', status: 'unresolved', notes: null };
-}
-
-export function WorkerDetailPage({ worker, workerProfile, edges, organizations, locations }: WorkerDetailPageProps) {
+export function WorkerDetailPage({ worker, edges, organizations, locations }: WorkerDetailPageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
     const router = useTransitionRouter();
@@ -98,10 +52,6 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const isLight = theme === 'light';
     const [isEditing, setIsEditing] = useState(false);
     const [isPending, setIsPending] = useState(false);
-    const [profile, setProfile] = useState<WorkerProfile | null>(workerProfile);
-    const [isProfileEditing, setIsProfileEditing] = useState(false);
-    const [isProfilePending, setIsProfilePending] = useState(false);
-    const [profileError, setProfileError] = useState<string | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
 
     // Name field
@@ -123,9 +73,6 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
     const [jobTitle, setJobTitle] = useState(worker.job_title || '');
     const [isVip, setIsVip] = useState(worker.is_vip);
     const [vipType, setVipType] = useState(worker.vip_type || '');
-    const [profileSummaryText, setProfileSummaryText] = useState(workerProfile?.summary || '');
-    const [profileTopicsDraft, setProfileTopicsDraft] = useState<WorkerProfileTopicItem[]>(workerProfile?.topics || []);
-    const [profileTagsText, setProfileTagsText] = useState(formatCommaList(workerProfile?.tags || null));
 
     const [isActive, setIsActive] = useState(worker.is_active);
     const [managedBy, setManagedBy] = useState<WorkerManagedBy>(worker.managed_by);
@@ -211,61 +158,6 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
         setIsActive(worker.is_active);
         setManagedBy(worker.managed_by);
         setIsEditing(false);
-    };
-
-    const resetProfileDraft = (nextProfile: WorkerProfile | null) => {
-        setProfileSummaryText(nextProfile?.summary || '');
-        setProfileTopicsDraft(nextProfile?.topics || []);
-        setProfileTagsText(formatCommaList(nextProfile?.tags || null));
-    };
-
-    const handleProfileCancel = () => {
-        resetProfileDraft(profile);
-        setProfileError(null);
-        setIsProfileEditing(false);
-    };
-
-    const handleProfileSave = async () => {
-        setIsProfilePending(true);
-        setProfileError(null);
-
-        try {
-            const normalizedSummary = normalizeSummary(profileSummaryText);
-            const normalizedTopics = profileTopicsDraft.filter(t => t.topic.trim()).map(t => ({
-                ...t,
-                topic: t.topic.trim(),
-                need: t.need.trim(),
-                notes: t.notes?.trim() || null,
-            }));
-            const finalTopics = normalizedTopics.length > 0 ? normalizedTopics : null;
-            const normalizedTags = parseCommaList(profileTagsText);
-
-            const payload: WorkerProfileUpsert = {};
-
-            if (normalizedSummary !== (profile?.summary || null)) {
-                payload.summary = normalizedSummary;
-            }
-            if (!areTopicsEqual(finalTopics, profile?.topics || null)) {
-                payload.topics = finalTopics;
-            }
-            if (!areStringArraysEqual(normalizedTags, profile?.tags || null)) {
-                payload.tags = normalizedTags;
-            }
-
-            if (payload.summary === undefined && payload.topics === undefined && payload.tags === undefined) {
-                setIsProfileEditing(false);
-                return;
-            }
-
-            const updatedProfile = await upsertWorkerProfileAction(worker.oid, payload);
-            setProfile(updatedProfile);
-            resetProfileDraft(updatedProfile);
-            setIsProfileEditing(false);
-        } catch (error) {
-            setProfileError(error instanceof Error ? error.message : 'Failed to save worker profile');
-        } finally {
-            setIsProfilePending(false);
-        }
     };
 
     const inputClass = `w-full px-3 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-white/10 text-white'}`;
@@ -644,245 +536,6 @@ export function WorkerDetailPage({ worker, workerProfile, edges, organizations, 
                             </button>
                         </div>
                     )}
-                </div>
-
-                {/* Worker Profile */}
-                <div className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                    <div className="flex items-center justify-between">
-                        <h2 className={`text-lg font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('workers.profile.title')}</h2>
-                        {!isProfileEditing && (
-                            <button
-                                onClick={() => {
-                                    setProfileError(null);
-                                    resetProfileDraft(profile);
-                                    setIsProfileEditing(true);
-                                }}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-accent transition-colors"
-                            >
-                                <Pencil className="w-4 h-4" />
-                                <span>{t('common.edit')}</span>
-                            </button>
-                        )}
-                    </div>
-
-                    {profileError && (
-                        <div className={`px-3 py-2 rounded-lg text-sm ${isLight ? 'bg-red-50 text-red-700' : 'bg-red-500/10 text-red-300'}`}>
-                            {profileError}
-                        </div>
-                    )}
-
-                    {isProfileEditing ? (
-                        <div className="space-y-4">
-                            <div>
-                                <label className={labelClass}>{t('workers.profile.summary')}</label>
-                                <textarea
-                                    rows={4}
-                                    value={profileSummaryText}
-                                    onChange={(e) => setProfileSummaryText(e.target.value)}
-                                    className={`${inputClass} resize-y`}
-                                    placeholder={t('workers.notSet')}
-                                />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className={labelClass}>{t('workers.profile.topics')}</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setProfileTopicsDraft([...profileTopicsDraft, emptyTopicItem()])}
-                                        className={`text-xs px-2 py-1 rounded ${isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-white/10 text-gray-400 hover:bg-white/15'}`}
-                                    >
-                                        + {t('workers.profile.addTopic')}
-                                    </button>
-                                </div>
-                                {profileTopicsDraft.length === 0 ? (
-                                    <p className={`text-sm ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{t('workers.notSet')}</p>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {profileTopicsDraft.map((item, idx) => (
-                                            <div key={idx} className={`p-3 rounded-lg border space-y-2 ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={item.topic}
-                                                        onChange={(e) => {
-                                                            const next = [...profileTopicsDraft];
-                                                            next[idx] = { ...next[idx], topic: e.target.value };
-                                                            setProfileTopicsDraft(next);
-                                                        }}
-                                                        className={`${inputClass} flex-1`}
-                                                        placeholder={t('workers.profile.topicName')}
-                                                    />
-                                                    <select
-                                                        value={item.status}
-                                                        onChange={(e) => {
-                                                            const next = [...profileTopicsDraft];
-                                                            next[idx] = { ...next[idx], status: e.target.value as 'resolved' | 'unresolved' };
-                                                            setProfileTopicsDraft(next);
-                                                        }}
-                                                        className={`${inputClass} w-36`}
-                                                    >
-                                                        <option value="unresolved">{t('workers.profile.topicUnresolved')}</option>
-                                                        <option value="resolved">{t('workers.profile.topicResolved')}</option>
-                                                    </select>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setProfileTopicsDraft(profileTopicsDraft.filter((_, i) => i !== idx))}
-                                                        className="p-1 rounded hover:bg-red-500/10 text-bad"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={item.need}
-                                                    onChange={(e) => {
-                                                        const next = [...profileTopicsDraft];
-                                                        next[idx] = { ...next[idx], need: e.target.value };
-                                                        setProfileTopicsDraft(next);
-                                                    }}
-                                                    className={inputClass}
-                                                    placeholder={t('workers.profile.topicNeed')}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={item.notes || ''}
-                                                    onChange={(e) => {
-                                                        const next = [...profileTopicsDraft];
-                                                        next[idx] = { ...next[idx], notes: e.target.value || null };
-                                                        setProfileTopicsDraft(next);
-                                                    }}
-                                                    className={inputClass}
-                                                    placeholder={t('workers.profile.topicNotes')}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className={labelClass}>{t('workers.profile.tags')}</label>
-                                <input
-                                    type="text"
-                                    value={profileTagsText}
-                                    onChange={(e) => setProfileTagsText(e.target.value)}
-                                    className={inputClass}
-                                    placeholder={t('workers.profile.commaDelimited')}
-                                />
-                                <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{t('workers.profile.commaDelimited')}</p>
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    onClick={handleProfileSave}
-                                    disabled={isProfilePending}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
-                                >
-                                    {isProfilePending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    <span>{t('common.save')}</span>
-                                </button>
-                                <button
-                                    onClick={handleProfileCancel}
-                                    disabled={isProfilePending}
-                                    className={`px-4 py-2 rounded-lg ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
-                                >
-                                    {t('common.cancel')}
-                                </button>
-                            </div>
-                        </div>
-                    ) : profile ? (
-                        <div className="space-y-4">
-                            <div>
-                                <label className={labelClass}>{t('workers.profile.summary')}</label>
-                                <div className={`px-3 py-2 rounded-lg whitespace-pre-wrap ${isLight ? 'bg-slate-50 text-slate-700' : 'bg-white/5 text-gray-300'}`}>
-                                    {profile.summary || t('workers.notSet')}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className={labelClass}>{t('workers.profile.topics')}</label>
-                                {profile.topics && profile.topics.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {profile.topics.map((item, i) => (
-                                            <div
-                                                key={`${item.topic}-${i}`}
-                                                className={`p-3 rounded-lg border ${isLight ? 'border-slate-100 bg-slate-50' : 'border-white/5 bg-white/5'}`}
-                                            >
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-sm font-medium ${isLight ? 'text-slate-800' : 'text-white'}`}>{item.topic}</span>
-                                                    <span className={`text-xs px-1.5 py-0.5 rounded ${item.status === 'resolved'
-                                                        ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                                                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                                                    }`}>
-                                                        {item.status === 'resolved' ? t('workers.profile.topicResolved') : t('workers.profile.topicUnresolved')}
-                                                    </span>
-                                                </div>
-                                                <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>{item.need}</p>
-                                                {item.notes && (
-                                                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>{item.notes}</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className={displayClass}>
-                                        <span className={textClass}>{t('workers.notSet')}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className={labelClass}>{t('workers.profile.tags')}</label>
-                                {profile.tags && profile.tags.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {profile.tags.map((tag, i) => (
-                                            <span
-                                                key={`${tag}-${i}`}
-                                                className={`px-2 py-1 rounded-lg text-sm ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-300'}`}
-                                            >
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className={displayClass}>
-                                        <span className={textClass}>{t('workers.notSet')}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.summaryUpdated')}</label>
-                                    <div className={displayClass}>
-                                        <Calendar className={iconClass} />
-                                        <span className={textClass}>
-                                            {profile.summary_updated_at ? formatDateTime(profile.summary_updated_at, timezone) : t('workers.notSet')}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.topicsUpdated')}</label>
-                                    <div className={displayClass}>
-                                        <Calendar className={iconClass} />
-                                        <span className={textClass}>
-                                            {profile.topics_updated_at ? formatDateTime(profile.topics_updated_at, timezone) : t('workers.notSet')}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>{t('workers.profile.tagsUpdated')}</label>
-                                    <div className={displayClass}>
-                                        <Calendar className={iconClass} />
-                                        <span className={textClass}>
-                                            {profile.tags_updated_at ? formatDateTime(profile.tags_updated_at, timezone) : t('workers.notSet')}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
                 </div>
 
                 {/* Graph */}

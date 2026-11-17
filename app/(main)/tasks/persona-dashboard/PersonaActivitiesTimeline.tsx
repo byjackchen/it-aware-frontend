@@ -122,7 +122,6 @@ export function PersonaActivitiesTimeline({ worker }: PersonaActivitiesTimelineP
             `${t('timeline.heatTooltip.request')}: ${bin.requestCount}`,
             `${t('timeline.heatTooltip.interaction')}: ${bin.interactionCount}`,
             `${t('timeline.heatTooltip.survey')}: ${bin.surveyCount}`,
-            `${t('timeline.heatTooltip.analysis')}: ${bin.analysisCount}`,
         ].join('\n');
         updateHoverPosition(event.clientX, event.clientY, label);
     }, [t, timezone, updateHoverPosition]);

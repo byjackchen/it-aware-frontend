@@ -17,7 +17,6 @@ import {
     createWorker,
     updateWorker,
     deleteWorker,
-    upsertWorkerProfile,
     createArticle,
     updateArticle,
     deleteArticle,
@@ -39,7 +38,7 @@ import {
     updateScenario,
     deleteScenario,
 } from '@/lib/api/scenarios';
-import type { WorkerManagedBy, WorkerProfile, WorkerProfileUpsert } from '@/lib/types/objects';
+import type { WorkerManagedBy } from '@/lib/types/objects';
 import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 
@@ -473,41 +472,6 @@ export async function updateWorkerAction(oid: string, formData: FormData) {
     } catch (error) {
         const duration = Date.now() - startTime;
         logger.error(`Failed after ${duration}ms`, error, { requestId, action });
-        throw error;
-    }
-}
-
-export async function upsertWorkerProfileAction(workerOid: string, payload: WorkerProfileUpsert): Promise<WorkerProfile> {
-    const requestId = logger.generateRequestId();
-    const action = 'Objects:upsertWorkerProfile';
-    const startTime = Date.now();
-
-    logger.info(`Started - worker_oid: ${workerOid}`, {
-        requestId,
-        action,
-        payload: {
-            hasSummary: payload.summary !== undefined,
-            hasTopics: payload.topics !== undefined,
-            hasTags: payload.tags !== undefined,
-        },
-    });
-
-    if (payload.summary === undefined && payload.topics === undefined && payload.tags === undefined) {
-        throw new Error('At least one of summary/topics/tags must be provided');
-    }
-
-    try {
-        const result = await upsertWorkerProfile(workerOid, payload);
-        const duration = Date.now() - startTime;
-        logger.info(`Success in ${duration}ms`, { requestId, action });
-        return result;
-    } catch (error) {
-        const duration = Date.now() - startTime;
-        logger.error(`Failed after ${duration}ms`, error, {
-            requestId,
-            action,
-            payload: { workerOid },
-        });
         throw error;
     }
 }

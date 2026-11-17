@@ -4,7 +4,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
-import { getWorker, getWorkerProfile, getConnectedEdges, getOrganizations, getLocations } from '@/lib/api/objects';
+import { getWorker, getConnectedEdges, getOrganizations, getLocations } from '@/lib/api/objects';
 import { WorkerDetailPage } from './WorkerDetailPage';
 
 interface PageProps {
@@ -42,26 +42,12 @@ export default async function WorkerPage({ params }: PageProps) {
             notFound();
         }
     })();
-    let workerProfile = null;
-    try {
-        workerProfile = await getWorkerProfile(workerOid);
-    } catch (error) {
-        if (typeof error === 'object' && error !== null && 'digest' in error) {
-            const digest = (error as { digest?: unknown }).digest;
-            if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT')) {
-                throw error;
-            }
-        }
-        console.warn(`Failed to fetch worker profile for oid=${workerOid}; rendering without profile`, error);
-    }
-
     return (
         <WorkerDetailPage
             worker={worker}
             edges={edgesResponse.items}
             organizations={organizations}
             locations={locations}
-            workerProfile={workerProfile}
         />
     );
 }

@@ -18,8 +18,6 @@ import type {
     Worker,
     WorkerCreate,
     WorkerUpdate,
-    WorkerProfile,
-    WorkerProfileUpsert,
     Hardware,
     HardwareCreate,
     HardwareUpdate,
@@ -299,12 +297,6 @@ function workerIdParam(id: string): string {
     return `${key}=${encodeURIComponent(id)}`;
 }
 
-/** Build `worker_oid=<v>` or `stable_id=<v>` based on the identifier format. */
-function workerOidParam(id: string): string {
-    const key = OID_RE.test(id) ? 'worker_oid' : 'stable_id';
-    return `${key}=${encodeURIComponent(id)}`;
-}
-
 export async function getWorkers(isActive?: boolean): Promise<Worker[]> {
     let baseUrl = `${OBJECTS_BASE}/workers`;
     if (isActive !== undefined) {
@@ -321,25 +313,6 @@ export async function getWorkersPage(params: ActivePagedListParams = {}): Promis
 
 export async function getWorker(id: string): Promise<Worker> {
     return fetchApi<Worker>(`${OBJECTS_BASE}/workers/detail?${workerIdParam(id)}`);
-}
-
-export async function getWorkerProfile(workerOidOrStableId: string): Promise<WorkerProfile | null> {
-    try {
-        return await fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`);
-    } catch (error) {
-        if (error instanceof Error) {
-            const message = error.message.toLowerCase();
-            if (
-                message === 'profile not found' ||
-                message === 'not found' ||
-                message.includes('profile not found') ||
-                message.includes('404')
-            ) {
-                return null;
-            }
-        }
-        throw error;
-    }
 }
 
 export async function createWorker(data: WorkerCreate): Promise<Worker> {
@@ -361,17 +334,6 @@ export async function deleteWorker(id: string): Promise<void> {
         method: 'DELETE',
     });
 }
-
-export async function upsertWorkerProfile(workerOidOrStableId: string, data: WorkerProfileUpsert): Promise<WorkerProfile> {
-    return fetchApi<WorkerProfile>(`${OBJECTS_BASE}/workers/profile?${workerOidParam(workerOidOrStableId)}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-    });
-}
-
-// ============================================================================
-// Hardware APIs (standalone)
-// ============================================================================
 
 export async function listHardwares(params: HardwareListParams = {}): Promise<HardwareListResponse> {
     const query = new URLSearchParams();

@@ -1,7 +1,6 @@
 /**
  * Helpers for the "default + override" service-catalog / service-type field
- * pair used across activities (interactions, incidents, requests) and
- * insights (analysiss).
+ * pair used across activities (interactions, incidents, requests).
  *
  * Convention (matches backend, see [[feedback-override-suffix-convention]]):
  *   - <field>_oid           — default value (AI- or source-system-derived)

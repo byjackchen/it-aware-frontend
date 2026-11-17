@@ -30,9 +30,6 @@ function incrementCount(bin: TimelineHeatBin, type: PersonaActivityEventType): v
         case 'survey':
             bin.surveyCount += 1;
             break;
-        case 'analysis':
-            bin.analysisCount += 1;
-            break;
         default:
             break;
     }
@@ -48,7 +45,7 @@ export function useTimelineHeatBins({
     return useMemo(() => {
         const visibleTypes: PersonaActivityEventType[] = includeInteractions
             ? [...TIMELINE_TYPES]
-            : ['incident', 'request', 'survey', 'analysis'];
+            : ['incident', 'request', 'survey'];
 
         const startMs = windowState.start.getTime();
         const endMs = windowState.end.getTime();
@@ -72,13 +69,11 @@ export function useTimelineHeatBins({
                 requestCount: 0,
                 interactionCount: 0,
                 surveyCount: 0,
-                analysisCount: 0,
                 totalCount: 0,
                 incidentIntensity: 0,
                 requestIntensity: 0,
                 interactionIntensity: 0,
                 surveyIntensity: 0,
-                analysisIntensity: 0,
             };
         });
 
@@ -101,14 +96,12 @@ export function useTimelineHeatBins({
         const maxRequest = bins.reduce((max, bin) => Math.max(max, bin.requestCount), 0);
         const maxInteraction = bins.reduce((max, bin) => Math.max(max, bin.interactionCount), 0);
         const maxSurvey = bins.reduce((max, bin) => Math.max(max, bin.surveyCount), 0);
-        const maxAnalysis = bins.reduce((max, bin) => Math.max(max, bin.analysisCount), 0);
 
         bins.forEach((bin) => {
             bin.incidentIntensity = normalizeSqrt(bin.incidentCount, maxIncident);
             bin.requestIntensity = normalizeSqrt(bin.requestCount, maxRequest);
             bin.interactionIntensity = normalizeSqrt(bin.interactionCount, maxInteraction);
             bin.surveyIntensity = normalizeSqrt(bin.surveyCount, maxSurvey);
-            bin.analysisIntensity = normalizeSqrt(bin.analysisCount, maxAnalysis);
         });
 
         return {

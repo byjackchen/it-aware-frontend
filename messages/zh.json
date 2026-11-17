@@ -185,11 +185,8 @@
       "sections": {
         "personalInfo": "个人信息",
         "jobInfo": "岗位信息",
-        "profileInfo": "画像信息",
         "activitiesTimeline": "活动时间线",
-        "graphLinks": "图关系",
-        "experimental": "实验性功能",
-        "experimentalHint": "画像和聚类分析仍在开发中，点击展开。"
+        "graphLinks": "图关系"
       },
       "fields": {
         "workerType": "员工类型",
@@ -218,15 +215,6 @@
         "noOrganizations": "未找到组织",
         "noWorkers": "未找到员工"
       },
-      "profile": {
-        "summary": "AI 摘要",
-        "topics": "主题",
-        "tags": "标签",
-        "summaryUpdated": "摘要更新时间",
-        "topicsUpdated": "主题更新时间",
-        "tagsUpdated": "标签更新时间",
-        "empty": "暂无画像信息"
-      },
       "timeline": {
         "window": "时间窗口",
         "slideLeft": "向左滑动",
@@ -248,7 +236,6 @@
           "request": "请求",
           "interaction": "交互",
           "survey": "问卷",
-          "analysis": "分析",
           "scenario": "场景"
         },
         "scenarioTooltip": "场景：{type}，生效时间 {date}",
@@ -263,8 +250,7 @@
           "incident": "事件",
           "request": "请求",
           "interaction": "交互",
-          "survey": "问卷",
-          "analysis": "分析"
+          "survey": "问卷"
         }
       }
     },
@@ -1227,24 +1213,7 @@
       "countPlural": "{filtered} / {total} 员工",
       "required": "必填",
       "optional": "可选",
-      "createWorker": "创建员工",
-      "profile": {
-        "title": "员工画像",
-        "empty": "暂无员工画像。",
-        "summary": "摘要",
-        "topics": "主题",
-        "tags": "标签",
-        "commaDelimited": "用逗号分隔",
-        "summaryUpdated": "摘要更新时间",
-        "topicsUpdated": "主题更新时间",
-        "tagsUpdated": "标签更新时间",
-        "addTopic": "添加主题",
-        "topicName": "主题名称",
-        "topicNeed": "需求 / 描述",
-        "topicNotes": "备注（可选）",
-        "topicResolved": "已解决",
-        "topicUnresolved": "未解决"
-      }
+      "createWorker": "创建员工"
     },
     "hardwares": {
       "title": "硬件",
@@ -1495,11 +1464,8 @@
     "sections": {
       "personalInfo": "个人信息",
       "jobInfo": "岗位信息",
-      "profileInfo": "画像信息",
       "activitiesTimeline": "活动时间线",
-      "graphLinks": "图关系",
-      "experimental": "实验性功能",
-      "experimentalHint": "预览功能，可能随时变更。"
+      "graphLinks": "图关系"
     },
     "fields": {
       "workerType": "员工类型",
@@ -1528,15 +1494,6 @@
       "noOrganizations": "未找到组织",
       "noWorkers": "未找到员工"
     },
-    "profile": {
-      "summary": "AI 摘要",
-      "topics": "主题",
-      "tags": "标签",
-      "summaryUpdated": "摘要更新时间",
-      "topicsUpdated": "主题更新时间",
-      "tagsUpdated": "标签更新时间",
-      "empty": "暂无画像信息"
-    },
     "timeline": {
       "window": "时间窗口",
       "slideLeft": "向左滑动",
@@ -1558,7 +1515,6 @@
         "request": "请求",
         "interaction": "交互",
         "survey": "问卷",
-        "analysis": "分析",
         "scenario": "场景"
       },
       "scenarioTooltip": "场景：{type}，生效时间 {date}",
@@ -1573,8 +1529,7 @@
         "incident": "事件",
         "request": "请求",
         "interaction": "交互",
-        "survey": "问卷",
-        "analysis": "分析"
+        "survey": "问卷"
       }
     }
   },
