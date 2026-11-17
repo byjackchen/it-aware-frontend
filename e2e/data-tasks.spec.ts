@@ -19,6 +19,10 @@ test.describe('data tasks', () => {
     await page.getByLabel('Incident number').fill('INC0000000');
     await page.getByRole('button', { name: 'Search' }).click();
     await expect(page).toHaveURL(/\/tasks\/it-csat\?incident=INC0000000$/);
+    // The searched page streams in, briefly beside the one it replaces: wait until
+    // it is there once (seen 2026-11-17: two csat-total elements for an instant).
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('csat-total')).toHaveCount(1);
     await expect(page.getByTestId('csat-total')).toHaveText('0 surveys');
     await expect(page.getByText('No survey here.')).toBeVisible();
   });

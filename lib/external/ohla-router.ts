@@ -10,6 +10,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
+import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu';
 
 /** Where the framed page lives. A name one level below the prefix, not the prefix with a
  * trailing slash (which Next.js removes): Router names its scripts and API relatively. */
@@ -22,6 +23,47 @@ export const GATEWAY = `${RUNTIME_CONFIG.backend.domain}/external/ohla-router`;
 export async function signInCookie(): Promise<string | null> {
   const session = (await cookies()).get('it_aware_access');
   return session ? `it_aware_access=${session.value}` : null;
+}
+
+/** A sign-in renewed for this request: the cookie to call with, and the Set-Cookie lines for the browser. */
+export interface RenewedSignIn {
+  cookie: string;
+  setCookies: string[];
+}
+
+/**
+ * A fresh IT-Aware sign-in, made the way the sign-in middleware (proxy.ts) makes
+ * one for a page: from the Taihu gateway's identity on this request. The framed
+ * page's requests go through `/api/`, which the middleware skips, so without this
+ * they would lose the sign-in when its cookie expires (an hour), while every other
+ * page renews it on its next load. Null when the request carries no Taihu
+ * identity, the person signed in with a password or signed out, or the gateway
+ * or the backend refuses: the caller then answers 401 as before.
+ */
+export async function renewSignIn(request: Request): Promise<RenewedSignIn | null> {
+  const mode = (await cookies()).get('it_aware_auth_mode')?.value;
+  const headers: TaihuHeaders = {
+    'x-tai-identity': request.headers.get('x-tai-identity') ?? undefined,
+    timestamp: request.headers.get('timestamp') ?? undefined,
+    signature: request.headers.get('signature') ?? undefined,
+    'x-rio-seq': request.headers.get('x-rio-seq') ?? undefined,
+  };
+  if (!headers['x-tai-identity'] || mode === 'password' || mode === 'logged_out') return null;
+  try {
+    const identity = await getIdentityFromHeaders(headers);
+    const answer = await fetch(`${RUNTIME_CONFIG.backend.domain}/auth/session/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'sso', username: identity.loginName, tai_identity: String(headers['x-tai-identity']) }),
+      cache: 'no-store',
+    });
+    if (!answer.ok) return null;
+    const setCookies = answer.headers.getSetCookie();
+    const cookie = setCookies.map((line) => line.split(';')[0]).find((pair) => pair.startsWith('it_aware_access='));
+    return cookie ? { cookie, setCookies } : null;
+  } catch {
+    return null;
+  }
 }
 
 export type RouterState = 'ready' | 'not_configured' | 'unavailable';
