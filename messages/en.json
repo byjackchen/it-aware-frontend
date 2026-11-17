@@ -3263,7 +3263,8 @@
       "feature": "Feature",
       "flags": "Flags",
       "lastFlip": "Last flip",
-      "noValue": "no value"
+      "noValue": "no value",
+      "empty": "No feature has a flag now."
     },
     "flag": {
       "name": "Flag",

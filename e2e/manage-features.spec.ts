@@ -3,47 +3,25 @@ import { FEATURES_BASE } from '../lib/features/view';
 
 /**
  * Manage Features (lib/features/view.ts) only controls feature flags, against the
- * backend's own definitions (it-aware-backend app/features/features.json): the CSAT
- * feature and its flag `source`, at `surveys`. There is no phase, gate, check or
- * note on the page. No flag is flipped here: the backend's e2e flips it on a
- * backend of its own (tests/e2e/test_manage_features.py); the page's admin only
- * sees the form ready.
+ * backend's own definitions (it-aware-backend app/features/features.json). None is
+ * declared since CSAT's removal (2026-11-16, ohla-xray TODO00000156): the page
+ * opens with an empty list and says so, with no error. How a flag is shown and
+ * flipped is held by the unit tests (lib/features).
  */
 
-async function open(page: Page, query = '') {
-  await page.goto(`${FEATURES_BASE}${query}`);
+async function open(page: Page, errors: string[]) {
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(FEATURES_BASE);
   await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { name: 'Manage Features', exact: true })).toHaveCount(1);
 }
 
 test.describe('Manage Features', () => {
-  test('lists every feature with its flags', async ({ page }) => {
-    await open(page);
-    const table = page.getByRole('table', { name: 'Features' });
-    await expect(table.getByRole('link', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
-    const csat = table.getByRole('row').filter({ hasText: 'csat-own-path' });
-    await expect(csat).toContainText('source = surveys');
-    await expect(table.getByRole('columnheader')).toHaveText(['Feature', 'Flags', 'Last flip']);
-  });
-
-  test('shows one feature: its flags and the flip form, and nothing else', async ({ page }) => {
-    await open(page, '?feature=csat-own-path');
-    await expect(page.getByRole('heading', { name: 'ServiceNow CSAT on its own' })).toBeVisible();
-    const flags = page.getByRole('table', { name: 'Flags' });
-    await expect(flags).toContainText('surveys');
-    await expect(flags).toContainText('surveys · csat');
-    await expect(page.getByRole('heading', { name: 'Flips' })).toBeVisible();
-    for (const gone of ['Phase', 'Gates', 'History']) {
-      await expect(page.getByRole('heading', { name: gone, exact: true })).toHaveCount(0);
-    }
-
-    const value = page.getByRole('combobox', { name: 'Value' });
-    await expect(value).toHaveValue('csat'); // the form starts on another value
-    const flip = page.getByRole('button', { name: 'Flip', exact: true });
-    await expect(flip).toBeDisabled(); // a flip needs a reason
-    await page.getByPlaceholder('Why (required)').fill('ready');
-    await expect(flip).toBeEnabled();
-    await value.selectOption('surveys');
-    await expect(flip).toBeDisabled(); // the value it already has
+  test('opens cleanly when no feature has a flag', async ({ page }) => {
+    const errors: string[] = [];
+    await open(page, errors);
+    await expect(page.getByTestId('features-empty')).toHaveText('No feature has a flag now.');
+    await expect(page.getByRole('table', { name: 'Features' })).toHaveCount(0);
+    expect(errors).toEqual([]);
   });
 });
