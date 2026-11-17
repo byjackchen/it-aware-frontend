@@ -1,10 +1,10 @@
 /**
- * The Ohla Router task (it-aware-backend specs/api_specs_tasks.md, "External
- * tasks"): Router's own interface, framed from IT-Aware's origin. Every request
- * the framed page makes goes to `/api/external/ohla-router/<path>`
- * (app/api/external/ohla-router/[...path]/route.ts), and on to the backend's
- * gateway, which checks the task's rule, signs a token for the person and
- * forwards to Router. Router then applies the person's own role there.
+ * External tasks (it-aware-backend specs/api_specs_tasks.md, "External tasks"):
+ * another Ohla app's own interface, framed from IT-Aware's origin. Every request
+ * the framed page makes goes to `/api/external/<task>/<path>`
+ * (app/api/external/[app]/[...path]/route.ts), and on to the backend's gateway
+ * for that task, which checks the task's rule, signs a token for the person and
+ * forwards to the app. The app then applies the person's own role there.
  */
 
 import { cookies } from 'next/headers';
@@ -12,14 +12,48 @@ import { redirect } from 'next/navigation';
 import { RUNTIME_CONFIG } from '@/lib/config/runtime';
 import { getIdentityFromHeaders, type TaihuHeaders } from '@/lib/auth/taihu';
 
-/** Where the framed page lives. A name one level below the prefix, not the prefix with a
- * trailing slash (which Next.js removes): Router names its scripts and API relatively. */
-export const FRAME_SRC = '/api/external/ohla-router/console';
+/** One app opened as an external task. */
+export interface ExternalApp {
+  /** The task's code, also the gateway's and the pass-through's prefix. */
+  code: string;
+  /** As people know it. */
+  name: string;
+  /** Where the framed page lives: a name one level below the prefix, not the prefix with a
+   * trailing slash (which Next.js removes). The app names its scripts and API relatively. */
+  entry: string;
+  /** What the page asks before drawing the frame: the app's own identity endpoint, or its page. */
+  probe: string;
+}
+
+/**
+ * The external tasks. Router's identity endpoint is its session; the others have
+ * none yet, so their page itself is asked. Knowledge and Journey serve their
+ * interface at `console`, the Sidebar its configuration page at `admin` (the seam:
+ * iWiki 4061914677, section 3.3).
+ */
+export const EXTERNAL_APPS: Record<string, ExternalApp> = {
+  'ohla-router': { code: 'ohla-router', name: 'Ohla Router', entry: 'console', probe: 'admin/api/session' },
+  'ohla-knowledge': { code: 'ohla-knowledge', name: 'Ohla Knowledge', entry: 'console', probe: 'console' },
+  'ohla-journey': { code: 'ohla-journey', name: 'Ohla Journey', entry: 'console', probe: 'console' },
+  'ohla-sidebar': { code: 'ohla-sidebar', name: 'Ohla Sidebar', entry: 'admin', probe: 'admin' },
+};
+
+/** The app of a task code, or null when it is no external task's. */
+export function externalApp(code: string): ExternalApp | null {
+  return Object.hasOwn(EXTERNAL_APPS, code) ? EXTERNAL_APPS[code] : null;
+}
+
+/** Where the browser frames the app's page. */
+export function frameSrc(app: ExternalApp): string {
+  return `/api/external/${app.code}/${app.entry}`;
+}
 
 /** The backend's gateway for the task. */
-export const GATEWAY = `${RUNTIME_CONFIG.backend.domain}/external/ohla-router`;
+export function gateway(app: ExternalApp): string {
+  return `${RUNTIME_CONFIG.backend.domain}/external/${app.code}`;
+}
 
-/** The person's IT-Aware sign-in, as the backend reads it; never sent on to Router. */
+/** The person's IT-Aware sign-in, as the backend reads it; never sent on to the app. */
 export async function signInCookie(): Promise<string | null> {
   const session = (await cookies()).get('it_aware_access');
   return session ? `it_aware_access=${session.value}` : null;
@@ -66,20 +100,20 @@ export async function renewSignIn(request: Request): Promise<RenewedSignIn | nul
   }
 }
 
-export type RouterState = 'ready' | 'not_configured' | 'unavailable';
+export type TaskState = 'ready' | 'not_configured' | 'unavailable';
 
 /**
  * Whether the framed page can be shown: one call through the gateway before the
  * frame is drawn. An ended sign-in goes to the login page and a person without
- * the task to the no-access page, as on every task; an environment without Router
- * configured, or Router down, is said in words rather than inside the frame.
+ * the task to the no-access page, as on every task; an environment without the
+ * app configured, or the app down, is said in words rather than inside the frame.
  */
-export async function routerState(): Promise<RouterState> {
+export async function taskState(app: ExternalApp): Promise<TaskState> {
   const cookie = await signInCookie();
   if (!cookie) redirect('/login');
   let status: number;
   try {
-    status = (await fetch(`${GATEWAY}/admin/api/session`, { headers: { Cookie: cookie }, cache: 'no-store' })).status;
+    status = (await fetch(`${gateway(app)}/${app.probe}`, { headers: { Cookie: cookie }, cache: 'no-store' })).status;
   } catch {
     return 'unavailable';
   }
@@ -111,7 +145,7 @@ export function plainPath(parts: string[]): boolean {
 /**
  * Whether a request may change something here. Only from IT-Aware's own pages:
  * the gateway acts with the person's sign-in, so another site must not be able to
- * make their browser send a change (Router does not check this for a signed token).
+ * make their browser send a change (an app does not check this for a signed token).
  */
 export function fromOwnPage(request: Request): boolean {
   if (request.method === 'GET' || request.method === 'HEAD') return true;

@@ -3475,9 +3475,8 @@
       }
     }
   },
-  "OhlaRouter": {
-    "title": "Ohla Router",
-    "notConfigured": "Ohla Router is not set up in this environment yet.",
-    "unavailable": "Ohla Router is temporarily unavailable. The rest of IT-Aware works as usual; try again shortly."
+  "ExternalTask": {
+    "notConfigured": "{name} is not set up in this environment yet.",
+    "unavailable": "{name} is temporarily unavailable. The rest of IT-Aware works as usual; try again shortly."
   }
 }

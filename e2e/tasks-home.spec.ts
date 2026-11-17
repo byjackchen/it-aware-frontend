@@ -221,7 +221,7 @@ test.describe('Tasks 3: home, pins and the home tasks per group', () => {
     await openGroup(page, oid);
     // The start page is gone (TODO00000169); every task of the catalog is offered.
     await expect(page.getByLabel('Start page')).toHaveCount(0);
-    await expect(card.getByRole('checkbox')).toHaveCount(27);
+    await expect(card.getByRole('checkbox')).toHaveCount(30);
     await expect(onHome).not.toBeChecked();
 
     try {

@@ -1865,6 +1865,119 @@
      "address": "/tasks/ohla-router"
     }
    ]
+  },
+  {
+   "code": "ohla-knowledge",
+   "name": {
+    "en": "Ohla Knowledge",
+    "zh": "Ohla Knowledge"
+   },
+   "grouping": "operations",
+   "kind": "external",
+   "external_app": "ohla-knowledge",
+   "address": "/tasks/ohla-knowledge",
+   "icon": "brain",
+   "keywords": [
+    "knowledge base",
+    "QA",
+    "retrieval",
+    "知识库",
+    "知识"
+   ],
+   "views": [
+    {
+     "slug": "knowledge",
+     "name": {
+      "en": "Ohla Knowledge",
+      "zh": "Ohla Knowledge"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "external:ohla_knowledge:use"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-knowledge"
+    }
+   ]
+  },
+  {
+   "code": "ohla-journey",
+   "name": {
+    "en": "Ohla Journey",
+    "zh": "Ohla Journey"
+   },
+   "grouping": "analytics",
+   "kind": "external",
+   "external_app": "ohla-journey",
+   "address": "/tasks/ohla-journey",
+   "icon": "footprints",
+   "keywords": [
+    "user journey",
+    "experience",
+    "用户旅程",
+    "体验"
+   ],
+   "views": [
+    {
+     "slug": "journey",
+     "name": {
+      "en": "Ohla Journey",
+      "zh": "Ohla Journey"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "external:ohla_journey:use"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-journey"
+    }
+   ]
+  },
+  {
+   "code": "ohla-sidebar",
+   "name": {
+    "en": "Ohla Sidebar",
+    "zh": "Ohla Sidebar"
+   },
+   "grouping": "administration",
+   "kind": "external",
+   "external_app": "ohla-sidebar",
+   "address": "/tasks/ohla-sidebar",
+   "icon": "panel-right",
+   "keywords": [
+    "sidebar",
+    "chatbot",
+    "WeCom",
+    "侧边栏",
+    "配置"
+   ],
+   "views": [
+    {
+     "slug": "sidebar",
+     "name": {
+      "en": "Ohla Sidebar",
+      "zh": "Ohla Sidebar"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "any",
+      "codes": [
+       "external:ohla_sidebar:use"
+      ]
+     },
+     "keywords": [],
+     "address": "/tasks/ohla-sidebar"
+    }
+   ]
   }
  ],
  "retired": [

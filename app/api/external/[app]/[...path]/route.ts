@@ -1,17 +1,19 @@
-import { GATEWAY, RETURNED, SENT, fromOwnPage, plainPath, renewSignIn, signInCookie, type RenewedSignIn } from '@/lib/external/ohla-router';
+import { RETURNED, SENT, externalApp, fromOwnPage, gateway, plainPath, renewSignIn, signInCookie, type RenewedSignIn } from '@/lib/external/gateway';
 
 /**
- * The framed Ohla Router page's every request, page and API, passed to the
- * backend's gateway with the person's IT-Aware sign-in (lib/external/ohla-router.ts).
+ * A framed external task's every request, page and API, passed to the backend's
+ * gateway for that task with the person's IT-Aware sign-in (lib/external/gateway.ts).
  * The answer comes back as the gateway gives it, with the headers a page needs.
  */
 
 export const dynamic = 'force-dynamic';
 
-type Context = { params: Promise<{ path: string[] }> };
+type Context = { params: Promise<{ app: string; path: string[] }> };
 
 async function pass(request: Request, context: Context): Promise<Response> {
-  const { path } = await context.params;
+  const { app: code, path } = await context.params;
+  const app = externalApp(code);
+  if (!app) return Response.json({ error: 'No such external task' }, { status: 404 });
   if (!plainPath(path)) return Response.json({ error: 'Invalid path' }, { status: 400 });
   if (!fromOwnPage(request)) return Response.json({ error: 'Only from IT-Aware' }, { status: 403 });
   // An expired sign-in is renewed here, as a page load would renew it (renewSignIn).
@@ -23,7 +25,7 @@ async function pass(request: Request, context: Context): Promise<Response> {
     cookie = renewed.cookie;
   }
 
-  const upstream = new URL(`${GATEWAY}/${path.map(encodeURIComponent).join('/')}`);
+  const upstream = new URL(`${gateway(app)}/${path.map(encodeURIComponent).join('/')}`);
   upstream.search = new URL(request.url).search;
   const sent: Record<string, string> = {};
   for (const name of SENT) {
@@ -40,7 +42,7 @@ async function pass(request: Request, context: Context): Promise<Response> {
       answer = await call(renewed.cookie);
     }
   } catch {
-    return Response.json({ error: 'Ohla Router is unavailable' }, { status: 502 });
+    return Response.json({ error: `${app.name} is unavailable` }, { status: 502 });
   }
   const returned = new Headers();
   for (const line of renewed?.setCookies ?? []) returned.append('set-cookie', line);

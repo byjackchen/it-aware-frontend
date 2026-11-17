@@ -30,23 +30,32 @@ A view:
 | `requires` | `{check, codes}` | The permission codes the view needs: `check` is `any` (one of them) or `all` |
 | `address` | string | `/tasks/<task>` for a task with one view, `/tasks/<task>/<slug>` otherwise. A record or sub-page follows it: `/tasks/it-incidents/<oid>` |
 
-Whether a task shows something or changes something is not stored: it follows from the leading verb of the English name (View, Find, Monitor, and names ending Dashboard or Report show; Maintain, Manage, Create, Edit, Send, Import change). An external task may instead be named after the app it opens, as people know it, and then counts as one that changes something (maintainer, 2026-11-17: **Ohla Router**).
+Whether a task shows something or changes something is not stored: it follows from the leading verb of the English name (View, Find, Monitor, and names ending Dashboard or Report show; Maintain, Manage, Create, Edit, Send, Import change). An external task may instead be named after the app it opens, as people know it, and then counts as one that changes something (maintainer, 2026-11-17: **Ohla Router**, then **Ohla Knowledge**, **Ohla Journey** and **Ohla Sidebar**).
 
 The catalog refuses to load when an internal task's name starts with no known verb and ends with neither Dashboard nor Report, when two tasks share a name in either language, when a name names a team, when a code starts with `it-` and the English name does not say "IT" or the other way round, or when an address does not follow the rule above.
 
 ## External tasks
 
-An external task opens another app's own interface inside IT-Aware. IT-Aware decides who has the task, by its view's rule like any other task; the app then decides what the person may do there, by the role it gives them. The first is **Ohla Router** (code `ohla-router`, `external_app` `ohla-router`, grouping Administration, icon `waypoints`, one view needing `external:ohla_router:use`, which migration 0152 gives the `admins` group; added 2026-11-17, ohla-xray TODO00000164).
+An external task opens another app's own interface inside IT-Aware. IT-Aware decides who has the task, by its view's rule like any other task; the app then decides what the person may do there, by the role it gives them. The seam each app implements: iWiki 4061914677, section 3. The tasks (ohla-xray TODO00000164), each with `external_app` equal to its code and one view needing `external:<app>:use`, which the `admins` group holds:
 
-### ANY /external/ohla-router/{path}
+| Task | Grouping | Icon | View rule | Migration | Address and key settings | Never forwarded |
+|---|---|---|---|---|---|---|
+| **Ohla Router** (`ohla-router`, 2026-11-17) | Administration | `waypoints` | `external:ohla_router:use` | 0152 | `ROUTER_BASE_URL`, `ROUTER_DELEGATION_PRIVATE_KEY` | `admin/api/login`, `admin/api/logout`, `v1/...` (model calls take a Consumer key) |
+| **Ohla Knowledge** (`ohla-knowledge`, 2026-11-17) | Operations | `brain` | `external:ohla_knowledge:use` | 0156 | `OHLA_KNOWLEDGE_URL`, `OHLA_KNOWLEDGE_DELEGATION_PRIVATE_KEY` | `v1/auth/...` (sign-in, device and OAuth flows) |
+| **Ohla Journey** (`ohla-journey`, 2026-11-17) | Analytics | `footprints` | `external:ohla_journey:use` | 0156 | `OHLA_JOURNEY_URL`, `OHLA_JOURNEY_DELEGATION_PRIVATE_KEY` | nothing more |
+| **Ohla Sidebar** (`ohla-sidebar`, 2026-11-17) | Administration | `panel-right` | `external:ohla_sidebar:use` | 0156 | `OHLA_SIDEBAR_URL`, `OHLA_SIDEBAR_DELEGATION_PRIVATE_KEY` | nothing more |
 
-`GET`, `POST`, `PUT` and `DELETE`. The frontend frames Router's interface from IT-Aware's own origin, and every request the framed page makes, for the page and for Router's management API, comes here.
+Knowledge, Journey and the Sidebar are unset in every environment until each app has its side: their tasks say they are not set up.
 
-- **Who.** A signed-in `user` account that meets the task's view rule: `401` without a sign-in, `403` without the code, and `403` for an integration account, since Router acts for people.
-- **What is forwarded.** Everything but Router's sign-in and sign-out (`admin/api/login`, `admin/api/logout`) and its model-call API (`v1/...`), which answer `404`, as does a path with an empty, `.` or `..` part. A body over 10 MiB is `413`.
-- **How.** The request goes to Router's origin, taken from `ROUTER_BASE_URL`, with its query, its body and its `Accept`, `Content-Type` and `If-None-Match` headers, and nothing else of the caller's: no cookie. It carries `Authorization: Bearer <token>`, a JWT signed RS256 with `ROUTER_DELEGATION_PRIVATE_KEY` (a key pair of its own, not the sign-in key): `iss` `it-aware`, `sub` the account's username, `aud` `ohla-router`, `iat`, `exp` one minute later, and a `jti`. Router checks it with the public half and applies the person's role there.
-- **The answer.** Router's status and body unchanged, with only the headers a page needs: `Content-Type`, `Cache-Control`, `ETag`, `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Retry-After`, `Allow`. Router's own refusals (`401 invalid_delegation`, `403 no_standing`, `403 role_required`) come back as they are.
-- **Not configured.** Without `ROUTER_BASE_URL` or `ROUTER_DELEGATION_PRIVATE_KEY` the answer is `503`; Router unreachable is `502`.
+### ANY /external/{task}/{path}
+
+One route per external task (`app/external_tasks/gateway.py`). `GET`, `POST`, `PUT` and `DELETE`. The frontend frames the app's interface from IT-Aware's own origin, and every request the framed page makes, for the page and for the app's API, comes here.
+
+- **Who.** A signed-in `user` account that meets the task's view rule: `401` without a sign-in, `403` without the code, and `403` for an integration account, since the app acts for people.
+- **What is forwarded.** Everything but the app's paths in the table above, and all below them, which answer `404`, as does a path with an empty, `.` or `..` part. A body over 10 MiB is `413`.
+- **How.** The request goes to the app's origin, taken from its address setting, with its query, its body and its `Accept`, `Content-Type` and `If-None-Match` headers, and nothing else of the caller's: no cookie. It carries `Authorization: Bearer <token>`, a JWT signed RS256 with the app's private key setting (a key pair of its own per app, not the sign-in key): `iss` `it-aware`, `sub` the account's username, `aud` the task's code, `iat`, `exp` one minute later, and a `jti`. The app checks it with the public half and applies the person's role there.
+- **The answer.** The app's status and body unchanged, with only the headers a page needs: `Content-Type`, `Cache-Control`, `ETag`, `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Retry-After`, `Allow`. The app's own refusals (Router's `401 invalid_delegation`, `403 no_standing`, `403 role_required`) come back as they are.
+- **Not configured.** Without the app's address or key the answer is `503`; the app unreachable is `502`.
 
 ## Who has a task
 

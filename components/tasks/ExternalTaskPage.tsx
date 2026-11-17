@@ -1,0 +1,34 @@
+/**
+ * An external task's page: the app's own interface, framed from IT-Aware's origin
+ * (lib/external/gateway.ts). IT-Aware decided the person has the task; inside the
+ * frame, the app shows what the person's role there allows, or tells them they
+ * have no access yet. Before the frame, an environment without the app set up, or
+ * the app down, is said in words.
+ */
+
+import { getTranslations } from 'next-intl/server';
+import { frameSrc, taskState, type ExternalApp } from '@/lib/external/gateway';
+
+export async function ExternalTaskPage({ app }: { app: ExternalApp }) {
+  const state = await taskState(app);
+  const t = await getTranslations('ExternalTask');
+  if (state !== 'ready') {
+    return (
+      <div className="mx-auto max-w-[1320px] p-4">
+        <p className="text-sm text-ink-2" data-testid="external-task-state">
+          {t(state === 'not_configured' ? 'notConfigured' : 'unavailable', { name: app.name })}
+        </p>
+      </div>
+    );
+  }
+  // The app's interface takes everything under the top bar: whose page it is
+  // is said by the app mark on the task's name (components/tasks/TaskFrame.tsx).
+  return (
+    <iframe
+      src={frameSrc(app)}
+      title={app.name}
+      className="block h-[calc(100vh-4rem-var(--env-banner-h,0px))] w-full border-0"
+      data-testid="external-task-frame"
+    />
+  );
+}

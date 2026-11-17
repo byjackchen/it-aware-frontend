@@ -3,9 +3,9 @@ import { GROUPINGS, TASKS, byGrouping, groupingName, named, openKey, pageHref, r
 import { PERMISSIONS } from '@/lib/config/permissions';
 
 describe('the checked-in catalog', () => {
-  it('holds the 27 tasks and 74 views of contract v3 (Clusters and the Survey Analysis Dashboard retired, View IT CSAT and View Raw Records added, 2026-11-16; Ohla Router, the first external task, added 2026-11-17), in four groupings', () => {
-    expect(TASKS).toHaveLength(27);
-    expect(TASKS.flatMap(task => task.views)).toHaveLength(74);
+  it('holds the 30 tasks and 77 views of contract v3 (Clusters and the Survey Analysis Dashboard retired, View IT CSAT and View Raw Records added, 2026-11-16; Ohla Router, the first external task, added 2026-11-17, then Ohla Knowledge, Ohla Journey and Ohla Sidebar), in four groupings', () => {
+    expect(TASKS).toHaveLength(30);
+    expect(TASKS.flatMap(task => task.views)).toHaveLength(77);
     expect(GROUPINGS.map(grouping => grouping.code)).toEqual(['data', 'analytics', 'operations', 'administration']);
   });
 

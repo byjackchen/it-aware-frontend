@@ -1,35 +1,10 @@
-/**
- * Ohla Router: Router's own management interface, framed from IT-Aware's origin
- * (lib/external/ohla-router.ts). IT-Aware decided the person has the task; inside
- * the frame, Router shows what the person's role there allows, or tells them
- * they have no access yet.
- */
+/** The ohla-router task: the app's own interface, framed (components/tasks/ExternalTaskPage.tsx). */
 
-import { getTranslations } from 'next-intl/server';
-import { FRAME_SRC, routerState } from '@/lib/external/ohla-router';
+import { ExternalTaskPage } from '@/components/tasks/ExternalTaskPage';
+import { EXTERNAL_APPS } from '@/lib/external/gateway';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OhlaRouterPage() {
-  const state = await routerState();
-  const t = await getTranslations('OhlaRouter');
-  if (state !== 'ready') {
-    return (
-      <div className="mx-auto max-w-[1320px] p-4">
-        <p className="text-sm text-ink-2" data-testid="ohla-router-state">
-          {t(state === 'not_configured' ? 'notConfigured' : 'unavailable')}
-        </p>
-      </div>
-    );
-  }
-  // Router's interface takes everything under the top bar: whose page it is
-  // is said by the app mark on the task's name (components/tasks/TaskFrame.tsx).
-  return (
-    <iframe
-      src={FRAME_SRC}
-      title={t('title')}
-      className="block h-[calc(100vh-4rem-var(--env-banner-h,0px))] w-full border-0"
-      data-testid="ohla-router-frame"
-    />
-  );
+export default function OhlaRouterPage() {
+  return <ExternalTaskPage app={EXTERNAL_APPS['ohla-router']} />;
 }

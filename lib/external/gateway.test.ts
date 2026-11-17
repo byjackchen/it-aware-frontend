@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { DELETE, GET, POST } from '@/app/api/external/ohla-router/[...path]/route';
-import { FRAME_SRC, fromOwnPage, plainPath, renewSignIn, routerState } from '@/lib/external/ohla-router';
+import { DELETE, GET, POST } from '@/app/api/external/[app]/[...path]/route';
+import { EXTERNAL_APPS, externalApp, frameSrc, fromOwnPage, plainPath, renewSignIn, taskState } from '@/lib/external/gateway';
 import { getIdentityFromHeaders } from '@/lib/auth/taihu';
 
 /**
- * The Ohla Router task (lib/external/ohla-router.ts): the page's check before the
- * frame, and the pass-through every framed request takes to the backend's gateway.
+ * External tasks (lib/external/gateway.ts), on Ohla Router and then each other app:
+ * the page's check before the frame, and the pass-through every framed request
+ * takes to the backend's gateway.
  * The gateway's own checks (the task's rule, the token) are the backend's tests.
  */
 
@@ -39,10 +40,12 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const ctx = (...path: string[]) => ({ params: Promise.resolve({ path }) });
+const ROUTER = EXTERNAL_APPS['ohla-router'];
+const ctx = (...path: string[]) => ({ params: Promise.resolve({ app: 'ohla-router', path }) });
+const routerState = () => taskState(ROUTER);
 
 it('frames a page one level below its prefix, which Next.js keeps as written', () => {
-  expect(FRAME_SRC).toBe('/api/external/ohla-router/console');
+  expect(frameSrc(ROUTER)).toBe('/api/external/ohla-router/console');
 });
 
 it.each([
@@ -228,4 +231,43 @@ it('does not renew when the gateway identity, the backend or its answer fails', 
   expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200, headers: [['set-cookie', 'other=1']] })));
   expect(await renewSignIn(new Request('http://localhost/x', { headers: TAIHU }))).toBeNull();
+});
+
+// --- the other external tasks -----------------------------------------------------
+
+it.each([
+  ['ohla-knowledge', 'Ohla Knowledge', '/api/external/ohla-knowledge/console', /\/external\/ohla-knowledge\/console$/],
+  ['ohla-journey', 'Ohla Journey', '/api/external/ohla-journey/console', /\/external\/ohla-journey\/console$/],
+  ['ohla-sidebar', 'Ohla Sidebar', '/api/external/ohla-sidebar/admin', /\/external\/ohla-sidebar\/admin$/],
+])('%s is framed at its own page, and asked there before the frame', async (code, name, src, asked) => {
+  const app = externalApp(code)!;
+  expect(app.name).toBe(name);
+  expect(frameSrc(app)).toBe(src);
+  const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
+  vi.stubGlobal('fetch', fetchMock);
+  expect(await taskState(app)).toBe('not_configured');
+  expect(String(fetchMock.mock.calls[0][0])).toMatch(asked);
+});
+
+it("passes each app's requests to its own gateway, and names it when unreachable", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+  vi.stubGlobal('fetch', fetchMock);
+  const own = { params: Promise.resolve({ app: 'ohla-knowledge', path: ['v1', 'items'] }) };
+  expect((await GET(new Request('http://localhost/x?q=1'), own)).status).toBe(200);
+  expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/external\/ohla-knowledge\/v1\/items\?q=1$/);
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+  const down = await GET(new Request('http://localhost/x'), { params: Promise.resolve({ app: 'ohla-sidebar', path: ['admin'] }) });
+  expect(down.status).toBe(502);
+  expect(await down.json()).toEqual({ error: 'Ohla Sidebar is unavailable' });
+});
+
+it('knows no other app: an unknown one is 404 before anything is called', async () => {
+  const fetchMock = vi.fn();
+  vi.stubGlobal('fetch', fetchMock);
+  for (const code of ['ohla-unknown', 'toString', '__proto__']) {
+    expect(externalApp(code)).toBeNull();
+    const response = await GET(new Request('http://localhost/x'), { params: Promise.resolve({ app: code, path: ['console'] }) });
+    expect(response.status).toBe(404);
+  }
+  expect(fetchMock).not.toHaveBeenCalled();
 });
