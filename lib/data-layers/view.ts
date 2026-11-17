@@ -51,6 +51,8 @@ export interface TableView {
   tag: TagKey | null;
   rows: string;
   link: TaskLink | null;
+  /** The raw sources it is rebuilt from (来自哪些原始来源); empty for none. */
+  rawSources: string[];
 }
 
 export interface LayerView {
@@ -114,6 +116,7 @@ export function shapeLayers(data: DataLayers, { held, locale, subject }: ShapeOp
                 tag: tagOf(table.declared),
                 rows: formatRows(table.rows, table.approximate, locale),
                 link: taskLink(table.task, held, locale),
+                rawSources: table.raw_sources,
               })),
             }))
             .sort((a, b) => a.subject.localeCompare(b.subject, locale)),

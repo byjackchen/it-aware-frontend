@@ -19,6 +19,10 @@ export interface LayerTable {
   approximate: boolean;
   /** The code of the task that shows the table's records; null for none. */
   task: string | null;
+  /** Who writes it: DAG ids, or people, migrations, triggers, scripts, ohla_journey_import, nobody. */
+  writers: string[];
+  /** The raw sources a derive step rebuilds it from; empty for a table its sync still writes directly. */
+  raw_sources: string[];
 }
 
 export interface LayerGroup {

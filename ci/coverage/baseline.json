@@ -225,42 +225,6 @@
         "total": 30
       }
     },
-    "app/api/dashboard/survey-analytics/analysis-classification/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 147
-      },
-      "lines": {
-        "covered": 0,
-        "total": 131
-      },
-      "functions": {
-        "covered": 0,
-        "total": 22
-      },
-      "branches": {
-        "covered": 0,
-        "total": 78
-      }
-    },
-    "app/api/dashboard/survey-analytics/keyword-heatmap/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 186
-      },
-      "lines": {
-        "covered": 0,
-        "total": 153
-      },
-      "functions": {
-        "covered": 0,
-        "total": 20
-      },
-      "branches": {
-        "covered": 0,
-        "total": 111
-      }
-    },
     "app/api/dashboard/survey-analytics/servicenow-month-details/route.ts": {
       "statements": {
         "covered": 20,
@@ -513,24 +477,6 @@
         "total": 14
       }
     },
-    "app/api/objects/worker-clusters/summary/route.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 20
-      },
-      "lines": {
-        "covered": 0,
-        "total": 18
-      },
-      "functions": {
-        "covered": 0,
-        "total": 6
-      },
-      "branches": {
-        "covered": 0,
-        "total": 8
-      }
-    },
     "app/api/services/chatbot/react/route.ts": {
       "statements": {
         "covered": 0,
@@ -621,24 +567,6 @@
         "total": 30
       }
     },
-    "lib/api/clusters.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 15
-      },
-      "lines": {
-        "covered": 0,
-        "total": 11
-      },
-      "functions": {
-        "covered": 0,
-        "total": 3
-      },
-      "branches": {
-        "covered": 0,
-        "total": 11
-      }
-    },
     "lib/api/core.ts": {
       "statements": {
         "covered": 0,
@@ -673,24 +601,6 @@
       "branches": {
         "covered": 0,
         "total": 25
-      }
-    },
-    "lib/api/insights.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 28
-      },
-      "lines": {
-        "covered": 0,
-        "total": 24
-      },
-      "functions": {
-        "covered": 0,
-        "total": 6
-      },
-      "branches": {
-        "covered": 0,
-        "total": 11
       }
     },
     "lib/api/itopsdashboard.ts": {
@@ -1609,24 +1519,6 @@
       "branches": {
         "covered": 0,
         "total": 18
-      }
-    },
-    "lib/utils/cluster-feature-labels.ts": {
-      "statements": {
-        "covered": 0,
-        "total": 1
-      },
-      "lines": {
-        "covered": 0,
-        "total": 1
-      },
-      "functions": {
-        "covered": 0,
-        "total": 0
-      },
-      "branches": {
-        "covered": 0,
-        "total": 0
       }
     },
     "lib/utils/datetime.ts": {

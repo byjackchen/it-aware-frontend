@@ -112,27 +112,6 @@
       "层级结构"
      ],
      "address": "/tasks/workers/locations"
-    },
-    {
-     "slug": "clusters",
-     "name": {
-      "en": "Clusters",
-      "zh": "群组"
-     },
-     "old_code": "data.clusters",
-     "old_base": "/data/clusters",
-     "requires": {
-      "check": "all",
-      "codes": [
-       "ui:navigation:data",
-       "objects:worker_clusters:read"
-      ]
-     },
-     "keywords": [
-      "Insights",
-      "洞察"
-     ],
-     "address": "/tasks/workers/clusters"
     }
    ]
   },
@@ -235,6 +214,47 @@
       "活动"
      ],
      "address": "/tasks/it-interactions"
+    }
+   ]
+  },
+  {
+   "code": "it-csat",
+   "name": {
+    "en": "View IT CSAT",
+    "zh": "查看 IT CSAT"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/it-csat",
+   "icon": "smile",
+   "keywords": [
+    "csat",
+    "satisfaction",
+    "survey",
+    "满意度",
+    "问卷"
+   ],
+   "views": [
+    {
+     "slug": "responses",
+     "name": {
+      "en": "CSAT Responses",
+      "zh": "CSAT 问卷"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "csat:responses:read"
+      ]
+     },
+     "keywords": [
+      "Derived",
+      "派生"
+     ],
+     "address": "/tasks/it-csat"
     }
    ]
   },
@@ -396,6 +416,145 @@
      },
      "keywords": [],
      "address": "/tasks/data-overview"
+    }
+   ]
+  },
+  {
+   "code": "raw-records",
+   "name": {
+    "en": "View Raw Records",
+    "zh": "查看原始记录"
+   },
+   "grouping": "data",
+   "kind": "internal",
+   "address": "/tasks/raw-records/servicenow-incident",
+   "icon": "database",
+   "keywords": [
+    "raw",
+    "source",
+    "原始",
+    "来源"
+   ],
+   "views": [
+    {
+     "slug": "servicenow-incident",
+     "name": {
+      "en": "ServiceNow Incidents",
+      "zh": "ServiceNow 事件"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_incident:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_incident"
+     ],
+     "address": "/tasks/raw-records/servicenow-incident"
+    },
+    {
+     "slug": "servicenow-incident-assessment",
+     "name": {
+      "en": "ServiceNow Incident Surveys",
+      "zh": "ServiceNow 事件问卷"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_incident_assessment:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_incident_assessment"
+     ],
+     "address": "/tasks/raw-records/servicenow-incident-assessment"
+    },
+    {
+     "slug": "servicenow-asmt-assessment-instance",
+     "name": {
+      "en": "ServiceNow Survey Completions",
+      "zh": "ServiceNow 问卷完成时间"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:servicenow_asmt_assessment_instance:read"
+      ]
+     },
+     "keywords": [
+      "servicenow_asmt_assessment_instance"
+     ],
+     "address": "/tasks/raw-records/servicenow-asmt-assessment-instance"
+    },
+    {
+     "slug": "itaware-campaigns-surveys",
+     "name": {
+      "en": "IT-Aware CSAT Archive",
+      "zh": "IT-Aware CSAT 存档"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:itaware_campaigns_surveys:read"
+      ]
+     },
+     "keywords": [
+      "itaware_campaigns_surveys"
+     ],
+     "address": "/tasks/raw-records/itaware-campaigns-surveys"
+    },
+    {
+     "slug": "erp-orginfo",
+     "name": {
+      "en": "ERP Organizations",
+      "zh": "ERP 组织"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:erp_orginfo:read"
+      ]
+     },
+     "keywords": [
+      "erp_orginfo"
+     ],
+     "address": "/tasks/raw-records/erp-orginfo"
+    },
+    {
+     "slug": "erp-locationinfo",
+     "name": {
+      "en": "ERP Offices",
+      "zh": "ERP 办公地点"
+     },
+     "old_code": null,
+     "old_base": null,
+     "requires": {
+      "check": "all",
+      "codes": [
+       "ui:navigation:data",
+       "raw:erp_locationinfo:read"
+      ]
+     },
+     "keywords": [
+      "erp_locationinfo"
+     ],
+     "address": "/tasks/raw-records/erp-locationinfo"
     }
    ]
   },
@@ -899,40 +1058,6 @@
    ]
   },
   {
-   "code": "survey-analysis-dashboard",
-   "name": {
-    "en": "Survey Analysis Dashboard",
-    "zh": "问卷分析仪表盘"
-   },
-   "grouping": "analytics",
-   "kind": "internal",
-   "address": "/tasks/survey-analysis-dashboard",
-   "icon": "chart-pie",
-   "views": [
-    {
-     "slug": "analyses",
-     "name": {
-      "en": "Analyses",
-      "zh": "分析"
-     },
-     "old_code": "data.analyses",
-     "old_base": "/data/analyses",
-     "requires": {
-      "check": "all",
-      "codes": [
-       "ui:navigation:data",
-       "objects:analysiss:read"
-      ]
-     },
-     "keywords": [
-      "Insights",
-      "洞察"
-     ],
-     "address": "/tasks/survey-analysis-dashboard"
-    }
-   ]
-  },
-  {
    "code": "it-tickets",
    "name": {
     "en": "Monitor IT Tickets",
@@ -1372,7 +1497,7 @@
       "check": "all",
       "codes": [
        "ui:navigation:ssc",
-       "objects:incidents:read"
+       "csat:responses:read"
       ]
      },
      "keywords": [],
@@ -1878,13 +2003,13 @@
   },
   {
    "old": "/data/analyses",
-   "new": "/tasks/survey-analysis-dashboard",
-   "type": "view"
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "special"
   },
   {
    "old": "/data/analyses/[oid]",
-   "new": "/tasks/survey-analysis-dashboard/[oid]",
-   "type": "record"
+   "new": "/tasks/it-operations-dashboard/csat",
+   "type": "special"
   },
   {
    "old": "/data/articles",
@@ -1898,13 +2023,13 @@
   },
   {
    "old": "/data/clusters",
-   "new": "/tasks/workers/clusters",
-   "type": "view"
+   "new": "/tasks/workers/workers",
+   "type": "special"
   },
   {
    "old": "/data/clusters/[label]",
-   "new": "/tasks/workers/clusters/[label]",
-   "type": "record"
+   "new": "/tasks/workers/workers",
+   "type": "special"
   },
   {
    "old": "/data/hardwares",

@@ -9,10 +9,9 @@ import { usePermissions } from '@/lib/contexts/user-context';
 import { PERMISSIONS } from '@/lib/config/permissions';
 import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 import { ObjectGraph } from '@/components/data';
-import type { GlobalEdge, Location, Organization, Worker, WorkerProfile, WorkerCluster, ClusterSummaryResponse } from '@/lib/types/objects';
+import type { GlobalEdge, Location, Organization, Worker, WorkerProfile } from '@/lib/types/objects';
 import { PersonaOrgWorkerSidebar } from './PersonaOrgWorkerSidebar';
 import { PersonaActivitiesTimeline } from './PersonaActivitiesTimeline';
-import { ClusterProfileCard } from './ClusterProfileCard';
 import { PersonaIoaScanWidget } from '@/components/ioa_scan/PersonaIoaScanWidget';
 
 interface PersonaProfilePageProps {
@@ -21,8 +20,6 @@ interface PersonaProfilePageProps {
     organization: Organization | null;
     location: Location | null;
     edges: GlobalEdge[];
-    workerCluster: WorkerCluster | null;
-    clusterSummary: ClusterSummaryResponse | null;
 }
 
 export function PersonaProfilePage({
@@ -31,8 +28,6 @@ export function PersonaProfilePage({
     organization,
     location,
     edges,
-    workerCluster,
-    clusterSummary,
 }: PersonaProfilePageProps) {
     const { theme } = useTheme();
     const { timezone } = useTimezone();
@@ -81,9 +76,6 @@ export function PersonaProfilePage({
                                     <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                                         {currentWorker.stable_id}
                                     </p>
-                                    {/* Cluster chip removed from the header — cluster analysis
-                                        lives in the collapsed Experimental Features section
-                                        at the bottom of the page. */}
                                 </div>
                             </div>
                         </section>
@@ -214,9 +206,9 @@ export function PersonaProfilePage({
                         </section>
 
                         {/* ── Experimental Features ────────────────────────────
-                            Profile Info (LLM-derived summary/topics/tags) and
-                            Cluster Info are still in development; collapsed by
-                            default to keep the main page focused. */}
+                            Profile Info (LLM-derived summary/topics/tags, the last
+                            profile since the profiling job was retired on
+                            2026-11-16); collapsed by default. */}
                         <details className={cardClass}>
                             <summary className="cursor-pointer list-none flex items-center gap-2 select-none">
                                 <span
@@ -324,18 +316,6 @@ export function PersonaProfilePage({
                                         </div>
                                     )}
                                 </div>
-
-                                {/* Cluster Info — uses its own internal card styling */}
-                                <ClusterProfileCard
-                                    currentWorker={currentWorker}
-                                    workerCluster={workerCluster}
-                                    clusterSummary={clusterSummary}
-                                    isLight={isLight}
-                                    cardClass={cardClass}
-                                    sectionTitleClass={sectionTitleClass}
-                                    labelClass={labelClass}
-                                    valueClass={valueClass}
-                                />
                             </div>
                         </details>
                     </div>

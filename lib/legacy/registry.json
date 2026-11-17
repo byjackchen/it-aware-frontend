@@ -164,13 +164,13 @@
     },
     {
       "old": "/data/analyses",
-      "new": "/tasks/survey-analysis-dashboard",
-      "type": "view"
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "special"
     },
     {
       "old": "/data/analyses/[oid]",
-      "new": "/tasks/survey-analysis-dashboard/[oid]",
-      "type": "record"
+      "new": "/tasks/it-operations-dashboard/csat",
+      "type": "special"
     },
     {
       "old": "/data/articles",
@@ -184,13 +184,13 @@
     },
     {
       "old": "/data/clusters",
-      "new": "/tasks/workers/clusters",
-      "type": "view"
+      "new": "/tasks/workers/workers",
+      "type": "special"
     },
     {
       "old": "/data/clusters/[label]",
-      "new": "/tasks/workers/clusters/[label]",
-      "type": "record"
+      "new": "/tasks/workers/workers",
+      "type": "special"
     },
     {
       "old": "/data/hardwares",
