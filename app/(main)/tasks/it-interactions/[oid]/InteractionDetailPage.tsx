@@ -28,6 +28,7 @@ import {
     EventTrackingSection,
     ReactSection,
 } from './InteractionFlowStateSections';
+import { InteractionFormSection } from './InteractionFormSection';
 
 // Resolve a service-catalog OID to its leaf name; falls back to the OID
 // (or "—" when null) so the cell never goes blank.
@@ -327,6 +328,7 @@ export function InteractionDetailPage({ interaction: initialInteraction }: Inter
 
                 {/* Chatbot flow-state sections (only meaningful for chatbot-sourced
                     interactions; render for all but they self-handle empty data). */}
+                <InteractionFormSection interaction={interaction} />
                 <EventTrackingSection interaction={interaction} />
                 <ReactSection interaction={interaction} />
 

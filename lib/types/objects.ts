@@ -1150,6 +1150,16 @@ export interface Interaction {
     review_optimization_notes?: string | null;
     review_completed_at?: string | null;
     review_completed_by_oid?: string | null;
+
+    // Software request form event of a chatbot turn (lib/interactions/form-events.ts);
+    // null on other turns. form_final marks the one closing turn of a request.
+    form_draft_id?: string | null;
+    form_event?: string | null;
+    form_final?: boolean | null;
+    form_item_name?: string | null;
+    form_item_sys_id?: string | null;
+    form_ticket_number?: string | null;
+    form_values?: Record<string, unknown> | null;
 }
 
 export interface InteractionListParams {
