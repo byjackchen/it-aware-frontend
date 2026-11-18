@@ -39,7 +39,8 @@ test('a submitted request shows its submitted values and every turn', async ({ p
   const turns = section.getByTestId('interaction-form-turns').getByRole('listitem');
   await expect(turns).toHaveCount(3);
   await expect(turns.nth(0)).toContainText('Started');
-  await expect(turns.nth(1)).toContainText('Form sent');
+  await expect(turns.nth(1)).toContainText('Rejected → Form sent');
+  await expect(turns.nth(1)).toContainText('Reason: employee not found (gate)');
   await expect(turns.nth(2)).toContainText('Submitted (this turn)');
 
   await section.getByRole('link', { name: 'Started' }).click();

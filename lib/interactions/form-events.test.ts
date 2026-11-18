@@ -3,7 +3,9 @@ import {
     FORM_EVENT_LABELS,
     formBadge,
     formEventLabel,
+    formEventsLabel,
     formFilterQuery,
+    formTurnDetail,
     formValueRows,
 } from './form-events';
 
@@ -66,5 +68,30 @@ describe('formValueRows', () => {
         expect(rows[1]).toMatchObject({ shown: 'gate work', cycleId: null });
         expect(rows[2]).toMatchObject({ shown: '3', value: '3' });
         expect(rows[3]).toMatchObject({ shown: '', value: '' });
+    });
+});
+
+describe('formTurnDetail and formEventsLabel', () => {
+    const raw = (catalogRequest: unknown) => ({ record: { flow_states: { catalog_request: catalogRequest } } });
+
+    it('reads the events and the reason of a turn', () => {
+        expect(formTurnDetail(raw({ events: ['rejected', 'form_sent', '', 7], error: ' employee not found ' }))).toEqual({
+            events: ['rejected', 'form_sent'],
+            error: 'employee not found',
+        });
+    });
+
+    it('is empty without a record, events or reason', () => {
+        expect(formTurnDetail(null)).toEqual({ events: [], error: null });
+        expect(formTurnDetail(undefined)).toEqual({ events: [], error: null });
+        expect(formTurnDetail({ record: [] })).toEqual({ events: [], error: null });
+        expect(formTurnDetail(raw({ events: 'rejected', error: '  ' }))).toEqual({ events: [], error: null });
+        expect(formTurnDetail(raw({ error: 3 }))).toEqual({ events: [], error: null });
+    });
+
+    it('joins several events and falls back to the single event', () => {
+        expect(formEventsLabel(['rejected', 'form_sent'], 'form_sent')).toBe('Rejected → Form sent');
+        expect(formEventsLabel([], 'cancelled')).toBe('Cancelled');
+        expect(formEventsLabel([], null)).toBe('');
     });
 });

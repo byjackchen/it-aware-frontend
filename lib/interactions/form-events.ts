@@ -96,3 +96,30 @@ export function formValueRows(values: Record<string, unknown> | null | undefined
         })
         .sort((a, b) => a.label.localeCompare(b.label));
 }
+
+export interface FormTurnDetail {
+    /** Every event of the turn, in order (e.g. rejected, then form_sent). */
+    events: string[];
+    /** Why a submission was refused or failed, as the form's system said it. */
+    error: string | null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+/** The turn's full form record, kept in content_raw.record.flow_states.catalog_request. */
+export function formTurnDetail(contentRaw: Record<string, unknown> | null | undefined): FormTurnDetail {
+    const record = asRecord(asRecord(asRecord(asRecord(contentRaw).record).flow_states).catalog_request);
+    const events = Array.isArray(record.events)
+        ? record.events.filter((e): e is string => typeof e === 'string' && e.length > 0)
+        : [];
+    const error = typeof record.error === 'string' && record.error.trim() ? record.error.trim() : null;
+    return { events, error };
+}
+
+/** "Rejected → Form sent" for a turn with several events; the single event's label otherwise. */
+export function formEventsLabel(events: string[], fallback: string | null | undefined): string {
+    if (events.length === 0) return formEventLabel(fallback);
+    return events.map((e) => formEventLabel(e)).join(' → ');
+}

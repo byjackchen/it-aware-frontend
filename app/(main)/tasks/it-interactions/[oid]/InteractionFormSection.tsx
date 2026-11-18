@@ -6,7 +6,7 @@ import { FileCheck2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { formatDateTime } from '@/lib/utils/datetime';
-import { formEventLabel, formValueRows } from '@/lib/interactions/form-events';
+import { formEventsLabel, formTurnDetail, formValueRows } from '@/lib/interactions/form-events';
 import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
 
 /**
@@ -31,7 +31,8 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
                     form_draft_id: draftId,
                     sort_by: 'created_at',
                     order: 'asc',
-                    view: 'slim',
+                    // full: each turn's events and reason are in content_raw
+                    view: 'full',
                     limit: '100',
                 });
                 const res = await fetch(`/api/objects/interactions?${params}`, { credentials: 'include' });
@@ -49,6 +50,7 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
 
     if (!interaction.form_event) return null;
     const rows = formValueRows(interaction.form_values);
+    const detail = formTurnDetail(interaction.content_raw);
     const muted = isLight ? 'text-slate-500' : 'text-gray-500';
     return (
         <div
@@ -66,7 +68,7 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
                 <div>
                     <dt className={muted}>Event</dt>
                     <dd data-testid="interaction-form-event">
-                        {formEventLabel(interaction.form_event)}
+                        {formEventsLabel(detail.events, interaction.form_event)}
                         {interaction.form_final ? ' (final)' : ''}
                     </dd>
                 </div>
@@ -79,6 +81,11 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
                     <dd className="font-mono text-xs break-all">{draftId || '—'}</dd>
                 </div>
             </dl>
+            {detail.error && (
+                <p data-testid="interaction-form-error" className={`text-sm ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
+                    Reason: {detail.error}
+                </p>
+            )}
             {rows.length > 0 && (
                 <table className="w-full text-sm" data-testid="interaction-form-values">
                     <thead>
@@ -105,18 +112,25 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
                 <div>
                     <div className={`text-xs font-semibold uppercase tracking-wider mb-2 ${muted}`}>Turns of this request</div>
                     <ol className="space-y-1 text-sm" data-testid="interaction-form-turns">
-                        {turns.map((turn) => (
-                            <li key={turn.oid} className="flex gap-3">
-                                <span className={muted}>{formatDateTime(turn.created_at, timezone)}</span>
-                                {turn.oid === interaction.oid ? (
-                                    <span className="font-medium">{formEventLabel(turn.form_event)} (this turn)</span>
-                                ) : (
-                                    <Link className="text-indigo-500 hover:underline" href={`/tasks/it-interactions/${turn.oid}`}>
-                                        {formEventLabel(turn.form_event)}
-                                    </Link>
-                                )}
-                            </li>
-                        ))}
+                        {turns.map((turn) => {
+                            const turnDetail = formTurnDetail(turn.content_raw);
+                            const label = formEventsLabel(turnDetail.events, turn.form_event);
+                            return (
+                                <li key={turn.oid} className="flex flex-wrap gap-x-3">
+                                    <span className={muted}>{formatDateTime(turn.created_at, timezone)}</span>
+                                    {turn.oid === interaction.oid ? (
+                                        <span className="font-medium">{label} (this turn)</span>
+                                    ) : (
+                                        <Link className="text-indigo-500 hover:underline" href={`/tasks/it-interactions/${turn.oid}`}>
+                                            {label}
+                                        </Link>
+                                    )}
+                                    {turnDetail.error && (
+                                        <span className={isLight ? 'text-amber-700' : 'text-amber-300'}>Reason: {turnDetail.error}</span>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ol>
                 </div>
             )}

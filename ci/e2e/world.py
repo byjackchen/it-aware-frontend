@@ -27,7 +27,8 @@ backend's dashboard golden snapshots, which this must not disturb):
   (e2e/task-redirects.spec.ts). The specs' accounts with no task at all never
   showed that crash's cause, the task frame of a held task.
 - two software requests in chatbot interactions (ohla-xray TODO00000174): one
-  submitted over three turns (started, form sent, submitted with its values) and
+  submitted over three turns (started; rejected then form sent again, with the
+  reason; submitted with its values) and
   one cancelled, so the Interactions list's form filter, badge and the detail
   page's form section have something to show (e2e/interaction-forms.spec.ts).
 
@@ -165,7 +166,7 @@ def form_interactions() -> list[dict]:
     item = {"item_sys_id": "gate-item-1", "item_name": "Gate Tool"}
     return [
         form_turn(1, "query", "I need Gate Tool for sprint work", {"event": "started", "final": False, "draft_id": "gate-d1", **item, "values": {"justification": FORM_VALUES["justification"]}}),
-        form_turn(2, "query", "yes, request access", {"event": "form_sent", "final": False, "draft_id": "gate-d1", **item, "values": FORM_VALUES}),
+        form_turn(2, "form_submit", "[Form submit]", {"event": "form_sent", "events": ["rejected", "form_sent"], "error": "employee not found (gate)", "final": False, "draft_id": "gate-d1", **item, "values": FORM_VALUES}),
         form_turn(3, "form_submit", "[Form submit]", {"event": "submitted", "final": True, "draft_id": "gate-d1", **item, "ticket_number": "RITM9500001", "values": FORM_VALUES}),
         form_turn(4, "query", "cancel my Gate Tool request", {"event": "cancelled", "final": True, "draft_id": "gate-d2", **item, "values": {}}),
     ]
