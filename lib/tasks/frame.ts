@@ -4,6 +4,7 @@
 
 import { unstable_rethrow } from 'next/navigation';
 import { getTaskHome, getTasksMine } from '@/lib/api/tasks';
+import { openAddresses } from '@/lib/external/gateway';
 import type { Task } from '@/lib/types/tasks';
 
 export interface FrameData {
@@ -11,6 +12,8 @@ export interface FrameData {
   held: Task[] | null;
   /** The codes the person pinned; null when the backend failed. */
   pinned: string[] | null;
+  /** Where a person opens each external task's app on their own, by task code; only the apps with one set. */
+  addresses: Record<string, string>;
 }
 
 /** A failure the frame can do without; Next.js's own signals are thrown on. */
@@ -32,5 +35,6 @@ export async function loadFrame(): Promise<FrameData> {
   return {
     held: mine ? mine.tasks.map(({ task }) => task) : null,
     pinned: home ? home.pinned.map(task => task.code) : null,
+    addresses: openAddresses(),
   };
 }

@@ -9,6 +9,9 @@ import { PASSWORD } from './env';
  * frame. The synthetic admin holds every task; ohla-drift-admin holds only
  * objects:interactions:read. The apps themselves, and a framed session through
  * one, are checked against a real build of the app outside this suite.
+ * The stack names no app's own address (.env.example), so every app mark is a
+ * mark, not a link; the link, where a deployment names an address, is
+ * lib/external/gateway.test.ts's openAddresses and a check on a real deployment.
  */
 
 const TASKS = [
@@ -56,6 +59,15 @@ test.describe('External tasks', () => {
       await context.close();
     });
   }
+
+  test('without an address of its own named, an app mark is a mark and not a link', async ({ page }) => {
+    for (const [code, name] of TASKS) {
+      await page.goto(`/tasks/${code}`);
+      await expect(page.getByTestId('task-frame-name')).toHaveText(name);
+      await expect(page.getByTestId('task-frame-external')).not.toHaveAttribute('href');
+      await expect(page.getByTestId('task-frame-external')).toHaveAttribute('title', new RegExp(`^Provided by ${name}\\.`));
+    }
+  });
 
   test('an app IT-Aware does not know is no external task', async ({ page }) => {
     await page.goto('/home');

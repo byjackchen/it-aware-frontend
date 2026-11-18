@@ -1653,7 +1653,8 @@
     "unpin": "Unpin from home",
     "pinTask": "Pin {name}",
     "unpinTask": "Unpin {name}",
-    "external": "Provided by {name}. What you can do here is set by your role in {name}."
+    "external": "Provided by {name}. What you can do here is set by your role in {name}.",
+    "externalOpen": "Open {name} at {address} in a new tab. What you can do there is set by your role in {name}."
   },
   "GlobalSearch": {
     "pin": "Pin to home",
@@ -3477,6 +3478,7 @@
   },
   "ExternalTask": {
     "notConfigured": "{name} is not set up in this environment yet.",
-    "unavailable": "{name} is temporarily unavailable. The rest of IT-Aware works as usual; try again shortly."
+    "unavailable": "{name} is temporarily unavailable. The rest of IT-Aware works as usual; try again shortly.",
+    "openDirectly": "Open {name} directly"
   }
 }

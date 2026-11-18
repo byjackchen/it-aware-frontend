@@ -6,7 +6,8 @@
  * - `TaskHeader`, in the top bar's middle: the task's icon tile, its grouping as
  *   a small caption, its name, and a pin toggle (the star of the home and of
  *   search). An external task (another app's page inside IT-Aware) carries a
- *   small app mark whose hint says whose page it is.
+ *   small app mark whose hint says whose page it is; where the deployment names
+ *   the app's own address, the mark is a link that opens it in a new tab.
  * - `TaskViews`, a slim row under the top bar: a tab per view, and only when the
  *   person has more than one of the task's views. Most tasks have none, so the
  *   page starts right under the top bar.
@@ -32,6 +33,8 @@ export interface TaskFrameProps {
     held: Task[] | null;
     /** The codes the person pinned (GET /tasks/home); null when unknown. */
     pinned: string[] | null;
+    /** Where a person opens each external task's app on their own, by task code (lib/external/gateway.ts). */
+    addresses: Record<string, string>;
 }
 
 /** The task of this page, and what the person has of it; null on a page that is no task's. */
@@ -45,7 +48,7 @@ function useTaskOfPage(held: Task[] | null) {
     return { task, view, mine, views };
 }
 
-export function TaskHeader({ held, pinned }: TaskFrameProps) {
+export function TaskHeader({ held, pinned, addresses }: TaskFrameProps) {
     const router = useRouter();
     const locale = useLocale();
     const t = useTranslations('TaskFrame');
@@ -59,6 +62,7 @@ export function TaskHeader({ held, pinned }: TaskFrameProps) {
     // The pin shows what is stored: it changes once the backend has it and
     // the layout's data is fetched again; until then the button waits.
     const isPinned = pinned?.includes(task.code) ?? false;
+    const address = task.kind === 'external' ? addresses[task.code] : undefined;
 
     const togglePin = () => {
         startTransition(async () => {
@@ -79,7 +83,19 @@ export function TaskHeader({ held, pinned }: TaskFrameProps) {
                     <span data-testid="task-frame-name" className={`truncate text-[15px] font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
                         {name}
                     </span>
-                    {task.kind === 'external' && (
+                    {task.kind === 'external' && (address ? (
+                        <a
+                            data-testid="task-frame-external"
+                            href={address}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t('externalOpen', { name, address: new URL(address).host })}
+                            aria-label={t('externalOpen', { name, address: new URL(address).host })}
+                            className={`shrink-0 rounded p-0.5 ${isLight ? 'text-slate-400 hover:bg-slate-100 hover:text-accent' : 'text-gray-500 hover:bg-white/10 hover:text-white'}`}
+                        >
+                            <AppWindow aria-hidden="true" className="h-3.5 w-3.5" />
+                        </a>
+                    ) : (
                         <span
                             data-testid="task-frame-external"
                             title={t('external', { name })}
@@ -88,7 +104,7 @@ export function TaskHeader({ held, pinned }: TaskFrameProps) {
                         >
                             <AppWindow aria-hidden="true" className="h-3.5 w-3.5" />
                         </span>
-                    )}
+                    ))}
                 </span>
             </div>
             {mine && pinned && (

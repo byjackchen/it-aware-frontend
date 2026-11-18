@@ -43,6 +43,22 @@ export function externalApp(code: string): ExternalApp | null {
   return Object.hasOwn(EXTERNAL_APPS, code) ? EXTERNAL_APPS[code] : null;
 }
 
+/**
+ * Where a person opens each app on their own, outside IT-Aware: the origin of
+ * `<APP CODE>_PUBLIC_URL` (`OHLA_ROUTER_PUBLIC_URL`, `OHLA_KNOWLEDGE_PUBLIC_URL`, ...) in this
+ * deployment's environment. It is not the address the backend calls, which a
+ * person's browser may not reach. An app with none set, or one that is no http(s)
+ * address, is left out, and its task then offers no link.
+ */
+export function openAddresses(env: Record<string, string | undefined> = process.env): Record<string, string> {
+  const found: Record<string, string> = {};
+  for (const code of Object.keys(EXTERNAL_APPS)) {
+    const value = env[`${code.toUpperCase().replaceAll('-', '_')}_PUBLIC_URL`] ?? '';
+    if (/^https?:\/\//i.test(value) && URL.canParse(value)) found[code] = new URL(value).origin;
+  }
+  return found;
+}
+
 /** Where the browser frames the app's page. */
 export function frameSrc(app: ExternalApp): string {
   return `/api/external/${app.code}/${app.entry}`;

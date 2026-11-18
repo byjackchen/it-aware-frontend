@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { DELETE, GET, POST } from '@/app/api/external/[app]/[...path]/route';
-import { EXTERNAL_APPS, externalApp, frameSrc, fromOwnPage, plainPath, renewSignIn, taskState } from '@/lib/external/gateway';
+import { EXTERNAL_APPS, externalApp, frameSrc, fromOwnPage, openAddresses, plainPath, renewSignIn, taskState } from '@/lib/external/gateway';
 import { getIdentityFromHeaders } from '@/lib/auth/taihu';
 
 /**
@@ -270,4 +270,19 @@ it('knows no other app: an unknown one is 404 before anything is called', async 
     expect(response.status).toBe(404);
   }
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it("gives each app's own address as its origin, and none for an app without a usable one", () => {
+  expect(
+    openAddresses({
+      OHLA_ROUTER_PUBLIC_URL: 'https://ohla-router.example.com/admin?x=1',
+      OHLA_KNOWLEDGE_PUBLIC_URL: 'http://knowledge.example.com:8080/',
+      OHLA_JOURNEY_PUBLIC_URL: 'javascript:alert(1)',
+      OHLA_SIDEBAR_PUBLIC_URL: 'https://',
+    }),
+  ).toEqual({ 'ohla-router': 'https://ohla-router.example.com', 'ohla-knowledge': 'http://knowledge.example.com:8080' });
+  vi.stubEnv('OHLA_SIDEBAR_PUBLIC_URL', 'https://sidebar.example.com');
+  expect(openAddresses()).toEqual({ 'ohla-sidebar': 'https://sidebar.example.com' });
+  vi.unstubAllEnvs();
+  expect(openAddresses()).toEqual({});
 });

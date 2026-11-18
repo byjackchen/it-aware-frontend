@@ -8,6 +8,8 @@ import type { Task, TaskHome, TasksMine } from '@/lib/types/tasks';
  */
 
 vi.mock('@/lib/api/tasks');
+vi.mock('@/lib/external/gateway', () => ({ openAddresses: () => ({ 'ohla-router': 'https://ohla-router.example.com' }) }));
+const addresses = { 'ohla-router': 'https://ohla-router.example.com' };
 afterEach(() => vi.resetAllMocks());
 
 const task = { code: 'it-tickets' } as Task;
@@ -15,13 +17,13 @@ const task = { code: 'it-tickets' } as Task;
 it("answers the person's tasks and pins", async () => {
   vi.mocked(api.getTasksMine).mockResolvedValue({ tasks: [{ task }] } as unknown as TasksMine);
   vi.mocked(api.getTaskHome).mockResolvedValue({ pinned: [{ code: 'it-incidents' }] } as unknown as TaskHome);
-  expect(await loadFrame()).toEqual({ held: [task], pinned: ['it-incidents'] });
+  expect(await loadFrame()).toEqual({ held: [task], pinned: ['it-incidents'], addresses });
 });
 
 it('answers null for what the backend failed to give', async () => {
   vi.mocked(api.getTasksMine).mockRejectedValue(new Error('API Error: 500'));
   vi.mocked(api.getTaskHome).mockRejectedValue(new Error('fetch failed'));
-  expect(await loadFrame()).toEqual({ held: null, pinned: null });
+  expect(await loadFrame()).toEqual({ held: null, pinned: null, addresses });
 });
 
 it('throws on the redirect to the login page, so the layout redirects before its shell', async () => {

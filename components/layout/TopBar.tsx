@@ -22,7 +22,7 @@ import { TaskHeader, type TaskFrameProps } from '@/components/tasks/TaskFrame';
  * its own, so the page under it keeps that height.
  */
 
-export function TopBar({ held, pinned }: TaskFrameProps) {
+export function TopBar({ held, pinned, addresses }: TaskFrameProps) {
   const t = useTranslations('TopBar');
   const router = useTransitionRouter();
   const { user, isLoading, clearUser } = useUser();
@@ -63,7 +63,7 @@ export function TopBar({ held, pinned }: TaskFrameProps) {
               </div>
               <span className={`hidden xl:inline text-xl font-semibold whitespace-nowrap ${isLight ? 'text-slate-800' : 'text-white'}`}>{t('title')}</span>
             </NavLink>
-            <TaskHeader held={held} pinned={pinned} />
+            <TaskHeader held={held} pinned={pinned} addresses={addresses} />
           </div>
         </div>
 

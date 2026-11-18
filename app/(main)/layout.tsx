@@ -11,13 +11,13 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { held, pinned } = await loadFrame();
+  const { held, pinned, addresses } = await loadFrame();
   return (
     <Providers>
       <NavigationProvider>
         <RouteProgressBar />
         <TaskOpenRecorder />
-        <TopBar held={held} pinned={pinned} />
+        <TopBar held={held} pinned={pinned} addresses={addresses} />
         <MainContent held={held}>
           {children}
         </MainContent>
