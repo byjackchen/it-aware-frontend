@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTransitionRouter } from '@/components/navigation/useTransitionRouter';
-import { MousePointerClick, RefreshCw, Search, Loader2 } from 'lucide-react';
+import { MousePointerClick, RefreshCw, Search, Loader2, FileCheck2 } from 'lucide-react';
 import { useTheme } from '@/lib/contexts/theme-context';
 import { useTimezone } from '@/lib/contexts/timezone-context';
 import { useInfiniteResource } from '@/lib/hooks/useInfiniteResource';
@@ -10,6 +10,7 @@ import { QuickScrollRail } from '@/components/data/QuickScrollRail';
 import { InfiniteLoadTrigger } from '@/components/data/InfiniteLoadTrigger';
 import { formatDateTime } from '@/lib/utils/datetime';
 import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
+import { FORM_FILTER_LABELS, formBadge, formFilterQuery, type FormFilter } from '@/lib/interactions/form-events';
 
 function getCreatedAtTimestamp(value: string): number {
     const ts = Date.parse(value);
@@ -24,6 +25,7 @@ export function InteractionsListPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [hideEnterChat, setHideEnterChat] = useState(false);
     const [hideClick, setHideClick] = useState(false);
+    const [formFilter, setFormFilter] = useState<FormFilter>('all');
 
     // Compose the toggles into one comma-separated exclude_action_types param
     // (the backend splits on commas → NOT IN (...)). Memoized so the query-string
@@ -37,8 +39,9 @@ export function InteractionsListPage() {
             sort_by: 'created_at',
             order: 'desc' as const,
             ...(excluded.length ? { exclude_action_types: excluded.join(',') } : {}),
+            ...formFilterQuery(formFilter),
         };
-    }, [hideEnterChat, hideClick]);
+    }, [hideEnterChat, hideClick, formFilter]);
 
     const {
         items: interactions,
@@ -141,6 +144,19 @@ export function InteractionsListPage() {
                         />
                         Hide click
                     </label>
+                    <select
+                        aria-label="Software request forms"
+                        data-testid="interactions-form-filter"
+                        value={formFilter}
+                        onChange={(e) => setFormFilter(e.target.value as FormFilter)}
+                        className={`text-sm rounded-lg px-2 py-2 shrink-0 ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-white/10 text-gray-200'} focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
+                    >
+                        {(Object.keys(FORM_FILTER_LABELS) as FormFilter[]).map((key) => (
+                            <option key={key} value={key}>
+                                {FORM_FILTER_LABELS[key]}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
@@ -168,8 +184,17 @@ export function InteractionsListPage() {
                                             <div className={`text-sm truncate ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                                                 {interaction.stable_id} · {interaction.action_type} · {interaction.source_system} · {interaction.actor_stable_id}
                                             </div>
-                                            <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
-                                                {formatDateTime(interaction.created_at, timezone)}
+                                            <div className={`text-xs mt-1 flex items-center gap-2 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                                <span>{formatDateTime(interaction.created_at, timezone)}</span>
+                                                {formBadge(interaction) && (
+                                                    <span
+                                                        data-testid="interaction-form-badge"
+                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${interaction.form_final ? (isLight ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-500/20 text-emerald-300') : (isLight ? 'bg-indigo-50 text-indigo-600' : 'bg-indigo-500/15 text-indigo-300')}`}
+                                                    >
+                                                        <FileCheck2 className="w-3 h-3" />
+                                                        {formBadge(interaction)}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -26,6 +26,10 @@ backend's dashboard golden snapshots, which this must not disturb):
   /access-denied, and an ended sign-in on /login, without a client exception
   (e2e/task-redirects.spec.ts). The specs' accounts with no task at all never
   showed that crash's cause, the task frame of a held task.
+- two software requests in chatbot interactions (ohla-xray TODO00000174): one
+  submitted over three turns (started, form sent, submitted with its values) and
+  one cancelled, so the Interactions list's form filter, badge and the detail
+  page's form section have something to show (e2e/interaction-forms.spec.ts).
 
 Deterministic: fixed timestamps and IDs, no randomness. It runs once per stack.
 """
@@ -128,6 +132,45 @@ def ticket(kind: str, n: int, workers: dict[str, str], systems: dict[str, str]) 
     }
 
 
+FORM_AT = datetime(2026, 8, 20, 9, 0, tzinfo=timezone.utc)
+FORM_VALUES = {
+    "request_type": {"label": "Request Type", "value": "1", "display": "Request Access", "cycle_id": "gate-cycle-1"},
+    "justification": {
+        "label": "Business Justification",
+        "value": "gate sprint work",
+        "display": "gate sprint work",
+        "cycle_id": "gate-cycle-1",
+    },
+}
+
+
+def form_turn(n: int, action: str, text: str, record: dict) -> dict:
+    """A chatbot turn carrying oit-chatbot's flow_states.catalog_request."""
+    return {
+        "stable_id": f"gate-form-cycle-{n}",
+        "source_system": "chatbot",
+        "actor_stable_id": "gate.alice",
+        "action_type": action,
+        "content_text": text,
+        "content_raw": {
+            "source": "chatbot_single_chats",
+            "cycle_id": f"gate-cycle-{n}",
+            "record": {"flow_states": {"catalog_request": {"events": [record["event"]], **record}}},
+        },
+        "created_at": (FORM_AT + timedelta(minutes=n)).isoformat(),
+    }
+
+
+def form_interactions() -> list[dict]:
+    item = {"item_sys_id": "gate-item-1", "item_name": "Gate Tool"}
+    return [
+        form_turn(1, "query", "I need Gate Tool for sprint work", {"event": "started", "final": False, "draft_id": "gate-d1", **item, "values": {"justification": FORM_VALUES["justification"]}}),
+        form_turn(2, "query", "yes, request access", {"event": "form_sent", "final": False, "draft_id": "gate-d1", **item, "values": FORM_VALUES}),
+        form_turn(3, "form_submit", "[Form submit]", {"event": "submitted", "final": True, "draft_id": "gate-d1", **item, "ticket_number": "RITM9500001", "values": FORM_VALUES}),
+        form_turn(4, "query", "cancel my Gate Tool request", {"event": "cancelled", "final": True, "draft_id": "gate-d2", **item, "values": {}}),
+    ]
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print("usage: world.py <backend base URL> <username> <password>", file=sys.stderr)
@@ -173,12 +216,14 @@ def main(argv: list[str]) -> int:
         api.post("/auth/config/group_permissions", {"group_oid": holders, "permission_oid": perms[code]})
     holder = api.post("/auth/config/accounts", {"username": "gate.holder", "password": api_password})["oid"]
     api.post("/auth/config/account_groups", {"account_oid": holder, "group_oid": holders})
+    api.post("/objects/activities/interactions/batch-upsert", {"interactions": form_interactions()})
     gone = Api(api.base, "gate.gone", GONE_PASSWORD)  # a sign-in event
     gone.post("/tasks/recent", {"task": "workers", "view": "workers"})  # a task_open event
     api.delete(f"/auth/config/accounts/{accounts['gate.gone']}")
     print(
         f"ui world: 2 systems, 1 worker, 1 edge, {COUNT} requests, {COUNT} incidents, "
-        "4 accounts (1 integration, 1 inactive, 1 deleted after use, 1 holding one data task)"
+        "4 accounts (1 integration, 1 inactive, 1 deleted after use, 1 holding one data task), "
+        "4 form interactions (2 requests)"
     )
     return 0
 
