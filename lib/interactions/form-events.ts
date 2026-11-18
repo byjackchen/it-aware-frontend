@@ -10,6 +10,7 @@ export type FormEvent =
     | 'updated'
     | 'form_sent'
     | 'edit'
+    | 'rejected'
     | 'cancelled'
     | 'submitted'
     | 'failed'
@@ -21,6 +22,7 @@ export const FORM_EVENT_LABELS: Record<FormEvent, string> = {
     updated: 'Details given',
     form_sent: 'Form sent',
     edit: 'Edit',
+    rejected: 'Rejected by ServiceNow',
     cancelled: 'Cancelled',
     submitted: 'Submitted',
     failed: 'Failed',

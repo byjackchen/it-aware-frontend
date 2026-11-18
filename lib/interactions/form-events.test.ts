@@ -18,6 +18,7 @@ describe('formFilterQuery', () => {
 describe('formEventLabel and formBadge', () => {
     it('labels known events and keeps unknown ones', () => {
         expect(formEventLabel('submitted')).toBe(FORM_EVENT_LABELS.submitted);
+        expect(formEventLabel('rejected')).toBe('Rejected by ServiceNow');
         expect(formEventLabel('later_event')).toBe('later_event');
         expect(formEventLabel(null)).toBe('');
         expect(formEventLabel(undefined)).toBe('');
