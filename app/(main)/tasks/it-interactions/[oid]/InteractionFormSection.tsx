@@ -10,7 +10,8 @@ import { formEventLabel, formValueRows } from '@/lib/interactions/form-events';
 import type { Interaction, InteractionListResponse } from '@/lib/types/objects';
 
 /**
- * The software request form event of a chatbot turn: which form, what happened,
+ * The form event of a chatbot turn (any form kind; software requests first):
+ * which form, what happened,
  * the values (on the closing turn, exactly what was submitted), and every other
  * turn of the same request. Renders nothing on a turn without a form event.
  */
@@ -55,7 +56,7 @@ export function InteractionFormSection({ interaction }: { interaction: Interacti
             className={`rounded-xl border p-6 space-y-4 ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}
         >
             <h3 className={`text-sm font-semibold flex items-center gap-2 ${isLight ? 'text-slate-700' : 'text-gray-200'}`}>
-                <FileCheck2 className="w-4 h-4" /> Software Request Form
+                <FileCheck2 className="w-4 h-4" /> Form
             </h3>
             <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>

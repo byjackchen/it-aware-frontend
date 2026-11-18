@@ -1,5 +1,6 @@
 /**
- * Software request form events on chatbot interactions (it-aware-backend
+ * Form events on chatbot interactions: any form the chatbot fills with a user,
+ * software requests first, other kinds later (it-aware-backend
  * docs/activities/interaction_form_events.md). oit-chatbot records one event per
  * turn that touches a request; the closing turn (`form_final`) holds the final
  * submitted values.
@@ -22,7 +23,7 @@ export const FORM_EVENT_LABELS: Record<FormEvent, string> = {
     updated: 'Details given',
     form_sent: 'Form sent',
     edit: 'Edit',
-    rejected: 'Rejected by ServiceNow',
+    rejected: 'Rejected',
     cancelled: 'Cancelled',
     submitted: 'Submitted',
     failed: 'Failed',

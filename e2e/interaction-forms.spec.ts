@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Software request forms in IT Interactions (ohla-xray TODO00000174): who used
+ * Forms in IT Interactions (ohla-xray TODO00000174; software requests first,
+ * other form kinds later): who used
  * which form when, down to the submitted values. The data is ci/e2e/world.py's
  * two synthetic requests: Gate Tool submitted over three turns, and one cancelled.
  */

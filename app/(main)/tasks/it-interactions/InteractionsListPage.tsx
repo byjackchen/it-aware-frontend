@@ -145,7 +145,7 @@ export function InteractionsListPage() {
                         Hide click
                     </label>
                     <select
-                        aria-label="Software request forms"
+                        aria-label="Forms"
                         data-testid="interactions-form-filter"
                         value={formFilter}
                         onChange={(e) => setFormFilter(e.target.value as FormFilter)}
